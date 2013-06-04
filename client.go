@@ -1,3 +1,7 @@
+// Copyright 2013 Francisco Souza. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 // Package docker provides a client for the Docker remote API.
 //
 // See http://goo.gl/mxyql for more details on the remote API.
