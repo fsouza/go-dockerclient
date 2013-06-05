@@ -69,3 +69,12 @@ func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, erro
 	}
 	return &container, nil
 }
+
+func (c *Client) KillContainer(id string) error {
+	path := "/containers/" + id + "/kill"
+	_, _, err := c.do("POST", path, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
