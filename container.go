@@ -70,6 +70,9 @@ func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, erro
 	return &container, nil
 }
 
+// KillContainer removes a container, returning an error in case of failure.
+//
+// See http://goo.gl/DfPJC for more details.
 func (c *Client) KillContainer(id string) error {
 	path := "/containers/" + id + "/kill"
 	_, _, err := c.do("POST", path, nil)
