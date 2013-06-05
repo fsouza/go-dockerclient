@@ -222,3 +222,42 @@ func TestInspectContainerFailure(t *testing.T) {
 		}
 	}
 }
+
+func TestCreateContainer(t *testing.T) {
+	jsonContainer := `{
+             "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
+	     "Warnings": []
+}`
+	var expected docker.Container
+	err := json.Unmarshal([]byte(jsonContainer), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fakeRT := FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	config := docker.Config{AttachStdout: true, AttachStdin: true}
+	container, err := client.CreateContainer(&config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+	if container.Id != id {
+		t.Errorf("CreateContainer: wrong ID. Want %q. Got %q.", id, container.Id)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("CreateContainer: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	}
+	expectedURL, _ := url.Parse(client.getURL("/containers/create"))
+	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+		t.Errorf("CreateContainer: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
+	}
+	var gotBody docker.Config
+	err = json.NewDecoder(req.Body).Decode(&gotBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+}

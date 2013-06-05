@@ -52,3 +52,20 @@ func (c *Client) InspectContainer(id string) (*docker.Container, error) {
 	}
 	return &container, nil
 }
+
+// CreateContainer creates a new container, returning the container instance,
+// or an error in case of failure.
+//
+// See http://goo.gl/lcR51 for more details.
+func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, error) {
+	body, _, err := c.do("POST", "/containers/create", config)
+	if err != nil {
+		return nil, err
+	}
+	var container docker.Container
+	err = json.Unmarshal(body, &container)
+	if err != nil {
+		return nil, err
+	}
+	return &container, nil
+}
