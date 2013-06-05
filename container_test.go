@@ -277,7 +277,7 @@ func TestKillContainer(t *testing.T) {
 	if req.Method != "POST" {
 		t.Errorf("KillContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
-	expectedURL, _ := url.Parse(client.getURL("/containers/"+id+"/kill"))
+	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/kill"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("KillContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
 	}
