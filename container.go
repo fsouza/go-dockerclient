@@ -70,6 +70,18 @@ func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, erro
 	return &container, nil
 }
 
+// StartContainer starts a container, returning an errror in case of failure.
+//
+// See http://goo.gl/QipuL for more details.
+func (c *Client) StartContainer(id string) error {
+	path := "/containers/" + id + "/start"
+	_, _, err := c.do("POST", path, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // KillContainer kills a container, returning an error in case of failure.
 //
 // See http://goo.gl/DfPJC for more details.
