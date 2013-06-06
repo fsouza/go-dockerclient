@@ -93,7 +93,10 @@ func queryString(opts interface{}) string {
 	items := url.Values(map[string][]string{})
 	for i := 0; i < value.NumField(); i++ {
 		field := value.Type().Field(i)
-		key := strings.ToLower(field.Name)
+		key := field.Tag.Get("qs")
+		if key == "" {
+			key = strings.ToLower(field.Name)
+		}
 		v := value.Field(i)
 		switch v.Kind() {
 		case reflect.Bool:

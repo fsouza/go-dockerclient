@@ -14,11 +14,6 @@ import (
 	"testing"
 )
 
-type dumb struct {
-	x int
-	y float64
-}
-
 func TestNewAPIClient(t *testing.T) {
 	endpoint := "http://localhost:4243"
 	client, err := NewClient(endpoint)
@@ -80,6 +75,7 @@ func TestQueryString(t *testing.T) {
 		{ListContainersOptions{Before: "something"}, "before=something"},
 		{ListContainersOptions{Before: "something", Since: "other"}, "before=something&since=other"},
 		{dumb{x: 10, y: 10.35000}, "x=10&y=10.35"},
+		{dumb{x: 10, y: 10.35000, z: 10}, "x=10&y=10.35&zee=10"},
 		{nil, ""},
 		{10, ""},
 		{"not_a_struct", ""},
@@ -109,4 +105,10 @@ func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func (rt *FakeRoundTripper) Reset() {
 	rt.requests = nil
+}
+
+type dumb struct {
+	x int
+	y float64
+	z int `qs:"zee"`
 }
