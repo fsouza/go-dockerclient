@@ -6,6 +6,7 @@ package docker
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/dotcloud/docker"
 )
 
@@ -75,6 +76,19 @@ func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, erro
 // See http://goo.gl/QipuL for more details.
 func (c *Client) StartContainer(id string) error {
 	path := "/containers/" + id + "/start"
+	_, _, err := c.do("POST", path, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// StopContainer stops a container, killing it after the given timeout (in
+// seconds).
+//
+// See http://goo.gl/bXrXM for more details.
+func (c *Client) StopContainer(id string, timeout uint) error {
+	path := fmt.Sprintf("/containers/%s/stop?t=%d", id, timeout)
 	_, _, err := c.do("POST", path, nil)
 	if err != nil {
 		return err

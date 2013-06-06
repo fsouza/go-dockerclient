@@ -283,6 +283,27 @@ func TestStartContainer(t *testing.T) {
 	}
 }
 
+func TestStopContainer(t *testing.T) {
+	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+	err := client.StopContainer(id, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("StopContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	}
+	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/stop"))
+	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+		t.Errorf("StopContainer(%q, 10): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+	}
+}
+
 func TestKillContainer(t *testing.T) {
 	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
 	client := Client{
