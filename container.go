@@ -70,12 +70,23 @@ func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, erro
 	return &container, nil
 }
 
-// KillContainer removes a container, returning an error in case of failure.
+// KillContainer kills a container, returning an error in case of failure.
 //
 // See http://goo.gl/DfPJC for more details.
 func (c *Client) KillContainer(id string) error {
 	path := "/containers/" + id + "/kill"
 	_, _, err := c.do("POST", path, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemoveContainer removes a container, returning an error in case of failure.
+//
+// See http://goo.gl/vCybY for more details.
+func (c *Client) RemoveContainer(id string) error {
+	_, _, err := c.do("DELETE", "/containers/"+id, nil)
 	if err != nil {
 		return err
 	}
