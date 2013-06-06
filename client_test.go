@@ -37,7 +37,7 @@ func TestNewAPIClient(t *testing.T) {
 	}
 }
 
-func TestAPIClientGetURL(t *testing.T) {
+func TestGetURL(t *testing.T) {
 	var tests = []struct {
 		endpoint string
 		path     string
@@ -58,7 +58,7 @@ func TestAPIClientGetURL(t *testing.T) {
 	}
 }
 
-func TestAPIClientError(t *testing.T) {
+func TestError(t *testing.T) {
 	err := newAPIClientError(400, []byte("bad parameter"))
 	expected := apiClientError{status: 400, message: "bad parameter"}
 	if !reflect.DeepEqual(expected, *err) {
@@ -70,7 +70,7 @@ func TestAPIClientError(t *testing.T) {
 	}
 }
 
-func TestAPIClientQueryString(t *testing.T) {
+func TestQueryString(t *testing.T) {
 	var tests = []struct {
 		input interface{}
 		want  string

@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-func TestAPIClientListContainers(t *testing.T) {
+func TestListContainers(t *testing.T) {
 	jsonContainers := `[
      {
              "Id": "8dfafdbc3a40",
@@ -64,7 +64,7 @@ func TestAPIClientListContainers(t *testing.T) {
 	}
 }
 
-func TestAPIClientListContainersParams(t *testing.T) {
+func TestListContainersParams(t *testing.T) {
 	var tests = []struct {
 		input  *ListContainersOptions
 		params map[string][]string
@@ -101,7 +101,7 @@ func TestAPIClientListContainersParams(t *testing.T) {
 	}
 }
 
-func TestAPIClientListContainersFailure(t *testing.T) {
+func TestListContainersFailure(t *testing.T) {
 	var tests = []struct {
 		status  int
 		message string
@@ -127,7 +127,7 @@ func TestAPIClientListContainersFailure(t *testing.T) {
 	}
 }
 
-func TestAPIClientInspectContainer(t *testing.T) {
+func TestInspectContainer(t *testing.T) {
 	jsonContainer := `{
              "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
              "Created": "2013-05-07T14:51:42.087658+02:00",
