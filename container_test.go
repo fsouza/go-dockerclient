@@ -366,3 +366,27 @@ func TestRemoveContainer(t *testing.T) {
 		t.Errorf("RemoveContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
 	}
 }
+
+func TestWaitContainer(t *testing.T) {
+	fakeRT := FakeRoundTripper{message: `{"StatusCode": 56}`, status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+	status, err := client.WaitContainer(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status != 56 {
+		t.Errorf("WaitContainer(%q): wrong return. Want 56. Got %d.", id, status)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("WaitContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	}
+	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/wait"))
+	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+		t.Errorf("WaitContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+	}
+}

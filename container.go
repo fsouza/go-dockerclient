@@ -131,3 +131,20 @@ func (c *Client) RemoveContainer(id string) error {
 	}
 	return nil
 }
+
+// WaitContainer blocks until the given container stops, return the exit code
+// of the container status.
+//
+// See http://goo.gl/MtAmo for more details.
+func (c *Client) WaitContainer(id string) (int, error) {
+	body, _, err := c.do("POST", "/containers/"+id+"/wait", nil)
+	if err != nil {
+		return 0, err
+	}
+	var r struct{ StatusCode int }
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		return 0, err
+	}
+	return r.StatusCode, nil
+}
