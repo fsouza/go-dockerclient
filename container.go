@@ -96,6 +96,19 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 	return nil
 }
 
+// RestartContainer stops a container, killing it after the given timeout (in
+// seconds), during the stop process.
+//
+// See http://goo.gl/n3S9r for more details.
+func (c *Client) RestartContainer(id string, timeout uint) error {
+	path := fmt.Sprintf("/containers/%s/restart?t=%d", id, timeout)
+	_, _, err := c.do("POST", path, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // KillContainer kills a container, returning an error in case of failure.
 //
 // See http://goo.gl/DfPJC for more details.
