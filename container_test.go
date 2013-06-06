@@ -275,7 +275,7 @@ func TestStartContainer(t *testing.T) {
 	}
 	req := fakeRT.requests[0]
 	if req.Method != "POST" {
-		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "DELETE", req.Method)
+		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/start"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
