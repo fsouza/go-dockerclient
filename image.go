@@ -3,3 +3,7 @@
 // license that can be found in the LICENSE file.
 
 package docker
+
+import "errors"
+
+var ErrNoSuchImage = errors.New("No such image")
