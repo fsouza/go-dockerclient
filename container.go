@@ -119,7 +119,10 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 // See http://goo.gl/n3S9r for more details.
 func (c *Client) RestartContainer(id string, timeout uint) error {
 	path := fmt.Sprintf("/containers/%s/restart?t=%d", id, timeout)
-	_, _, err := c.do("POST", path, nil)
+	_, status, err := c.do("POST", path, nil)
+	if status == http.StatusNotFound {
+		return ErrNoSuchContainer
+	}
 	if err != nil {
 		return err
 	}

@@ -375,6 +375,19 @@ func TestRestartContainer(t *testing.T) {
 	}
 }
 
+func TestRestartContainerNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{
+			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
+		},
+	}
+	err := client.RestartContainer("a2334", 10)
+	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
+		t.Errorf("RestartContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	}
+}
+
 func TestKillContainer(t *testing.T) {
 	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
 	client := Client{
