@@ -443,6 +443,19 @@ func TestRemoveContainer(t *testing.T) {
 	}
 }
 
+func TestRemoveContainerNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{
+			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
+		},
+	}
+	err := client.RemoveContainer("a2334")
+	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
+		t.Errorf("RemoveContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	}
+}
+
 func TestWaitContainer(t *testing.T) {
 	fakeRT := FakeRoundTripper{message: `{"StatusCode": 56}`, status: http.StatusOK}
 	client := Client{

@@ -148,7 +148,10 @@ func (c *Client) KillContainer(id string) error {
 //
 // See http://goo.gl/vCybY for more details.
 func (c *Client) RemoveContainer(id string) error {
-	_, _, err := c.do("DELETE", "/containers/"+id, nil)
+	_, status, err := c.do("DELETE", "/containers/"+id, nil)
+	if status == http.StatusNotFound {
+		return ErrNoSuchContainer
+	}
 	if err != nil {
 		return err
 	}
