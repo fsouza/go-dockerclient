@@ -198,28 +198,35 @@ func TestInspectContainer(t *testing.T) {
 }
 
 func TestInspectContainerFailure(t *testing.T) {
-	var tests = []struct {
-		status  int
-		message string
-	}{
-		{404, "no such container"},
-		{500, "internal server error"},
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client: &http.Client{
+			Transport: &FakeRoundTripper{message: "server error", status: 500},
+		},
 	}
-	for _, tt := range tests {
-		client := Client{
-			endpoint: "http://localhost:4243",
-			client: &http.Client{
-				Transport: &FakeRoundTripper{message: tt.message, status: tt.status},
-			},
-		}
-		expected := apiClientError{status: tt.status, message: tt.message}
-		container, err := client.InspectContainer("abe033")
-		if container != nil {
-			t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)
-		}
-		if !reflect.DeepEqual(expected, *err.(*apiClientError)) {
-			t.Errorf("InspectContainer: Wrong error information. Want %#v. Got %#v.", expected, err)
-		}
+	expected := apiClientError{status: 500, message: "server error"}
+	container, err := client.InspectContainer("abe033")
+	if container != nil {
+		t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)
+	}
+	if !reflect.DeepEqual(expected, *err.(*apiClientError)) {
+		t.Errorf("InspectContainer: Wrong error information. Want %#v. Got %#v.", expected, err)
+	}
+}
+
+func TestInspectContainerNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client:   &http.Client{
+			Transport: &FakeRoundTripper{message: "no such container", status: 404},
+		},
+	}
+	container, err := client.InspectContainer("abe033")
+	if container != nil {
+		t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)
+	}
+	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
+		t.Errorf("InspectContainer: Wrong error information. Want %#v. Got %#v.", ErrNoSuchContainer, err)
 	}
 }
 

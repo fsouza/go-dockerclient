@@ -6,9 +6,13 @@ package docker
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/dotcloud/docker"
 )
+
+// Error returned when the container does not exist.
+var ErrNoSuchContainer = errors.New("No such container")
 
 // ListContainersOptions specify parameters to the ListContainers function.
 //
@@ -42,7 +46,10 @@ func (c *Client) ListContainers(opts *ListContainersOptions) ([]docker.APIContai
 // See http://goo.gl/g5tpG for more details.
 func (c *Client) InspectContainer(id string) (*docker.Container, error) {
 	path := "/containers/" + id + "/json"
-	body, _, err := c.do("GET", path, nil)
+	body, status, err := c.do("GET", path, nil)
+	if status == 404 {
+		return nil, ErrNoSuchContainer
+	}
 	if err != nil {
 		return nil, err
 	}
