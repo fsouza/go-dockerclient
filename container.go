@@ -87,7 +87,10 @@ func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, erro
 // See http://goo.gl/QipuL for more details.
 func (c *Client) StartContainer(id string) error {
 	path := "/containers/" + id + "/start"
-	_, _, err := c.do("POST", path, nil)
+	_, status, err := c.do("POST", path, nil)
+	if status == http.StatusNotFound {
+		return ErrNoSuchContainer
+	}
 	if err != nil {
 		return err
 	}
