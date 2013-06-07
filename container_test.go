@@ -479,3 +479,16 @@ func TestWaitContainer(t *testing.T) {
 		t.Errorf("WaitContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
 	}
 }
+
+func TestWaitContainerNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{
+			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
+		},
+	}
+	_, err := client.WaitContainer("a2334")
+	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
+		t.Errorf("WaitContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	}
+}

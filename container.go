@@ -163,7 +163,10 @@ func (c *Client) RemoveContainer(id string) error {
 //
 // See http://goo.gl/MtAmo for more details.
 func (c *Client) WaitContainer(id string) (int, error) {
-	body, _, err := c.do("POST", "/containers/"+id+"/wait", nil)
+	body, status, err := c.do("POST", "/containers/"+id+"/wait", nil)
+	if status == http.StatusNotFound {
+		return 0, ErrNoSuchContainer
+	}
 	if err != nil {
 		return 0, err
 	}
