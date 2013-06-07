@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -66,6 +67,8 @@ func TestError(t *testing.T) {
 }
 
 func TestQueryString(t *testing.T) {
+	v := float32(2.4)
+	f32QueryString := fmt.Sprintf("w=%s&x=10&y=10.35", strconv.FormatFloat(float64(v), 'f', -1, 64))
 	var tests = []struct {
 		input interface{}
 		want  string
@@ -75,6 +78,7 @@ func TestQueryString(t *testing.T) {
 		{ListContainersOptions{Before: "something"}, "before=something"},
 		{ListContainersOptions{Before: "something", Since: "other"}, "before=something&since=other"},
 		{dumb{x: 10, y: 10.35000}, "x=10&y=10.35"},
+		{dumb{w: v, x: 10, y: 10.35000}, f32QueryString},
 		{dumb{x: 10, y: 10.35000, z: 10}, "x=10&y=10.35&zee=10"},
 		{nil, ""},
 		{10, ""},
@@ -108,6 +112,7 @@ func (rt *FakeRoundTripper) Reset() {
 }
 
 type dumb struct {
+	w float32
 	x int
 	y float64
 	z int `qs:"zee"`
