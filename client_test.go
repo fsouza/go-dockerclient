@@ -52,10 +52,10 @@ func TestGetURL(t *testing.T) {
 		path     string
 		expected string
 	}{
-		{"http://localhost:4243/", "/", fmt.Sprintf("http://localhost:4243/v%f/", docker.API_VERSION)},
-		{"http://localhost:4243", "/", fmt.Sprintf("http://localhost:4243/v%f/", docker.API_VERSION)},
-		{"http://localhost:4243", "/containers/ps", fmt.Sprintf("http://localhost:4243/v%f/containers/ps", docker.API_VERSION)},
-		{"http://localhost:4243/////", "/", fmt.Sprintf("http://localhost:4243/v%f/", docker.API_VERSION)},
+		{"http://localhost:4243/", "/", fmt.Sprintf("http://localhost:4243/v%f/", docker.APIVERSION)},
+		{"http://localhost:4243", "/", fmt.Sprintf("http://localhost:4243/v%f/", docker.APIVERSION)},
+		{"http://localhost:4243", "/containers/ps", fmt.Sprintf("http://localhost:4243/v%f/containers/ps", docker.APIVERSION)},
+		{"http://localhost:4243/////", "/", fmt.Sprintf("http://localhost:4243/v%f/", docker.APIVERSION)},
 	}
 	var client Client
 	for _, tt := range tests {

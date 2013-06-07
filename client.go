@@ -81,7 +81,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 }
 
 func (c *Client) getURL(path string) string {
-	return fmt.Sprintf("%s/v%f%s", strings.TrimRight(c.endpoint, "/"), docker.API_VERSION, path)
+	return fmt.Sprintf("%s/v%f%s", strings.TrimRight(c.endpoint, "/"), docker.APIVERSION, path)
 }
 
 func queryString(opts interface{}) string {

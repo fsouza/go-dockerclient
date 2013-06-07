@@ -44,7 +44,7 @@ func TestListContainers(t *testing.T) {
              "Status": "Exit 0"
      }
 ]`
-	var expected []docker.ApiContainer
+	var expected []docker.APIContainers
 	err := json.Unmarshal([]byte(jsonContainers), &expected)
 	if err != nil {
 		t.Fatal(err)
@@ -244,8 +244,8 @@ func TestCreateContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
-	if container.Id != id {
-		t.Errorf("CreateContainer: wrong ID. Want %q. Got %q.", id, container.Id)
+	if container.ID != id {
+		t.Errorf("CreateContainer: wrong ID. Want %q. Got %q.", id, container.ID)
 	}
 	req := fakeRT.requests[0]
 	if req.Method != "POST" {
