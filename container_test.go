@@ -269,6 +269,23 @@ func TestCreateContainer(t *testing.T) {
 	}
 }
 
+func TestCreateContainerImageNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{
+			Transport: &FakeRoundTripper{message: "No such image", status: http.StatusNotFound},
+		},
+	}
+	config := docker.Config{AttachStdout: true, AttachStdin: true}
+	container, err := client.CreateContainer(&config)
+	if container != nil {
+		t.Errorf("CreateContainer: expected <nil> container, got %#v.", container)
+	}
+	if !reflect.DeepEqual(err, ErrNoSuchImage) {
+		t.Errorf("CreateContainer: Wrong error type. Want %#v. Got %#v.", ErrNoSuchImage, err)
+	}
+}
+
 func TestStartContainer(t *testing.T) {
 	fakeRT := FakeRoundTripper{message: "", status: http.StatusOK}
 	client := Client{

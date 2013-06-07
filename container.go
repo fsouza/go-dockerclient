@@ -66,7 +66,10 @@ func (c *Client) InspectContainer(id string) (*docker.Container, error) {
 //
 // See http://goo.gl/lcR51 for more details.
 func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, error) {
-	body, _, err := c.do("POST", "/containers/create", config)
+	body, status, err := c.do("POST", "/containers/create", config)
+	if status == 404 {
+		return nil, ErrNoSuchImage
+	}
 	if err != nil {
 		return nil, err
 	}
