@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dotcloud/docker"
 	"io"
 	"io/ioutil"
 	"net"
@@ -22,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+const apiVersion = 1.1
 
 // ErrInvalidEndpoint is the error returned by NewClient when the given
 // endpoint is invalid.
@@ -81,7 +82,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 }
 
 func (c *Client) getURL(path string) string {
-	return fmt.Sprintf("%s/v%f%s", strings.TrimRight(c.endpoint, "/"), docker.APIVERSION, path)
+	return fmt.Sprintf("%s/v%f%s", strings.TrimRight(c.endpoint, "/"), apiVersion, path)
 }
 
 func queryString(opts interface{}) string {
