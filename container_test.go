@@ -341,6 +341,19 @@ func TestStopContainer(t *testing.T) {
 	}
 }
 
+func TestStopContainerNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{
+			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
+		},
+	}
+	err := client.StopContainer("a2334", 10)
+	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
+		t.Errorf("StopContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	}
+}
+
 func TestRestartContainer(t *testing.T) {
 	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
 	client := Client{
