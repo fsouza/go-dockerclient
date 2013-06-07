@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dotcloud/docker"
+	"net/http"
 )
 
 // Error returned when the container does not exist.
@@ -47,7 +48,7 @@ func (c *Client) ListContainers(opts *ListContainersOptions) ([]docker.APIContai
 func (c *Client) InspectContainer(id string) (*docker.Container, error) {
 	path := "/containers/" + id + "/json"
 	body, status, err := c.do("GET", path, nil)
-	if status == 404 {
+	if status == http.StatusNotFound {
 		return nil, ErrNoSuchContainer
 	}
 	if err != nil {
@@ -67,7 +68,7 @@ func (c *Client) InspectContainer(id string) (*docker.Container, error) {
 // See http://goo.gl/lcR51 for more details.
 func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, error) {
 	body, status, err := c.do("POST", "/containers/create", config)
-	if status == 404 {
+	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
 	}
 	if err != nil {
