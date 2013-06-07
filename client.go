@@ -56,7 +56,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	if err != nil {
 		return nil, -1, err
 	}
-	req.Header.Set("User-Agent", "Docker-Client/"+docker.VERSION)
+	req.Header.Set("User-Agent", "Docker-Client-API")
 	if data != nil {
 		req.Header.Set("Content-Type", "application/json")
 	} else if method == "POST" {
