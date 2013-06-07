@@ -27,9 +27,22 @@ func TestNewAPIClient(t *testing.T) {
 	if client.client != http.DefaultClient {
 		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.client)
 	}
-	_, err = NewClient("")
-	if err == nil {
-		t.Fatal("Unexpected <nil> error")
+}
+
+func TestNewClientInvalidEndpoint(t *testing.T) {
+	cases := []string{
+		"htp://localhost:3243", "http://localhost:a", "localhost:8080",
+		"", "localhost", "http://localhost:8080:8383", "http://localhost:65536",
+		"https://localhost:-20",
+	}
+	for _, c := range cases {
+		client, err := NewClient(c)
+		if client != nil {
+			t.Errorf("Want <nil> client for invalid endpoint, got %#v.", client)
+		}
+		if !reflect.DeepEqual(err, ErrInvalidEndpoint) {
+			t.Errorf("NewClient(%q): Got invalid error for invalid endpoint. Want %#v. Got %#v.", c, ErrInvalidEndpoint, err)
+		}
 	}
 }
 

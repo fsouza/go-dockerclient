@@ -15,12 +15,17 @@ import (
 	"github.com/dotcloud/docker"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
 )
+
+// ErrInvalidEndpoint is the error returned by NewClient when the given
+// endpoint is invalid.
+var ErrInvalidEndpoint = errors.New("Invalid endpoint")
 
 // Client is the basic type of this package. It provides methods for
 // interaction with the API.
@@ -32,8 +37,8 @@ type Client struct {
 // NewClient returns a Client instance ready for communication with the
 // given server endpoint.
 func NewClient(endpoint string) (*Client, error) {
-	if endpoint == "" {
-		return nil, errors.New("Server endpoint cannot be empty")
+	if !isValid(endpoint) {
+		return nil, ErrInvalidEndpoint
 	}
 	return &Client{endpoint: endpoint, client: http.DefaultClient}, nil
 }
@@ -141,4 +146,23 @@ func newAPIClientError(status int, body []byte) *apiClientError {
 
 func (e *apiClientError) Error() string {
 	return fmt.Sprintf("API error (%d): %s", e.status, e.message)
+}
+
+func isValid(endpoint string) bool {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return false
+	}
+	_, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		if e, ok := err.(*net.AddrError); ok {
+			return e.Err == "missing port in address"
+		}
+		return false
+	}
+	number, err := strconv.ParseInt(port, 10, 64)
+	return err == nil && number > 0 && number < 65536
 }
