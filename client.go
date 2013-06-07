@@ -108,21 +108,11 @@ func queryString(opts interface{}) string {
 			if v.Bool() {
 				items.Add(key, "1")
 			}
-		case reflect.Int:
-			fallthrough
-		case reflect.Int8:
-			fallthrough
-		case reflect.Int16:
-			fallthrough
-		case reflect.Int32:
-			fallthrough
-		case reflect.Int64:
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			if v.Int() > 0 {
 				items.Add(key, strconv.FormatInt(v.Int(), 10))
 			}
-		case reflect.Float32:
-			fallthrough
-		case reflect.Float64:
+		case reflect.Float32, reflect.Float64:
 			if v.Float() > 0 {
 				items.Add(key, strconv.FormatFloat(v.Float(), 'f', -1, 64))
 			}
