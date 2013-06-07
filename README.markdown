@@ -1,4 +1,6 @@
-go-dockerclient
+#go-dockerclient
+
+[![Build Status](https://drone.io/github.com/fsouza/go-dockerclient/status.png)](https://drone.io/github.com/fsouza/go-dockerclient/latest)
 
 This package presents a client for the Docker remote API.
 
