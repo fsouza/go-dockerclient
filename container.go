@@ -134,7 +134,10 @@ func (c *Client) RestartContainer(id string, timeout uint) error {
 // See http://goo.gl/DfPJC for more details.
 func (c *Client) KillContainer(id string) error {
 	path := "/containers/" + id + "/kill"
-	_, _, err := c.do("POST", path, nil)
+	_, status, err := c.do("POST", path, nil)
+	if status == http.StatusNotFound {
+		return ErrNoSuchContainer
+	}
 	if err != nil {
 		return err
 	}

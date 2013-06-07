@@ -409,6 +409,19 @@ func TestKillContainer(t *testing.T) {
 	}
 }
 
+func TestKillContainerNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client:   &http.Client{
+			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
+		},
+	}
+	err := client.KillContainer("a2334")
+	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
+		t.Errorf("KillContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	}
+}
+
 func TestRemoveContainer(t *testing.T) {
 	fakeRT := FakeRoundTripper{message: "", status: http.StatusOK}
 	client := Client{
