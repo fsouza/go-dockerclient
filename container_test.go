@@ -217,7 +217,7 @@ func TestInspectContainerFailure(t *testing.T) {
 func TestInspectContainerNotFound(t *testing.T) {
 	client := Client{
 		endpoint: "http://localhost:4243",
-		client:   &http.Client{
+		client: &http.Client{
 			Transport: &FakeRoundTripper{message: "no such container", status: 404},
 		},
 	}
@@ -272,7 +272,7 @@ func TestCreateContainer(t *testing.T) {
 func TestCreateContainerImageNotFound(t *testing.T) {
 	client := Client{
 		endpoint: "http://localhost:4343",
-		client:   &http.Client{
+		client: &http.Client{
 			Transport: &FakeRoundTripper{message: "No such image", status: http.StatusNotFound},
 		},
 	}
@@ -310,7 +310,7 @@ func TestStartContainer(t *testing.T) {
 func TestStartContainerNotFound(t *testing.T) {
 	client := Client{
 		endpoint: "http://localhost:4343",
-		client:   &http.Client{
+		client: &http.Client{
 			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
 		},
 	}
@@ -344,7 +344,7 @@ func TestStopContainer(t *testing.T) {
 func TestStopContainerNotFound(t *testing.T) {
 	client := Client{
 		endpoint: "http://localhost:4343",
-		client:   &http.Client{
+		client: &http.Client{
 			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
 		},
 	}
@@ -378,7 +378,7 @@ func TestRestartContainer(t *testing.T) {
 func TestRestartContainerNotFound(t *testing.T) {
 	client := Client{
 		endpoint: "http://localhost:4343",
-		client:   &http.Client{
+		client: &http.Client{
 			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
 		},
 	}
@@ -412,7 +412,7 @@ func TestKillContainer(t *testing.T) {
 func TestKillContainerNotFound(t *testing.T) {
 	client := Client{
 		endpoint: "http://localhost:4343",
-		client:   &http.Client{
+		client: &http.Client{
 			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
 		},
 	}
@@ -446,7 +446,7 @@ func TestRemoveContainer(t *testing.T) {
 func TestRemoveContainerNotFound(t *testing.T) {
 	client := Client{
 		endpoint: "http://localhost:4343",
-		client:   &http.Client{
+		client: &http.Client{
 			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
 		},
 	}
@@ -483,7 +483,7 @@ func TestWaitContainer(t *testing.T) {
 func TestWaitContainerNotFound(t *testing.T) {
 	client := Client{
 		endpoint: "http://localhost:4343",
-		client:   &http.Client{
+		client: &http.Client{
 			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
 		},
 	}
