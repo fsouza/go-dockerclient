@@ -124,6 +124,12 @@ func queryString(opts interface{}) string {
 			if v.String() != "" {
 				items.Add(key, v.String())
 			}
+		case reflect.Ptr:
+			if !v.IsNil() {
+				if b, err := json.Marshal(v.Interface()); err == nil {
+					items.Add(key, string(b))
+				}
+			}
 		}
 	}
 	return items.Encode()

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -81,6 +82,7 @@ func TestError(t *testing.T) {
 func TestQueryString(t *testing.T) {
 	v := float32(2.4)
 	f32QueryString := fmt.Sprintf("w=%s&x=10&y=10.35", strconv.FormatFloat(float64(v), 'f', -1, 64))
+	jsonPerson := url.QueryEscape(`{"Name":"gopher","age":4}`)
 	var tests = []struct {
 		input interface{}
 		want  string
@@ -93,6 +95,7 @@ func TestQueryString(t *testing.T) {
 		{dumb{W: v, X: 10, Y: 10.35000}, f32QueryString},
 		{dumb{X: 10, Y: 10.35000, Z: 10}, "x=10&y=10.35&zee=10"},
 		{dumb{v: 4, X: 10, Y: 10.35000}, "x=10&y=10.35"},
+		{dumb{Person: &person{Name: "gopher", Age: 4}}, "p=" + jsonPerson},
 		{nil, ""},
 		{10, ""},
 		{"not_a_struct", ""},
@@ -124,10 +127,16 @@ func (rt *FakeRoundTripper) Reset() {
 	rt.requests = nil
 }
 
+type person struct {
+	Name string
+	Age  int `json:"age"`
+}
+
 type dumb struct {
-	v int
-	W float32
-	X int
-	Y float64
-	Z int `qs:"zee"`
+	v      int
+	W      float32
+	X      int
+	Y      float64
+	Z      int     `qs:"zee"`
+	Person *person `qs:"p"`
 }
