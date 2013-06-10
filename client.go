@@ -22,7 +22,10 @@ import (
 	"strings"
 )
 
-const apiVersion = 1.1
+const (
+	apiVersion = 1.1
+	userAgent  = "go-dockerclient"
+)
 
 // ErrInvalidEndpoint is the error returned by NewClient when the given
 // endpoint is invalid.
@@ -57,7 +60,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	if err != nil {
 		return nil, -1, err
 	}
-	req.Header.Set("User-Agent", "Docker-Client-API")
+	req.Header.Set("User-Agent", userAgent)
 	if data != nil {
 		req.Header.Set("Content-Type", "application/json")
 	} else if method == "POST" {
@@ -81,8 +84,66 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
+func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error {
+	if (method == "POST" || method == "PUT") && in == nil {
+		in = bytes.NewReader([]byte{})
+	}
+	req, err := http.NewRequest(method, c.getURL(path), in)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	if method == "POST" {
+		req.Header.Set("Content-Type", "plain/text")
+	}
+	resp, err := c.client.Do(req)
+	if err != nil {
+		if strings.Contains(err.Error(), "connection refused") {
+			return fmt.Errorf("Can't connect to docker daemon. Is 'docker -d' running on this host?")
+		}
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return newAPIClientError(resp.StatusCode, body)
+	}
+	if resp.Header.Get("Content-Type") == "application/json" {
+		dec := json.NewDecoder(resp.Body)
+		for {
+			var m JSONMessage
+			if err := dec.Decode(&m); err == io.EOF {
+				break
+			} else if err != nil {
+				return err
+			}
+			if m.Progress != "" {
+				fmt.Fprintf(out, "%s %s\r", m.Status, m.Progress)
+			} else if m.Error != "" {
+				return fmt.Errorf(m.Error)
+			} else {
+				fmt.Fprintf(out, "%s\n", m.Status)
+			}
+		}
+	} else {
+		if _, err := io.Copy(out, resp.Body); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Client) getURL(path string) string {
 	return fmt.Sprintf("%s/v%f%s", strings.TrimRight(c.endpoint, "/"), apiVersion, path)
+}
+
+type JSONMessage struct {
+	Status   string `json:"status,omitempty"`
+	Progress string `json:"progress,omitempty"`
+	Error    string `json:"error,omitempty"`
 }
 
 func queryString(opts interface{}) string {
