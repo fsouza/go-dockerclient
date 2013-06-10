@@ -46,3 +46,22 @@ func (c *Client) RemoveImage(name string) error {
 	}
 	return err
 }
+
+// InspectImage returns an image by its name or ID.
+//
+// See http://goo.gl/dqGQO for more details.
+func (c *Client) InspectImage(name string) (*docker.Image, error) {
+	body, status, err := c.do("GET", "/images/"+name+"/json", nil)
+	if status == http.StatusNotFound {
+		return nil, ErrNoSuchImage
+	}
+	if err != nil {
+		return nil, err
+	}
+	var image docker.Image
+	err = json.Unmarshal(body, &image)
+	if err != nil {
+		return nil, err
+	}
+	return &image, nil
+}

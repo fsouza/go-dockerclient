@@ -107,3 +107,49 @@ func TestRemoveImageNotFound(t *testing.T) {
 		t.Errorf("RemoveImage: wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
 	}
 }
+
+func TestInspectImage(t *testing.T) {
+	body := `{
+     "id":"b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
+     "parent":"27cf784147099545",
+     "created":"2013-03-23T22:24:18.818426-07:00",
+     "container":"3d67245a8d72ecf13f33dffac9f79dcdf70f75acb84d308770391510e0c23ad0",
+     "container_config":{"Memory":0}
+}`
+	var expected docker.Image
+	json.Unmarshal([]byte(body), &expected)
+	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
+	client := Client{endpoint: "http://localhost:4243", client: &http.Client{Transport: &fakeRT}}
+	image, err := client.InspectImage(expected.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(*image, expected) {
+		t.Errorf("InspectImage(%q): Wrong image returned. Want %#v. Got %#v.", expected.ID, expected, *image)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "GET" {
+		t.Errorf("InspectImage(%q): Wrong HTTP method. Want GET. Got %s.", expected.ID, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/images/" + expected.ID + "/json"))
+	if req.URL.Path != u.Path {
+		t.Errorf("InspectImage(%q): Wrong request URL. Want %q. Got %q.", expected.ID, u.Path, req.URL.Path)
+	}
+}
+
+func TestInspectImageNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client: &http.Client{
+			Transport: &FakeRoundTripper{message: "no such image", status: http.StatusNotFound},
+		},
+	}
+	name := "test"
+	image, err := client.InspectImage(name)
+	if image != nil {
+		t.Errorf("InspectImage(%q): expected <nil> image, got %#v.", name, image)
+	}
+	if err != ErrNoSuchImage {
+		t.Errorf("InspectImage(%q): wrong error. Want %#v. Got %#v.", name, ErrNoSuchImage, err)
+	}
+}
