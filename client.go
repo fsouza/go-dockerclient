@@ -118,7 +118,7 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 	if resp.Header.Get("Content-Type") == "application/json" {
 		dec := json.NewDecoder(resp.Body)
 		for {
-			var m JSONMessage
+			var m jsonMessage
 			if err := dec.Decode(&m); err == io.EOF {
 				break
 			} else if err != nil {
@@ -144,7 +144,7 @@ func (c *Client) getURL(path string) string {
 	return fmt.Sprintf("%s/v%f%s", strings.TrimRight(c.endpoint, "/"), apiVersion, path)
 }
 
-type JSONMessage struct {
+type jsonMessage struct {
 	Status   string `json:"status,omitempty"`
 	Progress string `json:"progress,omitempty"`
 	Error    string `json:"error,omitempty"`
