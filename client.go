@@ -27,9 +27,13 @@ const (
 	userAgent  = "go-dockerclient"
 )
 
-// ErrInvalidEndpoint is the error returned by NewClient when the given
-// endpoint is invalid.
-var ErrInvalidEndpoint = errors.New("Invalid endpoint")
+var (
+	// Error returned when the endpoint is not a valid HTTP URL.
+	ErrInvalidEndpoint = errors.New("Invalid endpoint")
+
+	// Error returned when the client cannot connect to the given endpoint.
+	ErrConnectionRefused = errors.New("Cannot connect to Docker endpoint")
+)
 
 // Client is the basic type of this package. It provides methods for
 // interaction with the API.
@@ -69,7 +73,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	resp, err := c.client.Do(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
-			return nil, -1, fmt.Errorf("Can't connect to docker daemon. Is 'docker -d' running on this host?")
+			return nil, -1, ErrConnectionRefused
 		}
 		return nil, -1, err
 	}
@@ -86,7 +90,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 
 func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error {
 	if (method == "POST" || method == "PUT") && in == nil {
-		in = bytes.NewReader([]byte{})
+		in = bytes.NewReader(nil)
 	}
 	req, err := http.NewRequest(method, c.getURL(path), in)
 	if err != nil {
@@ -99,7 +103,7 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 	resp, err := c.client.Do(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
-			return fmt.Errorf("Can't connect to docker daemon. Is 'docker -d' running on this host?")
+			return ErrConnectionRefused
 		}
 		return err
 	}
@@ -123,7 +127,7 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 			if m.Progress != "" {
 				fmt.Fprintf(out, "%s %s\r", m.Status, m.Progress)
 			} else if m.Error != "" {
-				return fmt.Errorf(m.Error)
+				return errors.New(m.Error)
 			} else {
 				fmt.Fprintf(out, "%s\n", m.Status)
 			}
