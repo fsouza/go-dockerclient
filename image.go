@@ -6,4 +6,5 @@ package docker
 
 import "errors"
 
+// Error returned when the image does not exist.
 var ErrNoSuchImage = errors.New("No such image")
