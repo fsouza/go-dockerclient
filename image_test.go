@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/dotcloud/docker"
 	"net/http"
@@ -151,5 +152,62 @@ func TestInspectImageNotFound(t *testing.T) {
 	}
 	if err != ErrNoSuchImage {
 		t.Errorf("InspectImage(%q): wrong error. Want %#v. Got %#v.", name, ErrNoSuchImage, err)
+	}
+}
+
+func TestPushImage(t *testing.T) {
+	fakeRT := FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	var buf bytes.Buffer
+	err := client.PushImage(&PushImageOptions{Name: "test"}, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "Pushing 1/100"
+	if buf.String() != expected {
+		t.Errorf("PushImage: Wrong output. Want %q. Got %q.", expected, buf.String())
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("PushImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/images/test/push"))
+	if req.URL.Path != u.Path {
+		t.Errorf("PushImage: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+	if query := req.URL.Query().Encode(); query != "" {
+		t.Errorf("PushImage: Wrong query stirng. Want no parameters, got %q.", query)
+	}
+}
+
+func TestPushImageCustomRegistry(t *testing.T) {
+	fakeRT := FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	var buf bytes.Buffer
+	err := client.PushImage(&PushImageOptions{Name: "test", Registry: "docker.tsuru.io"}, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedQuery := "registry=docker.tsuru.io"
+	if query := req.URL.Query().Encode(); query != expectedQuery {
+		t.Errorf("PushImage: Wrong query string. Want %q. Got %q.", expectedQuery, query)
+	}
+}
+
+func TestPushImageNoName(t *testing.T) {
+	options := []*PushImageOptions{nil, {}}
+	for _, opt := range options {
+		client := Client{}
+		err := client.PushImage(opt, nil)
+		if err != ErrNoSuchImage {
+			t.Errorf("PushImage: got wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
+		}
 	}
 }

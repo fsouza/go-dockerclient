@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/dotcloud/docker"
+	"io"
 	"net/http"
 )
 
@@ -64,4 +65,26 @@ func (c *Client) InspectImage(name string) (*docker.Image, error) {
 		return nil, err
 	}
 	return &image, nil
+}
+
+// PushImageOptions options to use in the PushImage method.
+type PushImageOptions struct {
+	// Name or ID of the image
+	Name string
+
+	// Registry server to push the image
+	Registry string
+}
+
+// PushImage pushes a image to the given registry server, logging the progress
+// to w.
+//
+// See http://goo.gl/Hx3CB for more details.
+func (c *Client) PushImage(opts *PushImageOptions, w io.Writer) error {
+	if opts == nil || opts.Name == "" {
+		return ErrNoSuchImage
+	}
+	copy := PushImageOptions{Registry: opts.Registry}
+	path := "/images/" + opts.Name + "/push?" + queryString(&copy)
+	return c.stream("POST", path, nil, w)
 }
