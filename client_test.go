@@ -89,9 +89,10 @@ func TestQueryString(t *testing.T) {
 		{ListContainersOptions{All: true}, "all=1"},
 		{ListContainersOptions{Before: "something"}, "before=something"},
 		{ListContainersOptions{Before: "something", Since: "other"}, "before=something&since=other"},
-		{dumb{x: 10, y: 10.35000}, "x=10&y=10.35"},
-		{dumb{w: v, x: 10, y: 10.35000}, f32QueryString},
-		{dumb{x: 10, y: 10.35000, z: 10}, "x=10&y=10.35&zee=10"},
+		{dumb{X: 10, Y: 10.35000}, "x=10&y=10.35"},
+		{dumb{W: v, X: 10, Y: 10.35000}, f32QueryString},
+		{dumb{X: 10, Y: 10.35000, Z: 10}, "x=10&y=10.35&zee=10"},
+		{dumb{v: 4, X: 10, Y: 10.35000}, "x=10&y=10.35"},
 		{nil, ""},
 		{10, ""},
 		{"not_a_struct", ""},
@@ -124,8 +125,9 @@ func (rt *FakeRoundTripper) Reset() {
 }
 
 type dumb struct {
-	w float32
-	x int
-	y float64
-	z int `qs:"zee"`
+	v int
+	W float32
+	X int
+	Y float64
+	Z int `qs:"zee"`
 }

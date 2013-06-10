@@ -99,6 +99,9 @@ func queryString(opts interface{}) string {
 	items := url.Values(map[string][]string{})
 	for i := 0; i < value.NumField(); i++ {
 		field := value.Type().Field(i)
+		if field.PkgPath != "" {
+			continue
+		}
 		key := field.Tag.Get("qs")
 		if key == "" {
 			key = strings.ToLower(field.Name)
