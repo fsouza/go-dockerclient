@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/dotcloud/docker"
+	"net/http"
 )
 
 // Error returned when the image does not exist.
@@ -39,9 +40,9 @@ func (c *Client) ListImages(all bool) ([]docker.APIImages, error) {
 //
 // See http://goo.gl/J2FNF for more details.
 func (c *Client) RemoveImage(name string) error {
-	_, _, err := c.do("DELETE", "/images/"+name, nil)
-	if err != nil {
-		return err
+	_, status, err := c.do("DELETE", "/images/"+name, nil)
+	if status == http.StatusNotFound {
+		return ErrNoSuchImage
 	}
-	return nil
+	return err
 }

@@ -94,3 +94,16 @@ func TestRemoveImage(t *testing.T) {
 		t.Errorf("RemoveImage(%q): Wrong request path. Want %q. Got %q.", name, u.Path, req.URL.Path)
 	}
 }
+
+func TestRemoveImageNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client: &http.Client{
+			Transport: &FakeRoundTripper{message: "no such image", status: http.StatusNotFound},
+		},
+	}
+	err := client.RemoveImage("test:")
+	if err != ErrNoSuchImage {
+		t.Errorf("RemoveImage: wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
+	}
+}
