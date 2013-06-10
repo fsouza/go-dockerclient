@@ -492,3 +492,89 @@ func TestWaitContainerNotFound(t *testing.T) {
 		t.Errorf("WaitContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
 	}
 }
+
+func TestCommitContainer(t *testing.T) {
+	response := `{"Id":"596069db4bf5"}`
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client: &http.Client{
+			Transport: &FakeRoundTripper{message: response, status: http.StatusOK},
+		},
+	}
+	id := "596069db4bf5"
+	image, err := client.CommitContainer(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if image.ID != id {
+		t.Errorf("CommitContainer: Wrong image id. Want %q. Got %q.", id, image.ID)
+	}
+}
+
+func TestCommitContainerParams(t *testing.T) {
+	cfg := docker.Config{Memory: 67108864}
+	b, _ := json.Marshal(&cfg)
+	var tests = []struct {
+		input  *CommitContainerOptions
+		params map[string][]string
+	}{
+		{nil, map[string][]string{}},
+		{&CommitContainerOptions{Container: "44c004db4b17"}, map[string][]string{"container": {"44c004db4b17"}}},
+		{
+			&CommitContainerOptions{Container: "44c004db4b17", Repository: "tsuru/python", Message: "something"},
+			map[string][]string{"container": {"44c004db4b17"}, "repo": {"tsuru/python"}, "m": {"something"}},
+		},
+		{
+			&CommitContainerOptions{Container: "44c004db4b17", Run: &cfg},
+			map[string][]string{"container": {"44c004db4b17"}, "run": {string(b)}},
+		},
+	}
+	fakeRT := FakeRoundTripper{message: "[]", status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client: &http.Client{
+			Transport: &fakeRT,
+		},
+	}
+	u, _ := url.Parse(client.getURL("/commit"))
+	for _, tt := range tests {
+		client.CommitContainer(tt.input)
+		got := map[string][]string(fakeRT.requests[0].URL.Query())
+		if !reflect.DeepEqual(got, tt.params) {
+			t.Errorf("Expected %#v, got %#v.", tt.params, got)
+		}
+		if path := fakeRT.requests[0].URL.Path; path != u.Path {
+			t.Errorf("Wrong path on request. Want %q. Got %q.", u.Path, path)
+		}
+		if meth := fakeRT.requests[0].Method; meth != "POST" {
+			t.Errorf("Wrong HTTP method. Want POST. Got %s.", meth)
+		}
+		fakeRT.Reset()
+	}
+}
+
+func TestCommitContainerFailure(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client: &http.Client{
+			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusInternalServerError},
+		},
+	}
+	_, err := client.CommitContainer(nil)
+	if err == nil {
+		t.Error("Expected non-nil error, got <nil>.")
+	}
+}
+
+func TestCommitContainerNotFound(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4343",
+		client: &http.Client{
+			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
+		},
+	}
+	_, err := client.CommitContainer(nil)
+	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
+		t.Errorf("CommitContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	}
+}

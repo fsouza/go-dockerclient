@@ -177,3 +177,35 @@ func (c *Client) WaitContainer(id string) (int, error) {
 	}
 	return r.StatusCode, nil
 }
+
+// CommitContainerOptions aggregates parameters to the CommitContainer method.
+//
+// See http://goo.gl/qYrAF for more details.
+type CommitContainerOptions struct {
+	Container  string
+	Repository string `qs:"repo"`
+	Tag        string
+	Message    string `qs:"m"`
+	Author     string
+	Run        *docker.Config
+}
+
+// CommitContainer creates a new image from a container's changes.
+//
+// See http://goo.gl/qYrAF for more details.
+func (c *Client) CommitContainer(opts *CommitContainerOptions) (*docker.Image, error) {
+	path := "/commit?" + queryString(opts)
+	body, status, err := c.do("POST", path, nil)
+	if status == http.StatusNotFound {
+		return nil, ErrNoSuchContainer
+	}
+	if err != nil {
+		return nil, err
+	}
+	var image docker.Image
+	err = json.Unmarshal(body, &image)
+	if err != nil {
+		return nil, err
+	}
+	return &image, nil
+}
