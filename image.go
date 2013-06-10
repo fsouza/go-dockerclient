@@ -13,6 +13,9 @@ import (
 // Error returned when the image does not exist.
 var ErrNoSuchImage = errors.New("No such image")
 
+// ListImages returns the list of available images in the server.
+//
+// See http://goo.gl/5ZfHk for more details.
 func (c *Client) ListImages(all bool) ([]docker.APIImages, error) {
 	path := "/images/json?all="
 	if all {
