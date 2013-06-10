@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"github.com/dotcloud/docker"
 	"net/http"
+	"net/url"
 	"reflect"
 	"testing"
 )
@@ -72,5 +73,24 @@ func TestListImagesParameters(t *testing.T) {
 	req = fakeRT.requests[0]
 	if all := req.URL.Query().Get("all"); all != "1" {
 		t.Errorf("ListImages(true): Wrong parameter. Want all=1. Got all=%s", all)
+	}
+}
+
+func TestRemoveImage(t *testing.T) {
+	name := "test"
+	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := Client{endpoint: "http://localhost:4243", client: &http.Client{Transport: &fakeRT}}
+	err := client.RemoveImage(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "DELETE"
+	if req.Method != expectedMethod {
+		t.Errorf("RemoveImage(%q): Wrong HTTP method. Want %s. Got %s.", name, expectedMethod, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/images/" + name))
+	if req.URL.Path != u.Path {
+		t.Errorf("RemoveImage(%q): Wrong request path. Want %q. Got %q.", name, u.Path, req.URL.Path)
 	}
 }

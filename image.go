@@ -34,3 +34,14 @@ func (c *Client) ListImages(all bool) ([]docker.APIImages, error) {
 	}
 	return images, nil
 }
+
+// RemoveImage removes a image by its name or ID.
+//
+// See http://goo.gl/J2FNF for more details.
+func (c *Client) RemoveImage(name string) error {
+	_, _, err := c.do("DELETE", "/images/"+name, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
