@@ -162,7 +162,7 @@ func TestPushImage(t *testing.T) {
 		client:   &http.Client{Transport: &fakeRT},
 	}
 	var buf bytes.Buffer
-	err := client.PushImage(&PushImageOptions{Name: "test"}, &buf)
+	err := client.PushImage(PushImageOptions{Name: "test"}, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestPushImageCustomRegistry(t *testing.T) {
 		client:   &http.Client{Transport: &fakeRT},
 	}
 	var buf bytes.Buffer
-	err := client.PushImage(&PushImageOptions{Name: "test", Registry: "docker.tsuru.io"}, &buf)
+	err := client.PushImage(PushImageOptions{Name: "test", Registry: "docker.tsuru.io"}, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,13 +202,10 @@ func TestPushImageCustomRegistry(t *testing.T) {
 }
 
 func TestPushImageNoName(t *testing.T) {
-	options := []*PushImageOptions{nil, {}}
-	for _, opt := range options {
-		client := Client{}
-		err := client.PushImage(opt, nil)
-		if err != ErrNoSuchImage {
-			t.Errorf("PushImage: got wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
-		}
+	client := Client{}
+	err := client.PushImage(PushImageOptions{}, nil)
+	if err != ErrNoSuchImage {
+		t.Errorf("PushImage: got wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
 	}
 }
 

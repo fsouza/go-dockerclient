@@ -79,12 +79,13 @@ type PushImageOptions struct {
 // PushImage pushes a image to a remote registry, logging progress to w.
 //
 // See http://goo.gl/Hx3CB for more details.
-func (c *Client) PushImage(opts *PushImageOptions, w io.Writer) error {
-	if opts == nil || opts.Name == "" {
+func (c *Client) PushImage(opts PushImageOptions, w io.Writer) error {
+	if opts.Name == "" {
 		return ErrNoSuchImage
 	}
-	copy := PushImageOptions{Registry: opts.Registry}
-	path := "/images/" + opts.Name + "/push?" + queryString(&copy)
+	name := opts.Name
+	opts.Name = ""
+	path := "/images/" + name + "/push?" + queryString(&opts)
 	return c.stream("POST", path, nil, w)
 }
 
