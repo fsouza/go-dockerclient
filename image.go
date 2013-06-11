@@ -87,3 +87,23 @@ func (c *Client) PushImage(opts *PushImageOptions, w io.Writer) error {
 	path := "/images/" + opts.Name + "/push?" + queryString(&copy)
 	return c.stream("POST", path, nil, w)
 }
+
+// PullImageOptions present the set of options available for pulling a image
+// from a registry.
+//
+// See http://goo.gl/JSltN for more details.
+type PullImageOptions struct {
+	Repository string `qs:"fromImage"`
+	Registry   string
+}
+
+// PullImage pulls a image from a remote registry, logging progress to w.
+//
+// See http://goo.gl/JSltN for more details.
+func (c *Client) PullImage(opts PullImageOptions, w io.Writer) error {
+	if opts.Repository == "" {
+		return ErrNoSuchImage
+	}
+	path := "/images/create?" + queryString(&opts)
+	return c.stream("POST", path, nil, w)
+}
