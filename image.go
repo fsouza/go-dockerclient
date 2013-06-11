@@ -76,8 +76,7 @@ type PushImageOptions struct {
 	Registry string
 }
 
-// PushImage pushes a image to the given registry server, logging the progress
-// to w.
+// PushImage pushes a image to a remote registry, logging progress to w.
 //
 // See http://goo.gl/Hx3CB for more details.
 func (c *Client) PushImage(opts *PushImageOptions, w io.Writer) error {
