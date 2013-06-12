@@ -12,11 +12,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/dotcloud/docker/term"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -136,6 +139,52 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 		}
 	} else {
 		if _, err := io.Copy(out, resp.Body); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, errStream io.Writer, out io.Writer) error {
+	req, err := http.NewRequest(method, c.getURL(path), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "plain/text")
+	dial, err := net.Dial("tcp", c.endpointURL.Host)
+	if err != nil {
+		return err
+	}
+	clientconn := httputil.NewClientConn(dial, nil)
+	clientconn.Do(req)
+	defer clientconn.Close()
+	rwc, br := clientconn.Hijack()
+	defer rwc.Close()
+	errStdout := make(chan error, 1)
+	go func() {
+		_, err := io.Copy(out, br)
+		errStdout <- err
+	}()
+	if in != nil && setRawTerminal && term.IsTerminal(in.Fd()) && os.Getenv("NORAW") == "" {
+		oldState, err := term.SetRawTerminal()
+		if err != nil {
+			return err
+		}
+		defer term.RestoreTerminal(oldState)
+	}
+	errStdin := make(chan error, 1)
+	go func() {
+		_, err := io.Copy(rwc, in)
+		if err := rwc.(*net.TCPConn).CloseWrite(); err != nil {
+			fmt.Fprintf(errStream, "Couldn't send EOF: %s\n", err)
+		}
+		errStdin <- err
+	}()
+	if err := <-errStdout; err != nil {
+		return err
+	}
+	if !term.IsTerminal(in.Fd()) {
+		if err := <-errStdin; err != nil {
 			return err
 		}
 	}
