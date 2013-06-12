@@ -38,17 +38,19 @@ var (
 // Client is the basic type of this package. It provides methods for
 // interaction with the API.
 type Client struct {
-	endpoint string
-	client   *http.Client
+	endpoint    string
+	endpointURL *url.URL
+	client      *http.Client
 }
 
 // NewClient returns a Client instance ready for communication with the
 // given server endpoint.
 func NewClient(endpoint string) (*Client, error) {
-	if !isValid(endpoint) {
-		return nil, ErrInvalidEndpoint
+	u, err := parseEndpoint(endpoint)
+	if err != nil {
+		return nil, err
 	}
-	return &Client{endpoint: endpoint, client: http.DefaultClient}, nil
+	return &Client{endpoint: endpoint, endpointURL: u, client: http.DefaultClient}, nil
 }
 
 func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) {
@@ -213,21 +215,26 @@ func (e *apiClientError) Error() string {
 	return fmt.Sprintf("API error (%d): %s", e.status, e.message)
 }
 
-func isValid(endpoint string) bool {
+func parseEndpoint(endpoint string) (*url.URL, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return false
+		return nil, ErrInvalidEndpoint
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return false
+		return nil, ErrInvalidEndpoint
 	}
 	_, port, err := net.SplitHostPort(u.Host)
 	if err != nil {
 		if e, ok := err.(*net.AddrError); ok {
-			return e.Err == "missing port in address"
+			if e.Err == "missing port in address" {
+				return u, nil
+			}
 		}
-		return false
+		return nil, ErrInvalidEndpoint
 	}
 	number, err := strconv.ParseInt(port, 10, 64)
-	return err == nil && number > 0 && number < 65536
+	if err == nil && number > 0 && number < 65536 {
+		return u, nil
+	}
+	return nil, ErrInvalidEndpoint
 }
