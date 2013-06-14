@@ -6,6 +6,8 @@ package testing
 
 import (
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -56,5 +58,23 @@ func TestServerURLNoListener(t *testing.T) {
 	url := server.URL()
 	if url != "" {
 		t.Errorf("DockerServer.URL(): Expected empty URL on handler mode, got %q.", url)
+	}
+}
+
+func TestCommitContainer(t *testing.T) {
+	server, err := NewServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Stop()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/v1.1/commit?container=abcdef", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("CommitContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	expected := `{"ID":"abcdef"}`
+	if got := recorder.Body.String(); got != expected {
+		t.Errorf("CommitContainer: wrong response body. Want %q. Got %q.", expected, got)
 	}
 }

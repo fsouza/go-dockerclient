@@ -7,9 +7,12 @@
 package testing
 
 import (
+	"fmt"
+	"github.com/bmizerany/pat"
 	"github.com/dotcloud/docker"
 	"net"
 	"net/http"
+	"sync"
 )
 
 // DockerServer represents a programmable, concurrent, HTTP server implementing
@@ -21,8 +24,11 @@ import (
 // For more details on the remote API, check http://goo.gl/yMI1S.
 type DockerServer struct {
 	containers []docker.Container
+	cMut       sync.RWMutex
 	images     []docker.Image
+	iMut       sync.RWMutex
 	listener   net.Listener
+	mux        *pat.PatternServeMux
 }
 
 // NewServer returns a new instance of the fake server, in standalone mode. Use
@@ -33,8 +39,15 @@ func NewServer() (*DockerServer, error) {
 		return nil, err
 	}
 	server := DockerServer{listener: listener}
+	server.buildMuxer()
 	go http.Serve(listener, &server)
 	return &server, nil
+}
+
+func (s *DockerServer) buildMuxer() {
+	s.mux = pat.New()
+	s.mux.Post("/:version/commit", http.HandlerFunc(s.commitContainer))
+	s.mux.Get("/:version/containers/:id/json", http.HandlerFunc(s.inspectContainer))
 }
 
 // Stop stops the server.
@@ -54,4 +67,14 @@ func (s *DockerServer) URL() string {
 
 // ServeHTTP handles HTTP requests sent to the server.
 func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.mux.ServeHTTP(w, r)
+}
+
+func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("container")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"ID":%q}`, id)
+}
+
+func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) {
 }
