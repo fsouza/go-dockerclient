@@ -46,7 +46,10 @@ func (s *DockerServer) Stop() {
 
 // URL returns the HTTP URL of the server.
 func (s *DockerServer) URL() string {
-	return ""
+	if s.listener == nil {
+		return ""
+	}
+	return "http://" + s.listener.Addr().String() + "/"
 }
 
 // ServeHTTP handles HTTP requests sent to the server.

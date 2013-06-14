@@ -38,3 +38,23 @@ func TestServerStopNoListener(t *testing.T) {
 	server := DockerServer{}
 	server.Stop()
 }
+
+func TestServerURL(t *testing.T) {
+	server, err := NewServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Stop()
+	url := server.URL()
+	if expected := "http://" + server.listener.Addr().String() + "/"; url != expected {
+		t.Errorf("DockerServer.URL(): Want %q. Got %q.", expected, url)
+	}
+}
+
+func TestServerURLNoListener(t *testing.T) {
+	server := DockerServer{}
+	url := server.URL()
+	if url != "" {
+		t.Errorf("DockerServer.URL(): Expected empty URL on handler mode, got %q.", url)
+	}
+}
