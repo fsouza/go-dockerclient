@@ -238,7 +238,7 @@ type AttachToContainerOptions struct {
 	Stderr bool
 }
 
-// AttachToContainerOptions attaches to a container, using the given options.
+// AttachToContainer attaches to a container, using the given options.
 //
 // See http://goo.gl/APgKE for more details.
 func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
