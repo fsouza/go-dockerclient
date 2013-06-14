@@ -30,7 +30,7 @@ type ListContainersOptions struct {
 // ListContainers returns a slice of containers matching the given criteria.
 //
 // See http://goo.gl/8IMr2 for more details.
-func (c *Client) ListContainers(opts *ListContainersOptions) ([]docker.APIContainers, error) {
+func (c *Client) ListContainers(opts ListContainersOptions) ([]docker.APIContainers, error) {
 	path := "/containers/ps?" + queryString(opts)
 	body, _, err := c.do("GET", path, nil)
 	if err != nil {

@@ -58,7 +58,7 @@ func TestListContainers(t *testing.T) {
 			Transport: &FakeRoundTripper{message: jsonContainers, status: http.StatusOK},
 		},
 	}
-	containers, err := client.ListContainers(nil)
+	containers, err := client.ListContainers(ListContainersOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,14 +69,14 @@ func TestListContainers(t *testing.T) {
 
 func TestListContainersParams(t *testing.T) {
 	var tests = []struct {
-		input  *ListContainersOptions
+		input  ListContainersOptions
 		params map[string][]string
 	}{
-		{nil, map[string][]string{}},
-		{&ListContainersOptions{All: true}, map[string][]string{"all": {"1"}}},
-		{&ListContainersOptions{All: true, Limit: 10}, map[string][]string{"all": {"1"}, "limit": {"10"}}},
+		{ListContainersOptions{}, map[string][]string{}},
+		{ListContainersOptions{All: true}, map[string][]string{"all": {"1"}}},
+		{ListContainersOptions{All: true, Limit: 10}, map[string][]string{"all": {"1"}, "limit": {"10"}}},
 		{
-			&ListContainersOptions{All: true, Limit: 10, Since: "adf9983", Before: "abdeef"},
+			ListContainersOptions{All: true, Limit: 10, Since: "adf9983", Before: "abdeef"},
 			map[string][]string{"all": {"1"}, "limit": {"10"}, "since": {"adf9983"}, "before": {"abdeef"}},
 		},
 	}
@@ -120,7 +120,7 @@ func TestListContainersFailure(t *testing.T) {
 			},
 		}
 		expected := Error{Status: tt.status, Message: tt.message}
-		containers, err := client.ListContainers(nil)
+		containers, err := client.ListContainers(ListContainersOptions{})
 		if !reflect.DeepEqual(expected, *err.(*Error)) {
 			t.Errorf("Wrong error in ListContainers. Want %#v. Got %#v.", expected, err)
 		}
