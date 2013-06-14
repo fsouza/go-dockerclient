@@ -9,6 +9,7 @@ import (
 	"github.com/dotcloud/docker"
 )
 
+// Version returns version information about the docker server.
 func (c *Client) Version() (*docker.APIVersion, error) {
 	body, _, err := c.do("GET", "/version", nil)
 	if err != nil {
