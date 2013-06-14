@@ -612,3 +612,11 @@ func TestAttachToContainerLogs(t *testing.T) {
 		t.Errorf("AttachToContainer for logs: wrong HTTP path. Want %q. Got %q.", u.Path, req.URL.Path)
 	}
 }
+
+func TestAttachToContainerWithoutContainer(t *testing.T) {
+	var client Client
+	err := client.AttachToContainer(AttachToContainerOptions{})
+	if err != ErrNoSuchContainer {
+		t.Errorf("AttachToContainer: wrong error. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	}
+}

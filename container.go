@@ -243,6 +243,9 @@ type AttachToContainerOptions struct {
 // See http://goo.gl/APgKE for more details.
 func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 	container := opts.Container
+	if container == "" {
+		return ErrNoSuchContainer
+	}
 	stdout := opts.OutputStream
 	opts.Container = ""
 	opts.InputFile = nil
