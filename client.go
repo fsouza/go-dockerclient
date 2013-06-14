@@ -31,10 +31,10 @@ const (
 )
 
 var (
-	// Error returned when the endpoint is not a valid HTTP URL.
+	// ErrInvalidEndpoint is returned when the endpoint is not a valid HTTP URL.
 	ErrInvalidEndpoint = errors.New("Invalid endpoint")
 
-	// Error returned when the client cannot connect to the given endpoint.
+	// ErrConnectionRefused is returned when the client cannot connect to the given endpoint.
 	ErrConnectionRefused = errors.New("Cannot connect to Docker endpoint")
 )
 
