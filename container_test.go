@@ -505,7 +505,7 @@ func TestCommitContainer(t *testing.T) {
 		},
 	}
 	id := "596069db4bf5"
-	image, err := client.CommitContainer(nil)
+	image, err := client.CommitContainer(CommitContainerOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -518,17 +518,17 @@ func TestCommitContainerParams(t *testing.T) {
 	cfg := docker.Config{Memory: 67108864}
 	b, _ := json.Marshal(&cfg)
 	var tests = []struct {
-		input  *CommitContainerOptions
+		input  CommitContainerOptions
 		params map[string][]string
 	}{
-		{nil, map[string][]string{}},
-		{&CommitContainerOptions{Container: "44c004db4b17"}, map[string][]string{"container": {"44c004db4b17"}}},
+		{CommitContainerOptions{}, map[string][]string{}},
+		{CommitContainerOptions{Container: "44c004db4b17"}, map[string][]string{"container": {"44c004db4b17"}}},
 		{
-			&CommitContainerOptions{Container: "44c004db4b17", Repository: "tsuru/python", Message: "something"},
+			CommitContainerOptions{Container: "44c004db4b17", Repository: "tsuru/python", Message: "something"},
 			map[string][]string{"container": {"44c004db4b17"}, "repo": {"tsuru/python"}, "m": {"something"}},
 		},
 		{
-			&CommitContainerOptions{Container: "44c004db4b17", Run: &cfg},
+			CommitContainerOptions{Container: "44c004db4b17", Run: &cfg},
 			map[string][]string{"container": {"44c004db4b17"}, "run": {string(b)}},
 		},
 	}
@@ -563,7 +563,7 @@ func TestCommitContainerFailure(t *testing.T) {
 			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusInternalServerError},
 		},
 	}
-	_, err := client.CommitContainer(nil)
+	_, err := client.CommitContainer(CommitContainerOptions{})
 	if err == nil {
 		t.Error("Expected non-nil error, got <nil>.")
 	}
@@ -576,7 +576,7 @@ func TestCommitContainerNotFound(t *testing.T) {
 			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
 		},
 	}
-	_, err := client.CommitContainer(nil)
+	_, err := client.CommitContainer(CommitContainerOptions{})
 	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
 		t.Errorf("CommitContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
 	}
