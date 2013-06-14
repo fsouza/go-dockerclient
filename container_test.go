@@ -9,7 +9,9 @@ import (
 	"encoding/json"
 	"github.com/dotcloud/docker"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -602,7 +604,6 @@ func TestAttachToContainerLogs(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("AttachToContainer for logs: wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-
 	req := fakeRT.requests[0]
 	if req.Method != "POST" {
 		t.Errorf("AttachToContainer: wrong HTTP method. Want POST. Got %s.", req.Method)
@@ -610,6 +611,57 @@ func TestAttachToContainerLogs(t *testing.T) {
 	u, _ := url.Parse(client.getURL("/containers/a123456/attach"))
 	if req.URL.Path != u.Path {
 		t.Errorf("AttachToContainer for logs: wrong HTTP path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+	expectedQs := map[string][]string{
+		"logs":   {"1"},
+		"stdout": {"1"},
+		"stderr": {"1"},
+	}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expectedQs) {
+		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expectedQs, got)
+	}
+}
+
+func TestAttachToContainer(t *testing.T) {
+	file, err := os.OpenFile("/tmp/docker-temp-file.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	file.Write([]byte("send value"))
+	file.Seek(0, 0)
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("something happened!"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	var stdout, stderr bytes.Buffer
+	opts := AttachToContainerOptions{
+		Container:    "a123456",
+		OutputStream: &stdout,
+		ErrorStream:  &stderr,
+		InputFile:    file,
+		Stdin:        true,
+		Stdout:       true,
+		Stderr:       true,
+		Stream:       true,
+	}
+	err = client.AttachToContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]string{
+		"stdin":  {"1"},
+		"stdout": {"1"},
+		"stderr": {"1"},
+		"stream": {"1"},
+	}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
 }
 

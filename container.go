@@ -221,6 +221,7 @@ type AttachToContainerOptions struct {
 	InputFile    *os.File
 	OutputStream io.Writer
 	ErrorStream  io.Writer
+	RawTerminal  bool
 
 	// Get container logs, sending it to OutputStream.
 	Logs bool
@@ -247,13 +248,17 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 		return ErrNoSuchContainer
 	}
 	stdout := opts.OutputStream
+	stderr := opts.ErrorStream
+	stdin := opts.InputFile
+	raw := opts.RawTerminal
 	opts.Container = ""
 	opts.InputFile = nil
 	opts.OutputStream = nil
 	opts.ErrorStream = nil
+	opts.RawTerminal = false
 	path := "/containers/" + container + "/attach?" + queryString(opts)
 	if opts.Logs {
 		return c.stream("POST", path, nil, stdout)
 	}
-	return nil
+	return c.hijack("POST", path, raw, stdin, stderr, stdout)
 }
