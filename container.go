@@ -195,7 +195,7 @@ type CommitContainerOptions struct {
 // CommitContainer creates a new image from a container's changes.
 //
 // See http://goo.gl/qYrAF for more details.
-func (c *Client) CommitContainer(opts *CommitContainerOptions) (*docker.Image, error) {
+func (c *Client) CommitContainer(opts CommitContainerOptions) (*docker.Image, error) {
 	path := "/commit?" + queryString(opts)
 	body, status, err := c.do("POST", path, nil)
 	if status == http.StatusNotFound {
