@@ -22,3 +22,19 @@ func (c *Client) Version() (*docker.APIVersion, error) {
 	}
 	return &version, nil
 }
+
+// Info returns system-wide information, like the number of running containers.
+//
+// See http://goo.gl/9eYZF for more details.
+func (c *Client) Info() (*docker.APIInfo, error) {
+	body, _, err := c.do("GET", "/info", nil)
+	if err != nil {
+		return nil, err
+	}
+	var info docker.APIInfo
+	err = json.Unmarshal(body, &info)
+	if err != nil {
+		return nil, err
+	}
+	return &info, nil
+}

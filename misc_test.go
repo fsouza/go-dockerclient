@@ -60,3 +60,60 @@ func TestVersionError(t *testing.T) {
 		t.Error("Version(): unexpected <nil> error")
 	}
 }
+
+func TestInfo(t *testing.T) {
+	body := `{
+     "Containers":11,
+     "Images":16,
+     "Debug":false,
+     "NFd": 11,
+     "NGoroutines":21,
+     "MemoryLimit":true,
+     "SwapLimit":false
+}`
+	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:3232",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	expected := docker.APIInfo{
+		Containers:  11,
+		Images:      16,
+		Debug:       false,
+		NFd:         11,
+		NGoroutines: 21,
+		MemoryLimit: true,
+		SwapLimit:   false,
+	}
+	info, err := client.Info()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(*info, expected) {
+		t.Errorf("Info(): Wrong result. Want %#v. Got %#v.", expected, info)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "GET" {
+		t.Errorf("Info(): Wrong HTTP method. Want GET. Got %s.", req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/info"))
+	if req.URL.Path != u.Path {
+		t.Errorf("Info(): Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+}
+
+func TestInfoError(t *testing.T) {
+	client := Client{
+		endpoint: "http://localhost:4242",
+		client: &http.Client{
+			Transport: &FakeRoundTripper{message: "internal error", status: http.StatusInternalServerError},
+		},
+	}
+	version, err := client.Info()
+	if version != nil {
+		t.Errorf("Info(): expected <nil> value, got %#v.", version)
+	}
+	if err == nil {
+		t.Error("Info(): unexpected <nil> error")
+	}
+}
