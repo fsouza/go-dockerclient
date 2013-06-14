@@ -1,6 +1,6 @@
 language: go
 go: 1.1.1
 before_script:
-  - go get
+  - go get ./...
 script:
-  - go test
+  - go test ./...
