@@ -9,7 +9,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dotcloud/docker"
+	"io"
 	"net/http"
+	"os"
 )
 
 // Error returned when the container does not exist.
@@ -208,4 +210,47 @@ func (c *Client) CommitContainer(opts *CommitContainerOptions) (*docker.Image, e
 		return nil, err
 	}
 	return &image, nil
+}
+
+// AttachToContainerOptions is the set of options that can be used when
+// attaching to a container.
+//
+// See http://goo.gl/APgKE for more details.
+type AttachToContainerOptions struct {
+	Container    string
+	InputFile    *os.File
+	OutputStream io.Writer
+	ErrorStream  io.Writer
+
+	// Get container logs, sending it to OutputStream.
+	Logs bool
+
+	// Stream the response?
+	Stream bool
+
+	// Attach to stdin, and use InputFile.
+	Stdin bool
+
+	// Attach to stdout, and use OutputStream.
+	Stdout bool
+
+	// Attach to stderr, and use ErrorStream.
+	Stderr bool
+}
+
+// AttachToContainerOptions attaches to a container, using the given options.
+//
+// See http://goo.gl/APgKE for more details.
+func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
+	container := opts.Container
+	stdout := opts.OutputStream
+	opts.Container = ""
+	opts.InputFile = nil
+	opts.OutputStream = nil
+	opts.ErrorStream = nil
+	path := "/containers/" + container + "/attach?" + queryString(opts)
+	if opts.Logs {
+		return c.stream("POST", path, nil, stdout)
+	}
+	return nil
 }

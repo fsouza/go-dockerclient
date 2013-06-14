@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/dotcloud/docker"
 	"net/http"
@@ -576,5 +577,38 @@ func TestCommitContainerNotFound(t *testing.T) {
 	_, err := client.CommitContainer(nil)
 	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
 		t.Errorf("CommitContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	}
+}
+
+func TestAttachToContainerLogs(t *testing.T) {
+	fakeRT := FakeRoundTripper{message: "something happened", status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	var buf bytes.Buffer
+	opts := AttachToContainerOptions{
+		Container:    "a123456",
+		OutputStream: &buf,
+		Stdout:       true,
+		Stderr:       true,
+		Logs:         true,
+	}
+	err := client.AttachToContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "something happened"
+	if buf.String() != expected {
+		t.Errorf("AttachToContainer for logs: wrong output. Want %q. Got %q.", expected, buf.String())
+	}
+
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("AttachToContainer: wrong HTTP method. Want POST. Got %s.", req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/containers/a123456/attach"))
+	if req.URL.Path != u.Path {
+		t.Errorf("AttachToContainer for logs: wrong HTTP path. Want %q. Got %q.", u.Path, req.URL.Path)
 	}
 }
