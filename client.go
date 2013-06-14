@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	apiVersion = 1.2
+	apiVersion = "v1.2"
 	userAgent  = "go-dockerclient"
 )
 
@@ -192,7 +192,7 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 }
 
 func (c *Client) getURL(path string) string {
-	return fmt.Sprintf("%s/v%f%s", strings.TrimRight(c.endpoint, "/"), apiVersion, path)
+	return fmt.Sprintf("%s/%s%s", strings.TrimRight(c.endpoint, "/"), apiVersion, path)
 }
 
 type jsonMessage struct {
