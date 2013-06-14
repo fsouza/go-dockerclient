@@ -244,16 +244,16 @@ func queryString(opts interface{}) string {
 	return items.Encode()
 }
 
-type apiClientError struct {
+type Error struct {
 	status  int
 	message string
 }
 
-func newAPIClientError(status int, body []byte) *apiClientError {
-	return &apiClientError{status: status, message: string(body)}
+func newAPIClientError(status int, body []byte) *Error {
+	return &Error{status: status, message: string(body)}
 }
 
-func (e *apiClientError) Error() string {
+func (e *Error) Error() string {
 	return fmt.Sprintf("API error (%d): %s", e.status, e.message)
 }
 
