@@ -119,7 +119,7 @@ func TestListContainersFailure(t *testing.T) {
 				Transport: &FakeRoundTripper{message: tt.message, status: tt.status},
 			},
 		}
-		expected := Error{status: tt.status, message: tt.message}
+		expected := Error{Status: tt.status, Message: tt.message}
 		containers, err := client.ListContainers(nil)
 		if !reflect.DeepEqual(expected, *err.(*Error)) {
 			t.Errorf("Wrong error in ListContainers. Want %#v. Got %#v.", expected, err)
@@ -207,7 +207,7 @@ func TestInspectContainerFailure(t *testing.T) {
 			Transport: &FakeRoundTripper{message: "server error", status: 500},
 		},
 	}
-	expected := Error{status: 500, message: "server error"}
+	expected := Error{Status: 500, Message: "server error"}
 	container, err := client.InspectContainer("abe033")
 	if container != nil {
 		t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)

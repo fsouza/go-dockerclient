@@ -88,7 +88,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 		return nil, -1, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, resp.StatusCode, newAPIClientError(resp.StatusCode, body)
+		return nil, resp.StatusCode, newError(resp.StatusCode, body)
 	}
 	return body, resp.StatusCode, nil
 }
@@ -118,7 +118,7 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 		if err != nil {
 			return err
 		}
-		return newAPIClientError(resp.StatusCode, body)
+		return newError(resp.StatusCode, body)
 	}
 	if resp.Header.Get("Content-Type") == "application/json" {
 		dec := json.NewDecoder(resp.Body)
@@ -244,17 +244,18 @@ func queryString(opts interface{}) string {
 	return items.Encode()
 }
 
+// Error represents failures in the API. It represents a failure from the API.
 type Error struct {
-	status  int
-	message string
+	Status  int
+	Message string
 }
 
-func newAPIClientError(status int, body []byte) *Error {
-	return &Error{status: status, message: string(body)}
+func newError(status int, body []byte) *Error {
+	return &Error{Status: status, Message: string(body)}
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("API error (%d): %s", e.status, e.message)
+	return fmt.Sprintf("API error (%d): %s", e.Status, e.Message)
 }
 
 func parseEndpoint(endpoint string) (*url.URL, error) {
