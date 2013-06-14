@@ -21,3 +21,20 @@ func TestNewServer(t *testing.T) {
 	}
 	conn.Close()
 }
+
+func TestServerStop(t *testing.T) {
+	server, err := NewServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	server.Stop()
+	_, err = net.Dial("tcp", server.listener.Addr().String())
+	if err == nil {
+		t.Error("Unexpected <nil> error when dialing to stopped server")
+	}
+}
+
+func TestServerStopNoListener(t *testing.T) {
+	server := DockerServer{}
+	server.Stop()
+}

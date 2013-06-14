@@ -39,6 +39,9 @@ func NewServer() (*DockerServer, error) {
 
 // Stop stops the server.
 func (s *DockerServer) Stop() {
+	if s.listener != nil {
+		s.listener.Close()
+	}
 }
 
 // URL returns the HTTP URL of the server.
