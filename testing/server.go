@@ -28,7 +28,13 @@ type DockerServer struct {
 // NewServer returns a new instance of the fake server, in standalone mode. Use
 // the method URL to get the URL of the server.
 func NewServer() (*DockerServer, error) {
-	return nil, nil
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return nil, err
+	}
+	server := DockerServer{listener: listener}
+	go http.Serve(listener, &server)
+	return &server, nil
 }
 
 // Stop stops the server.
