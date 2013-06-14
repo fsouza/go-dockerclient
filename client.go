@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	apiVersion = 1.1
+	apiVersion = 1.2
 	userAgent  = "go-dockerclient"
 )
 
