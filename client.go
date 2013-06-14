@@ -172,21 +172,14 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 		}
 		defer term.RestoreTerminal(oldState)
 	}
-	errStdin := make(chan error, 1)
 	go func() {
-		_, err := io.Copy(rwc, in)
+		io.Copy(rwc, in)
 		if err := rwc.(*net.TCPConn).CloseWrite(); err != nil {
 			fmt.Fprintf(errStream, "Couldn't send EOF: %s\n", err)
 		}
-		errStdin <- err
 	}()
 	if err := <-errStdout; err != nil {
 		return err
-	}
-	if !term.IsTerminal(in.Fd()) {
-		if err := <-errStdin; err != nil {
-			return err
-		}
 	}
 	return nil
 }
