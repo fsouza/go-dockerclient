@@ -164,6 +164,56 @@ func TestCommitContainer(t *testing.T) {
 	}
 }
 
+func TestCommitContainerComplete(t *testing.T) {
+	server := DockerServer{}
+	server.imgIDs = make(map[string]string)
+	addContainers(&server, 2)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	queryString := "container=" + server.containers[0].ID + "&repo=tsuru/python&m=saving&author=developers"
+	queryString += `&run={"Cmd": ["cat", "/world"],"PortSpecs":["22"]}`
+	request, _ := http.NewRequest("POST", "/v1.1/commit?"+queryString, nil)
+	server.ServeHTTP(recorder, request)
+	image := server.images[0]
+	if image.Parent != server.containers[0].Image {
+		t.Errorf("CommitContainer: wrong parent image. Want %q. Got %q.", server.containers[0].Image, image.Parent)
+	}
+	if image.Container != server.containers[0].ID {
+		t.Errorf("CommitContainer: wrong container. Want %q. Got %q.", server.containers[0].ID, image.Container)
+	}
+	message := "saving"
+	if image.Comment != message {
+		t.Errorf("CommitContainer: wrong comment (commit message). Want %q. Got %q.", message, image.Comment)
+	}
+	author := "developers"
+	if image.Author != author {
+		t.Errorf("CommitContainer: wrong author. Want %q. Got %q.", author, image.Author)
+	}
+	if id := server.imgIDs["tsuru/python"]; id != image.ID {
+		t.Errorf("CommitContainer: wrong ID saved for repository. Want %q. Got %q.", image.ID, id)
+	}
+	portSpecs := []string{"22"}
+	if !reflect.DeepEqual(image.Config.PortSpecs, portSpecs) {
+		t.Errorf("CommitContainer: wrong port spec in config. Want %#v. Got %#v.", portSpecs, image.Config.PortSpecs)
+	}
+	cmd := []string{"cat", "/world"}
+	if !reflect.DeepEqual(image.Config.Cmd, cmd) {
+		t.Errorf("CommitContainer: wrong cmd in config. Want %#v. Got %#v.", cmd, image.Config.Cmd)
+	}
+}
+
+func TestCommitContainerInvalidRun(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/v1.1/commit?container="+server.containers[0].ID+"&run=abc---", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("CommitContainer. Wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
+	}
+}
+
 func TestCommitContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()

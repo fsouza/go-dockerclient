@@ -46,7 +46,7 @@ func NewServer() (*DockerServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	server := DockerServer{listener: listener}
+	server := DockerServer{listener: listener, imgIDs: make(map[string]string)}
 	server.buildMuxer()
 	go http.Serve(listener, &server)
 	return &server, nil
@@ -172,14 +172,31 @@ func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	var config *docker.Config
+	runConfig := r.URL.Query().Get("run")
+	if runConfig != "" {
+		config = new(docker.Config)
+		err = json.Unmarshal([]byte(runConfig), config)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 	w.WriteHeader(http.StatusOK)
 	image := docker.Image{
-		ID: "img-" + container.ID,
-		Parent: container.Image,
+		ID:        "img-" + container.ID,
+		Parent:    container.Image,
 		Container: container.ID,
+		Comment:   r.URL.Query().Get("m"),
+		Author:    r.URL.Query().Get("author"),
+		Config:    config,
 	}
+	repository := r.URL.Query().Get("repo")
 	s.iMut.Lock()
 	s.images = append(s.images, image)
+	if repository != "" {
+		s.imgIDs[repository] = image.ID
+	}
 	s.iMut.Unlock()
 	fmt.Fprintf(w, `{"ID":%q}`, image.ID)
 }
