@@ -13,6 +13,7 @@ import (
 	"github.com/dotcloud/docker"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -49,6 +50,7 @@ func NewServer() (*DockerServer, error) {
 func (s *DockerServer) buildMuxer() {
 	s.mux = pat.New()
 	s.mux.Post("/:version/commit", http.HandlerFunc(s.commitContainer))
+	s.mux.Get("/:version/containers/json", http.HandlerFunc(s.listContainers))
 	s.mux.Get("/:version/containers/:id/json", http.HandlerFunc(s.inspectContainer))
 }
 
@@ -70,6 +72,25 @@ func (s *DockerServer) URL() string {
 // ServeHTTP handles HTTP requests sent to the server.
 func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
+}
+
+func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
+	s.cMut.RLock()
+	defer s.cMut.RUnlock()
+	result := make([]docker.APIContainers, len(s.containers))
+	for i, container := range s.containers {
+		result[i] = docker.APIContainers{
+			ID:      container.ID,
+			Image:   container.Image,
+			Command: fmt.Sprintf("%s %s", container.Path, strings.Join(container.Args, " ")),
+			Created: container.Created.Unix(),
+			Status:  container.State.String(),
+			Ports:   container.NetworkSettings.PortMappingHuman(),
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
 }
 
 func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {

@@ -6,11 +6,14 @@ package testing
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/dotcloud/docker"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -62,6 +65,37 @@ func TestServerURLNoListener(t *testing.T) {
 	url := server.URL()
 	if url != "" {
 		t.Errorf("DockerServer.URL(): Expected empty URL on handler mode, got %q.", url)
+	}
+}
+
+func TestListContainers(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 2)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/v1.1/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("ListContainers: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	expected := make([]docker.APIContainers, 2)
+	for i, container := range server.containers {
+		expected[i] = docker.APIContainers{
+			ID:      container.ID,
+			Image:   container.Image,
+			Command: strings.Join(container.Config.Cmd, " "),
+			Created: container.Created.Unix(),
+			Status:  container.State.String(),
+			Ports:   container.NetworkSettings.PortMappingHuman(),
+		}
+	}
+	var got []docker.APIContainers
+	err := json.NewDecoder(recorder.Body).Decode(&got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ListContainers. Want %#v. Got %#v.", expected, got)
 	}
 }
 
@@ -135,5 +169,44 @@ func TestInspectContainer(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+func addContainers(server *DockerServer, n int) {
+	server.cMut.Lock()
+	defer server.cMut.Unlock()
+	for i := 0; i < n; i++ {
+		date := time.Now().Add(time.Duration((rand.Int() % (i + 1))) * time.Hour)
+		container := docker.Container{
+			ID:      fmt.Sprintf("%x", rand.Int()%10000),
+			Created: date,
+			Path:    "ls",
+			Args:    []string{"-la", ".."},
+			Config: &docker.Config{
+				Hostname:     fmt.Sprintf("docker-%d", i),
+				AttachStdout: true,
+				AttachStderr: true,
+				Env:          []string{"ME=you", fmt.Sprintf("NUMBER=%d", i)},
+				Cmd:          []string{"ls", "-la", ".."},
+				Dns:          nil,
+				Image:        "base",
+			},
+			State: docker.State{
+				Running:   true,
+				Pid:       400 + i,
+				ExitCode:  0,
+				StartedAt: date,
+			},
+			Image: "b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
+			NetworkSettings: &docker.NetworkSettings{
+				IPAddress:   fmt.Sprintf("10.10.10.%d", i+2),
+				IPPrefixLen: 24,
+				Gateway:     "10.10.10.1",
+				Bridge:      "docker0",
+				PortMapping: map[string]string{"8888": fmt.Sprintf("%d", 49600+i)},
+			},
+			ResolvConfPath: "/etc/resolv.conf",
+		}
+		server.containers = append(server.containers, container)
 	}
 }
