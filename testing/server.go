@@ -59,6 +59,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Post("/:version/containers/create", http.HandlerFunc(s.createContainer))
 	s.mux.Get("/:version/containers/:id/json", http.HandlerFunc(s.inspectContainer))
 	s.mux.Post("/:version/containers/:id/start", http.HandlerFunc(s.startContainer))
+	s.mux.Post("/:version/images/create", http.HandlerFunc(s.pullImage))
 }
 
 // Stop stops the server.
@@ -221,4 +222,13 @@ func (s *DockerServer) findContainer(id string) (*docker.Container, error) {
 		}
 	}
 	return nil, errors.New("No such container")
+}
+
+func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
+	image := docker.Image{
+		ID: s.generateID(),
+	}
+	s.iMut.Lock()
+	s.images = append(s.images, image)
+	s.iMut.Unlock()
 }
