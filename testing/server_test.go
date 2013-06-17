@@ -66,11 +66,8 @@ func TestServerURLNoListener(t *testing.T) {
 }
 
 func TestCommitContainer(t *testing.T) {
-	server, err := NewServer()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer server.Stop()
+	server := DockerServer{}
+	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/v1.1/commit?container=abcdef", nil)
 	server.ServeHTTP(recorder, request)
@@ -84,11 +81,8 @@ func TestCommitContainer(t *testing.T) {
 }
 
 func TestInspectContainer(t *testing.T) {
-	server, err := NewServer()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer server.Stop()
+	server := DockerServer{}
+	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/v1.1/containers/abc123/json", nil)
 	server.ServeHTTP(recorder, request)
@@ -135,7 +129,7 @@ func TestInspectContainer(t *testing.T) {
 		},
 	}
 	var got docker.Container
-	err = json.NewDecoder(recorder.Body).Decode(&got)
+	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
 		t.Fatal(err)
 	}
