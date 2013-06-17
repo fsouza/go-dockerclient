@@ -245,7 +245,7 @@ func TestInspectContainer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(got, expected) {
+	if !reflect.DeepEqual(got, *expected) {
 		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", expected, got)
 	}
 }
@@ -258,6 +258,34 @@ func TestInspectContainerNotFound(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Errorf("InspectContainer: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
+func TestStartContainer(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/v1.1/containers/%s/start", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if !server.containers[0].State.Running {
+		t.Error("StartContainer: did not set the container to running state")
+	}
+}
+
+func TestStartContainerNotFound(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := "/v1.1/containers/abc123/start"
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
 	}
 }
 
@@ -281,7 +309,7 @@ func addContainers(server *DockerServer, n int) {
 				Image:        "base",
 			},
 			State: docker.State{
-				Running:   true,
+				Running:   false,
 				Pid:       400 + i,
 				ExitCode:  0,
 				StartedAt: date,
@@ -296,6 +324,6 @@ func addContainers(server *DockerServer, n int) {
 			},
 			ResolvConfPath: "/etc/resolv.conf",
 		}
-		server.containers = append(server.containers, container)
+		server.containers = append(server.containers, &container)
 	}
 }

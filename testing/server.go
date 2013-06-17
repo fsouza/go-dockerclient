@@ -30,7 +30,7 @@ import (
 //
 // For more details on the remote API, check http://goo.gl/yMI1S.
 type DockerServer struct {
-	containers []docker.Container
+	containers []*docker.Container
 	cMut       sync.RWMutex
 	images     []docker.Image
 	iMut       sync.RWMutex
@@ -58,6 +58,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Get("/:version/containers/json", http.HandlerFunc(s.listContainers))
 	s.mux.Post("/:version/containers/create", http.HandlerFunc(s.createContainer))
 	s.mux.Get("/:version/containers/:id/json", http.HandlerFunc(s.inspectContainer))
+	s.mux.Post("/:version/containers/:id/start", http.HandlerFunc(s.startContainer))
 }
 
 // Stop stops the server.
@@ -141,7 +142,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	s.cMut.Lock()
-	s.containers = append(s.containers, container)
+	s.containers = append(s.containers, &container)
 	s.cMut.Unlock()
 	var c = struct{ ID string }{ID: container.ID}
 	json.NewEncoder(w).Encode(c)
@@ -163,6 +164,16 @@ func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(container)
+}
+
+func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get(":id")
+	container, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	container.State.Running = true
 }
 
 func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
@@ -201,7 +212,7 @@ func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"ID":%q}`, image.ID)
 }
 
-func (s *DockerServer) findContainer(id string) (docker.Container, error) {
+func (s *DockerServer) findContainer(id string) (*docker.Container, error) {
 	s.cMut.RLock()
 	defer s.cMut.RUnlock()
 	for _, container := range s.containers {
@@ -209,5 +220,5 @@ func (s *DockerServer) findContainer(id string) (docker.Container, error) {
 			return container, nil
 		}
 	}
-	return docker.Container{}, errors.New("No such container")
+	return nil, errors.New("No such container")
 }
