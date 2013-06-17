@@ -126,7 +126,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		Args:    config.Cmd[1:],
 		Config:  &config,
 		State: docker.State{
-			Running:   true,
+			Running:   false,
 			Pid:       mathrand.Int() % 50000,
 			ExitCode:  0,
 			StartedAt: time.Now(),

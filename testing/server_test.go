@@ -121,6 +121,9 @@ func TestCreateContainer(t *testing.T) {
 	if returned.ID != stored.ID {
 		t.Errorf("CreateContainer: ID mismatch. Stored: %q. Returned: %q.", stored.ID, returned.ID)
 	}
+	if stored.State.Running {
+		t.Errorf("CreateContainer should not set container to running state.")
+	}
 }
 
 func TestCreateContainerInvalidBody(t *testing.T) {
