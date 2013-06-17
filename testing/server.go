@@ -152,12 +152,6 @@ func (s *DockerServer) generateID() string {
 	return fmt.Sprintf("%x", buf)
 }
 
-func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("container")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"ID":%q}`, id)
-}
-
 func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get(":id")
 	w.Header().Set("Content-Type", "application/json")
@@ -202,4 +196,10 @@ func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) 
 		},
 	}
 	json.NewEncoder(w).Encode(container)
+}
+
+func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("container")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"ID":%q}`, id)
 }
