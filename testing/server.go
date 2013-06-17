@@ -7,12 +7,14 @@
 package testing
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bmizerany/pat"
 	"github.com/dotcloud/docker"
 	"net"
 	"net/http"
 	"sync"
+	"time"
 )
 
 // DockerServer represents a programmable, concurrent, HTTP server implementing
@@ -77,4 +79,47 @@ func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get(":id")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	container := docker.Container{
+		ID:      id,
+		Created: time.Date(2013, time.June, 17, 10, 20, 0, 0, time.UTC),
+		Path:    "date",
+		Args:    []string{},
+		Config: &docker.Config{
+			Hostname:     "4fa6e0f0c678",
+			User:         "",
+			Memory:       67108864,
+			MemorySwap:   0,
+			AttachStdin:  false,
+			AttachStdout: true,
+			AttachStderr: true,
+			PortSpecs:    nil,
+			Tty:          false,
+			OpenStdin:    false,
+			StdinOnce:    false,
+			Cmd:          []string{"date"},
+			Dns:          nil,
+			Image:        "base",
+			Volumes:      map[string]struct{}{},
+			VolumesFrom:  "",
+		},
+		State: docker.State{
+			Running:   false,
+			Pid:       0,
+			ExitCode:  0,
+			StartedAt: time.Date(2013, time.June, 17, 10, 21, 0, 0, time.UTC),
+			Ghost:     false,
+		},
+		Image: "b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
+		NetworkSettings: &docker.NetworkSettings{
+			IPAddress:   "10.10.10.10",
+			IPPrefixLen: 24,
+			Gateway:     "10.10.10.1",
+			Bridge:      "docker0",
+			PortMapping: map[string]string{"8888": "32412"},
+		},
+	}
+	json.NewEncoder(w).Encode(container)
 }
