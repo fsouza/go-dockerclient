@@ -165,52 +165,16 @@ func TestCommitContainer(t *testing.T) {
 
 func TestInspectContainer(t *testing.T) {
 	server := DockerServer{}
+	addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("GET", "/v1.1/containers/abc123/json", nil)
+	path := fmt.Sprintf("/v1.1/containers/%s/json", server.containers[0].ID)
+	request, _ := http.NewRequest("GET", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("InspectContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	expected := docker.Container{
-		ID:      "abc123",
-		Created: time.Date(2013, time.June, 17, 10, 20, 0, 0, time.UTC),
-		Path:    "date",
-		Args:    []string{},
-		Config: &docker.Config{
-			Hostname:     "4fa6e0f0c678",
-			User:         "",
-			Memory:       67108864,
-			MemorySwap:   0,
-			AttachStdin:  false,
-			AttachStdout: true,
-			AttachStderr: true,
-			PortSpecs:    nil,
-			Tty:          false,
-			OpenStdin:    false,
-			StdinOnce:    false,
-			Cmd:          []string{"date"},
-			Dns:          nil,
-			Image:        "base",
-			Volumes:      map[string]struct{}{},
-			VolumesFrom:  "",
-		},
-		State: docker.State{
-			Running:   false,
-			Pid:       0,
-			ExitCode:  0,
-			StartedAt: time.Date(2013, time.June, 17, 10, 21, 0, 0, time.UTC),
-			Ghost:     false,
-		},
-		Image: "b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
-		NetworkSettings: &docker.NetworkSettings{
-			IPAddress:   "10.10.10.10",
-			IPPrefixLen: 24,
-			Gateway:     "10.10.10.1",
-			Bridge:      "docker0",
-			PortMapping: map[string]string{"8888": "32412"},
-		},
-	}
+	expected := server.containers[0]
 	var got docker.Container
 	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
@@ -218,6 +182,17 @@ func TestInspectContainer(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+func TestInspectContainerNotFound(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/v1.1/containers/abc123/json", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("InspectContainer: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
 	}
 }
 
