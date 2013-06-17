@@ -76,7 +76,6 @@ func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 	s.cMut.RLock()
-	defer s.cMut.RUnlock()
 	result := make([]docker.APIContainers, len(s.containers))
 	for i, container := range s.containers {
 		result[i] = docker.APIContainers{
@@ -88,6 +87,7 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 			Ports:   container.NetworkSettings.PortMappingHuman(),
 		}
 	}
+	s.cMut.RUnlock()
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(result)
