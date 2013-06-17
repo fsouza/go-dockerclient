@@ -150,16 +150,28 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 
 func TestCommitContainer(t *testing.T) {
 	server := DockerServer{}
+	addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/commit?container=abcdef", nil)
+	request, _ := http.NewRequest("POST", "/v1.1/commit?container="+server.containers[0].ID, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("CommitContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	expected := `{"ID":"abcdef"}`
+	expected := fmt.Sprintf(`{"ID":"%s"}`, server.images[0].ID)
 	if got := recorder.Body.String(); got != expected {
 		t.Errorf("CommitContainer: wrong response body. Want %q. Got %q.", expected, got)
+	}
+}
+
+func TestCommitContainerNotFound(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/v1.1/commit?container=abc123", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("CommitContainer. Wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
 	}
 }
 

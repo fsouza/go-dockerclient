@@ -9,6 +9,7 @@ package testing
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/bmizerany/pat"
 	"github.com/dotcloud/docker"
@@ -154,19 +155,10 @@ func (s *DockerServer) generateID() string {
 
 func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get(":id")
-	var container docker.Container
-	index := -1
-	s.cMut.RLock()
-	for i, c := range s.containers {
-		if c.ID == id {
-			container = c
-			index = i
-			break
-		}
-	}
-	s.cMut.RUnlock()
-	if index < 0 {
-		http.Error(w, "No such container", http.StatusNotFound)
+	container, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -175,6 +167,30 @@ func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) 
 
 func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("container")
+	container, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"ID":%q}`, id)
+	image := docker.Image{
+		ID: "img-" + container.ID,
+		Parent: container.Image,
+		Container: container.ID,
+	}
+	s.iMut.Lock()
+	s.images = append(s.images, image)
+	s.iMut.Unlock()
+	fmt.Fprintf(w, `{"ID":%q}`, image.ID)
+}
+
+func (s *DockerServer) findContainer(id string) (docker.Container, error) {
+	s.cMut.RLock()
+	defer s.cMut.RUnlock()
+	for _, container := range s.containers {
+		if container.ID == id {
+			return container, nil
+		}
+	}
+	return docker.Container{}, errors.New("No such container")
 }
