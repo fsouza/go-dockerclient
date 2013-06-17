@@ -246,7 +246,7 @@ func TestInspectContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(got, *expected) {
-		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", expected, got)
+		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", *expected, got)
 	}
 }
 
