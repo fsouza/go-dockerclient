@@ -87,7 +87,7 @@ func TestListContainersParams(t *testing.T) {
 			Transport: &fakeRT,
 		},
 	}
-	u, _ := url.Parse(client.getURL("/containers/ps"))
+	u, _ := url.Parse(client.getURL("/containers/json"))
 	for _, tt := range tests {
 		client.ListContainers(tt.input)
 		got := map[string][]string(fakeRT.requests[0].URL.Query())
