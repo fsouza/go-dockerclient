@@ -289,6 +289,20 @@ func TestStartContainerNotFound(t *testing.T) {
 	}
 }
 
+func TestStartContainerAlreadyRunning(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.containers[0].State.Running = true
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/v1.1/containers/%s/start", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
+	}
+}
+
 func TestAttachContainer(t *testing.T) {
 	server := DockerServer{}
 	addContainers(&server, 1)
