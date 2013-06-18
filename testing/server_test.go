@@ -289,6 +289,38 @@ func TestStartContainerNotFound(t *testing.T) {
 	}
 }
 
+func TestAttachContainer(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.containers[0].State.Running = true
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/v1.1/containers/%s/attach?logs=1", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	lines := []string{
+		fmt.Sprintf("Container %q is running", server.containers[0].ID),
+		"What happened?",
+		"Something happened",
+	}
+	expected := strings.Join(lines, "\n") + "\n"
+	if body := recorder.Body.String(); !reflect.DeepEqual(body, expected) {
+		t.Errorf("AttachContainer: wrong body. Want %q. Got %q.", expected, body)
+	}
+}
+
+func TestAttachContainerNotFound(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := "/v1.1/containers/abc123/attach?logs=1"
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("AttachContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
 func TestPullImage(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()

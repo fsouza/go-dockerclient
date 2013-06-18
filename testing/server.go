@@ -59,6 +59,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Post("/:version/containers/create", http.HandlerFunc(s.createContainer))
 	s.mux.Get("/:version/containers/:id/json", http.HandlerFunc(s.inspectContainer))
 	s.mux.Post("/:version/containers/:id/start", http.HandlerFunc(s.startContainer))
+	s.mux.Post("/:version/containers/:id/attach", http.HandlerFunc(s.attachContainer))
 	s.mux.Post("/:version/images/create", http.HandlerFunc(s.pullImage))
 }
 
@@ -175,6 +176,22 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	container.State.Running = true
+}
+
+func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get(":id")
+	container, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	if container.State.Running {
+		fmt.Fprintf(w, "Container %q is running\n", container.ID)
+	} else {
+		fmt.Fprintf(w, "Container %q is not running\n", container.ID)
+	}
+	fmt.Fprintln(w, "What happened?")
+	fmt.Fprintln(w, "Something happened")
 }
 
 func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
