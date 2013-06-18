@@ -303,6 +303,21 @@ func TestPullImage(t *testing.T) {
 	}
 }
 
+func TestPullImageRepository(t *testing.T) {
+	server := DockerServer{imgIDs: make(map[string]string)}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/v1.1/images/create?fromImage=base&repo=myrepo", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("PullImage: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	fmt.Println(server.imgIDs)
+	if _, ok := server.imgIDs["myrepo"]; !ok {
+		t.Error("PullImage: Repository should not be empty.")
+	}
+}
+
 func addContainers(server *DockerServer, n int) {
 	server.cMut.Lock()
 	defer server.cMut.Unlock()
