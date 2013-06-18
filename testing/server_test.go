@@ -406,7 +406,7 @@ func TestRemoveContainerNotFound(t *testing.T) {
 }
 
 func TestPullImage(t *testing.T) {
-	server := DockerServer{}
+	server := DockerServer{imgIDs: make(map[string]string)}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/v1.1/images/create?fromImage=base", nil)
@@ -417,18 +417,7 @@ func TestPullImage(t *testing.T) {
 	if len(server.images) != 1 {
 		t.Errorf("PullImage: Want 1 image. Got %d.", len(server.images))
 	}
-}
-
-func TestPullImageRepository(t *testing.T) {
-	server := DockerServer{imgIDs: make(map[string]string)}
-	server.buildMuxer()
-	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/images/create?fromImage=base&repo=myrepo", nil)
-	server.ServeHTTP(recorder, request)
-	if recorder.Code != http.StatusOK {
-		t.Errorf("PullImage: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
-	}
-	if _, ok := server.imgIDs["myrepo"]; !ok {
+	if _, ok := server.imgIDs["base"]; !ok {
 		t.Error("PullImage: Repository should not be empty.")
 	}
 }

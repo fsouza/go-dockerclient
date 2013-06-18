@@ -276,7 +276,7 @@ func (s *DockerServer) findContainer(id string) (*docker.Container, int, error) 
 }
 
 func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
-	repository := r.URL.Query().Get("repo")
+	repository := r.URL.Query().Get("fromImage")
 	image := docker.Image{
 		ID: s.generateID(),
 	}
