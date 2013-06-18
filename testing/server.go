@@ -60,6 +60,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Get("/:version/containers/:id/json", http.HandlerFunc(s.inspectContainer))
 	s.mux.Post("/:version/containers/:id/start", http.HandlerFunc(s.startContainer))
 	s.mux.Post("/:version/containers/:id/attach", http.HandlerFunc(s.attachContainer))
+	s.mux.Del("/:version/containers/:id", http.HandlerFunc(s.removeContainer))
 	s.mux.Post("/:version/images/create", http.HandlerFunc(s.pullImage))
 }
 
@@ -158,7 +159,7 @@ func (s *DockerServer) generateID() string {
 
 func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get(":id")
-	container, err := s.findContainer(id)
+	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -170,7 +171,7 @@ func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) 
 
 func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get(":id")
-	container, err := s.findContainer(id)
+	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -184,7 +185,7 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get(":id")
-	container, err := s.findContainer(id)
+	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -198,9 +199,23 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Something happened")
 }
 
+func (s *DockerServer) removeContainer(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get(":id")
+	_, index, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+	s.cMut.Lock()
+	defer s.cMut.Unlock()
+	s.containers[index] = s.containers[len(s.containers)-1]
+	s.containers = s.containers[:len(s.containers)-1]
+}
+
 func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("container")
-	container, err := s.findContainer(id)
+	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -234,15 +249,15 @@ func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"ID":%q}`, image.ID)
 }
 
-func (s *DockerServer) findContainer(id string) (*docker.Container, error) {
+func (s *DockerServer) findContainer(id string) (*docker.Container, int, error) {
 	s.cMut.RLock()
 	defer s.cMut.RUnlock()
-	for _, container := range s.containers {
+	for i, container := range s.containers {
 		if container.ID == id {
-			return container, nil
+			return container, i, nil
 		}
 	}
-	return nil, errors.New("No such container")
+	return nil, -1, errors.New("No such container")
 }
 
 func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
