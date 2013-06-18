@@ -177,6 +177,8 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	s.cMut.Lock()
+	defer s.cMut.Unlock()
 	if container.State.Running {
 		http.Error(w, "Container already running", http.StatusBadRequest)
 		return
@@ -191,6 +193,8 @@ func (s *DockerServer) stopContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	s.cMut.Lock()
+	defer s.cMut.Unlock()
 	if !container.State.Running {
 		http.Error(w, "Container not running", http.StatusBadRequest)
 	}
