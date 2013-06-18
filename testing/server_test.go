@@ -312,7 +312,6 @@ func TestPullImageRepository(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Errorf("PullImage: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	fmt.Println(server.imgIDs)
 	if _, ok := server.imgIDs["myrepo"]; !ok {
 		t.Error("PullImage: Repository should not be empty.")
 	}
