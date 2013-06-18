@@ -60,6 +60,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Get("/:version/containers/:id/json", http.HandlerFunc(s.inspectContainer))
 	s.mux.Post("/:version/containers/:id/start", http.HandlerFunc(s.startContainer))
 	s.mux.Post("/:version/containers/:id/stop", http.HandlerFunc(s.stopContainer))
+	s.mux.Post("/:version/containers/:id/wait", http.HandlerFunc(s.waitContainer))
 	s.mux.Post("/:version/containers/:id/attach", http.HandlerFunc(s.attachContainer))
 	s.mux.Del("/:version/containers/:id", http.HandlerFunc(s.removeContainer))
 	s.mux.Post("/:version/images/create", http.HandlerFunc(s.pullImage))
@@ -216,6 +217,24 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintln(w, "What happened?")
 	fmt.Fprintln(w, "Something happened")
+}
+
+func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get(":id")
+	container, _, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	for {
+		s.cMut.RLock()
+		if container.State.Running {
+			s.cMut.RUnlock()
+			break
+		}
+		s.cMut.RUnlock()
+	}
+	w.Write([]byte(`{"StatusCode":0}`))
 }
 
 func (s *DockerServer) removeContainer(w http.ResponseWriter, r *http.Request) {
