@@ -22,8 +22,8 @@ import (
 	"time"
 )
 
-// DockerServer represents a programmable, concurrent, HTTP server implementing
-// a fake version of the Docker remote API.
+// DockerServer represents a programmable, concurrent (not much), HTTP server
+// implementing a fake version of the Docker remote API.
 //
 // It can used in standalone mode, listening for connections or as an arbitrary
 // HTTP handler.
