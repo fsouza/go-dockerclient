@@ -37,7 +37,7 @@ func (c *Client) ListImages(all bool) ([]docker.APIImages, error) {
 	return images, nil
 }
 
-// RemoveImage removes a image by its name or ID.
+// RemoveImage removes an image by its name or ID.
 //
 // See http://goo.gl/J2FNF for more details.
 func (c *Client) RemoveImage(name string) error {
@@ -76,7 +76,7 @@ type PushImageOptions struct {
 	Registry string
 }
 
-// PushImage pushes a image to a remote registry, logging progress to w.
+// PushImage pushes an image to a remote registry, logging progress to w.
 //
 // See http://goo.gl/Hx3CB for more details.
 func (c *Client) PushImage(opts PushImageOptions, w io.Writer) error {
@@ -89,7 +89,7 @@ func (c *Client) PushImage(opts PushImageOptions, w io.Writer) error {
 	return c.stream("POST", path, nil, w)
 }
 
-// PullImageOptions present the set of options available for pulling a image
+// PullImageOptions present the set of options available for pulling an image
 // from a registry.
 //
 // See http://goo.gl/JSltN for more details.
@@ -98,7 +98,7 @@ type PullImageOptions struct {
 	Registry   string
 }
 
-// PullImage pulls a image from a remote registry, logging progress to w.
+// PullImage pulls an image from a remote registry, logging progress to w.
 //
 // See http://goo.gl/JSltN for more details.
 func (c *Client) PullImage(opts PullImageOptions, w io.Writer) error {
