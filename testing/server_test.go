@@ -245,6 +245,15 @@ func TestInspectContainer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if !reflect.DeepEqual(got.Config, expected.Config) {
+		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", *expected, got)
+	}
+	if !reflect.DeepEqual(got.NetworkSettings, expected.NetworkSettings) {
+		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", *expected, got)
+	}
+	got.State.StartedAt = expected.State.StartedAt
+	got.Config = expected.Config
+	expected.NetworkSettings = expected.NetworkSettings
 	if !reflect.DeepEqual(got, *expected) {
 		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", *expected, got)
 	}
