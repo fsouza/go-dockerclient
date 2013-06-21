@@ -506,3 +506,43 @@ func addContainers(server *DockerServer, n int) {
 		server.containers = append(server.containers, &container)
 	}
 }
+
+func addImages(server *DockerServer, n int) {
+	server.iMut.Lock()
+	defer server.iMut.Unlock()
+	for i := 0; i < n; i++ {
+		date := time.Now().Add(time.Duration((rand.Int() % (i + 1))) * time.Hour)
+		image := docker.Image{
+			ID:      fmt.Sprintf("%x", rand.Int()%10000),
+			Created: date,
+		}
+		server.images = append(server.images, image)
+	}
+}
+
+func TestListImages(t *testing.T) {
+	server := DockerServer{}
+	addImages(&server, 2)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/v1.1/images/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("ListImages: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	expected := make([]docker.APIImages, 2)
+	for i, image := range server.images {
+		expected[i] = docker.APIImages{
+			ID:      image.ID,
+			Created: image.Created.Unix(),
+		}
+	}
+	var got []docker.APIImages
+	err := json.NewDecoder(recorder.Body).Decode(&got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ListImages. Want %#v. Got %#v.", expected, got)
+	}
+}

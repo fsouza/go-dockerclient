@@ -64,6 +64,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Post("/:version/containers/:id/attach", http.HandlerFunc(s.attachContainer))
 	s.mux.Del("/:version/containers/:id", http.HandlerFunc(s.removeContainer))
 	s.mux.Post("/:version/images/create", http.HandlerFunc(s.pullImage))
+	s.mux.Get("/:version/images/json", http.HandlerFunc(s.listImages))
 }
 
 // Stop stops the server.
@@ -97,6 +98,21 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 			Created: container.Created.Unix(),
 			Status:  container.State.String(),
 			Ports:   container.NetworkSettings.PortMappingHuman(),
+		}
+	}
+	s.cMut.RUnlock()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}
+
+func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
+	s.cMut.RLock()
+	result := make([]docker.APIImages, len(s.images))
+	for i, image := range s.images {
+		result[i] = docker.APIImages{
+			ID:      image.ID,
+			Created: image.Created.Unix(),
 		}
 	}
 	s.cMut.RUnlock()
