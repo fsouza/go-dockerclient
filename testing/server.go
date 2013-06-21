@@ -105,6 +105,21 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+func (s *DockerServer) findImage(id string) (string, error) {
+	s.iMut.RLock()
+	defer s.iMut.RUnlock()
+	image, ok := s.imgIDs[id]
+	if ok {
+		return image, nil
+	}
+	for _, image := range s.images {
+		if image.ID == id {
+			return image.ID, nil
+		}
+	}
+	return "", errors.New("No such image")
+}
+
 func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 	var config docker.Config
 	defer r.Body.Close()
@@ -113,11 +128,9 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	s.iMut.RLock()
-	image, ok := s.imgIDs[config.Image]
-	s.iMut.RUnlock()
-	if !ok {
-		http.Error(w, "No such image", http.StatusNotFound)
+	image, err := s.findImage(config.Image)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
