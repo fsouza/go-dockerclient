@@ -546,3 +546,19 @@ func TestListImages(t *testing.T) {
 		t.Errorf("ListImages. Want %#v. Got %#v.", expected, got)
 	}
 }
+
+func TestRemoveImage(t *testing.T) {
+	server := DockerServer{}
+	addImages(&server, 1)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/v1.1/images/%s", server.images[0].ID)
+	request, _ := http.NewRequest("DELETE", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("RemoveImage: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	if len(server.images) > 0 {
+		t.Error("RemoveImage: did not remove the image.")
+	}
+}

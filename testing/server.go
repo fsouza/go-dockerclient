@@ -65,6 +65,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Del("/:version/containers/:id", http.HandlerFunc(s.removeContainer))
 	s.mux.Post("/:version/images/create", http.HandlerFunc(s.pullImage))
 	s.mux.Get("/:version/images/json", http.HandlerFunc(s.listImages))
+	s.mux.Del("/:version/images/:id", http.HandlerFunc(s.removeImage))
 }
 
 // Stop stops the server.
@@ -128,12 +129,19 @@ func (s *DockerServer) findImage(id string) (string, error) {
 	if ok {
 		return image, nil
 	}
-	for _, image := range s.images {
+	image, _, err := s.findImageByID(id)
+	return image, err
+}
+
+func (s *DockerServer) findImageByID(id string) (string, int, error) {
+	s.iMut.RLock()
+	defer s.iMut.RUnlock()
+	for i, image := range s.images {
 		if image.ID == id {
-			return image.ID, nil
+			return image.ID, i, nil
 		}
 	}
-	return "", errors.New("No such image")
+	return "", -1, errors.New("No such image")
 }
 
 func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
@@ -338,4 +346,18 @@ func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
 		s.imgIDs[repository] = image.ID
 	}
 	s.iMut.Unlock()
+}
+
+func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get(":id")
+	_, index, err := s.findImageByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+	s.iMut.Lock()
+	defer s.iMut.Unlock()
+	s.images[index] = s.images[len(s.images)-1]
+	s.images = s.images[:len(s.images)-1]
 }
