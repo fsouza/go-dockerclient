@@ -22,6 +22,7 @@ var ErrNoSuchContainer = errors.New("No such container")
 // See http://goo.gl/8IMr2 for more details.
 type ListContainersOptions struct {
 	All    bool
+	Size   bool
 	Limit  int
 	Since  string
 	Before string
