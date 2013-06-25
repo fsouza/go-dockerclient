@@ -69,7 +69,7 @@ func (c *Client) InspectImage(name string) (*docker.Image, error) {
 
 // PushImageOptions options to use in the PushImage method.
 type PushImageOptions struct {
-	// Name or ID of the image
+	// Name of the image
 	Name string
 
 	// Registry server to push the image
