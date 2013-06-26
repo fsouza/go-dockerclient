@@ -11,8 +11,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bmizerany/pat"
 	"github.com/dotcloud/docker"
+	"github.com/gorilla/mux"
 	mathrand "math/rand"
 	"net"
 	"net/http"
@@ -36,7 +36,7 @@ type DockerServer struct {
 	iMut       sync.RWMutex
 	imgIDs     map[string]string
 	listener   net.Listener
-	mux        *pat.PatternServeMux
+	mux        *mux.Router
 	hook       func(*http.Request)
 }
 
@@ -56,20 +56,20 @@ func NewServer(hook func(*http.Request)) (*DockerServer, error) {
 }
 
 func (s *DockerServer) buildMuxer() {
-	s.mux = pat.New()
-	s.mux.Post("/:version/commit", http.HandlerFunc(s.commitContainer))
-	s.mux.Get("/:version/containers/json", http.HandlerFunc(s.listContainers))
-	s.mux.Post("/:version/containers/create", http.HandlerFunc(s.createContainer))
-	s.mux.Get("/:version/containers/:id/json", http.HandlerFunc(s.inspectContainer))
-	s.mux.Post("/:version/containers/:id/start", http.HandlerFunc(s.startContainer))
-	s.mux.Post("/:version/containers/:id/stop", http.HandlerFunc(s.stopContainer))
-	s.mux.Post("/:version/containers/:id/wait", http.HandlerFunc(s.waitContainer))
-	s.mux.Post("/:version/containers/:id/attach", http.HandlerFunc(s.attachContainer))
-	s.mux.Del("/:version/containers/:id", http.HandlerFunc(s.removeContainer))
-	s.mux.Post("/:version/images/create", http.HandlerFunc(s.pullImage))
-	s.mux.Post("/:version/images/:name/push", http.HandlerFunc(s.pushImage))
-	s.mux.Get("/:version/images/json", http.HandlerFunc(s.listImages))
-	s.mux.Del("/:version/images/:id", http.HandlerFunc(s.removeImage))
+	s.mux = mux.NewRouter()
+	s.mux.Path("/v{version:[0-9.]+}/commit").Methods("POST").HandlerFunc(s.commitContainer)
+	s.mux.Path("/v{version:[0-9.]+}/containers/json").Methods("GET").HandlerFunc(s.listContainers)
+	s.mux.Path("/v{version:[0-9.]+}/containers/create").Methods("POST").HandlerFunc(s.createContainer)
+	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/json").Methods("GET").HandlerFunc(s.inspectContainer)
+	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/start").Methods("POST").HandlerFunc(s.startContainer)
+	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/stop").Methods("POST").HandlerFunc(s.stopContainer)
+	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/wait").Methods("POST").HandlerFunc(s.waitContainer)
+	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/attach").Methods("POST").HandlerFunc(s.attachContainer)
+	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}").Methods("DELETE").HandlerFunc(s.removeContainer)
+	s.mux.Path("/v{version:[0-9.]+}/images/create").Methods("POST").HandlerFunc(s.pullImage)
+	s.mux.Path("/v{version:[0-9.]+}/images/json").Methods("GET").HandlerFunc(s.listImages)
+	s.mux.Path("/v{version:[0-9.]+}/images/{id:.*}").Methods("DELETE").HandlerFunc(s.removeImage)
+	s.mux.Path("/v{version:[0-9.]+}/images/{name:.*}/push").Methods("POST").HandlerFunc(s.pushImage)
 }
 
 // Stop stops the server.
@@ -204,7 +204,7 @@ func (s *DockerServer) generateID() string {
 }
 
 func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get(":id")
+	id := mux.Vars(r)["id"]
 	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -216,7 +216,7 @@ func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get(":id")
+	id := mux.Vars(r)["id"]
 	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -232,7 +232,7 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) stopContainer(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get(":id")
+	id := mux.Vars(r)["id"]
 	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -249,7 +249,7 @@ func (s *DockerServer) stopContainer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get(":id")
+	id := mux.Vars(r)["id"]
 	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -265,7 +265,7 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get(":id")
+	id := mux.Vars(r)["id"]
 	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -283,7 +283,7 @@ func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) removeContainer(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get(":id")
+	id := mux.Vars(r)["id"]
 	_, index, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -360,7 +360,7 @@ func (s *DockerServer) pushImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get(":id")
+	id := mux.Vars(r)["id"]
 	_, index, err := s.findImageByID(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
