@@ -235,6 +235,7 @@ func (s *DockerServer) stopContainer(w http.ResponseWriter, r *http.Request) {
 	defer s.cMut.Unlock()
 	if !container.State.Running {
 		http.Error(w, "Container not running", http.StatusBadRequest)
+		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 	container.State.Running = false
