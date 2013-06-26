@@ -37,16 +37,19 @@ type DockerServer struct {
 	imgIDs     map[string]string
 	listener   net.Listener
 	mux        *pat.PatternServeMux
+	hook       func(*http.Request)
 }
 
 // NewServer returns a new instance of the fake server, in standalone mode. Use
 // the method URL to get the URL of the server.
-func NewServer() (*DockerServer, error) {
+//
+// Hook is a function that will be called on every request.
+func NewServer(hook func(*http.Request)) (*DockerServer, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
-	server := DockerServer{listener: listener, imgIDs: make(map[string]string)}
+	server := DockerServer{listener: listener, imgIDs: make(map[string]string), hook: hook}
 	server.buildMuxer()
 	go http.Serve(listener, &server)
 	return &server, nil
@@ -86,6 +89,9 @@ func (s *DockerServer) URL() string {
 // ServeHTTP handles HTTP requests sent to the server.
 func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
+	if s.hook != nil {
+		s.hook(r)
+	}
 }
 
 func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {

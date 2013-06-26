@@ -19,7 +19,7 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
-	server, err := NewServer()
+	server, err := NewServer(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestServerStop(t *testing.T) {
-	server, err := NewServer()
+	server, err := NewServer(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestServerStopNoListener(t *testing.T) {
 }
 
 func TestServerURL(t *testing.T) {
-	server, err := NewServer()
+	server, err := NewServer(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,6 +65,18 @@ func TestServerURLNoListener(t *testing.T) {
 	url := server.URL()
 	if url != "" {
 		t.Errorf("DockerServer.URL(): Expected empty URL on handler mode, got %q.", url)
+	}
+}
+
+func TestHandleWithHook(t *testing.T) {
+	var called bool
+	server, _ := NewServer(func(*http.Request) { called = true })
+	defer server.Stop()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/v1.1/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if !called {
+		t.Error("ServeHTTP did not call the hook function.")
 	}
 }
 
