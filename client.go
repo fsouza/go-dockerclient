@@ -166,11 +166,11 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 		errStdout <- err
 	}()
 	if in != nil && setRawTerminal && term.IsTerminal(in.Fd()) && os.Getenv("NORAW") == "" {
-		oldState, err := term.SetRawTerminal()
+		oldState, err := term.SetRawTerminal(in.Fd())
 		if err != nil {
 			return err
 		}
-		defer term.RestoreTerminal(oldState)
+		defer term.RestoreTerminal(in.Fd(), oldState)
 	}
 	go func() {
 		io.Copy(rwc, in)
