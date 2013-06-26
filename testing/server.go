@@ -67,6 +67,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Post("/:version/containers/:id/attach", http.HandlerFunc(s.attachContainer))
 	s.mux.Del("/:version/containers/:id", http.HandlerFunc(s.removeContainer))
 	s.mux.Post("/:version/images/create", http.HandlerFunc(s.pullImage))
+	s.mux.Post("/:version/images/:name/push", http.HandlerFunc(s.pushImage))
 	s.mux.Get("/:version/images/json", http.HandlerFunc(s.listImages))
 	s.mux.Del("/:version/images/:id", http.HandlerFunc(s.removeImage))
 }
@@ -353,6 +354,9 @@ func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
 		s.imgIDs[repository] = image.ID
 	}
 	s.iMut.Unlock()
+}
+
+func (s *DockerServer) pushImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
