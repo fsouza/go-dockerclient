@@ -258,8 +258,5 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 	opts.ErrorStream = nil
 	opts.RawTerminal = false
 	path := "/containers/" + container + "/attach?" + queryString(opts)
-	if opts.Logs {
-		return c.stream("POST", path, nil, stdout)
-	}
 	return c.hijack("POST", path, raw, stdin, stderr, stdout)
 }

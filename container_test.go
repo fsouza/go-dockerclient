@@ -583,11 +583,13 @@ func TestCommitContainerNotFound(t *testing.T) {
 }
 
 func TestAttachToContainerLogs(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "something happened", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("something happened"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
 	var buf bytes.Buffer
 	opts := AttachToContainerOptions{
 		Container:    "a123456",
@@ -604,7 +606,6 @@ func TestAttachToContainerLogs(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("AttachToContainer for logs: wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-	req := fakeRT.requests[0]
 	if req.Method != "POST" {
 		t.Errorf("AttachToContainer: wrong HTTP method. Want POST. Got %s.", req.Method)
 	}
