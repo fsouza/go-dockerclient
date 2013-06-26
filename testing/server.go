@@ -357,6 +357,16 @@ func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) pushImage(w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	s.iMut.RLock()
+	if _, ok := s.imgIDs[name]; !ok {
+		s.iMut.RUnlock()
+		http.Error(w, "No such image", http.StatusNotFound)
+		return
+	}
+	s.iMut.RUnlock()
+	fmt.Fprintln(w, "Pushing...")
+	fmt.Fprintln(w, "Pushed")
 }
 
 func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
