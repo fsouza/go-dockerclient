@@ -260,3 +260,12 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 	path := "/containers/" + container + "/attach?" + queryString(opts)
 	return c.hijack("POST", path, raw, stdin, stderr, stdout)
 }
+
+// NoSuchContainer is the error returned when a given container does not exist.
+type NoSuchContainer struct {
+	ID string
+}
+
+func (err *NoSuchContainer) Error() string {
+	return "No such container: " + err.ID
+}

@@ -673,3 +673,11 @@ func TestAttachToContainerWithoutContainer(t *testing.T) {
 		t.Errorf("AttachToContainer: wrong error. Want %#v. Got %#v.", ErrNoSuchContainer, err)
 	}
 }
+
+func TestNoSuchContainerError(t *testing.T) {
+	var err error = &NoSuchContainer{ID: "i345"}
+	expected := "No such container: i345"
+	if got := err.Error(); got != expected {
+		t.Errorf("NoSuchContainer: wrong message. Want %q. Got %q.", expected, got)
+	}
+}
