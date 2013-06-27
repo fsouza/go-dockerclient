@@ -228,8 +228,9 @@ func TestInspectContainerNotFound(t *testing.T) {
 	if container != nil {
 		t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)
 	}
-	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
-		t.Errorf("InspectContainer: Wrong error information. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: "abe033"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("InspectContainer: Wrong error information. Want %#v. Got %#v.", expected, err)
 	}
 }
 
@@ -318,8 +319,9 @@ func TestStartContainerNotFound(t *testing.T) {
 		},
 	}
 	err := client.StartContainer("a2344")
-	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
-		t.Errorf("StartContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: "a2344"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("StartContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
 
@@ -352,8 +354,9 @@ func TestStopContainerNotFound(t *testing.T) {
 		},
 	}
 	err := client.StopContainer("a2334", 10)
-	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
-		t.Errorf("StopContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: "a2334"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("StopContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
 
@@ -386,8 +389,9 @@ func TestRestartContainerNotFound(t *testing.T) {
 		},
 	}
 	err := client.RestartContainer("a2334", 10)
-	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
-		t.Errorf("RestartContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: "a2334"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("RestartContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
 
@@ -420,8 +424,9 @@ func TestKillContainerNotFound(t *testing.T) {
 		},
 	}
 	err := client.KillContainer("a2334")
-	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
-		t.Errorf("KillContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: "a2334"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("KillContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
 
@@ -454,8 +459,9 @@ func TestRemoveContainerNotFound(t *testing.T) {
 		},
 	}
 	err := client.RemoveContainer("a2334")
-	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
-		t.Errorf("RemoveContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: "a2334"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("RemoveContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
 
@@ -491,8 +497,9 @@ func TestWaitContainerNotFound(t *testing.T) {
 		},
 	}
 	_, err := client.WaitContainer("a2334")
-	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
-		t.Errorf("WaitContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: "a2334"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("WaitContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
 
@@ -577,8 +584,9 @@ func TestCommitContainerNotFound(t *testing.T) {
 		},
 	}
 	_, err := client.CommitContainer(CommitContainerOptions{})
-	if !reflect.DeepEqual(err, ErrNoSuchContainer) {
-		t.Errorf("CommitContainer: Wrong error returned. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: ""}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("CommitContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
 
@@ -669,8 +677,9 @@ func TestAttachToContainer(t *testing.T) {
 func TestAttachToContainerWithoutContainer(t *testing.T) {
 	var client Client
 	err := client.AttachToContainer(AttachToContainerOptions{})
-	if err != ErrNoSuchContainer {
-		t.Errorf("AttachToContainer: wrong error. Want %#v. Got %#v.", ErrNoSuchContainer, err)
+	expected := &NoSuchContainer{ID: ""}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("AttachToContainer: wrong error. Want %#v. Got %#v.", expected, err)
 	}
 }
 
