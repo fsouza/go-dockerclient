@@ -309,6 +309,10 @@ func TestStartContainer(t *testing.T) {
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("StartContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
 	}
+	expectedContentType := "application/json"
+	if contentType := req.Header.Get("Content-Type"); contentType != expectedContentType {
+		t.Errorf("StartContainer(%q): Wrong content-type in request. Want %q. Got %q.", id, expectedContentType, contentType)
+	}
 }
 
 func TestStartContainerNotFound(t *testing.T) {
