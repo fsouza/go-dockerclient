@@ -289,6 +289,11 @@ func (s *DockerServer) removeContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	if s.containers[index].State.Running {
+		msg := "Error: API error (406): Impossible to remove a running container, please stop it first"
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 	s.cMut.Lock()
 	defer s.cMut.Unlock()
