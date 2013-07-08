@@ -96,16 +96,19 @@ func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
+	all := r.URL.Query().Get("all")
 	s.cMut.RLock()
 	result := make([]docker.APIContainers, len(s.containers))
 	for i, container := range s.containers {
-		result[i] = docker.APIContainers{
-			ID:      container.ID,
-			Image:   container.Image,
-			Command: fmt.Sprintf("%s %s", container.Path, strings.Join(container.Args, " ")),
-			Created: container.Created.Unix(),
-			Status:  container.State.String(),
-			Ports:   container.NetworkSettings.PortMappingHuman(),
+		if all == "1" || container.State.Running {
+			result[i] = docker.APIContainers{
+				ID:      container.ID,
+				Image:   container.Image,
+				Command: fmt.Sprintf("%s %s", container.Path, strings.Join(container.Args, " ")),
+				Created: container.Created.Unix(),
+				Status:  container.State.String(),
+				Ports:   container.NetworkSettings.PortMappingHuman(),
+			}
 		}
 	}
 	s.cMut.RUnlock()

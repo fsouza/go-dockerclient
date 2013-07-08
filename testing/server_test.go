@@ -111,6 +111,26 @@ func TestListContainers(t *testing.T) {
 	}
 }
 
+func TestListRunningContainers(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 2)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/v1.1/containers/json?all=0", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("ListRunningContainers: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var got []docker.APIContainers
+	err := json.NewDecoder(recorder.Body).Decode(&got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) == 0 {
+		t.Errorf("ListRunningContainers: Want 0. Got %d.", len(got))
+	}
+}
+
 func TestCreateContainer(t *testing.T) {
 	server := DockerServer{}
 	server.imgIDs = map[string]string{"base": "a1234"}
