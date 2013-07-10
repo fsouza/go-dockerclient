@@ -100,7 +100,7 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 	s.cMut.RLock()
 	result := make([]docker.APIContainers, len(s.containers))
 	for i, container := range s.containers {
-		if all == "1" || container.State.Running == true {
+		if all == "1" || container.State.Running {
 			result[i] = docker.APIContainers{
 				ID:      container.ID,
 				Image:   container.Image,
