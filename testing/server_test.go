@@ -570,7 +570,9 @@ func addContainers(server *DockerServer, n int) {
 				IPPrefixLen: 24,
 				Gateway:     "10.10.10.1",
 				Bridge:      "docker0",
-				PortMapping: map[string]string{"8888": fmt.Sprintf("%d", 49600+i)},
+				PortMapping: map[string]docker.PortMapping{
+					"Tcp": {"8888": fmt.Sprintf("%d", 49600+i)},
+				},
 			},
 			ResolvConfPath: "/etc/resolv.conf",
 		}
