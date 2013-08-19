@@ -162,7 +162,7 @@ func TestPushImage(t *testing.T) {
 		client:   &http.Client{Transport: &fakeRT},
 	}
 	var buf bytes.Buffer
-	err := client.PushImage(PushImageOptions{Name: "test"}, &buf)
+	err := client.PushImage(PushImageOptions{Name: "test"}, AuthConfiguration{}, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +179,41 @@ func TestPushImage(t *testing.T) {
 		t.Errorf("PushImage: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
 	}
 	if query := req.URL.Query().Encode(); query != "" {
-		t.Errorf("PushImage: Wrong query stirng. Want no parameters, got %q.", query)
+		t.Errorf("PushImage: Wrong query string. Want no parameters, got %q.", query)
+	}
+	var b [2]byte
+	req.Body.Read(b[:])
+	if string(b[:]) != "{}" {
+		t.Errorf("PushImage: wrong body. Want %q. Got %q.", "{}", string(b[:]))
+	}
+}
+
+func TestPushImageWithAuthentication(t *testing.T) {
+	fakeRT := FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	var buf bytes.Buffer
+	inputAuth := AuthConfiguration{
+		Username: "gopher",
+		Password: "gopher123",
+		Email:    "gopher@tsuru.io",
+	}
+	err := client.PushImage(PushImageOptions{Name: "test"}, inputAuth, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	var b [128]byte
+	n, _ := req.Body.Read(b[:])
+	var gotAuth AuthConfiguration
+	err = json.Unmarshal(b[:n], &gotAuth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(gotAuth, inputAuth) {
+		t.Errorf("PushImage: wrong auth configuration. Want %#v. Got %#v.", inputAuth, gotAuth)
 	}
 }
 
@@ -189,8 +223,9 @@ func TestPushImageCustomRegistry(t *testing.T) {
 		endpoint: "http://localhost:4243",
 		client:   &http.Client{Transport: &fakeRT},
 	}
+	var authConfig AuthConfiguration
 	var buf bytes.Buffer
-	err := client.PushImage(PushImageOptions{Name: "test", Registry: "docker.tsuru.io"}, &buf)
+	err := client.PushImage(PushImageOptions{Name: "test", Registry: "docker.tsuru.io"}, authConfig, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +238,7 @@ func TestPushImageCustomRegistry(t *testing.T) {
 
 func TestPushImageNoName(t *testing.T) {
 	client := Client{}
-	err := client.PushImage(PushImageOptions{}, nil)
+	err := client.PushImage(PushImageOptions{}, AuthConfiguration{}, nil)
 	if err != ErrNoSuchImage {
 		t.Errorf("PushImage: got wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
 	}

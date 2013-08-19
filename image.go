@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/dotcloud/docker"
@@ -67,7 +68,7 @@ func (c *Client) InspectImage(name string) (*docker.Image, error) {
 	return &image, nil
 }
 
-// PushImageOptions options to use in the PushImage method.
+// PushImageOptions represents options to use in the PushImage method.
 //
 // See http://goo.gl/GBmyhc for more details.
 type PushImageOptions struct {
@@ -78,17 +79,30 @@ type PushImageOptions struct {
 	Registry string
 }
 
+// AuthConfiguration represents authentication options to use in the PushImage
+// method. It represents the authencation in the Docker index server.
+type AuthConfiguration struct {
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Email    string `json:"email,omitempty"`
+}
+
 // PushImage pushes an image to a remote registry, logging progress to w.
 //
+// An empty instance of AuthConfiguration may be used for unauthenticated
+// pushes.
+//
 // See http://goo.gl/GBmyhc for more details.
-func (c *Client) PushImage(opts PushImageOptions, w io.Writer) error {
+func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration, w io.Writer) error {
 	if opts.Name == "" {
 		return ErrNoSuchImage
 	}
 	name := opts.Name
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
-	return c.stream("POST", path, nil, w)
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(auth)
+	return c.stream("POST", path, &buf, w)
 }
 
 // PullImageOptions present the set of options available for pulling an image
