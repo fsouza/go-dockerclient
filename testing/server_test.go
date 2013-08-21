@@ -580,9 +580,12 @@ func addContainers(server *DockerServer, n int) {
 	}
 }
 
-func addImages(server *DockerServer, n int) {
+func addImages(server *DockerServer, n int, repo bool) {
 	server.iMut.Lock()
 	defer server.iMut.Unlock()
+	if server.imgIDs == nil {
+		server.imgIDs = make(map[string]string)
+	}
 	for i := 0; i < n; i++ {
 		date := time.Now().Add(time.Duration((rand.Int() % (i + 1))) * time.Hour)
 		image := docker.Image{
@@ -590,12 +593,16 @@ func addImages(server *DockerServer, n int) {
 			Created: date,
 		}
 		server.images = append(server.images, image)
+		if repo {
+			repo := "docker/python-" + image.ID
+			server.imgIDs[repo] = image.ID
+		}
 	}
 }
 
 func TestListImages(t *testing.T) {
 	server := DockerServer{}
-	addImages(&server, 2)
+	addImages(&server, 2, false)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/v1.1/images/json?all=1", nil)
@@ -622,10 +629,26 @@ func TestListImages(t *testing.T) {
 
 func TestRemoveImage(t *testing.T) {
 	server := DockerServer{}
-	addImages(&server, 1)
+	addImages(&server, 1, false)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := fmt.Sprintf("/v1.1/images/%s", server.images[0].ID)
+	request, _ := http.NewRequest("DELETE", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("RemoveImage: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	if len(server.images) > 0 {
+		t.Error("RemoveImage: did not remove the image.")
+	}
+}
+
+func TestRemoveImageByName(t *testing.T) {
+	server := DockerServer{}
+	addImages(&server, 1, true)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := "/v1.1/images/docker/python-" + server.images[0].ID
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
