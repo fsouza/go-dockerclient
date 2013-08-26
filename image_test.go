@@ -300,3 +300,23 @@ func TestPullImageNoRepository(t *testing.T) {
 		t.Errorf("PullImage: got wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
 	}
 }
+
+func TestImportImageFromUrl(t *testing.T) {
+	fakeRT := FakeRoundTripper{message: "", status: http.StatusOK}
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client:   &http.Client{Transport: &fakeRT},
+	}
+	var buf bytes.Buffer
+	opts := ImportImageOptions{Source: "http://mycompany.com/file.tar", Repository: "testimage"}
+	err := client.ImportImage(opts, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := map[string][]string{"fromSrc": {opts.Source}, "repository": {opts.Repository}}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
