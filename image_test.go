@@ -8,11 +8,29 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/dotcloud/docker"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
 	"testing"
 )
+
+func newTestClient(rt *FakeRoundTripper) Client {
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client:   &http.Client{Transport: rt},
+		in:       stdinMock{bytes.NewBufferString("tar content")},
+	}
+	return client
+}
+
+type stdinMock struct {
+	*bytes.Buffer
+}
+
+func (m stdinMock) Close() error {
+	return nil
+}
 
 func TestListImages(t *testing.T) {
 	body := `[
@@ -34,12 +52,7 @@ func TestListImages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: body, status: http.StatusOK},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
 	images, err := client.ListImages(false)
 	if err != nil {
 		t.Error(err)
@@ -50,11 +63,8 @@ func TestListImages(t *testing.T) {
 }
 
 func TestListImagesParameters(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "null", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "null", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	_, err := client.ListImages(false)
 	if err != nil {
 		t.Fatal(err)
@@ -79,8 +89,8 @@ func TestListImagesParameters(t *testing.T) {
 
 func TestRemoveImage(t *testing.T) {
 	name := "test"
-	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := Client{endpoint: "http://localhost:4243", client: &http.Client{Transport: &fakeRT}}
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
 	err := client.RemoveImage(name)
 	if err != nil {
 		t.Fatal(err)
@@ -97,12 +107,7 @@ func TestRemoveImage(t *testing.T) {
 }
 
 func TestRemoveImageNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such image", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such image", status: http.StatusNotFound})
 	err := client.RemoveImage("test:")
 	if err != ErrNoSuchImage {
 		t.Errorf("RemoveImage: wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
@@ -119,8 +124,8 @@ func TestInspectImage(t *testing.T) {
 }`
 	var expected docker.Image
 	json.Unmarshal([]byte(body), &expected)
-	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
-	client := Client{endpoint: "http://localhost:4243", client: &http.Client{Transport: &fakeRT}}
+	fakeRT := &FakeRoundTripper{message: body, status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	image, err := client.InspectImage(expected.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -139,12 +144,7 @@ func TestInspectImage(t *testing.T) {
 }
 
 func TestInspectImageNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such image", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such image", status: http.StatusNotFound})
 	name := "test"
 	image, err := client.InspectImage(name)
 	if image != nil {
@@ -156,11 +156,8 @@ func TestInspectImageNotFound(t *testing.T) {
 }
 
 func TestPushImage(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	err := client.PushImage(PushImageOptions{Name: "test"}, AuthConfiguration{}, &buf)
 	if err != nil {
@@ -189,11 +186,8 @@ func TestPushImage(t *testing.T) {
 }
 
 func TestPushImageWithAuthentication(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	inputAuth := AuthConfiguration{
 		Username: "gopher",
@@ -218,11 +212,8 @@ func TestPushImageWithAuthentication(t *testing.T) {
 }
 
 func TestPushImageCustomRegistry(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	var authConfig AuthConfiguration
 	var buf bytes.Buffer
 	err := client.PushImage(PushImageOptions{Name: "test", Registry: "docker.tsuru.io"}, authConfig, &buf)
@@ -245,11 +236,8 @@ func TestPushImageNoName(t *testing.T) {
 }
 
 func TestPullImage(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	err := client.PullImage(PullImageOptions{Repository: "base"}, &buf)
 	if err != nil {
@@ -274,11 +262,8 @@ func TestPullImage(t *testing.T) {
 }
 
 func TestPullImageCustomRegistry(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	err := client.PullImage(PullImageOptions{Repository: "base", Registry: "docker.tsuru.io"}, &buf)
 	if err != nil {
@@ -302,11 +287,8 @@ func TestPullImageNoRepository(t *testing.T) {
 }
 
 func TestImportImageFromUrl(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	opts := ImportImageOptions{Source: "http://mycompany.com/file.tar", Repository: "testimage"}
 	err := client.ImportImage(opts, &buf)
@@ -318,5 +300,30 @@ func TestImportImageFromUrl(t *testing.T) {
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+func TestImportImageFromStdin(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := ImportImageOptions{Source: "-", Repository: "testimage"}
+	err := client.ImportImage(opts, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := map[string][]string{"fromSrc": {opts.Source}, "repository": {opts.Repository}}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		t.Errorf("ImportImage: caugth error while reading body %#v", err.Error())
+	}
+	e := "tar content"
+	if string(body) != e {
+		t.Errorf("ImportImage: wrong body. Want %#v. Got %#v.", e, string(body))
 	}
 }

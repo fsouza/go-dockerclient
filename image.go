@@ -11,7 +11,6 @@ import (
 	"github.com/dotcloud/docker"
 	"io"
 	"net/http"
-	"os"
 )
 
 // Error returned when the image does not exist.
@@ -125,7 +124,7 @@ func (c *Client) PullImage(opts PullImageOptions, w io.Writer) error {
 	return c.createImage(queryString(&opts), nil, w)
 }
 
-func (c *Client) createImage(qs string, in io.Reader, w io.Writer) error {
+func (c *Client) createImage(qs string, in io.ReadCloser, w io.Writer) error {
 	path := "/images/create?" + qs
 	return c.stream("POST", path, in, w)
 }
@@ -146,5 +145,5 @@ func (c *Client) ImportImage(opts ImportImageOptions, w io.Writer) error {
 	if opts.Repository == "" {
 		return ErrNoSuchImage
 	}
-	return c.createImage(queryString(&opts), os.Stdin, w)
+	return c.createImage(queryString(&opts), c.in, w)
 }
