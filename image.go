@@ -145,5 +145,9 @@ func (c *Client) ImportImage(opts ImportImageOptions, w io.Writer) error {
 	if opts.Repository == "" {
 		return ErrNoSuchImage
 	}
-	return c.createImage(queryString(&opts), c.in, w)
+	input := c.in
+	if opts.Source != "-" {
+		input = nil
+	}
+	return c.createImage(queryString(&opts), input, w)
 }

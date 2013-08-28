@@ -327,3 +327,27 @@ func TestImportImageFromStdin(t *testing.T) {
 		t.Errorf("ImportImage: wrong body. Want %#v. Got %#v.", e, string(body))
 	}
 }
+
+func TestImportImageDoesNotPassesStdinIfSourceIsNotDash(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := ImportImageOptions{Source: "http://test.com/container.tar", Repository: "testimage"}
+	err := client.ImportImage(opts, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := map[string][]string{"fromSrc": {opts.Source}, "repository": {opts.Repository}}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		t.Errorf("ImportImage: caugth error while reading body %#v", err.Error())
+	}
+	if string(body) != "" {
+		t.Errorf("ImportImage: wrong body. Want nothing. Got %#v.", string(body))
+	}
+}
