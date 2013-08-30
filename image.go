@@ -10,7 +10,10 @@ import (
 	"errors"
 	"github.com/dotcloud/docker"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"net/url"
+	"os"
 )
 
 // Error returned when the image does not exist.
@@ -124,7 +127,7 @@ func (c *Client) PullImage(opts PullImageOptions, w io.Writer) error {
 	return c.createImage(queryString(&opts), nil, w)
 }
 
-func (c *Client) createImage(qs string, in io.ReadCloser, w io.Writer) error {
+func (c *Client) createImage(qs string, in io.Reader, w io.Writer) error {
 	path := "/images/create?" + qs
 	return c.stream("POST", path, in, w)
 }
@@ -145,9 +148,26 @@ func (c *Client) ImportImage(opts ImportImageOptions, w io.Writer) error {
 	if opts.Repository == "" {
 		return ErrNoSuchImage
 	}
-	input := c.in
+	var input io.Reader
+	input = c.in
 	if opts.Source != "-" {
 		input = nil
 	}
+	if opts.Source != "-" && !isUrl(opts.Source) {
+		f, err := os.Open(opts.Source)
+		if err != nil {
+			return err
+		}
+		b, err := ioutil.ReadAll(f)
+		input = bytes.NewBuffer(b)
+	}
 	return c.createImage(queryString(&opts), input, w)
+}
+
+func isUrl(u string) bool {
+	p, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+	return p.Scheme == "http" || p.Scheme == "https"
 }

@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -349,5 +350,43 @@ func TestImportImageDoesNotPassesStdinIfSourceIsNotDash(t *testing.T) {
 	}
 	if string(body) != "" {
 		t.Errorf("ImportImage: wrong body. Want nothing. Got %#v.", string(body))
+	}
+}
+
+func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	tarPath := "testing/data/container.tar"
+	opts := ImportImageOptions{Source: tarPath, Repository: "testimage"}
+	err := client.ImportImage(opts, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tar, err := os.Open(tarPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	tarContent, err := ioutil.ReadAll(tar)
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(tarContent, body) {
+		t.Errorf("ImportImage: wrong body. Want %#v content. Got %#v.", tarPath, body)
+	}
+}
+
+func TestIsUrl(t *testing.T) {
+	url := "http://foo.bar/"
+	result := isUrl(url)
+	if !result {
+		t.Errorf("isUrl: wrong match. Expected %#v to be a url. Got %#v.", url, result)
+	}
+	url = "/foo/bar.tar"
+	result = isUrl(url)
+	if result {
+		t.Errorf("isUrl: wrong match. Expected %#v to not be a url. Got %#v", url, result)
 	}
 }
