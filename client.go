@@ -45,6 +45,7 @@ type Client struct {
 	endpointURL *url.URL
 	client      *http.Client
 	in          io.ReadCloser
+	out         io.WriteCloser
 }
 
 // NewClient returns a Client instance ready for communication with the
@@ -54,7 +55,13 @@ func NewClient(endpoint string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{endpoint: endpoint, endpointURL: u, client: http.DefaultClient, in: os.Stdin}, nil
+	return &Client{
+		endpoint:    endpoint,
+		endpointURL: u,
+		client:      http.DefaultClient,
+		in:          os.Stdin,
+		out:         os.Stdout,
+	}, nil
 }
 
 func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) {

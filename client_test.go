@@ -31,6 +31,9 @@ func TestNewAPIClient(t *testing.T) {
 	if client.in == nil {
 		t.Errorf("Expected stdin %#v. Got %#v.", os.Stdin, client.in)
 	}
+	if client.out == nil {
+		t.Errorf("Expected stdout %#v. Got %#v.", os.Stdin, client.in)
+	}
 }
 
 func TestNewClientInvalidEndpoint(t *testing.T) {
