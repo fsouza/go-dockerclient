@@ -20,9 +20,16 @@ func newTestClient(rt *FakeRoundTripper) Client {
 	client := Client{
 		endpoint: "http://localhost:4243",
 		client:   &http.Client{Transport: rt},
-		in:       stdinMock{bytes.NewBufferString("tar content")},
 	}
 	return client
+}
+
+type stdoutMock struct {
+	*bytes.Buffer
+}
+
+func (m stdoutMock) Close() error {
+	return nil
 }
 
 type stdinMock struct {
@@ -306,7 +313,11 @@ func TestImportImageFromUrl(t *testing.T) {
 
 func TestImportImageFromStdin(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	client := Client{
+		endpoint: "http://localhost:4243",
+		client:   &http.Client{Transport: fakeRT},
+		in:       stdinMock{bytes.NewBufferString("tar content")},
+	}
 	var buf bytes.Buffer
 	opts := ImportImageOptions{Source: "-", Repository: "testimage"}
 	err := client.ImportImage(opts, &buf)
