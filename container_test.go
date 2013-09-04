@@ -52,12 +52,7 @@ func TestListContainers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: jsonContainers, status: http.StatusOK},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: jsonContainers, status: http.StatusOK})
 	containers, err := client.ListContainers(ListContainersOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -80,13 +75,8 @@ func TestListContainersParams(t *testing.T) {
 			map[string][]string{"all": {"1"}, "limit": {"10"}, "since": {"adf9983"}, "before": {"abdeef"}},
 		},
 	}
-	fakeRT := FakeRoundTripper{message: "[]", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &fakeRT,
-		},
-	}
+	fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	u, _ := url.Parse(client.getURL("/containers/json"))
 	for _, tt := range tests {
 		client.ListContainers(tt.input)
@@ -113,12 +103,7 @@ func TestListContainersFailure(t *testing.T) {
 		{500, "internal server error"},
 	}
 	for _, tt := range tests {
-		client := Client{
-			endpoint: "http://localhost:4243",
-			client: &http.Client{
-				Transport: &FakeRoundTripper{message: tt.message, status: tt.status},
-			},
-		}
+		client := newTestClient(&FakeRoundTripper{message: tt.message, status: tt.status})
 		expected := Error{Status: tt.status, Message: tt.message}
 		containers, err := client.ListContainers(ListContainersOptions{})
 		if !reflect.DeepEqual(expected, *err.(*Error)) {
@@ -181,11 +166,8 @@ func TestInspectContainer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fakeRT := FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c678"
 	container, err := client.InspectContainer(id)
 	if err != nil {
@@ -201,12 +183,7 @@ func TestInspectContainer(t *testing.T) {
 }
 
 func TestInspectContainerFailure(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "server error", status: 500},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "server error", status: 500})
 	expected := Error{Status: 500, Message: "server error"}
 	container, err := client.InspectContainer("abe033")
 	if container != nil {
@@ -218,12 +195,7 @@ func TestInspectContainerFailure(t *testing.T) {
 }
 
 func TestInspectContainerNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: 404},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: 404})
 	container, err := client.InspectContainer("abe033")
 	if container != nil {
 		t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)
@@ -244,11 +216,8 @@ func TestCreateContainer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fakeRT := FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	config := docker.Config{AttachStdout: true, AttachStdin: true}
 	container, err := client.CreateContainer(&config)
 	if err != nil {
@@ -274,12 +243,7 @@ func TestCreateContainer(t *testing.T) {
 }
 
 func TestCreateContainerImageNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "No such image", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "No such image", status: http.StatusNotFound})
 	config := docker.Config{AttachStdout: true, AttachStdin: true}
 	container, err := client.CreateContainer(&config)
 	if container != nil {
@@ -291,11 +255,8 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 }
 
 func TestStartContainer(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.StartContainer(id)
 	if err != nil {
@@ -316,12 +277,7 @@ func TestStartContainer(t *testing.T) {
 }
 
 func TestStartContainerNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.StartContainer("a2344")
 	expected := &NoSuchContainer{ID: "a2344"}
 	if !reflect.DeepEqual(err, expected) {
@@ -330,11 +286,8 @@ func TestStartContainerNotFound(t *testing.T) {
 }
 
 func TestStopContainer(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.StopContainer(id, 10)
 	if err != nil {
@@ -351,12 +304,7 @@ func TestStopContainer(t *testing.T) {
 }
 
 func TestStopContainerNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.StopContainer("a2334", 10)
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -365,11 +313,8 @@ func TestStopContainerNotFound(t *testing.T) {
 }
 
 func TestRestartContainer(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.RestartContainer(id, 10)
 	if err != nil {
@@ -386,12 +331,7 @@ func TestRestartContainer(t *testing.T) {
 }
 
 func TestRestartContainerNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.RestartContainer("a2334", 10)
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -400,11 +340,8 @@ func TestRestartContainerNotFound(t *testing.T) {
 }
 
 func TestKillContainer(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.KillContainer(id)
 	if err != nil {
@@ -421,12 +358,7 @@ func TestKillContainer(t *testing.T) {
 }
 
 func TestKillContainerNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.KillContainer("a2334")
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -435,11 +367,8 @@ func TestKillContainerNotFound(t *testing.T) {
 }
 
 func TestRemoveContainer(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: "", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.RemoveContainer(id)
 	if err != nil {
@@ -456,12 +385,7 @@ func TestRemoveContainer(t *testing.T) {
 }
 
 func TestRemoveContainerNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.RemoveContainer("a2334")
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -470,11 +394,8 @@ func TestRemoveContainerNotFound(t *testing.T) {
 }
 
 func TestWaitContainer(t *testing.T) {
-	fakeRT := FakeRoundTripper{message: `{"StatusCode": 56}`, status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	fakeRT := &FakeRoundTripper{message: `{"StatusCode": 56}`, status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	status, err := client.WaitContainer(id)
 	if err != nil {
@@ -494,12 +415,7 @@ func TestWaitContainer(t *testing.T) {
 }
 
 func TestWaitContainerNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	_, err := client.WaitContainer("a2334")
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -509,12 +425,7 @@ func TestWaitContainerNotFound(t *testing.T) {
 
 func TestCommitContainer(t *testing.T) {
 	response := `{"Id":"596069db4bf5"}`
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: response, status: http.StatusOK},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: response, status: http.StatusOK})
 	id := "596069db4bf5"
 	image, err := client.CommitContainer(CommitContainerOptions{})
 	if err != nil {
@@ -543,13 +454,8 @@ func TestCommitContainerParams(t *testing.T) {
 			map[string][]string{"container": {"44c004db4b17"}, "run": {string(b)}},
 		},
 	}
-	fakeRT := FakeRoundTripper{message: "[]", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client: &http.Client{
-			Transport: &fakeRT,
-		},
-	}
+	fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	u, _ := url.Parse(client.getURL("/commit"))
 	for _, tt := range tests {
 		client.CommitContainer(tt.input)
@@ -568,12 +474,7 @@ func TestCommitContainerParams(t *testing.T) {
 }
 
 func TestCommitContainerFailure(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusInternalServerError},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusInternalServerError})
 	_, err := client.CommitContainer(CommitContainerOptions{})
 	if err == nil {
 		t.Error("Expected non-nil error, got <nil>.")
@@ -581,12 +482,7 @@ func TestCommitContainerFailure(t *testing.T) {
 }
 
 func TestCommitContainerNotFound(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4343",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "no such container", status: http.StatusNotFound},
-		},
-	}
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	_, err := client.CommitContainer(CommitContainerOptions{})
 	expected := &NoSuchContainer{ID: ""}
 	if !reflect.DeepEqual(err, expected) {
