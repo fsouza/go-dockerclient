@@ -594,12 +594,8 @@ func TestNoSuchContainerError(t *testing.T) {
 func TestExportContainer(t *testing.T) {
 	content := "exported container tar content"
 	out := stdoutMock{bytes.NewBufferString(content)}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: &FakeRoundTripper{status: http.StatusOK}},
-		out:      out,
-	}
-	err := client.ExportContainer("4fa6e0f0c678")
+	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	err := client.ExportContainer("4fa6e0f0c678", out)
 	if err != nil {
 		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
 	}
@@ -610,7 +606,8 @@ func TestExportContainer(t *testing.T) {
 
 func TestExportContainerNoId(t *testing.T) {
 	client := Client{}
-	err := client.ExportContainer("")
+	out := stdoutMock{bytes.NewBufferString("")}
+	err := client.ExportContainer("", out)
 	if err != (NoSuchContainer{}) {
 		t.Errorf("ExportContainer: wrong error. Want %#v. Got %#v.", NoSuchContainer{}, err)
 	}
