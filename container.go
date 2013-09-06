@@ -262,7 +262,7 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 // and prints the exported contents to stdout.
 //
 // see http://goo.gl/Lqk0FZ for more details.
-func (c *Client) ExportContainer(id string, out io.WriteCloser) error {
+func (c *Client) ExportContainer(id string, out io.Writer) error {
 	if id == "" {
 		return NoSuchContainer{ID: id}
 	}
