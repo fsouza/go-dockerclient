@@ -107,7 +107,7 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 				Command: fmt.Sprintf("%s %s", container.Path, strings.Join(container.Args, " ")),
 				Created: container.Created.Unix(),
 				Status:  container.State.String(),
-				Ports:   container.NetworkSettings.PortMappingHuman(),
+				Ports:   container.NetworkSettings.PortMappingAPI(),
 			}
 		}
 	}

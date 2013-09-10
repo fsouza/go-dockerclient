@@ -98,7 +98,7 @@ func TestListContainers(t *testing.T) {
 			Command: strings.Join(container.Config.Cmd, " "),
 			Created: container.Created.Unix(),
 			Status:  container.State.String(),
-			Ports:   container.NetworkSettings.PortMappingHuman(),
+			Ports:   container.NetworkSettings.PortMappingAPI(),
 		}
 	}
 	var got []docker.APIContainers
