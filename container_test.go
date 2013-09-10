@@ -23,6 +23,7 @@ func TestListContainers(t *testing.T) {
              "Image": "base:latest",
              "Command": "echo 1",
              "Created": 1367854155,
+             "Ports":[{"PrivatePort": 2222, "PublicPort": 3333, "Type": "tcp"}],
              "Status": "Exit 0"
      },
      {
@@ -30,6 +31,7 @@ func TestListContainers(t *testing.T) {
              "Image": "base:latest",
              "Command": "echo 222222",
              "Created": 1367854155,
+             "Ports":[{"PrivatePort": 2222, "PublicPort": 3333, "Type": "tcp"}],
              "Status": "Exit 0"
      },
      {
@@ -37,12 +39,14 @@ func TestListContainers(t *testing.T) {
              "Image": "base:latest",
              "Command": "echo 3333333333333333",
              "Created": 1367854154,
+             "Ports":[{"PrivatePort": 2221, "PublicPort": 3331, "Type": "tcp"}],
              "Status": "Exit 0"
      },
      {
              "Id": "4cb07b47f9fb",
              "Image": "base:latest",
              "Command": "echo 444444444444444444444444444444444",
+             "Ports":[{"PrivatePort": 2223, "PublicPort": 3332, "Type": "tcp"}],
              "Created": 1367854152,
              "Status": "Exit 0"
      }
