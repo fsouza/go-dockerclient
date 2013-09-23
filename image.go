@@ -160,6 +160,7 @@ func (c *Client) ImportImage(opts ImportImageOptions, w io.Writer) error {
 		}
 		b, err := ioutil.ReadAll(f)
 		input = bytes.NewBuffer(b)
+		opts.Source = "-"
 	}
 	return c.createImage(queryString(&opts), input, w)
 }

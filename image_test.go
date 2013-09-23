@@ -389,6 +389,24 @@ func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T)
 	}
 }
 
+func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	tarPath := "testing/data/container.tar"
+	opts := ImportImageOptions{Source: tarPath, Repository: "testimage"}
+	err := client.ImportImage(opts, &buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := map[string][]string{"fromSrc": {"-"}, "repository": {opts.Repository}}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
 func TestIsUrl(t *testing.T) {
 	url := "http://foo.bar/"
 	result := isUrl(url)
