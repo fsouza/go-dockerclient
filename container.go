@@ -84,9 +84,8 @@ func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, erro
 // StartContainer starts a container, returning an errror in case of failure.
 //
 // See http://goo.gl/y5GZlE for more details.
-func (c *Client) StartContainer(id string) error {
+func (c *Client) StartContainer(id string, hostConfig *docker.HostConfig) error {
 	path := "/containers/" + id + "/start"
-	hostConfig := &docker.HostConfig{}
 	_, status, err := c.do("POST", path, hostConfig)
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
