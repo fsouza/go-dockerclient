@@ -262,7 +262,7 @@ func TestStartContainer(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
-	err := client.StartContainer(id)
+	err := client.StartContainer(id, &docker.HostConfig{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -282,7 +282,7 @@ func TestStartContainer(t *testing.T) {
 
 func TestStartContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
-	err := client.StartContainer("a2344")
+	err := client.StartContainer("a2344", &docker.HostConfig{})
 	expected := &NoSuchContainer{ID: "a2344"}
 	if !reflect.DeepEqual(err, expected) {
 		t.Errorf("StartContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
