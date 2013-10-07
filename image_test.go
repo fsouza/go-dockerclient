@@ -304,7 +304,7 @@ func TestImportImageFromUrl(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"fromSrc": {opts.Source}, "repository": {opts.Repository}}
+	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
@@ -325,7 +325,7 @@ func TestImportImageFromStdin(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"fromSrc": {opts.Source}, "repository": {opts.Repository}}
+	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
@@ -350,7 +350,7 @@ func TestImportImageDoesNotPassesStdinIfSourceIsNotDash(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"fromSrc": {opts.Source}, "repository": {opts.Repository}}
+	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
@@ -400,7 +400,7 @@ func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"fromSrc": {"-"}, "repository": {opts.Repository}}
+	expected := map[string][]string{"fromSrc": {"-"}, "repo": {opts.Repository}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)

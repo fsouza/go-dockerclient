@@ -137,7 +137,7 @@ func (c *Client) createImage(qs string, in io.Reader, w io.Writer) error {
 //
 // See http://goo.gl/PhBKnS for more details.
 type ImportImageOptions struct {
-	Repository string
+	Repository string `qs:"repo"`
 	Source     string `qs:"fromSrc"`
 }
 
