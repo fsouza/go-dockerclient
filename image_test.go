@@ -299,7 +299,7 @@ func TestImportImageFromUrl(t *testing.T) {
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	opts := ImportImageOptions{Source: "http://mycompany.com/file.tar", Repository: "testimage"}
-	err := client.ImportImage(opts, &buf)
+	err := client.ImportImage(opts, nil, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,16 +311,16 @@ func TestImportImageFromUrl(t *testing.T) {
 	}
 }
 
-func TestImportImageFromStdin(t *testing.T) {
+func TestImportImageFromInput(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := Client{
 		endpoint: "http://localhost:4243",
 		client:   &http.Client{Transport: fakeRT},
-		in:       stdinMock{bytes.NewBufferString("tar content")},
 	}
+	in := bytes.NewBufferString("tar content")
 	var buf bytes.Buffer
 	opts := ImportImageOptions{Source: "-", Repository: "testimage"}
-	err := client.ImportImage(opts, &buf)
+	err := client.ImportImage(opts, in, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -340,12 +340,13 @@ func TestImportImageFromStdin(t *testing.T) {
 	}
 }
 
-func TestImportImageDoesNotPassesStdinIfSourceIsNotDash(t *testing.T) {
+func TestImportImageDoesNotPassesInputIfSourceIsNotDash(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
+	in := bytes.NewBufferString("foo")
 	opts := ImportImageOptions{Source: "http://test.com/container.tar", Repository: "testimage"}
-	err := client.ImportImage(opts, &buf)
+	err := client.ImportImage(opts, in, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +371,7 @@ func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T)
 	var buf bytes.Buffer
 	tarPath := "testing/data/container.tar"
 	opts := ImportImageOptions{Source: tarPath, Repository: "testimage"}
-	err := client.ImportImage(opts, &buf)
+	err := client.ImportImage(opts, nil, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -395,7 +396,7 @@ func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
 	var buf bytes.Buffer
 	tarPath := "testing/data/container.tar"
 	opts := ImportImageOptions{Source: tarPath, Repository: "testimage"}
-	err := client.ImportImage(opts, &buf)
+	err := client.ImportImage(opts, nil, &buf)
 	if err != nil {
 		t.Fatal(err)
 	}

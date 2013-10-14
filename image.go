@@ -144,14 +144,13 @@ type ImportImageOptions struct {
 // ImportImage imports an image from a url, a file or stdin
 //
 // See http://goo.gl/PhBKnS for more details.
-func (c *Client) ImportImage(opts ImportImageOptions, w io.Writer) error {
+func (c *Client) ImportImage(opts ImportImageOptions, in io.Reader, out io.Writer) error {
 	if opts.Repository == "" {
 		return ErrNoSuchImage
 	}
-	var input io.Reader
-	input = c.in
+	in = in
 	if opts.Source != "-" {
-		input = nil
+		in = nil
 	}
 	if opts.Source != "-" && !isUrl(opts.Source) {
 		f, err := os.Open(opts.Source)
@@ -159,10 +158,10 @@ func (c *Client) ImportImage(opts ImportImageOptions, w io.Writer) error {
 			return err
 		}
 		b, err := ioutil.ReadAll(f)
-		input = bytes.NewBuffer(b)
+		in = bytes.NewBuffer(b)
 		opts.Source = "-"
 	}
-	return c.createImage(queryString(&opts), input, w)
+	return c.createImage(queryString(&opts), in, out)
 }
 
 func isUrl(u string) bool {
