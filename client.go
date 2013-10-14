@@ -44,7 +44,6 @@ type Client struct {
 	endpoint    string
 	endpointURL *url.URL
 	client      *http.Client
-	in          io.ReadCloser
 	out         io.WriteCloser
 }
 
@@ -59,7 +58,6 @@ func NewClient(endpoint string) (*Client, error) {
 		endpoint:    endpoint,
 		endpointURL: u,
 		client:      http.DefaultClient,
-		in:          os.Stdin,
 		out:         os.Stdout,
 	}, nil
 }

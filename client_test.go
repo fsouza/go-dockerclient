@@ -28,11 +28,8 @@ func TestNewAPIClient(t *testing.T) {
 	if client.client != http.DefaultClient {
 		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.client)
 	}
-	if client.in == nil {
-		t.Errorf("Expected stdin %#v. Got %#v.", os.Stdin, client.in)
-	}
 	if client.out == nil {
-		t.Errorf("Expected stdout %#v. Got %#v.", os.Stdin, client.in)
+		t.Errorf("Expected stdout %#v. Got %#v.", os.Stdout, client.out)
 	}
 }
 
