@@ -25,10 +25,7 @@ import (
 	"strings"
 )
 
-const (
-	apiVersion = "v1.5"
-	userAgent  = "go-dockerclient"
-)
+const userAgent = "go-dockerclient"
 
 var (
 	// ErrInvalidEndpoint is returned when the endpoint is not a valid HTTP URL.
@@ -191,7 +188,7 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 }
 
 func (c *Client) getURL(path string) string {
-	return fmt.Sprintf("%s/%s%s", strings.TrimRight(c.endpoint, "/"), apiVersion, path)
+	return fmt.Sprintf("%s%s", strings.TrimRight(c.endpoint, "/"), path)
 }
 
 type jsonMessage struct {

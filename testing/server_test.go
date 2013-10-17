@@ -73,7 +73,7 @@ func TestHandleWithHook(t *testing.T) {
 	server, _ := NewServer(func(*http.Request) { called = true })
 	defer server.Stop()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("GET", "/v1.1/containers/json?all=1", nil)
+	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
 	server.ServeHTTP(recorder, request)
 	if !called {
 		t.Error("ServeHTTP did not call the hook function.")
@@ -85,7 +85,7 @@ func TestListContainers(t *testing.T) {
 	addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("GET", "/v1.1/containers/json?all=1", nil)
+	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("ListContainers: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
@@ -116,7 +116,7 @@ func TestListRunningContainers(t *testing.T) {
 	addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("GET", "/v1.1/containers/json?all=0", nil)
+	request, _ := http.NewRequest("GET", "/containers/json?all=0", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("ListRunningContainers: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
@@ -139,7 +139,7 @@ func TestCreateContainer(t *testing.T) {
 	body := `{"Hostname":"", "User":"", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
 "PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"],
 "Dns":null, "Image":"base", "Volumes":{}, "VolumesFrom":""}`
-	request, _ := http.NewRequest("POST", "/v1.1/containers/create", strings.NewReader(body))
+	request, _ := http.NewRequest("POST", "/containers/create", strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusCreated {
 		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusCreated, recorder.Code)
@@ -162,7 +162,7 @@ func TestCreateContainerInvalidBody(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/containers/create", strings.NewReader("whaaaaaat---"))
+	request, _ := http.NewRequest("POST", "/containers/create", strings.NewReader("whaaaaaat---"))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
 		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
@@ -176,7 +176,7 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 	body := `{"Hostname":"", "User":"", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
 "PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"],
 "Dns":null, "Image":"base", "Volumes":{}, "VolumesFrom":""}`
-	request, _ := http.NewRequest("POST", "/v1.1/containers/create", strings.NewReader(body))
+	request, _ := http.NewRequest("POST", "/containers/create", strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
@@ -188,7 +188,7 @@ func TestCommitContainer(t *testing.T) {
 	addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/commit?container="+server.containers[0].ID, nil)
+	request, _ := http.NewRequest("POST", "/commit?container="+server.containers[0].ID, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("CommitContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
@@ -207,7 +207,7 @@ func TestCommitContainerComplete(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	queryString := "container=" + server.containers[0].ID + "&repo=tsuru/python&m=saving&author=developers"
 	queryString += `&run={"Cmd": ["cat", "/world"],"PortSpecs":["22"]}`
-	request, _ := http.NewRequest("POST", "/v1.1/commit?"+queryString, nil)
+	request, _ := http.NewRequest("POST", "/commit?"+queryString, nil)
 	server.ServeHTTP(recorder, request)
 	image := server.images[0]
 	if image.Parent != server.containers[0].Image {
@@ -242,7 +242,7 @@ func TestCommitContainerInvalidRun(t *testing.T) {
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/commit?container="+server.containers[0].ID+"&run=abc---", nil)
+	request, _ := http.NewRequest("POST", "/commit?container="+server.containers[0].ID+"&run=abc---", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
 		t.Errorf("CommitContainer. Wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
@@ -253,7 +253,7 @@ func TestCommitContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/commit?container=abc123", nil)
+	request, _ := http.NewRequest("POST", "/commit?container=abc123", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Errorf("CommitContainer. Wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
@@ -265,7 +265,7 @@ func TestInspectContainer(t *testing.T) {
 	addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s/json", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/json", server.containers[0].ID)
 	request, _ := http.NewRequest("GET", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -297,7 +297,7 @@ func TestInspectContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("GET", "/v1.1/containers/abc123/json", nil)
+	request, _ := http.NewRequest("GET", "/containers/abc123/json", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Errorf("InspectContainer: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
@@ -309,7 +309,7 @@ func TestStartContainer(t *testing.T) {
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s/start", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -324,7 +324,7 @@ func TestStartContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := "/v1.1/containers/abc123/start"
+	path := "/containers/abc123/start"
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
@@ -338,7 +338,7 @@ func TestStartContainerAlreadyRunning(t *testing.T) {
 	server.containers[0].State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s/start", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
@@ -352,7 +352,7 @@ func TestStopContainer(t *testing.T) {
 	server.containers[0].State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s/stop", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/stop", server.containers[0].ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
@@ -367,7 +367,7 @@ func TestStopContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := "/v1.1/containers/abc123/stop"
+	path := "/containers/abc123/stop"
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
@@ -380,7 +380,7 @@ func TestStopContainerNotRunning(t *testing.T) {
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s/stop", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/stop", server.containers[0].ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
@@ -394,7 +394,7 @@ func TestWaitContainer(t *testing.T) {
 	server.containers[0].State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s/wait", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/wait", server.containers[0].ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	go func() {
 		time.Sleep(200e6)
@@ -416,7 +416,7 @@ func TestWaitContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := "/v1.1/containers/abc123/wait"
+	path := "/containers/abc123/wait"
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
@@ -430,7 +430,7 @@ func TestAttachContainer(t *testing.T) {
 	server.containers[0].State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s/attach?logs=1", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/attach?logs=1", server.containers[0].ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	lines := []string{
@@ -448,7 +448,7 @@ func TestAttachContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := "/v1.1/containers/abc123/attach?logs=1"
+	path := "/containers/abc123/attach?logs=1"
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
@@ -461,7 +461,7 @@ func TestRemoveContainer(t *testing.T) {
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s", server.containers[0].ID)
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
@@ -476,7 +476,7 @@ func TestRemoveContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/abc123")
+	path := fmt.Sprintf("/containers/abc123")
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
@@ -490,7 +490,7 @@ func TestRemoveContainerRunning(t *testing.T) {
 	server.containers[0].State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/containers/%s", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s", server.containers[0].ID)
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusInternalServerError {
@@ -505,7 +505,7 @@ func TestPullImage(t *testing.T) {
 	server := DockerServer{imgIDs: make(map[string]string)}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/images/create?fromImage=base", nil)
+	request, _ := http.NewRequest("POST", "/images/create?fromImage=base", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("PullImage: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
@@ -522,7 +522,7 @@ func TestPushImage(t *testing.T) {
 	server := DockerServer{imgIDs: map[string]string{"tsuru/python": "a123"}}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/images/tsuru/python/push", nil)
+	request, _ := http.NewRequest("POST", "/images/tsuru/python/push", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("PushImage: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
@@ -533,7 +533,7 @@ func TestPushImageNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/v1.1/images/tsuru/python/push", nil)
+	request, _ := http.NewRequest("POST", "/images/tsuru/python/push", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Errorf("PushImage: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
@@ -606,7 +606,7 @@ func TestListImages(t *testing.T) {
 	addImages(&server, 2, false)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("GET", "/v1.1/images/json?all=1", nil)
+	request, _ := http.NewRequest("GET", "/images/json?all=1", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("ListImages: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
@@ -633,7 +633,7 @@ func TestRemoveImage(t *testing.T) {
 	addImages(&server, 1, false)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/v1.1/images/%s", server.images[0].ID)
+	path := fmt.Sprintf("/images/%s", server.images[0].ID)
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
@@ -649,7 +649,7 @@ func TestRemoveImageByName(t *testing.T) {
 	addImages(&server, 1, true)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := "/v1.1/images/docker/python-" + server.images[0].ID
+	path := "/images/docker/python-" + server.images[0].ID
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {

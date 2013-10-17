@@ -57,19 +57,19 @@ func NewServer(hook func(*http.Request)) (*DockerServer, error) {
 
 func (s *DockerServer) buildMuxer() {
 	s.mux = mux.NewRouter()
-	s.mux.Path("/v{version:[0-9.]+}/commit").Methods("POST").HandlerFunc(s.commitContainer)
-	s.mux.Path("/v{version:[0-9.]+}/containers/json").Methods("GET").HandlerFunc(s.listContainers)
-	s.mux.Path("/v{version:[0-9.]+}/containers/create").Methods("POST").HandlerFunc(s.createContainer)
-	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/json").Methods("GET").HandlerFunc(s.inspectContainer)
-	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/start").Methods("POST").HandlerFunc(s.startContainer)
-	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/stop").Methods("POST").HandlerFunc(s.stopContainer)
-	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/wait").Methods("POST").HandlerFunc(s.waitContainer)
-	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}/attach").Methods("POST").HandlerFunc(s.attachContainer)
-	s.mux.Path("/v{version:[0-9.]+}/containers/{id:.*}").Methods("DELETE").HandlerFunc(s.removeContainer)
-	s.mux.Path("/v{version:[0-9.]+}/images/create").Methods("POST").HandlerFunc(s.pullImage)
-	s.mux.Path("/v{version:[0-9.]+}/images/json").Methods("GET").HandlerFunc(s.listImages)
-	s.mux.Path("/v{version:[0-9.]+}/images/{id:.*}").Methods("DELETE").HandlerFunc(s.removeImage)
-	s.mux.Path("/v{version:[0-9.]+}/images/{name:.*}/push").Methods("POST").HandlerFunc(s.pushImage)
+	s.mux.Path("/commit").Methods("POST").HandlerFunc(s.commitContainer)
+	s.mux.Path("/containers/json").Methods("GET").HandlerFunc(s.listContainers)
+	s.mux.Path("/containers/create").Methods("POST").HandlerFunc(s.createContainer)
+	s.mux.Path("/containers/{id:.*}/json").Methods("GET").HandlerFunc(s.inspectContainer)
+	s.mux.Path("/containers/{id:.*}/start").Methods("POST").HandlerFunc(s.startContainer)
+	s.mux.Path("/containers/{id:.*}/stop").Methods("POST").HandlerFunc(s.stopContainer)
+	s.mux.Path("/containers/{id:.*}/wait").Methods("POST").HandlerFunc(s.waitContainer)
+	s.mux.Path("/containers/{id:.*}/attach").Methods("POST").HandlerFunc(s.attachContainer)
+	s.mux.Path("/containers/{id:.*}").Methods("DELETE").HandlerFunc(s.removeContainer)
+	s.mux.Path("/images/create").Methods("POST").HandlerFunc(s.pullImage)
+	s.mux.Path("/images/json").Methods("GET").HandlerFunc(s.listImages)
+	s.mux.Path("/images/{id:.*}").Methods("DELETE").HandlerFunc(s.removeImage)
+	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.pushImage)
 }
 
 // Stop stops the server.
