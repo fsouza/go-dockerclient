@@ -284,6 +284,7 @@ func TestInspectContainer(t *testing.T) {
 		t.Errorf("InspectContainer: wrong value. Want %#v. Got %#v.", *expected, got)
 	}
 	got.State.StartedAt = expected.State.StartedAt
+	got.State.FinishedAt = expected.State.FinishedAt
 	got.Config = expected.Config
 	got.Created = expected.Created
 	got.NetworkSettings = expected.NetworkSettings
