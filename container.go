@@ -61,12 +61,20 @@ func (c *Client) InspectContainer(id string) (*docker.Container, error) {
 	return &container, nil
 }
 
+// CreateContainerOptions specify parameters to the CreateContainer function.
+//
+// See http://goo.gl/WPPYtB for more details.
+type CreateContainerOptions struct {
+	Name string
+}
+
 // CreateContainer creates a new container, returning the container instance,
 // or an error in case of failure.
 //
 // See http://goo.gl/tjihUc for more details.
-func (c *Client) CreateContainer(config *docker.Config) (*docker.Container, error) {
-	body, status, err := c.do("POST", "/containers/create", config)
+func (c *Client) CreateContainer(opts CreateContainerOptions, config *docker.Config) (*docker.Container, error) {
+	path := "/containers/create?" + queryString(opts)
+	body, status, err := c.do("POST", path, config)
 	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
 	}
