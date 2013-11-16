@@ -223,7 +223,8 @@ func TestCreateContainer(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	config := docker.Config{AttachStdout: true, AttachStdin: true}
-	container, err := client.CreateContainer(&config)
+	opts := CreateContainerOptions{Name: "TestCreateContainer"}
+	container, err := client.CreateContainer(opts, &config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +250,7 @@ func TestCreateContainer(t *testing.T) {
 func TestCreateContainerImageNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "No such image", status: http.StatusNotFound})
 	config := docker.Config{AttachStdout: true, AttachStdin: true}
-	container, err := client.CreateContainer(&config)
+	container, err := client.CreateContainer(CreateContainerOptions{}, &config)
 	if container != nil {
 		t.Errorf("CreateContainer: expected <nil> container, got %#v.", container)
 	}
