@@ -31,6 +31,17 @@ func TestNewAPIClient(t *testing.T) {
 	if client.out == nil {
 		t.Errorf("Expected stdout %#v. Got %#v.", os.Stdout, client.out)
 	}
+
+	// test unix socket endpoints
+	endpoint = "unix:///var/run/docker.sock"
+	client, err = NewClient(endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	}
+
 }
 
 func TestNewClientInvalidEndpoint(t *testing.T) {
@@ -60,6 +71,7 @@ func TestGetURL(t *testing.T) {
 		{"http://localhost:4243", "/", "http://localhost:4243/"},
 		{"http://localhost:4243", "/containers/ps", "http://localhost:4243/containers/ps"},
 		{"http://localhost:4243/////", "/", "http://localhost:4243/"},
+		{"unix:///var/run/docker.socket", "/", "unix:///var/run/docker.socket/"},
 	}
 	var client Client
 	for _, tt := range tests {
