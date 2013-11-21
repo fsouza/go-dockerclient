@@ -316,10 +316,7 @@ func TestImportImageFromUrl(t *testing.T) {
 
 func TestImportImageFromInput(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243",
-		client:   &http.Client{Transport: fakeRT},
-	}
+	client := newTestClient(fakeRT)
 	in := bytes.NewBufferString("tar content")
 	var buf bytes.Buffer
 	opts := ImportImageOptions{Source: "-", Repository: "testimage"}

@@ -19,10 +19,7 @@ func TestVersion(t *testing.T) {
      "GoVersion":"go1.0.3"
 }`
 	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:4243/",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	client := newTestClient(&fakeRT)
 	expected := docker.APIVersion{
 		Version:   "0.2.2",
 		GitCommit: "5a2a5cc+CHANGES",
@@ -46,12 +43,8 @@ func TestVersion(t *testing.T) {
 }
 
 func TestVersionError(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4242",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "internal error", status: http.StatusInternalServerError},
-		},
-	}
+	fakeRT := &FakeRoundTripper{message: "internal error", status: http.StatusInternalServerError}
+	client := newTestClient(fakeRT)
 	version, err := client.Version()
 	if version != nil {
 		t.Errorf("Version(): expected <nil> value, got %#v.", version)
@@ -72,10 +65,7 @@ func TestInfo(t *testing.T) {
      "SwapLimit":false
 }`
 	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
-	client := Client{
-		endpoint: "http://localhost:3232",
-		client:   &http.Client{Transport: &fakeRT},
-	}
+	client := newTestClient(&fakeRT)
 	expected := docker.APIInfo{
 		Containers:  11,
 		Images:      16,
@@ -103,12 +93,8 @@ func TestInfo(t *testing.T) {
 }
 
 func TestInfoError(t *testing.T) {
-	client := Client{
-		endpoint: "http://localhost:4242",
-		client: &http.Client{
-			Transport: &FakeRoundTripper{message: "internal error", status: http.StatusInternalServerError},
-		},
-	}
+	fakeRT := &FakeRoundTripper{message: "internal error", status: http.StatusInternalServerError}
+	client := newTestClient(fakeRT)
 	version, err := client.Info()
 	if version != nil {
 		t.Errorf("Info(): expected <nil> value, got %#v.", version)
