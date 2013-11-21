@@ -71,7 +71,7 @@ func TestGetURL(t *testing.T) {
 		{"http://localhost:4243", "/", "http://localhost:4243/"},
 		{"http://localhost:4243", "/containers/ps", "http://localhost:4243/containers/ps"},
 		{"http://localhost:4243/////", "/", "http://localhost:4243/"},
-		{"unix:///var/run/docker.socket", "/", "unix:///var/run/docker.socket/"},
+		{"unix:///var/run/docker.socket", "/containers", "/containers"},
 	}
 	for _, tt := range tests {
 		client, _ := NewClient(tt.endpoint)
@@ -155,4 +155,8 @@ type dumb struct {
 	Y      float64
 	Z      int     `qs:"zee"`
 	Person *person `qs:"p"`
+}
+
+type fakeEndpointURL struct {
+	Scheme string
 }

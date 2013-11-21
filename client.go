@@ -79,18 +79,19 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 		req.Header.Set("Content-Type", "plain/text")
 	}
 	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
-	if protocol != "unix" {
-		protocol = "tcp"
-		address = c.endpointURL.Host
+	var resp *http.Response
+	if protocol == "unix" {
+		address := c.endpointURL.Path
+		dial, err := net.Dial(protocol, address)
+		if err != nil {
+			return nil, -1, err
+		}
+		clientconn := httputil.NewClientConn(dial, nil)
+		resp, err = clientconn.Do(req)
+		defer clientconn.Close()
+	} else {
+		resp, err = c.client.Do(req)
 	}
-	dial, err := net.Dial(protocol, address)
-	if err != nil {
-		return nil, -1, err
-	}
-	clientconn := httputil.NewClientConn(dial, nil)
-	resp, err := clientconn.Do(req)
-	defer clientconn.Close()
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return nil, -1, ErrConnectionRefused
