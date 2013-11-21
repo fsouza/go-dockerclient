@@ -73,8 +73,8 @@ func TestGetURL(t *testing.T) {
 		{"http://localhost:4243/////", "/", "http://localhost:4243/"},
 		{"unix:///var/run/docker.socket", "/", "unix:///var/run/docker.socket/"},
 	}
-	var client Client
 	for _, tt := range tests {
+		client, _ := NewClient(tt.endpoint)
 		client.endpoint = tt.endpoint
 		got := client.getURL(tt.path)
 		if got != tt.expected {

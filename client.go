@@ -78,7 +78,19 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	} else if method == "POST" {
 		req.Header.Set("Content-Type", "plain/text")
 	}
-	resp, err := c.client.Do(req)
+	protocol := c.endpointURL.Scheme
+	address := c.endpointURL.Path
+	if protocol != "unix" {
+		protocol = "tcp"
+		address = c.endpointURL.Host
+	}
+	dial, err := net.Dial(protocol, address)
+	if err != nil {
+		return nil, -1, err
+	}
+	clientconn := httputil.NewClientConn(dial, nil)
+	resp, err := clientconn.Do(req)
+	defer clientconn.Close()
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return nil, -1, ErrConnectionRefused
@@ -192,7 +204,11 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 }
 
 func (c *Client) getURL(path string) string {
-	return fmt.Sprintf("%s%s", strings.TrimRight(c.endpoint, "/"), path)
+	urlStr := strings.TrimRight(c.endpoint, "/")
+	if c.endpointURL.Scheme == "unix" {
+		urlStr = ""
+	}
+	return fmt.Sprintf("%s%s", urlStr, path)
 }
 
 type jsonMessage struct {
