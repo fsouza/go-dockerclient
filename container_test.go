@@ -617,3 +617,21 @@ func TestExportContainerNoId(t *testing.T) {
 		t.Errorf("ExportContainer: wrong error. Want %#v. Got %#v.", NoSuchContainer{}, err)
 	}
 }
+
+func TestCopyContainer(t *testing.T) {
+	content := "File content"
+	out := stdoutMock{bytes.NewBufferString(content)}
+	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	opts := CopyFromContainerOptions{
+		Container:    "a123456",
+		Resource:     "file.txt",
+		OutputStream: out,
+	}
+	err := client.CopyFromContainer(opts)
+	if err != nil {
+		t.Errorf("CopyFromContainer: caugh error %#v while copying from container, expected nil", err.Error())
+	}
+	if out.String() != content {
+		t.Errorf("CopyFromContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
+	}
+}
