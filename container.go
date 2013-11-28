@@ -154,9 +154,16 @@ func (c *Client) KillContainer(id string) error {
 
 // RemoveContainer removes a container, returning an error in case of failure.
 //
-// See http://goo.gl/PBvGdU for more details.
-func (c *Client) RemoveContainer(id string) error {
-	_, status, err := c.do("DELETE", "/containers/"+id, nil)
+// RemoveContainer takes 2 params:
+// * id: container id
+// * v: 1/True/true or 0/False/false, Remove the volumes associated to the container. Default false
+// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.7/#remove-a-container for more details.
+func (c *Client) RemoveContainer(id string, removeVolumes ...bool) error {
+	var v bool
+	if len(removeVolumes) == 1 {
+		v = removeVolumes[0]
+	}
+	_, status, err := c.do("DELETE", "/containers/"+id+"?v="+fmt.Sprint(v), nil)
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
 	}

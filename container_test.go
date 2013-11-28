@@ -389,6 +389,16 @@ func TestRemoveContainer(t *testing.T) {
 	}
 }
 
+func TestRemoveContainerAndVolumes(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+	err := client.RemoveContainer(id, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRemoveContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.RemoveContainer("a2334")
