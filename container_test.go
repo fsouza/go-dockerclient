@@ -510,6 +510,7 @@ func TestAttachToContainerLogs(t *testing.T) {
 		Stdout:       true,
 		Stderr:       true,
 		Logs:         true,
+		RawTerminal:  true,
 	}
 	err := client.AttachToContainer(opts)
 	if err != nil {
@@ -562,6 +563,52 @@ func TestAttachToContainer(t *testing.T) {
 		Stdout:       true,
 		Stderr:       true,
 		Stream:       true,
+		RawTerminal:  true,
+	}
+	err = client.AttachToContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]string{
+		"stdin":  {"1"},
+		"stdout": {"1"},
+		"stderr": {"1"},
+		"stream": {"1"},
+	}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+func TestAttachToContainerRawTerminalFalse(t *testing.T) {
+	file, err := os.OpenFile("/tmp/docker-temp-file.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	file.Write([]byte("send value"))
+	file.Seek(0, 0)
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		prefix := []byte{1, 0, 0, 0, 5, 0, 0, 0}
+		w.Write(prefix)
+		w.Write([]byte("hello"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	var stdout, stderr bytes.Buffer
+	opts := AttachToContainerOptions{
+		Container:    "a123456",
+		OutputStream: &stdout,
+		ErrorStream:  &stderr,
+		InputFile:    file,
+		Stdin:        true,
+		Stdout:       true,
+		Stderr:       true,
+		Stream:       true,
+		RawTerminal:  false,
 	}
 	err = client.AttachToContainer(opts)
 	if err != nil {

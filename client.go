@@ -187,7 +187,7 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 		if setRawTerminal {
 			_, err = io.Copy(out, br)
 		} else {
-			_, err = utils.StdCopy(out, out, br)
+			_, err = utils.StdCopy(out, errStream, br)
 		}
 		errStdout <- err
 	}()
