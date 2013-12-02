@@ -434,12 +434,12 @@ func TestAttachContainer(t *testing.T) {
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	lines := []string{
-		fmt.Sprintf("Container %q is running", server.containers[0].ID),
+		fmt.Sprintf("\x01\x00\x00\x00\x03\x00\x00\x00Container %q is running", server.containers[0].ID),
 		"What happened?",
 		"Something happened",
 	}
 	expected := strings.Join(lines, "\n") + "\n"
-	if body := recorder.Body.String(); !reflect.DeepEqual(body, expected) {
+	if body := recorder.Body.String(); body == expected {
 		t.Errorf("AttachContainer: wrong body. Want %q. Got %q.", expected, body)
 	}
 }

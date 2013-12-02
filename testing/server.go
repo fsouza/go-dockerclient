@@ -260,13 +260,20 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	msgs := []string{}
 	if container.State.Running {
-		fmt.Fprintf(w, "Container %q is running\n", container.ID)
+		msgs = append(msgs, fmt.Sprintf("Container %q is running\n", container.ID))
 	} else {
-		fmt.Fprintf(w, "Container %q is not running\n", container.ID)
+		msgs = append(msgs, fmt.Sprintf("Container %q is not running\n", container.ID))
 	}
-	fmt.Fprintln(w, "What happened?")
-	fmt.Fprintln(w, "Something happened")
+	msgs = append(msgs, "What happened?\n")
+	msgs = append(msgs, "Something happened")
+	msgLen := len(msgs)
+	prefix := []byte{1, 0, 0, 0, byte(msgLen), 0, 0, 0}
+	w.Write(prefix)
+	for _, msg := range msgs {
+		fmt.Fprintln(w, msg)
+	}
 }
 
 func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
