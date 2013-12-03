@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dotcloud/docker"
+	"github.com/dotcloud/docker/utils"
 	"github.com/gorilla/mux"
 	mathrand "math/rand"
 	"net"
@@ -260,20 +261,15 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	msgs := []string{}
+	outStream := utils.NewStdWriter(w, utils.Stdout)
+	fmt.Fprintf(outStream, "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.docker.raw-stream\r\n\r\n")
 	if container.State.Running {
-		msgs = append(msgs, fmt.Sprintf("Container %q is running\n", container.ID))
+		fmt.Fprintf(outStream, "Container %q is running\n", container.ID)
 	} else {
-		msgs = append(msgs, fmt.Sprintf("Container %q is not running\n", container.ID))
+		fmt.Fprintf(outStream, "Container %q is not running\n", container.ID)
 	}
-	msgs = append(msgs, "What happened?\n")
-	msgs = append(msgs, "Something happened")
-	msgLen := len(msgs)
-	prefix := []byte{1, 0, 0, 0, byte(msgLen), 0, 0, 0}
-	w.Write(prefix)
-	for _, msg := range msgs {
-		fmt.Fprintln(w, msg)
-	}
+	fmt.Fprintln(outStream, "What happened?")
+	fmt.Fprintln(outStream, "Something happened")
 }
 
 func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
