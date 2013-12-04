@@ -169,11 +169,12 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	portMapping := map[string]docker.PortMapping{
-		"Tcp": make(docker.PortMapping, len(config.PortSpecs)),
-	}
-	for _, p := range config.PortSpecs {
-		portMapping["Tcp"][p] = strconv.Itoa(mathrand.Int() % 65536)
+	ports := map[docker.Port][]docker.PortBinding{}
+	for port := range config.ExposedPorts {
+		ports[port] = []docker.PortBinding{{
+			HostIp: "0.0.0.0",
+			HostPort: strconv.Itoa(mathrand.Int() % 65536),
+		}}
 	}
 	container := docker.Container{
 		ID:      s.generateID(),
@@ -193,7 +194,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 			IPPrefixLen: 24,
 			Gateway:     "172.16.42.1",
 			Bridge:      "docker0",
-			PortMapping: portMapping,
+			Ports:       ports,
 		},
 	}
 	s.cMut.Lock()
