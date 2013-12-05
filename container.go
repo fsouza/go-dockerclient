@@ -166,20 +166,20 @@ func (c *Client) RemoveContainer(id string) error {
 	return nil
 }
 
-// CopyFromContainerOptions is the set of options that can be used when
-// copying files or folders from a container.
+// CopyFromContainerOptions is the set of options that can be used when copying
+// files or folders from a container.
 //
-// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.6/#copy-files-or-folders-from-a-container
-// for more details.
+// See http://goo.gl/mnxRMl for more details.
 type CopyFromContainerOptions struct {
 	Container    string
 	Resource     string
 	OutputStream io.Writer
 }
 
-// CopyFromContainer copy files or folders from a container, using a given resource.
+// CopyFromContainer copy files or folders from a container, using a given
+// resource.
 //
-// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.6/#copy-files-or-folders-from-a-container
+// See http://goo.gl/mnxRMl for more details.
 func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 	container := opts.Container
 	if container == "" {
