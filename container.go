@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/dotcloud/docker"
@@ -153,15 +154,54 @@ func (c *Client) KillContainer(id string) error {
 
 // RemoveContainer removes a container, returning an error in case of failure.
 //
-// See http://goo.gl/PBvGdU for more details.
-func (c *Client) RemoveContainer(id string) error {
-	_, status, err := c.do("DELETE", "/containers/"+id, nil)
+// RemoveContainer takes 2 params:
+// * id: container id
+// * v: 1/True/true or 0/False/false, Remove the volumes associated to the container. Default false
+// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.7/#remove-a-container for more details.
+func (c *Client) RemoveContainer(id string, removeVolumes ...bool) error {
+	var v bool
+	if len(removeVolumes) == 1 {
+		v = removeVolumes[0]
+	}
+	_, status, err := c.do("DELETE", "/containers/"+id+"?v="+fmt.Sprint(v), nil)
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
 	}
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// CopyFromContainerOptions is the set of options that can be used when
+// copying files or folders from a container.
+//
+// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.6/#copy-files-or-folders-from-a-container
+// for more details.
+type CopyFromContainerOptions struct {
+	Container    string
+	Resource     string
+	OutputStream io.Writer
+}
+
+// CopyFromContainer copy files or folders from a container, using a given resource.
+//
+// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.6/#copy-files-or-folders-from-a-container
+func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
+	container := opts.Container
+	if container == "" {
+		return &NoSuchContainer{ID: container}
+	}
+	stdout := opts.OutputStream
+	url := fmt.Sprintf("/containers/%s/copy", container)
+	body, status, err := c.do("POST", url, opts)
+	if status == http.StatusNotFound {
+		return &NoSuchContainer{ID: opts.Container}
+	}
+	if err != nil {
+		return err
+	}
+	io.Copy(stdout, bytes.NewBuffer(body))
 	return nil
 }
 
