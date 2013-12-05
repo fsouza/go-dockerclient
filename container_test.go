@@ -665,7 +665,7 @@ func TestExportContainerNoId(t *testing.T) {
 	}
 }
 
-func TestCopyContainer(t *testing.T) {
+func TestCopyFromContainer(t *testing.T) {
 	content := "File content"
 	out := stdoutMock{bytes.NewBufferString(content)}
 	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
@@ -680,5 +680,14 @@ func TestCopyContainer(t *testing.T) {
 	}
 	if out.String() != content {
 		t.Errorf("CopyFromContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
+	}
+}
+
+func TestCopyFromContainerEmptyContainer(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	err := client.CopyFromContainer(CopyFromContainerOptions{})
+	_, ok := err.(*NoSuchContainer)
+	if !ok {
+		t.Errorf("CopyFromContainer: invalid error returned. Want NoSuchContainer, got %#v.", err)
 	}
 }
