@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/dotcloud/docker"
@@ -162,6 +163,38 @@ func (c *Client) RemoveContainer(id string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// CopyFromContainerOptions is the set of options that can be used when
+// copying files or folders from a container.
+//
+// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.6/#copy-files-or-folders-from-a-container
+// for more details.
+type CopyFromContainerOptions struct {
+	Container    string
+	Resource     string
+	OutputStream io.Writer
+}
+
+// CopyFromContainer copy files or folders from a container, using a given resource.
+//
+// See http://docs.docker.io/en/latest/api/docker_remote_api_v1.6/#copy-files-or-folders-from-a-container
+func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
+	container := opts.Container
+	if container == "" {
+		return &NoSuchContainer{ID: container}
+	}
+	stdout := opts.OutputStream
+	url := fmt.Sprintf("/containers/%s/copy", container)
+	body, status, err := c.do("POST", url, opts)
+	if status == http.StatusNotFound {
+		return &NoSuchContainer{ID: opts.Container}
+	}
+	if err != nil {
+		return err
+	}
+	io.Copy(stdout, bytes.NewBuffer(body))
 	return nil
 }
 
