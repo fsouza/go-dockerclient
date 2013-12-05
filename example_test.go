@@ -10,7 +10,7 @@ import (
 	"log"
 )
 
-func ExampleAttachToContainer() {
+func ExampleClient_AttachToContainer() {
 	client, err := docker.NewClient("http://localhost:4243")
 	if err != nil {
 		log.Fatal(err)
