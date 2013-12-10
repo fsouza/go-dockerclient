@@ -17,8 +17,8 @@
 		},
 		{
 			"ImportPath": "github.com/dotcloud/docker",
-			"Comment": "v0.7.1-330-g8814c11",
-			"Rev": "8814c11b140fbcda266c5168340431044f59aa30"
+			"Comment": "master",
+			"Rev": "master"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
