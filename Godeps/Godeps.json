@@ -1,14 +1,11 @@
 {
 	"ImportPath": "github.com/fsouza/go-dockerclient",
-	"GoVersion": "devel +5b9a2c239b6d Tue Dec 10 16:10:09 2013 +0400",
-	"Packages": [
-		"./..."
-	],
+	"GoVersion": "go1.2",
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/go.net/websocket",
-			"Comment": "null-88",
-			"Rev": "55437409069bb181ad562b1ad1e5f361c44aff17"
+			"Comment": "null-99",
+			"Rev": "65926d3a7d01d26b31f8e70a799044bcecb48775"
 		},
 		{
 			"ImportPath": "code.google.com/p/gosqlite/sqlite3",
@@ -17,16 +14,16 @@
 		},
 		{
 			"ImportPath": "github.com/dotcloud/docker",
-			"Comment": "v0.7.1",
-			"Rev": "88df052197fc16f578ed0551ad654dd67bb3a39a"
+			"Comment": "v0.7.1-330-g8814c11",
+			"Rev": "8814c11b140fbcda266c5168340431044f59aa30"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
-			"Rev": "708054d61e5a2918b9f4e9700000ee611dcf03f5"
+			"Rev": "a08edd30ad9e104612741163dc087a613829a23c"
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
-			"Rev": "b08c5fcf14d01cb0c20ddf70157f54d4a2c3a38a"
+			"Rev": "9ede152210fa25c1377d33e867cb828c19316445"
 		},
 		{
 			"ImportPath": "github.com/kr/pty",
