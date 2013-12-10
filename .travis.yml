@@ -1,5 +1,10 @@
 language: go
-go: 1.1.1
+go:
+  - 1.1.2
+  - 1.2
+env:
+  - GOARCH=amd64
+  - GOARCH=386
 install:
   - sudo git clone https://git.fedorahosted.org/git/lvm2.git /usr/local/lvm2
   - pushd /usr/local/lvm2
