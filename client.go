@@ -80,7 +80,19 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 		req.Header.Set("Content-Type", "plain/text")
 	}
 	var resp *http.Response
-	resp, err = c.execRequest(req)
+	protocol := c.endpointURL.Scheme
+	address := c.endpointURL.Path
+	if protocol == "unix" {
+		dial, err := net.Dial(protocol, address)
+		if err != nil {
+			return nil, -1, err
+		}
+		clientconn := httputil.NewClientConn(dial, nil)
+		resp, err = clientconn.Do(req)
+		defer clientconn.Close()
+	} else {
+		resp, err = c.client.Do(req)
+	}
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return nil, -1, ErrConnectionRefused
@@ -111,7 +123,19 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 		req.Header.Set("Content-Type", "plain/text")
 	}
 	var resp *http.Response
-	resp, err = c.execRequest(req)
+	protocol := c.endpointURL.Scheme
+	address := c.endpointURL.Path
+	if protocol == "unix" {
+		dial, err := net.Dial(protocol, address)
+		if err != nil {
+			return err
+		}
+		clientconn := httputil.NewClientConn(dial, nil)
+		resp, err = clientconn.Do(req)
+		defer clientconn.Close()
+	} else {
+		resp, err = c.client.Do(req)
+	}
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return ErrConnectionRefused
@@ -303,21 +327,4 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 		return u, nil // we don't need port when using a unix socket
 	}
 	return nil, ErrInvalidEndpoint
-}
-
-func (c *Client) execRequest(req *http.Request) (resp *http.Response, err error) {
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
-	if protocol == "unix" {
-		dial, err := net.Dial(protocol, address)
-		if err != nil {
-			return nil, err
-		}
-		clientconn := httputil.NewClientConn(dial, nil)
-		resp, err = clientconn.Do(req)
-		defer clientconn.Close()
-	} else {
-		resp, err = c.client.Do(req)
-	}
-	return resp, err
 }
