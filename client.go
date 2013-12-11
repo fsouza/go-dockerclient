@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dotcloud/docker/term"
+	"github.com/dotcloud/docker/utils"
 	"io"
 	"io/ioutil"
 	"net"
@@ -171,7 +172,12 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 	defer rwc.Close()
 	errStdout := make(chan error, 1)
 	go func() {
-		_, err := io.Copy(out, br)
+		var err error
+		if setRawTerminal {
+			_, err = io.Copy(out, br)
+		} else {
+			_, err = utils.StdCopy(out, errStream, br)
+		}
 		errStdout <- err
 	}()
 	if in != nil && setRawTerminal && term.IsTerminal(in.Fd()) && os.Getenv("NORAW") == "" {

@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dotcloud/docker"
+	"github.com/dotcloud/docker/utils"
 	"github.com/gorilla/mux"
 	mathrand "math/rand"
 	"net"
@@ -168,11 +169,12 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	portMapping := map[string]docker.PortMapping{
-		"Tcp": make(docker.PortMapping, len(config.PortSpecs)),
-	}
-	for _, p := range config.PortSpecs {
-		portMapping["Tcp"][p] = strconv.Itoa(mathrand.Int() % 65536)
+	ports := map[docker.Port][]docker.PortBinding{}
+	for port := range config.ExposedPorts {
+		ports[port] = []docker.PortBinding{{
+			HostIp: "0.0.0.0",
+			HostPort: strconv.Itoa(mathrand.Int() % 65536),
+		}}
 	}
 	container := docker.Container{
 		ID:      s.generateID(),
@@ -192,7 +194,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 			IPPrefixLen: 24,
 			Gateway:     "172.16.42.1",
 			Bridge:      "docker0",
-			PortMapping: portMapping,
+			Ports:       ports,
 		},
 	}
 	s.cMut.Lock()
@@ -260,13 +262,15 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	outStream := utils.NewStdWriter(w, utils.Stdout)
+	fmt.Fprintf(outStream, "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.docker.raw-stream\r\n\r\n")
 	if container.State.Running {
-		fmt.Fprintf(w, "Container %q is running\n", container.ID)
+		fmt.Fprintf(outStream, "Container %q is running\n", container.ID)
 	} else {
-		fmt.Fprintf(w, "Container %q is not running\n", container.ID)
+		fmt.Fprintf(outStream, "Container %q is not running\n", container.ID)
 	}
-	fmt.Fprintln(w, "What happened?")
-	fmt.Fprintln(w, "Something happened")
+	fmt.Fprintln(outStream, "What happened?")
+	fmt.Fprintln(outStream, "Something happened")
 }
 
 func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {

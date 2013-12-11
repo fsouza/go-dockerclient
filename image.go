@@ -148,7 +148,6 @@ func (c *Client) ImportImage(opts ImportImageOptions, in io.Reader, out io.Write
 	if opts.Repository == "" {
 		return ErrNoSuchImage
 	}
-	in = in
 	if opts.Source != "-" {
 		in = nil
 	}
