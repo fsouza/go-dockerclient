@@ -79,10 +79,10 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	} else if method == "POST" {
 		req.Header.Set("Content-Type", "plain/text")
 	}
-	protocol := c.endpointURL.Scheme
 	var resp *http.Response
+	protocol := c.endpointURL.Scheme
+	address := c.endpointURL.Path
 	if protocol == "unix" {
-		address := c.endpointURL.Path
 		dial, err := net.Dial(protocol, address)
 		if err != nil {
 			return nil, -1, err
@@ -122,7 +122,20 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 	if method == "POST" {
 		req.Header.Set("Content-Type", "plain/text")
 	}
-	resp, err := c.client.Do(req)
+	var resp *http.Response
+	protocol := c.endpointURL.Scheme
+	address := c.endpointURL.Path
+	if protocol == "unix" {
+		dial, err := net.Dial(protocol, address)
+		if err != nil {
+			return err
+		}
+		clientconn := httputil.NewClientConn(dial, nil)
+		resp, err = clientconn.Do(req)
+		defer clientconn.Close()
+	} else {
+		resp, err = c.client.Do(req)
+	}
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return ErrConnectionRefused

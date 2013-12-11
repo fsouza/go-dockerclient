@@ -8,11 +8,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/dotcloud/docker"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"reflect"
+	"runtime"
+	"strconv"
 	"testing"
 )
 
@@ -654,6 +657,59 @@ func TestExportContainer(t *testing.T) {
 	if out.String() != content {
 		t.Errorf("ExportContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
 	}
+}
+
+func TestExportContainerViaUnix(t *testing.T) {
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+		t.Skip("skipping test on %q", runtime.GOOS)
+	}
+	content := "exported container tar content"
+	var buf []byte
+	out := bytes.NewBuffer(buf)
+	tempSocket := tempfile("export_socket")
+	defer os.Remove(tempSocket)
+	endpoint := "unix://" + tempSocket
+	u, _ := parseEndpoint(endpoint)
+	client := Client{
+		endpoint:    endpoint,
+		endpointURL: u,
+		client:      http.DefaultClient,
+	}
+	listening := make(chan string)
+	done := make(chan int)
+	go runStreamConnServer(t, "unix", tempSocket, listening, done)
+	<-listening // wait for server to start
+	err := client.ExportContainer("4fa6e0f0c678", out)
+	<-done // make sure server stopped
+	if err != nil {
+		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
+	}
+	if out.String() != content {
+		t.Errorf("ExportContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
+	}
+}
+
+func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- string, done chan<- int) {
+	defer close(done)
+	l, err := net.Listen(network, laddr)
+	if err != nil {
+		t.Errorf("Listen(%q, %q) failed: %v", network, laddr, err)
+		listening <- "<nil>"
+		return
+	}
+	defer l.Close()
+	listening <- l.Addr().String()
+	c, err := l.Accept()
+	if err != nil {
+		t.Logf("Accept failed: %v", err)
+		return
+	}
+	c.Write([]byte("HTTP/1.1 200 OK\n\nexported container tar content"))
+	c.Close()
+}
+
+func tempfile(filename string) string {
+	return "/tmp/" + filename + "." + strconv.Itoa(os.Getpid())
 }
 
 func TestExportContainerNoId(t *testing.T) {
