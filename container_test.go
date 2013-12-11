@@ -542,7 +542,7 @@ func TestAttachToContainerLogs(t *testing.T) {
 }
 
 func TestAttachToContainer(t *testing.T) {
-	file, err := os.OpenFile("/tmp/docker-temp-file.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(os.TempDir()+"/docker-temp-file.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -585,7 +585,7 @@ func TestAttachToContainer(t *testing.T) {
 }
 
 func TestAttachToContainerRawTerminalFalse(t *testing.T) {
-	file, err := os.OpenFile("/tmp/docker-temp-file.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(os.TempDir()+"/docker-temp-file.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -709,7 +709,7 @@ func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- s
 }
 
 func tempfile(filename string) string {
-	return "/tmp/" + filename + "." + strconv.Itoa(os.Getpid())
+	return os.TempDir() + "/" + filename + "." + strconv.Itoa(os.Getpid())
 }
 
 func TestExportContainerNoId(t *testing.T) {
