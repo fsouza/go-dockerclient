@@ -676,11 +676,11 @@ func TestExportContainerViaUnix(t *testing.T) {
 		client:      http.DefaultClient,
 	}
 	listening := make(chan string)
-	close := make(chan int)
-	go runStreamConnServer(t, "unix", tempSocket, listening, close)
-	<-listening
+	done := make(chan int)
+	go runStreamConnServer(t, "unix", tempSocket, listening, done)
+	<-listening // wait for server to start
 	err := client.ExportContainer("4fa6e0f0c678", out)
-	close <- 1
+	<-done // make sure server stopped
 	if err != nil {
 		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
 	}
@@ -689,7 +689,8 @@ func TestExportContainerViaUnix(t *testing.T) {
 	}
 }
 
-func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- string, close <-chan int) {
+func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- string, done chan<- int) {
+	defer close(done)
 	l, err := net.Listen(network, laddr)
 	if err != nil {
 		t.Errorf("Listen(%q, %q) failed: %v", network, laddr, err)
@@ -705,7 +706,6 @@ func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- s
 	}
 	c.Write([]byte("HTTP/1.1 200 OK\n\nexported container tar content"))
 	c.Close()
-	<-close
 }
 
 func tempfile(filename string) string {
