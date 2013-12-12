@@ -659,8 +659,8 @@ func TestExportContainer(t *testing.T) {
 	}
 }
 
-func TestExportContainerViaUnix(t *testing.T) {
-	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+func TestExportContainerViaUnixSocket(t *testing.T) {
+	if runtime.GOOS != "darwin" {
 		t.Skip("skipping test on %q", runtime.GOOS)
 	}
 	content := "exported container tar content"
