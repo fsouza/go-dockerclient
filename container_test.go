@@ -17,7 +17,6 @@ import (
 	"runtime"
 	"strconv"
 	"testing"
-	"time"
 )
 
 func TestListContainers(t *testing.T) {
@@ -679,9 +678,9 @@ func TestExportContainerViaUnix(t *testing.T) {
 	listening := make(chan string)
 	done := make(chan int)
 	go runStreamConnServer(t, "unix", tempSocket, listening, done)
-	<-listening
+	<-listening // wait for server to start
 	err := client.ExportContainer("4fa6e0f0c678", out)
-	<-done
+	<-done // make sure server stopped
 	if err != nil {
 		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
 	}
@@ -706,9 +705,7 @@ func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- s
 		return
 	}
 	c.Write([]byte("HTTP/1.1 200 OK\n\nexported container tar content"))
-	time.Sleep(2e9)
 	c.Close()
-
 }
 
 func tempfile(filename string) string {
