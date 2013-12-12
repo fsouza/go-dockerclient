@@ -676,7 +676,7 @@ func TestExportContainerViaUnix(t *testing.T) {
 		client:      http.DefaultClient,
 	}
 	listening := make(chan string)
-	close := make(chan int)
+	close := make(chan int, 1)
 	go runStreamConnServer(t, "unix", tempSocket, listening, close)
 	<-listening
 	err := client.ExportContainer("4fa6e0f0c678", out)
