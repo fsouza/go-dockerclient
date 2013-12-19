@@ -7,10 +7,20 @@ package docker
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/dotcloud/docker"
 	"github.com/dotcloud/docker/engine"
 	"io"
 )
+
+type APIInfo struct {
+	Containers     int64
+	Images         int64
+	Debug          bool
+	NFd            int64
+	NGoroutines    int64
+	MemoryLimit    bool
+	SwapLimit      bool
+	IPv4Forwarding bool
+}
 
 // Version returns version information about the docker server.
 //
@@ -34,12 +44,12 @@ func (c *Client) Version() (*engine.Env, error) {
 // Info returns system-wide information, like the number of running containers.
 //
 // See http://goo.gl/LOmySw for more details.
-func (c *Client) Info() (*docker.APIInfo, error) {
+func (c *Client) Info() (*APIInfo, error) {
 	body, _, err := c.do("GET", "/info", nil)
 	if err != nil {
 		return nil, err
 	}
-	var info docker.APIInfo
+	var info APIInfo
 	err = json.Unmarshal(body, &info)
 	if err != nil {
 		return nil, err
