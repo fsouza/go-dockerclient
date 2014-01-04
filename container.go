@@ -94,6 +94,9 @@ func (c *Client) CreateContainer(opts CreateContainerOptions, config *docker.Con
 //
 // See http://goo.gl/y5GZlE for more details.
 func (c *Client) StartContainer(id string, hostConfig *docker.HostConfig) error {
+	if hostConfig == nil {
+		hostConfig = &docker.HostConfig{}
+	}
 	path := "/containers/" + id + "/start"
 	_, status, err := c.do("POST", path, hostConfig)
 	if status == http.StatusNotFound {
