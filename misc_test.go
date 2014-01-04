@@ -5,7 +5,7 @@
 package docker
 
 import (
-	"github.com/dotcloud/docker"
+	"github.com/dotcloud/docker/engine"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -71,28 +71,27 @@ func TestInfo(t *testing.T) {
 	body := `{
      "Containers":11,
      "Images":16,
-     "Debug":false,
-     "NFd": 11,
+     "Debug":0,
+     "NFd":11,
      "NGoroutines":21,
-     "MemoryLimit":true,
-     "SwapLimit":false
+     "MemoryLimit":1,
+     "SwapLimit":0
 }`
 	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
 	client := newTestClient(&fakeRT)
-	expected := docker.APIInfo{
-		Containers:  11,
-		Images:      16,
-		Debug:       false,
-		NFd:         11,
-		NGoroutines: 21,
-		MemoryLimit: true,
-		SwapLimit:   false,
-	}
+	expected := engine.Env{}
+	expected.SetInt("Containers", 11)
+	expected.SetInt("Images", 16)
+	expected.SetBool("Debug", false)
+	expected.SetInt("NFd", 11)
+	expected.SetInt("NGoroutines", 21)
+	expected.SetBool("MemoryLimit", true)
+	expected.SetBool("SwapLimit", false)
 	info, err := client.Info()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(*info, expected) {
+	if !reflect.DeepEqual(expected, *info) {
 		t.Errorf("Info(): Wrong result. Want %#v. Got %#v.", expected, info)
 	}
 	req := fakeRT.requests[0]
