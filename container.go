@@ -11,7 +11,9 @@ import (
 	"github.com/dotcloud/docker"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 )
 
 // ListContainersOptions specify parameters to the ListContainers function.
@@ -299,6 +301,15 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 	opts.RawTerminal = false
 	path := "/containers/" + container + "/attach?" + queryString(opts)
 	return c.hijack("POST", path, raw, stdin, stderr, stdout)
+}
+
+// ResizeContainerTTY resizes the terminal to the given height and width
+func (c *Client) ResizeContainerTTY(id string, height, width int) error {
+	params := make(url.Values)
+	params.Set("h", strconv.Itoa(height))
+	params.Set("w", strconv.Itoa(width))
+	_, _, err := c.do("POST", "/containers/" + id + "/resize?" + params.Encode(), nil)
+	return err
 }
 
 // ExportContainer export the contents of container id as tar archive
