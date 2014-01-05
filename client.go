@@ -175,7 +175,7 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 	return nil
 }
 
-func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, errStream io.Writer, out io.Writer) error {
+func (c *Client) hijack(method, path string, setRawTerminal bool, in io.Reader, errStream io.Writer, out io.Writer) error {
 	req, err := http.NewRequest(method, c.getURL(path), nil)
 	if err != nil {
 		return err
@@ -204,15 +204,17 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 		}
 		errStdout <- err
 	}()
-	if in != nil && setRawTerminal && term.IsTerminal(in.Fd()) && os.Getenv("NORAW") == "" {
-		oldState, err := term.SetRawTerminal(in.Fd())
+	if inFile, ok := in.(*os.File); ok && setRawTerminal && term.IsTerminal(inFile.Fd()) && os.Getenv("NORAW") == "" {
+		oldState, err := term.SetRawTerminal(inFile.Fd())
 		if err != nil {
 			return err
 		}
-		defer term.RestoreTerminal(in.Fd(), oldState)
+		defer term.RestoreTerminal(inFile.Fd(), oldState)
 	}
 	go func() {
-		io.Copy(rwc, in)
+		if in != nil {
+			io.Copy(rwc, in)
+		}
 		if err := rwc.(interface {
 			CloseWrite() error
 		}).CloseWrite(); err != nil && errStream != nil {
