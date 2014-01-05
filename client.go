@@ -213,7 +213,9 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in *os.File, e
 	}
 	go func() {
 		io.Copy(rwc, in)
-		if err := rwc.(*net.TCPConn).CloseWrite(); err != nil {
+		if err := rwc.(interface {
+			CloseWrite() error
+		}).CloseWrite(); err != nil && errStream != nil {
 			fmt.Fprintf(errStream, "Couldn't send EOF: %s\n", err)
 		}
 	}()
