@@ -442,8 +442,8 @@ func TestResizeContainerTTY(t *testing.T) {
 	}
 	got := map[string][]string(req.URL.Query())
 	expectedParams := map[string][]string{
-		"w": []string{"80"},
-		"h": []string{"40"},
+		"w": {"80"},
+		"h": {"40"},
 	}
 	if !reflect.DeepEqual(got, expectedParams) {
 		t.Errorf("Expected %#v, got %#v.", expectedParams, got)
