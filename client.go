@@ -182,10 +182,12 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in io.Reader, 
 	}
 	req.Header.Set("Content-Type", "plain/text")
 	protocol := c.endpointURL.Scheme
+	address := c.endpointURL.Path
 	if protocol != "unix" {
 		protocol = "tcp"
+		address = c.endpointURL.Host
 	}
-	dial, err := net.Dial(protocol, c.endpointURL.Host)
+	dial, err := net.Dial(protocol, address)
 	if err != nil {
 		return err
 	}
