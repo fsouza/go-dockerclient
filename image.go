@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/dotcloud/docker"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,13 +15,22 @@ import (
 	"os"
 )
 
+type APIImages struct {
+	ID          string   `json:"Id"`
+	RepoTags    []string `json:",omitempty"`
+	Created     int64
+	Size        int64
+	VirtualSize int64
+	ParentId    string `json:",omitempty"`
+}
+
 // Error returned when the image does not exist.
 var ErrNoSuchImage = errors.New("No such image")
 
 // ListImages returns the list of available images in the server.
 //
 // See http://goo.gl/dkMrwP for more details.
-func (c *Client) ListImages(all bool) ([]docker.APIImages, error) {
+func (c *Client) ListImages(all bool) ([]APIImages, error) {
 	path := "/images/json?all="
 	if all {
 		path += "1"
@@ -33,7 +41,7 @@ func (c *Client) ListImages(all bool) ([]docker.APIImages, error) {
 	if err != nil {
 		return nil, err
 	}
-	var images []docker.APIImages
+	var images []APIImages
 	err = json.Unmarshal(body, &images)
 	if err != nil {
 		return nil, err
@@ -55,7 +63,7 @@ func (c *Client) RemoveImage(name string) error {
 // InspectImage returns an image by its name or ID.
 //
 // See http://goo.gl/pHEbma for more details.
-func (c *Client) InspectImage(name string) (*docker.Image, error) {
+func (c *Client) InspectImage(name string) (*Image, error) {
 	body, status, err := c.do("GET", "/images/"+name+"/json", nil)
 	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
@@ -63,7 +71,7 @@ func (c *Client) InspectImage(name string) (*docker.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	var image docker.Image
+	var image Image
 	err = json.Unmarshal(body, &image)
 	if err != nil {
 		return nil, err

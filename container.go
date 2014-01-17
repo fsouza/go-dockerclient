@@ -8,11 +8,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/dotcloud/docker"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 // ListContainersOptions specify parameters to the ListContainers function.
@@ -26,16 +26,38 @@ type ListContainersOptions struct {
 	Before string
 }
 
+type APIPort struct {
+	PrivatePort int64
+	PublicPort  int64
+	Type        string
+	IP          string
+}
+
+// APIContainers represents a container.
+//
+// See http://goo.gl/QeFH7U for more details.
+type APIContainers struct {
+	ID         string `json:"Id"`
+	Image      string
+	Command    string
+	Created    int64
+	Status     string
+	Ports      []APIPort
+	SizeRw     int64
+	SizeRootFs int64
+	Names      []string
+}
+
 // ListContainers returns a slice of containers matching the given criteria.
 //
 // See http://goo.gl/QpCnDN for more details.
-func (c *Client) ListContainers(opts ListContainersOptions) ([]docker.APIContainers, error) {
+func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, error) {
 	path := "/containers/json?" + queryString(opts)
 	body, _, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
-	var containers []docker.APIContainers
+	var containers []APIContainers
 	err = json.Unmarshal(body, &containers)
 	if err != nil {
 		return nil, err
@@ -43,10 +65,89 @@ func (c *Client) ListContainers(opts ListContainersOptions) ([]docker.APIContain
 	return containers, nil
 }
 
+// 80/tcp
+type Port string
+
+type State struct {
+	Running    bool
+	Pid        int
+	ExitCode   int
+	StartedAt  time.Time
+	FinishedAt time.Time
+	Ghost      bool
+}
+
+type PortBinding struct {
+	HostIp   string
+	HostPort string
+}
+
+type PortMapping map[string]string
+
+type NetworkSettings struct {
+	IPAddress   string
+	IPPrefixLen int
+	Gateway     string
+	Bridge      string
+	PortMapping map[string]PortMapping
+	Ports       map[Port][]PortBinding
+}
+
+type Config struct {
+	Hostname        string
+	Domainname      string
+	User            string
+	Memory          int64
+	MemorySwap      int64
+	CpuShares       int64
+	AttachStdin     bool
+	AttachStdout    bool
+	AttachStderr    bool
+	PortSpecs       []string
+	ExposedPorts    map[Port]struct{}
+	Tty             bool
+	OpenStdin       bool
+	StdinOnce       bool
+	Env             []string
+	Cmd             []string
+	Dns             []string
+	Image           string
+	Volumes         map[string]struct{}
+	VolumesFrom     string
+	WorkingDir      string
+	Entrypoint      []string
+	NetworkDisabled bool
+}
+
+type Container struct {
+	ID string
+
+	Created time.Time
+
+	Path string
+	Args []string
+
+	Config *Config
+	State  State
+	Image  string
+
+	NetworkSettings *NetworkSettings
+
+	SysInitPath    string
+	ResolvConfPath string
+	HostnamePath   string
+	HostsPath      string
+	Name           string
+	Driver         string
+
+	Volumes   map[string]string
+	VolumesRW map[string]bool
+}
+
 // InspectContainer returns information about a container by its ID.
 //
 // See http://goo.gl/2o52Sx for more details.
-func (c *Client) InspectContainer(id string) (*docker.Container, error) {
+func (c *Client) InspectContainer(id string) (*Container, error) {
 	path := "/containers/" + id + "/json"
 	body, status, err := c.do("GET", path, nil)
 	if status == http.StatusNotFound {
@@ -55,7 +156,7 @@ func (c *Client) InspectContainer(id string) (*docker.Container, error) {
 	if err != nil {
 		return nil, err
 	}
-	var container docker.Container
+	var container Container
 	err = json.Unmarshal(body, &container)
 	if err != nil {
 		return nil, err
@@ -74,7 +175,7 @@ type CreateContainerOptions struct {
 // or an error in case of failure.
 //
 // See http://goo.gl/tjihUc for more details.
-func (c *Client) CreateContainer(opts CreateContainerOptions, config *docker.Config) (*docker.Container, error) {
+func (c *Client) CreateContainer(opts CreateContainerOptions, config *Config) (*Container, error) {
 	path := "/containers/create?" + queryString(opts)
 	body, status, err := c.do("POST", path, config)
 	if status == http.StatusNotFound {
@@ -83,7 +184,7 @@ func (c *Client) CreateContainer(opts CreateContainerOptions, config *docker.Con
 	if err != nil {
 		return nil, err
 	}
-	var container docker.Container
+	var container Container
 	err = json.Unmarshal(body, &container)
 	if err != nil {
 		return nil, err
@@ -91,12 +192,27 @@ func (c *Client) CreateContainer(opts CreateContainerOptions, config *docker.Con
 	return &container, nil
 }
 
+type KeyValuePair struct {
+	Key   string
+	Value string
+}
+
+type HostConfig struct {
+	Binds           []string
+	ContainerIDFile string
+	LxcConf         []KeyValuePair
+	Privileged      bool
+	PortBindings    map[Port][]PortBinding
+	Links           []string
+	PublishAllPorts bool
+}
+
 // StartContainer starts a container, returning an errror in case of failure.
 //
 // See http://goo.gl/y5GZlE for more details.
-func (c *Client) StartContainer(id string, hostConfig *docker.HostConfig) error {
+func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 	if hostConfig == nil {
-		hostConfig = &docker.HostConfig{}
+		hostConfig = &HostConfig{}
 	}
 	path := "/containers/" + id + "/start"
 	_, status, err := c.do("POST", path, hostConfig)
@@ -231,13 +347,27 @@ type CommitContainerOptions struct {
 	Tag        string
 	Message    string `qs:"m"`
 	Author     string
-	Run        *docker.Config
+	Run        *Config
+}
+
+type Image struct {
+	ID              string    `json:"id"`
+	Parent          string    `json:"parent,omitempty"`
+	Comment         string    `json:"comment,omitempty"`
+	Created         time.Time `json:"created"`
+	Container       string    `json:"container,omitempty"`
+	ContainerConfig Config    `json:"container_config,omitempty"`
+	DockerVersion   string    `json:"docker_version,omitempty"`
+	Author          string    `json:"author,omitempty"`
+	Config          *Config   `json:"config,omitempty"`
+	Architecture    string    `json:"architecture,omitempty"`
+	Size            int64
 }
 
 // CommitContainer creates a new image from a container's changes.
 //
 // See http://goo.gl/628gxm for more details.
-func (c *Client) CommitContainer(opts CommitContainerOptions) (*docker.Image, error) {
+func (c *Client) CommitContainer(opts CommitContainerOptions) (*Image, error) {
 	path := "/commit?" + queryString(opts)
 	body, status, err := c.do("POST", path, nil)
 	if status == http.StatusNotFound {
@@ -246,7 +376,7 @@ func (c *Client) CommitContainer(opts CommitContainerOptions) (*docker.Image, er
 	if err != nil {
 		return nil, err
 	}
-	var image docker.Image
+	var image Image
 	err = json.Unmarshal(body, &image)
 	if err != nil {
 		return nil, err

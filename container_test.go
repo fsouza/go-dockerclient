@@ -7,7 +7,6 @@ package docker
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/dotcloud/docker"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -55,7 +54,7 @@ func TestListContainers(t *testing.T) {
              "Status": "Exit 0"
      }
 ]`
-	var expected []docker.APIContainers
+	var expected []APIContainers
 	err := json.Unmarshal([]byte(jsonContainers), &expected)
 	if err != nil {
 		t.Fatal(err)
@@ -169,7 +168,7 @@ func TestInspectContainer(t *testing.T) {
              "ResolvConfPath": "/etc/resolv.conf",
              "Volumes": {}
 }`
-	var expected docker.Container
+	var expected Container
 	err := json.Unmarshal([]byte(jsonContainer), &expected)
 	if err != nil {
 		t.Fatal(err)
@@ -219,14 +218,14 @@ func TestCreateContainer(t *testing.T) {
              "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
 	     "Warnings": []
 }`
-	var expected docker.Container
+	var expected Container
 	err := json.Unmarshal([]byte(jsonContainer), &expected)
 	if err != nil {
 		t.Fatal(err)
 	}
 	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	config := docker.Config{AttachStdout: true, AttachStdin: true}
+	config := Config{AttachStdout: true, AttachStdin: true}
 	opts := CreateContainerOptions{Name: "TestCreateContainer"}
 	container, err := client.CreateContainer(opts, &config)
 	if err != nil {
@@ -244,7 +243,7 @@ func TestCreateContainer(t *testing.T) {
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("CreateContainer: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
 	}
-	var gotBody docker.Config
+	var gotBody Config
 	err = json.NewDecoder(req.Body).Decode(&gotBody)
 	if err != nil {
 		t.Fatal(err)
@@ -253,7 +252,7 @@ func TestCreateContainer(t *testing.T) {
 
 func TestCreateContainerImageNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "No such image", status: http.StatusNotFound})
-	config := docker.Config{AttachStdout: true, AttachStdin: true}
+	config := Config{AttachStdout: true, AttachStdin: true}
 	container, err := client.CreateContainer(CreateContainerOptions{}, &config)
 	if container != nil {
 		t.Errorf("CreateContainer: expected <nil> container, got %#v.", container)
@@ -267,7 +266,7 @@ func TestStartContainer(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
-	err := client.StartContainer(id, &docker.HostConfig{})
+	err := client.StartContainer(id, &HostConfig{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -309,7 +308,7 @@ func TestStartContainerNilHostConfig(t *testing.T) {
 
 func TestStartContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
-	err := client.StartContainer("a2344", &docker.HostConfig{})
+	err := client.StartContainer("a2344", &HostConfig{})
 	expected := &NoSuchContainer{ID: "a2344"}
 	if !reflect.DeepEqual(err, expected) {
 		t.Errorf("StartContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
@@ -494,7 +493,7 @@ func TestCommitContainer(t *testing.T) {
 }
 
 func TestCommitContainerParams(t *testing.T) {
-	cfg := docker.Config{Memory: 67108864}
+	cfg := Config{Memory: 67108864}
 	b, _ := json.Marshal(&cfg)
 	var tests = []struct {
 		input  CommitContainerOptions

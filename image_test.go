@@ -7,7 +7,6 @@ package docker
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/dotcloud/docker"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -58,7 +57,7 @@ func TestListImages(t *testing.T) {
              "Created":1364102658
      }
 ]`
-	var expected []docker.APIImages
+	var expected []APIImages
 	err := json.Unmarshal([]byte(body), &expected)
 	if err != nil {
 		t.Fatal(err)
@@ -133,7 +132,7 @@ func TestInspectImage(t *testing.T) {
      "container":"3d67245a8d72ecf13f33dffac9f79dcdf70f75acb84d308770391510e0c23ad0",
      "container_config":{"Memory":0}
 }`
-	var expected docker.Image
+	var expected Image
 	json.Unmarshal([]byte(body), &expected)
 	fakeRT := &FakeRoundTripper{message: body, status: http.StatusOK}
 	client := newTestClient(fakeRT)

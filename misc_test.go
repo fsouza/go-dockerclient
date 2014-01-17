@@ -5,7 +5,7 @@
 package docker
 
 import (
-	"github.com/dotcloud/docker/engine"
+	"github.com/fsouza/go-dockerclient/engine"
 	"net/http"
 	"net/url"
 	"reflect"
