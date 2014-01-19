@@ -19,6 +19,7 @@ import (
 type APIImages struct {
 	Repository string `json:",omitempty"`
 	Tag        string `json:",omitempty"`
+	RepoTags   []string `json:",omitempty"`
 	ID         string
 	Created    int64 `json:",omitempty"`
 }
