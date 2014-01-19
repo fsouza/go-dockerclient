@@ -58,7 +58,7 @@ func TestListImages(t *testing.T) {
              "Created":1364102658
      }
 ]`
-	var expected []docker.APIImages
+	var expected []APIImages
 	err := json.Unmarshal([]byte(body), &expected)
 	if err != nil {
 		t.Fatal(err)

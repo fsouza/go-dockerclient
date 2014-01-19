@@ -16,13 +16,20 @@ import (
 	"os"
 )
 
+type APIImages struct {
+	Repository string `json:",omitempty"`
+	Tag        string `json:",omitempty"`
+	ID         string
+	Created    int64 `json:",omitempty"`
+}
+
 // Error returned when the image does not exist.
 var ErrNoSuchImage = errors.New("No such image")
 
 // ListImages returns the list of available images in the server.
 //
 // See http://goo.gl/dkMrwP for more details.
-func (c *Client) ListImages(all bool) ([]docker.APIImages, error) {
+func (c *Client) ListImages(all bool) ([]APIImages, error) {
 	path := "/images/json?all="
 	if all {
 		path += "1"
@@ -33,7 +40,7 @@ func (c *Client) ListImages(all bool) ([]docker.APIImages, error) {
 	if err != nil {
 		return nil, err
 	}
-	var images []docker.APIImages
+	var images []APIImages
 	err = json.Unmarshal(body, &images)
 	if err != nil {
 		return nil, err
