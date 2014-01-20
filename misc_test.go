@@ -91,7 +91,7 @@ func TestInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(expected, *info) {
+	if !reflect.DeepEqual(&expected, info) {
 		t.Errorf("Info(): Wrong result. Want %#v. Got %#v.", expected, info)
 	}
 	req := fakeRT.requests[0]
