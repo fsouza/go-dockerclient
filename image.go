@@ -16,12 +16,15 @@ import (
 	"os"
 )
 
-type APIImages struct {
-	Repository string `json:",omitempty"`
-	Tag        string `json:",omitempty"`
-	RepoTags   []string `json:",omitempty"`
-	ID         string
-	Created    int64 `json:",omitempty"`
+// This work with api verion < v1.7 and > v1.8
+type Image struct {
+	ID          string
+	Repository  string   `json:",omitempty"`
+	Tag         string   `json:",omitempty"`
+	Created     int64    `json:",omitempty"`
+	Size        int64    `json:",omitempty"`
+	VirtualSize int64    `json:",omitempty"`
+	RepoTag     []string `json:",omitempty"`
 }
 
 // Error returned when the image does not exist.
@@ -30,7 +33,7 @@ var ErrNoSuchImage = errors.New("No such image")
 // ListImages returns the list of available images in the server.
 //
 // See http://goo.gl/dkMrwP for more details.
-func (c *Client) ListImages(all bool) ([]APIImages, error) {
+func (c *Client) ListImages(all bool) ([]Image, error) {
 	path := "/images/json?all="
 	if all {
 		path += "1"
@@ -41,7 +44,7 @@ func (c *Client) ListImages(all bool) ([]APIImages, error) {
 	if err != nil {
 		return nil, err
 	}
-	var images []APIImages
+	var images []Image
 	err = json.Unmarshal(body, &images)
 	if err != nil {
 		return nil, err
