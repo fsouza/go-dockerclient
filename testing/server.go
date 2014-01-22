@@ -24,11 +24,14 @@ import (
 )
 
 // TODO: This is duplicated from ../image.go.
-type APIImages struct {
-	Repository string `json:",omitempty"`
-	Tag        string `json:",omitempty"`
-	ID         string
-	Created    int64 `json:",omitempty"`
+type Image struct {
+	ID          string
+	Repository  string   `json:",omitempty"`
+	Tag         string   `json:",omitempty"`
+	Created     int64    `json:",omitempty"`
+	Size        int64    `json:",omitempty"`
+	VirtualSize int64    `json:",omitempty"`
+	RepoTag     []string `json:",omitempty"`
 }
 
 // DockerServer represents a programmable, concurrent (not much), HTTP server
@@ -128,9 +131,9 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
 	s.cMut.RLock()
-	result := make([]APIImages, len(s.images))
+	result := make([]Image, len(s.images))
 	for i, image := range s.images {
-		result[i] = APIImages{
+		result[i] = Image{
 			ID:      image.ID,
 			Created: image.Created.Unix(),
 		}
