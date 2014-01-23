@@ -697,13 +697,6 @@ func NewWriteFlusher(w io.Writer) *WriteFlusher {
 	return &WriteFlusher{w: w, flusher: flusher}
 }
 
-func NewHTTPRequestError(msg string, res *http.Response) error {
-	return &JSONError{
-		Message: msg,
-		Code:    res.StatusCode,
-	}
-}
-
 func IsURL(str string) bool {
 	return strings.HasPrefix(str, "http://") || strings.HasPrefix(str, "https://")
 }
@@ -1083,29 +1076,6 @@ func PartParser(template, data string) (map[string]string, error) {
 }
 
 var globalTestID string
-
-// TestDirectory creates a new temporary directory and returns its path.
-// The contents of directory at path `templateDir` is copied into the
-// new directory.
-func TestDirectory(templateDir string) (dir string, err error) {
-	if globalTestID == "" {
-		globalTestID = RandomString()[:4]
-	}
-	prefix := fmt.Sprintf("docker-test%s-%s-", globalTestID, GetCallerName(2))
-	if prefix == "" {
-		prefix = "docker-test-"
-	}
-	dir, err = ioutil.TempDir("", prefix)
-	if err = os.Remove(dir); err != nil {
-		return
-	}
-	if templateDir != "" {
-		if err = CopyDirectory(templateDir, dir); err != nil {
-			return
-		}
-	}
-	return
-}
 
 // GetCallerName introspects the call stack and returns the name of the
 // function `depth` levels down in the stack.
