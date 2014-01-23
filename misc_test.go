@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -91,8 +92,12 @@ func TestInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(&expected, info) {
-		t.Errorf("Info(): Wrong result. Want %#v. Got %#v.", expected, info)
+	infoSlice := []string(*info)
+	expectedSlice := []string(expected)
+	sort.Strings(infoSlice)
+	sort.Strings(expectedSlice)
+	if !reflect.DeepEqual(expectedSlice, infoSlice) {
+		t.Errorf("Info(): Wrong result.\nWant %#v.\nGot %#v.", expected, *info)
 	}
 	req := fakeRT.requests[0]
 	if req.Method != "GET" {
