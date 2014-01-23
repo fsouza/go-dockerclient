@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 )
 
@@ -74,7 +75,10 @@ func TestEngineRoot(t *testing.T) {
 	} else if !st.IsDir() {
 		t.Fatalf("engine.New() created something other than a directory at %s", dir)
 	}
-	if r := eng.Root(); r != dir {
+	r := eng.Root()
+	r, _ = filepath.EvalSymlinks(r)
+	dir, _ = filepath.EvalSymlinks(dir)
+	if r != dir {
 		t.Fatalf("Expected: %v\nReceived: %v", dir, r)
 	}
 }
