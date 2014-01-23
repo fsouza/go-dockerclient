@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -69,12 +70,26 @@ func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, er
 type Port string
 
 type State struct {
+	sync.RWMutex
 	Running    bool
 	Pid        int
 	ExitCode   int
 	StartedAt  time.Time
 	FinishedAt time.Time
 	Ghost      bool
+}
+
+func (s *State) String() string {
+	s.RLock()
+	defer s.RUnlock()
+
+	if s.Running {
+		if s.Ghost {
+			return fmt.Sprintf("Ghost")
+		}
+		return fmt.Sprintf("Up %s", time.Now().UTC().Sub(s.StartedAt))
+	}
+	return fmt.Sprintf("Exit %d", s.ExitCode)
 }
 
 type PortBinding struct {
