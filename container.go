@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -69,6 +70,18 @@ func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, er
 // 80/tcp
 type Port string
 
+func (p Port) Port() string {
+	return strings.Split(string(p), "/")[0]
+}
+
+func (p Port) Proto() string {
+	parts := strings.Split(string(p), "/")
+	if len(parts) == 1 {
+		return "tcp"
+	}
+	return parts[1]
+}
+
 type State struct {
 	sync.RWMutex
 	Running    bool
@@ -106,6 +119,39 @@ type NetworkSettings struct {
 	Bridge      string
 	PortMapping map[string]PortMapping
 	Ports       map[Port][]PortBinding
+}
+
+func (settings *NetworkSettings) PortMappingAPI() []APIPort {
+	var mapping []APIPort
+	for port, bindings := range settings.Ports {
+		p, _ := parsePort(port.Port())
+		if len(bindings) == 0 {
+			mapping = append(mapping, APIPort{
+				PublicPort: int64(p),
+				Type:       port.Proto(),
+			})
+			continue
+		}
+		for _, binding := range bindings {
+			p, _ := parsePort(port.Port())
+			h, _ := parsePort(binding.HostPort)
+			mapping = append(mapping, APIPort{
+				PrivatePort: int64(p),
+				PublicPort:  int64(h),
+				Type:        port.Proto(),
+				IP:          binding.HostIp,
+			})
+		}
+	}
+	return mapping
+}
+
+func parsePort(rawPort string) (int, error) {
+	port, err := strconv.ParseUint(rawPort, 10, 16)
+	if err != nil {
+		return 0, err
+	}
+	return int(port), nil
 }
 
 type Config struct {
