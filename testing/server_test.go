@@ -7,7 +7,7 @@ package testing
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dotcloud/docker"
+	"github.com/fsouza/go-dockerclient"
 	"math/rand"
 	"net"
 	"net/http"
