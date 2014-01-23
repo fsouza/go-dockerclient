@@ -7,12 +7,6 @@ env:
   - GOARCH=amd64
   - GOARCH=386
 install:
-  - sudo add-apt-repository ppa:tsuru/lvm2 -y
-  - sudo apt-get update
-  - sudo apt-get install -q libdevmapper-dev
   - go get -d ./...
-  - go get github.com/kr/godep
 script:
-  - export PATH="$HOME/gopath/bin:$PATH"
-  - godep restore ./...
-  - godep go test ./...
+  - go test ./...
