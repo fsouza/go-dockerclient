@@ -1,14 +1,14 @@
 package engine
 
 import (
-	"github.com/fsouza/go-dockerclient/utils"
+	"io/ioutil"
 	"testing"
 )
 
 var globalTestID string
 
 func newTestEngine(t *testing.T) *Engine {
-	tmp, err := utils.TestDirectory("")
+	tmp, err := ioutil.TempDir("", "asd")
 	if err != nil {
 		t.Fatal(err)
 	}
