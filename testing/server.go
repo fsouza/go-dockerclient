@@ -24,11 +24,16 @@ import (
 )
 
 // TODO: This is duplicated from ../image.go.
+// This work with api verion < v1.7 and > v1.9
 type APIImages struct {
-	Repository string `json:",omitempty"`
-	Tag        string `json:",omitempty"`
-	ID         string
-	Created    int64 `json:",omitempty"`
+	ID          string   `json:"Id"`
+	RepoTags    []string `json:",omitempty"`
+	Created     int64
+	Size        int64
+	VirtualSize int64
+	ParentId    string `json:",omitempty"`
+	Repository  string `json:",omitempty"`
+	Tag         string `json:",omitempty"`
 }
 
 // DockerServer represents a programmable, concurrent (not much), HTTP server
