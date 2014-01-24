@@ -23,19 +23,6 @@ import (
 	"time"
 )
 
-// TODO: This is duplicated from ../image.go.
-// This work with api verion < v1.7 and > v1.9
-type APIImages struct {
-	ID          string   `json:"Id"`
-	RepoTags    []string `json:",omitempty"`
-	Created     int64
-	Size        int64
-	VirtualSize int64
-	ParentId    string `json:",omitempty"`
-	Repository  string `json:",omitempty"`
-	Tag         string `json:",omitempty"`
-}
-
 // DockerServer represents a programmable, concurrent (not much), HTTP server
 // implementing a fake version of the Docker remote API.
 //
@@ -133,9 +120,9 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
 	s.cMut.RLock()
-	result := make([]APIImages, len(s.images))
+	result := make([]docker.APIImages, len(s.images))
 	for i, image := range s.images {
-		result[i] = APIImages{
+		result[i] = docker.APIImages{
 			ID:      image.ID,
 			Created: image.Created.Unix(),
 		}

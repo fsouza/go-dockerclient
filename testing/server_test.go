@@ -611,14 +611,14 @@ func TestListImages(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Errorf("ListImages: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	expected := make([]APIImages, 2)
+	expected := make([]docker.APIImages, 2)
 	for i, image := range server.images {
-		expected[i] = APIImages{
+		expected[i] = docker.APIImages{
 			ID:      image.ID,
 			Created: image.Created.Unix(),
 		}
 	}
-	var got []APIImages
+	var got []docker.APIImages
 	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
 		t.Fatal(err)
