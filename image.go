@@ -15,6 +15,7 @@ import (
 	"os"
 )
 
+// This work with api verion < v1.7 and > v1.9
 type APIImages struct {
 	ID          string   `json:"Id"`
 	RepoTags    []string `json:",omitempty"`
@@ -22,6 +23,8 @@ type APIImages struct {
 	Size        int64
 	VirtualSize int64
 	ParentId    string `json:",omitempty"`
+	Repository  string `json:",omitempty"`
+	Tag         string `json:",omitempty"`
 }
 
 // Error returned when the image does not exist.
