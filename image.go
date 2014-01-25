@@ -174,6 +174,28 @@ func (c *Client) ImportImage(opts ImportImageOptions, in io.Reader, out io.Write
 	return c.createImage(queryString(&opts), in, out)
 }
 
+// BuildImageOptions present the set of informations available for building
+// an image from a tarball's url.
+//
+// See http://goo.gl/PhBKnS for more details.
+type BuildImageOptions struct {
+	Name string `qs:"t"`
+  SuppressOutput string `qs:"q"`
+}
+
+// BuildImage builds an image from a tarball's url.
+func (c *Client) BuildImage(opts BuildImageOptions) error {
+	// create query string
+	values := &url.Values{}
+	values.Set("remote", opts.Name)
+	values.Set("t", opts.Name)
+  values.Set("q", opts.SuppressOutput)
+
+  // call api server
+	err := c.stream("POST", fmt.Sprintf("/build?%s", values.Encode()), nil, c.out, nil)
+  return err
+}
+
 func isUrl(u string) bool {
 	p, err := url.Parse(u)
 	if err != nil {
