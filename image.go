@@ -5,6 +5,7 @@
 package docker
 
 import (
+  "fmt"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -192,7 +193,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
   values.Set("q", opts.SuppressOutput)
 
   // call api server
-	err := c.stream("POST", fmt.Sprintf("/build?%s", values.Encode()), nil, c.out, nil)
+	err := c.stream("POST", fmt.Sprintf("/build?%s", values.Encode()), nil, c.out)
   return err
 }
 
