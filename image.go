@@ -5,10 +5,10 @@
 package docker
 
 import (
-  "fmt"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -180,8 +180,8 @@ func (c *Client) ImportImage(opts ImportImageOptions, in io.Reader, out io.Write
 //
 // See http://goo.gl/PhBKnS for more details.
 type BuildImageOptions struct {
-	Name string `qs:"t"`
-  SuppressOutput string `qs:"q"`
+	Name           string `qs:"t"`
+	SuppressOutput string `qs:"q"`
 }
 
 // BuildImage builds an image from a tarball's url.
@@ -190,11 +190,11 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	values := &url.Values{}
 	values.Set("remote", opts.Name)
 	values.Set("t", opts.Name)
-  values.Set("q", opts.SuppressOutput)
+	values.Set("q", opts.SuppressOutput)
 
-  // call api server
+	// call api server
 	err := c.stream("POST", fmt.Sprintf("/build?%s", values.Encode()), nil, c.out)
-  return err
+	return err
 }
 
 func isUrl(u string) bool {
