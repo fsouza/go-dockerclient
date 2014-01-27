@@ -812,7 +812,6 @@ func TestCopyFromContainer(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
 	opts := CopyFromContainerOptions{
 		Container:    "a123456",
-		Resource:     "file.txt",
 		OutputStream: out,
 	}
 	err := client.CopyFromContainer(opts)

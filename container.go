@@ -352,9 +352,9 @@ func (c *Client) RemoveContainer(id string) error {
 //
 // See http://goo.gl/mnxRMl for more details.
 type CopyFromContainerOptions struct {
-	Container    string
+	OutputStream io.Writer `json:"-"`
+	Container    string    `json:"-"`
 	Resource     string
-	OutputStream io.Writer
 }
 
 // CopyFromContainer copy files or folders from a container, using a given
@@ -362,12 +362,10 @@ type CopyFromContainerOptions struct {
 //
 // See http://goo.gl/mnxRMl for more details.
 func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
-	container := opts.Container
-	if container == "" {
-		return &NoSuchContainer{ID: container}
+	if opts.Container == "" {
+		return &NoSuchContainer{ID: opts.Container}
 	}
-	stdout := opts.OutputStream
-	url := fmt.Sprintf("/containers/%s/copy", container)
+	url := fmt.Sprintf("/containers/%s/copy", opts.Container)
 	body, status, err := c.do("POST", url, opts)
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: opts.Container}
@@ -375,7 +373,7 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 	if err != nil {
 		return err
 	}
-	io.Copy(stdout, bytes.NewBuffer(body))
+	io.Copy(opts.OutputStream, bytes.NewBuffer(body))
 	return nil
 }
 
