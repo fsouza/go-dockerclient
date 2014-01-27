@@ -14,6 +14,9 @@ const (
 	ChangeDelete
 )
 
+// Change represents a change in a container.
+//
+// See http://goo.gl/DpGyzK for more details.
 type Change struct {
 	Path string
 	Kind ChangeType
