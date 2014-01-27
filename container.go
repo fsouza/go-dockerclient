@@ -225,6 +225,26 @@ func (c *Client) InspectContainer(id string) (*Container, error) {
 	return &container, nil
 }
 
+// ContainerChanges returns changes in the filesystem of the given container.
+//
+// See http://goo.gl/DpGyzK for more details.
+func (c *Client) ContainerChanges(id string) ([]Change, error) {
+	path := "/containers/" + id + "/changes"
+	body, status, err := c.do("GET", path, nil)
+	if status == http.StatusNotFound {
+		return nil, &NoSuchContainer{ID: id}
+	}
+	if err != nil {
+		return nil, err
+	}
+	var changes []Change
+	err = json.Unmarshal(body, &changes)
+	if err != nil {
+		return nil, err
+	}
+	return changes, nil
+}
+
 // CreateContainerOptions specify parameters to the CreateContainer function.
 //
 // See http://goo.gl/WPPYtB for more details.
