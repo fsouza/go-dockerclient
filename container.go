@@ -353,13 +353,24 @@ func (c *Client) KillContainer(id string) error {
 	return nil
 }
 
+// RemoveContainerOptions encapsulates options to remove a container.
+type RemoveContainerOptions struct {
+	// The ID of the container.
+	ID string `qs:"-"`
+
+	// A flag that indicates whether Docker should remove the volumes
+	// associated to the container.
+	RemoveVolumes bool `qs:"v"`
+}
+
 // RemoveContainer removes a container, returning an error in case of failure.
 //
 // See http://goo.gl/PBvGdU for more details.
-func (c *Client) RemoveContainer(id string) error {
-	_, status, err := c.do("DELETE", "/containers/"+id, nil)
+func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
+	path := "/containers/" + opts.ID + "?" + queryString(opts)
+	_, status, err := c.do("DELETE", path, nil)
 	if status == http.StatusNotFound {
-		return &NoSuchContainer{ID: id}
+		return &NoSuchContainer{ID: opts.ID}
 	}
 	if err != nil {
 		return err
