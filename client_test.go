@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -27,9 +26,6 @@ func TestNewAPIClient(t *testing.T) {
 	}
 	if client.client != http.DefaultClient {
 		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.client)
-	}
-	if client.out == nil {
-		t.Errorf("Expected stdout %#v. Got %#v.", os.Stdout, client.out)
 	}
 
 	// test unix socket endpoints
