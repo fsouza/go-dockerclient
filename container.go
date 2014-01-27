@@ -481,7 +481,7 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 	return c.hijack("POST", path, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream)
 }
 
-// ResizeContainerTTY resizes the terminal to the given height and width
+// ResizeContainerTTY resizes the terminal to the given height and width.
 func (c *Client) ResizeContainerTTY(id string, height, width int) error {
 	params := make(url.Values)
 	params.Set("h", strconv.Itoa(height))
