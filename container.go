@@ -448,11 +448,11 @@ func (c *Client) CommitContainer(opts CommitContainerOptions) (*Image, error) {
 //
 // See http://goo.gl/oPzcqH for more details.
 type AttachToContainerOptions struct {
-	Container    string    `qs:"omit"`
-	InputStream  io.Reader `qs:"omit"`
-	OutputStream io.Writer `qs:"omit"`
-	ErrorStream  io.Writer `qs:"omit"`
-	RawTerminal  bool      `qs:"omit"`
+	Container    string    `qs:"-"`
+	InputStream  io.Reader `qs:"-"`
+	OutputStream io.Writer `qs:"-"`
+	ErrorStream  io.Writer `qs:"-"`
+	RawTerminal  bool      `qs:"-"`
 
 	// Get container logs, sending it to OutputStream.
 	Logs bool

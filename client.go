@@ -261,7 +261,7 @@ func queryString(opts interface{}) string {
 		key := field.Tag.Get("qs")
 		if key == "" {
 			key = strings.ToLower(field.Name)
-		} else if key == "omit" {
+		} else if key == "-" {
 			continue
 		}
 		v := value.Field(i)

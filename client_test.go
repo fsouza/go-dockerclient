@@ -146,7 +146,7 @@ type person struct {
 }
 
 type dumb struct {
-	T      int `qs:"omit"`
+	T      int `qs:"-"`
 	v      int
 	W      float32
 	X      int
