@@ -1,4 +1,4 @@
-// Copyright 2013 go-dockerclient authors. All rights reserved.
+// Copyright 2014 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -111,6 +111,7 @@ func TestQueryString(t *testing.T) {
 		{dumb{W: v, X: 10, Y: 10.35000}, f32QueryString},
 		{dumb{X: 10, Y: 10.35000, Z: 10}, "x=10&y=10.35&zee=10"},
 		{dumb{v: 4, X: 10, Y: 10.35000}, "x=10&y=10.35"},
+		{dumb{T: 10, Y: 10.35000}, "y=10.35"},
 		{dumb{Person: &person{Name: "gopher", Age: 4}}, "p=" + jsonPerson},
 		{nil, ""},
 		{10, ""},
@@ -149,6 +150,7 @@ type person struct {
 }
 
 type dumb struct {
+	T      int `qs:"omit"`
 	v      int
 	W      float32
 	X      int
