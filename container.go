@@ -450,11 +450,11 @@ func (c *Client) CommitContainer(opts CommitContainerOptions) (*Image, error) {
 //
 // See http://goo.gl/oPzcqH for more details.
 type AttachToContainerOptions struct {
-	Container    string
-	InputStream  io.Reader
-	OutputStream io.Writer
-	ErrorStream  io.Writer
-	RawTerminal  bool
+	Container    string    `qs:"omit"`
+	InputStream  io.Reader `qs:"omit"`
+	OutputStream io.Writer `qs:"omit"`
+	ErrorStream  io.Writer `qs:"omit"`
+	RawTerminal  bool      `qs:"omit"`
 
 	// Get container logs, sending it to OutputStream.
 	Logs bool
@@ -476,21 +476,11 @@ type AttachToContainerOptions struct {
 //
 // See http://goo.gl/oPzcqH for more details.
 func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
-	container := opts.Container
-	if container == "" {
-		return &NoSuchContainer{ID: container}
+	if opts.Container == "" {
+		return &NoSuchContainer{ID: opts.Container}
 	}
-	stdout := opts.OutputStream
-	stderr := opts.ErrorStream
-	stdin := opts.InputStream
-	raw := opts.RawTerminal
-	opts.Container = ""
-	opts.InputStream = nil
-	opts.OutputStream = nil
-	opts.ErrorStream = nil
-	opts.RawTerminal = false
-	path := "/containers/" + container + "/attach?" + queryString(opts)
-	return c.hijack("POST", path, raw, stdin, stderr, stdout)
+	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
+	return c.hijack("POST", path, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width
