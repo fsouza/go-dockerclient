@@ -91,6 +91,8 @@ type PushImageOptions struct {
 
 	// Registry server to push the image
 	Registry string
+
+	OutputStream io.Writer `qs:"-"`
 }
 
 // AuthConfiguration represents authentication options to use in the PushImage
@@ -107,7 +109,7 @@ type AuthConfiguration struct {
 // pushes.
 //
 // See http://goo.gl/GBmyhc for more details.
-func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration, w io.Writer) error {
+func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error {
 	if opts.Name == "" {
 		return ErrNoSuchImage
 	}
@@ -116,7 +118,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration, w io.W
 	path := "/images/" + name + "/push?" + queryString(&opts)
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(auth)
-	return c.stream("POST", path, &buf, w)
+	return c.stream("POST", path, &buf, opts.OutputStream)
 }
 
 // PullImageOptions present the set of options available for pulling an image
