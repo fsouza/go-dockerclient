@@ -813,7 +813,8 @@ func TestExportContainer(t *testing.T) {
 	content := "exported container tar content"
 	out := stdoutMock{bytes.NewBufferString(content)}
 	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
-	err := client.ExportContainer("4fa6e0f0c678", out)
+	opts := ExportContainerOptions{ID: "4fa6e0f0c678", OutputStream: out}
+	err := client.ExportContainer(opts)
 	if err != nil {
 		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
 	}
@@ -842,7 +843,8 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	done := make(chan int)
 	go runStreamConnServer(t, "unix", tempSocket, listening, done)
 	<-listening // wait for server to start
-	err := client.ExportContainer("4fa6e0f0c678", out)
+	opts := ExportContainerOptions{ID: "4fa6e0f0c678", OutputStream: out}
+	err := client.ExportContainer(opts)
 	<-done // make sure server stopped
 	if err != nil {
 		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
@@ -878,7 +880,7 @@ func tempfile(filename string) string {
 func TestExportContainerNoId(t *testing.T) {
 	client := Client{}
 	out := stdoutMock{bytes.NewBufferString("")}
-	err := client.ExportContainer("", out)
+	err := client.ExportContainer(ExportContainerOptions{OutputStream: out})
 	if err != (NoSuchContainer{}) {
 		t.Errorf("ExportContainer: wrong error. Want %#v. Got %#v.", NoSuchContainer{}, err)
 	}

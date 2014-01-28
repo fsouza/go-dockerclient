@@ -522,16 +522,25 @@ func (c *Client) ResizeContainerTTY(id string, height, width int) error {
 	return err
 }
 
+// ExportContainerOptions is the set of parameters to the ExportContainer
+// method.
+//
+// See http://goo.gl/Lqk0FZ for more details.
+type ExportContainerOptions struct {
+	ID           string
+	OutputStream io.Writer
+}
+
 // ExportContainer export the contents of container id as tar archive
 // and prints the exported contents to stdout.
 //
-// see http://goo.gl/Lqk0FZ for more details.
-func (c *Client) ExportContainer(id string, out io.Writer) error {
-	if id == "" {
-		return NoSuchContainer{ID: id}
+// See http://goo.gl/Lqk0FZ for more details.
+func (c *Client) ExportContainer(opts ExportContainerOptions) error {
+	if opts.ID == "" {
+		return NoSuchContainer{ID: opts.ID}
 	}
-	url := fmt.Sprintf("/containers/%s/export", id)
-	return c.stream("GET", url, nil, out)
+	url := fmt.Sprintf("/containers/%s/export", opts.ID)
+	return c.stream("GET", url, nil, opts.OutputStream)
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.
