@@ -249,16 +249,17 @@ func (c *Client) ContainerChanges(id string) ([]Change, error) {
 //
 // See http://goo.gl/WPPYtB for more details.
 type CreateContainerOptions struct {
-	Name string
+	Name   string
+	Config *Config `qs:"-"`
 }
 
 // CreateContainer creates a new container, returning the container instance,
 // or an error in case of failure.
 //
 // See http://goo.gl/tjihUc for more details.
-func (c *Client) CreateContainer(opts CreateContainerOptions, config *Config) (*Container, error) {
+func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error) {
 	path := "/containers/create?" + queryString(opts)
-	body, status, err := c.do("POST", path, config)
+	body, status, err := c.do("POST", path, opts.Config)
 	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
 	}
