@@ -326,8 +326,12 @@ func TestImportImageFromUrl(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
-	opts := ImportImageOptions{Source: "http://mycompany.com/file.tar", Repository: "testimage"}
-	err := client.ImportImage(opts, nil, &buf)
+	opts := ImportImageOptions{
+		Source:       "http://mycompany.com/file.tar",
+		Repository:   "testimage",
+		OutputStream: &buf,
+	}
+	err := client.ImportImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -344,8 +348,11 @@ func TestImportImageFromInput(t *testing.T) {
 	client := newTestClient(fakeRT)
 	in := bytes.NewBufferString("tar content")
 	var buf bytes.Buffer
-	opts := ImportImageOptions{Source: "-", Repository: "testimage"}
-	err := client.ImportImage(opts, in, &buf)
+	opts := ImportImageOptions{
+		Source: "-", Repository: "testimage",
+		InputStream: in, OutputStream: &buf,
+	}
+	err := client.ImportImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,8 +377,11 @@ func TestImportImageDoesNotPassesInputIfSourceIsNotDash(t *testing.T) {
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	in := bytes.NewBufferString("foo")
-	opts := ImportImageOptions{Source: "http://test.com/container.tar", Repository: "testimage"}
-	err := client.ImportImage(opts, in, &buf)
+	opts := ImportImageOptions{
+		Source: "http://test.com/container.tar", Repository: "testimage",
+		InputStream: in, OutputStream: &buf,
+	}
+	err := client.ImportImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -395,8 +405,11 @@ func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T)
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	tarPath := "testing/data/container.tar"
-	opts := ImportImageOptions{Source: tarPath, Repository: "testimage"}
-	err := client.ImportImage(opts, nil, &buf)
+	opts := ImportImageOptions{
+		Source: tarPath, Repository: "testimage",
+		OutputStream: &buf,
+	}
+	err := client.ImportImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,8 +433,11 @@ func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	tarPath := "testing/data/container.tar"
-	opts := ImportImageOptions{Source: tarPath, Repository: "testimage"}
-	err := client.ImportImage(opts, nil, &buf)
+	opts := ImportImageOptions{
+		Source: tarPath, Repository: "testimage",
+		OutputStream: &buf,
+	}
+	err := client.ImportImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}

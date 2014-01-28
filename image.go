@@ -152,17 +152,20 @@ func (c *Client) createImage(qs string, in io.Reader, w io.Writer) error {
 type ImportImageOptions struct {
 	Repository string `qs:"repo"`
 	Source     string `qs:"fromSrc"`
+
+	InputStream  io.Reader `qs:"-"`
+	OutputStream io.Writer `qs:"-"`
 }
 
 // ImportImage imports an image from a url, a file or stdin
 //
 // See http://goo.gl/PhBKnS for more details.
-func (c *Client) ImportImage(opts ImportImageOptions, in io.Reader, out io.Writer) error {
+func (c *Client) ImportImage(opts ImportImageOptions) error {
 	if opts.Repository == "" {
 		return ErrNoSuchImage
 	}
 	if opts.Source != "-" {
-		in = nil
+		opts.InputStream = nil
 	}
 	if opts.Source != "-" && !isUrl(opts.Source) {
 		f, err := os.Open(opts.Source)
@@ -170,10 +173,10 @@ func (c *Client) ImportImage(opts ImportImageOptions, in io.Reader, out io.Write
 			return err
 		}
 		b, err := ioutil.ReadAll(f)
-		in = bytes.NewBuffer(b)
+		opts.InputStream = bytes.NewBuffer(b)
 		opts.Source = "-"
 	}
-	return c.createImage(queryString(&opts), in, out)
+	return c.createImage(queryString(&opts), opts.InputStream, opts.OutputStream)
 }
 
 func isUrl(u string) bool {
