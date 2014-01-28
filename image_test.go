@@ -436,7 +436,7 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 	opts := BuildImageOptions{
 		Name:           "testImage",
 		Remote:         "testing/data/container.tar",
-		SuppressOutput: "1",
+		SuppressOutput: true,
 		OutputStream:   &buf,
 	}
 	err := client.BuildImage(opts)
@@ -444,7 +444,7 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {opts.SuppressOutput}}
+	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
@@ -457,7 +457,7 @@ func TestBuildImageShouldReturnErrorWhenRemoteIsMissing(t *testing.T) {
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
 		Name:           "testImage",
-		SuppressOutput: "1",
+		SuppressOutput: true,
 		OutputStream:   &buf,
 	}
 	err := client.BuildImage(opts)
@@ -474,7 +474,7 @@ func TestBuildImageShouldSetTagToRemoteIfTagIsMissing(t *testing.T) {
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
 		Remote:         "testing/data/container.tar",
-		SuppressOutput: "1",
+		SuppressOutput: true,
 		OutputStream:   &buf,
 	}
 	err := client.BuildImage(opts)
@@ -482,7 +482,7 @@ func TestBuildImageShouldSetTagToRemoteIfTagIsMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"t": {opts.Remote}, "remote": {opts.Remote}, "q": {opts.SuppressOutput}}
+	expected := map[string][]string{"t": {opts.Remote}, "remote": {opts.Remote}, "q": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
@@ -503,29 +503,7 @@ func TestBuildImageShouldEnableQuietIfQuietIsMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {"1"}}
-	got := map[string][]string(req.URL.Query())
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
-	}
-}
-
-func TestBuildImageShouldEnableQuietIfQuietIsInvalid(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
-	var buf bytes.Buffer
-	opts := BuildImageOptions{
-		Name:           "testImage",
-		Remote:         "testing/data/container.tar",
-		SuppressOutput: "invalid",
-		OutputStream:   &buf,
-	}
-	err := client.BuildImage(opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req := fakeRT.requests[0]
-	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {"1"}}
+	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
@@ -538,7 +516,7 @@ func TestBuildImageShouldReturnErrorWhenOutputStreamIsMissing(t *testing.T) {
 	opts := BuildImageOptions{
 		Name:           "testImage",
 		Remote:         "testing/data/container.tar",
-		SuppressOutput: "1",
+		SuppressOutput: true,
 	}
 	err := client.BuildImage(opts)
 	expected := ErrMissingOutputStream

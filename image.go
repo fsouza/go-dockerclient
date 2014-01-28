@@ -184,7 +184,7 @@ func (c *Client) ImportImage(opts ImportImageOptions, in io.Reader, out io.Write
 type BuildImageOptions struct {
 	Name           string    `qs:"t"`
 	Remote         string    `qs:"remote"`
-	SuppressOutput string    `qs:"q"`
+	SuppressOutput bool      `qs:"q"`
 	OutputStream   io.Writer `qs:"-"`
 }
 
@@ -197,10 +197,6 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	// "github.com/user/repo"
 	if opts.Name == "" {
 		opts.Name = opts.Remote
-	}
-	// Suppress output by default.
-	if opts.SuppressOutput == "" || opts.SuppressOutput != "0" || opts.SuppressOutput != "1" {
-		opts.SuppressOutput = "1"
 	}
 	if opts.OutputStream == nil {
 		return ErrMissingOutputStream
