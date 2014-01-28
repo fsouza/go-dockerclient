@@ -191,22 +191,18 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	if opts.Remote == "" {
 		return ErrMissingRepo
 	}
-
 	// Name the image by default with the repository identifier e.g.
 	// "github.com/user/repo"
 	if opts.Name == "" {
 		opts.Name = opts.Remote
 	}
-
 	// Suppress output by default.
 	if opts.SuppressOutput == "" || opts.SuppressOutput != "0" || opts.SuppressOutput != "1" {
 		opts.SuppressOutput = "1"
 	}
-
 	if opts.OutputStream == nil {
 		return ErrMissingOutputStream
 	}
-
 	// Call api server.
 	err := c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, opts.OutputStream)
 	return err
