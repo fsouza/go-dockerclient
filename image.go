@@ -29,9 +29,11 @@ type APIImages struct {
 }
 
 // Error returned when the image does not exist.
-var ErrNoSuchImage = errors.New("No such image")
-var ErrMissingRepo = errors.New("Missing remote repository e.g. 'github.com/user/repo'")
-var ErrMissingOutputStream = errors.New("Missing output-stream")
+var (
+	ErrNoSuchImage         = errors.New("No such image")
+	ErrMissingRepo         = errors.New("Missing remote repository e.g. 'github.com/user/repo'")
+	ErrMissingOutputStream = errors.New("Missing output-stream")
+)
 
 // ListImages returns the list of available images in the server.
 //
