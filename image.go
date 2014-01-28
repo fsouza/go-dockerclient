@@ -30,7 +30,8 @@ type APIImages struct {
 
 // Error returned when the image does not exist.
 var ErrNoSuchImage = errors.New("No such image")
-var ErrMissingRepo = errors.New("missing remote repository e.g. 'github.com/user/repo'")
+var ErrMissingRepo = errors.New("Missing remote repository e.g. 'github.com/user/repo'")
+var ErrMissingOutputStream = errors.New("Missing output-stream")
 
 // ListImages returns the list of available images in the server.
 //
@@ -178,12 +179,11 @@ func (c *Client) ImportImage(opts ImportImageOptions, in io.Reader, out io.Write
 
 // BuildImageOptions present the set of informations available for building
 // an image from a tarball's url.
-//
-// See http://goo.gl/PhBKnS for more details.
 type BuildImageOptions struct {
-	Name           string `qs:"t"`
-	Remote         string `qs:"remote"`
-	SuppressOutput string `qs:"q"`
+	Name           string    `qs:"t"`
+	Remote         string    `qs:"remote"`
+	SuppressOutput string    `qs:"q"`
+	OutputStream   io.Writer `qs:"-"`
 }
 
 // BuildImage builds an image from a tarball's url.
@@ -192,16 +192,23 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		return ErrMissingRepo
 	}
 
+	// Name the image by default with the repository identifier e.g.
+	// "github.com/user/repo"
 	if opts.Name == "" {
 		opts.Name = opts.Remote
 	}
 
+	// Suppress output by default.
 	if opts.SuppressOutput == "" || opts.SuppressOutput != "0" || opts.SuppressOutput != "1" {
 		opts.SuppressOutput = "1"
 	}
 
-	// call api server
-	err := c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, c.out)
+	if opts.OutputStream == nil {
+		return ErrMissingOutputStream
+	}
+
+	// Call api server.
+	err := c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, opts.OutputStream)
 	return err
 }
 

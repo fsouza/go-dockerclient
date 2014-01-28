@@ -432,7 +432,13 @@ func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
 func TestBuildImageShouldParseAllParameters(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	opts := BuildImageOptions{Name: "testImage", Remote: "testing/data/container.tar", SuppressOutput: "1"}
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Name:           "testImage",
+		Remote:         "testing/data/container.tar",
+		SuppressOutput: "1",
+		OutputStream:   &buf,
+	}
 	err := client.BuildImage(opts)
 	if err != nil {
 		t.Fatal(err)
@@ -448,7 +454,12 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 func TestBuildImageShouldReturnErrorWhenRemoteIsMissing(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	opts := BuildImageOptions{Name: "testImage", SuppressOutput: "1"}
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Name:           "testImage",
+		SuppressOutput: "1",
+		OutputStream:   &buf,
+	}
 	err := client.BuildImage(opts)
 	expected := ErrMissingRepo
 	got := err
@@ -460,7 +471,12 @@ func TestBuildImageShouldReturnErrorWhenRemoteIsMissing(t *testing.T) {
 func TestBuildImageShouldSetTagToRemoteIfTagIsMissing(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	opts := BuildImageOptions{Remote: "testing/data/container.tar", SuppressOutput: "1"}
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Remote:         "testing/data/container.tar",
+		SuppressOutput: "1",
+		OutputStream:   &buf,
+	}
 	err := client.BuildImage(opts)
 	if err != nil {
 		t.Fatal(err)
@@ -476,7 +492,12 @@ func TestBuildImageShouldSetTagToRemoteIfTagIsMissing(t *testing.T) {
 func TestBuildImageShouldEnableQuietIfQuietIsMissing(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	opts := BuildImageOptions{Name: "testImage", Remote: "testing/data/container.tar"}
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Name:         "testImage",
+		Remote:       "testing/data/container.tar",
+		OutputStream: &buf,
+	}
 	err := client.BuildImage(opts)
 	if err != nil {
 		t.Fatal(err)
@@ -492,7 +513,13 @@ func TestBuildImageShouldEnableQuietIfQuietIsMissing(t *testing.T) {
 func TestBuildImageShouldEnableQuietIfQuietIsInvalid(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	opts := BuildImageOptions{Name: "testImage", Remote: "testing/data/container.tar", SuppressOutput: "invalid"}
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Name:           "testImage",
+		Remote:         "testing/data/container.tar",
+		SuppressOutput: "invalid",
+		OutputStream:   &buf,
+	}
 	err := client.BuildImage(opts)
 	if err != nil {
 		t.Fatal(err)
@@ -500,6 +527,22 @@ func TestBuildImageShouldEnableQuietIfQuietIsInvalid(t *testing.T) {
 	req := fakeRT.requests[0]
 	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {"1"}}
 	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+func TestBuildImageShouldReturnErrorWhenOutputStreamIsMissing(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := BuildImageOptions{
+		Name:           "testImage",
+		Remote:         "testing/data/container.tar",
+		SuppressOutput: "1",
+	}
+	err := client.BuildImage(opts)
+	expected := ErrMissingOutputStream
+	got := err
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
