@@ -275,7 +275,8 @@ func TestPullImage(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
-	err := client.PullImage(PullImageOptions{Repository: "base", OutputStream: &buf})
+	err := client.PullImage(PullImageOptions{Repository: "base", OutputStream: &buf},
+		AuthConfiguration{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -306,7 +307,7 @@ func TestPullImageCustomRegistry(t *testing.T) {
 		Registry:     "docker.tsuru.io",
 		OutputStream: &buf,
 	}
-	err := client.PullImage(opts)
+	err := client.PullImage(opts, AuthConfiguration{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +322,7 @@ func TestPullImageCustomRegistry(t *testing.T) {
 func TestPullImageNoRepository(t *testing.T) {
 	var opts PullImageOptions
 	client := Client{}
-	err := client.PullImage(opts)
+	err := client.PullImage(opts, AuthConfiguration{})
 	if err != ErrNoSuchImage {
 		t.Errorf("PullImage: got wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
 	}
