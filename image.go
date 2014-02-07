@@ -122,9 +122,13 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	name := opts.Name
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
+	var headers = make(map[string]string)
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(auth)
-	return c.stream("POST", path, nil, &buf, opts.OutputStream)
+
+	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+
+	return c.stream("POST", path, headers, nil, opts.OutputStream)
 }
 
 // PullImageOptions present the set of options available for pulling an image

@@ -6,12 +6,14 @@ package docker
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -210,10 +212,14 @@ func TestPushImage(t *testing.T) {
 	if query := req.URL.Query().Encode(); query != "" {
 		t.Errorf("PushImage: Wrong query string. Want no parameters, got %q.", query)
 	}
-	var b [2]byte
-	req.Body.Read(b[:])
-	if string(b[:]) != "{}" {
-		t.Errorf("PushImage: wrong body. Want %q. Got %q.", "{}", string(b[:]))
+
+	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
+	if err != nil {
+		t.Errorf("PushImage: caught error decoding auth. %#v", err.Error())
+	}
+	if strings.TrimSpace(string(auth)) != "{}" {
+		t.Errorf("PushImage: wrong body. Want %q. Got %q.",
+			base64.URLEncoding.EncodeToString([]byte("{}")), req.Header.Get("X-Registry-Auth"))
 	}
 }
 
@@ -231,10 +237,14 @@ func TestPushImageWithAuthentication(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	var b [128]byte
-	n, _ := req.Body.Read(b[:])
 	var gotAuth AuthConfiguration
-	err = json.Unmarshal(b[:n], &gotAuth)
+
+	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
+	if err != nil {
+		t.Errorf("PushImage: caught error decoding auth. %#v", err.Error())
+	}
+
+	err = json.Unmarshal(auth, &gotAuth)
 	if err != nil {
 		t.Fatal(err)
 	}
