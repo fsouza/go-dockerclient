@@ -108,7 +108,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error {
+func (c *Client) stream(method, path string, headers map[string]string, in io.Reader, out io.Writer) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
@@ -120,6 +120,13 @@ func (c *Client) stream(method, path string, in io.Reader, out io.Writer) error 
 	if method == "POST" {
 		req.Header.Set("Content-Type", "plain/text")
 	}
+
+	if headers != nil {
+		for key, val := range headers {
+			req.Header.Set(key, val)
+		}
+	}
+
 	var resp *http.Response
 	protocol := c.endpointURL.Scheme
 	address := c.endpointURL.Path

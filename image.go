@@ -6,6 +6,7 @@ package docker
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -121,9 +122,13 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	name := opts.Name
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
+	var headers = make(map[string]string)
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(auth)
-	return c.stream("POST", path, &buf, opts.OutputStream)
+
+	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+
+	return c.stream("POST", path, headers, nil, opts.OutputStream)
 }
 
 // PullImageOptions present the set of options available for pulling an image
@@ -139,16 +144,22 @@ type PullImageOptions struct {
 // PullImage pulls an image from a remote registry, logging progress to w.
 //
 // See http://goo.gl/PhBKnS for more details.
-func (c *Client) PullImage(opts PullImageOptions) error {
+func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error {
 	if opts.Repository == "" {
 		return ErrNoSuchImage
 	}
-	return c.createImage(queryString(&opts), nil, opts.OutputStream)
+
+	var headers = make(map[string]string)
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(auth)
+	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+
+	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream)
 }
 
-func (c *Client) createImage(qs string, in io.Reader, w io.Writer) error {
+func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer) error {
 	path := "/images/create?" + qs
-	return c.stream("POST", path, in, w)
+	return c.stream("POST", path, headers, in, w)
 }
 
 // ImportImageOptions present the set of informations available for importing
@@ -182,7 +193,7 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 		opts.InputStream = bytes.NewBuffer(b)
 		opts.Source = "-"
 	}
-	return c.createImage(queryString(&opts), opts.InputStream, opts.OutputStream)
+	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream)
 }
 
 // BuildImageOptions present the set of informations available for building
@@ -208,7 +219,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		return ErrMissingOutputStream
 	}
 	// Call api server.
-	err := c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, opts.OutputStream)
+	err := c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, nil, opts.OutputStream)
 	return err
 }
 
