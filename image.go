@@ -33,6 +33,7 @@ type APIImages struct {
 var (
 	ErrNoSuchImage         = errors.New("No such image")
 	ErrMissingRepo         = errors.New("Missing remote repository e.g. 'github.com/user/repo'")
+	ErrMissingInputStream = errors.New("Missing input-stream")
 	ErrMissingOutputStream = errors.New("Missing output-stream")
 )
 
@@ -197,29 +198,28 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 }
 
 // BuildImageOptions present the set of informations available for building
-// an image from a tarball's url.
+// an image from a tarfile with a Dockerfile in it,the details about Dockerfile
+// see http://docs.docker.io/en/latest/reference/builder/
 type BuildImageOptions struct {
 	Name           string    `qs:"t"`
-	Remote         string    `qs:"remote"`
+	NoCache        bool      `qs:"nocache"`
 	SuppressOutput bool      `qs:"q"`
+	RmTmpContainer bool      `qs:"rm"`
+	InputStream    io.Reader `qs:"-"`
 	OutputStream   io.Writer `qs:"-"`
 }
 
 // BuildImage builds an image from a tarball's url.
 func (c *Client) BuildImage(opts BuildImageOptions) error {
-	if opts.Remote == "" {
-		return ErrMissingRepo
+	if opts.InputStream == nil {
+		return ErrMissingInputStream
 	}
-	// Name the image by default with the repository identifier e.g.
-	// "github.com/user/repo"
-	if opts.Name == "" {
-		opts.Name = opts.Remote
-	}
+
 	if opts.OutputStream == nil {
 		return ErrMissingOutputStream
 	}
 	// Call api server.
-	err := c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, nil, opts.OutputStream)
+	err := c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, opts.OutputStream)
 	return err
 }
 
