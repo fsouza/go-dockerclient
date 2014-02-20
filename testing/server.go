@@ -360,24 +360,23 @@ func (s *DockerServer) findContainer(id string) (*docker.Container, int, error) 
 }
 
 func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
-fmt.Println("in buildimage", r.URL.RawQuery)
 	if ct := r.Header.Get("Content-Type"); ct != "application/tar" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("The stream must be a tar archive compressed with one of the following algorithms: identity (no compression), gzip, bzip2, xz."))
 		return
 	}
 
-	got_dockerfile := false
-	tar_reader := tar.NewReader(r.Body)
+	gotDockerFile := false
+	tr := tar.NewReader(r.Body)
 	for {
-		header, err := tar_reader.Next()
+		header, err := tr.Next()
 		if err != nil { break }
 		if header.Name == "Dockerfile" {
-			got_dockerfile = true
+			gotDockerFile = true
 		}
 	}
 
-	if !got_dockerfile {
+	if !gotDockerFile {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("miss Dockerfile"))
 		return
