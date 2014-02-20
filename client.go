@@ -126,6 +126,9 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 	var resp *http.Response
 	protocol := c.endpointURL.Scheme
 	address := c.endpointURL.Path
+	if out == nil {
+		out = ioutil.Discard
+	}
 	if protocol == "unix" {
 		dial, err := net.Dial(protocol, address)
 		if err != nil {
