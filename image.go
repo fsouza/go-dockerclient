@@ -5,7 +5,6 @@
 package docker
 
 import (
-	"bufio"
 	"bytes"
 	"strings"
 	"encoding/base64"
@@ -131,7 +130,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 
 	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 
-	return c.stream("POST", path, headers, nil, opts.OutputStream)
+	return c.stream("POST", path, headers, nil, opts.OutputStream, true)
 }
 
 // PullImageOptions present the set of options available for pulling an image
@@ -162,7 +161,7 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 
 func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer) error {
 	path := "/images/create?" + qs
-	return c.stream("POST", path, headers, in, w)
+	return c.stream("POST", path, headers, in, w, true)
 }
 
 // ImportImageOptions present the set of informations available for importing
@@ -217,32 +216,27 @@ func (c *Client) BuildImage(opts BuildImageOptions) (image *Image, err error) {
 		return nil, ErrMissingInputStream
 	}
 
-	if opts.OutputStream == nil {
-		return nil, ErrMissingOutputStream
-	}
 	// Call api server.
 	tmpbuf := bytes.NewBuffer(nil)
-	multiwriter := io.MultiWriter(opts.OutputStream, tmpbuf)
-	if err = c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, multiwriter); err != nil {
+	var multiwriter io.Writer
+	if opts.OutputStream != nil {
+		multiwriter = io.MultiWriter(opts.OutputStream, tmpbuf)
+	} else {
+		multiwriter = io.MultiWriter(tmpbuf)
+	}
+
+	if err = c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, multiwriter, false); err != nil {
 		return
 	}
 
 	//parse the image id
 	id := ""
-	scanner := bufio.NewScanner(tmpbuf)
-	if scanner == nil {
-		return nil, errors.New("new scanner to parse imageid fail")
-	}
-
-	for scanner.Scan() {
-		text := scanner.Text()
-		if strings.Index(text, "Successfully built") == -1 { continue }
-		if l := strings.Split(text, " "); len(l) > 0 {
-			id = l[len(l)-1]
-		}
-	}
-
-	if id == "" {
+	retmsg := tmpbuf.String()
+	if pos := strings.Index(retmsg, "Successfully built"); pos != -1 {
+		start_pos := pos+len("Successfully built") + 1
+		end_pos := start_pos + 12
+		id = retmsg[start_pos:end_pos]
+	} else {
 		return nil, errors.New("build image fail, details in output stream")
 	}
 	return c.InspectImage(id)

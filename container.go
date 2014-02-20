@@ -540,7 +540,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, nil, nil, opts.OutputStream)
+	return c.stream("GET", url, nil, nil, opts.OutputStream, true)
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.

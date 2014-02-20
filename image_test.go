@@ -529,25 +529,6 @@ func TestBuildImageShouldEnableQuietIfQuietIsMissing(t *testing.T) {
 	}
 }
 
-func TestBuildImageShouldReturnErrorWhenOutputStreamIsMissing(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
-
-	buf := bytes.NewBuffer(nil)
-	opts := BuildImageOptions{
-		Name:           "testImage",
-		InputStream:    buf,
-		SuppressOutput: true,
-	}
-
-	_, err := client.BuildImage(opts)
-	expected := ErrMissingOutputStream
-	got := err
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
-	}
-}
-
 func TestIsUrl(t *testing.T) {
 	url := "http://foo.bar/"
 	result := isUrl(url)

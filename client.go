@@ -108,7 +108,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, headers map[string]string, in io.Reader, out io.Writer) error {
+func (c *Client) stream(method, path string, headers map[string]string, in io.Reader, out io.Writer, jsonmessage bool) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
@@ -151,7 +151,7 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 		}
 		return newError(resp.StatusCode, body)
 	}
-	if resp.Header.Get("Content-Type") == "application/json" {
+	if resp.Header.Get("Content-Type") == "application/json" && jsonmessage{
 		dec := json.NewDecoder(resp.Body)
 		for {
 			var m jsonMessage
