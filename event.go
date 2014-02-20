@@ -1,3 +1,7 @@
+// Copyright 2013 go-dockerclient authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -16,15 +20,15 @@ import (
 
 type APIEvents struct {
 	Status string
-	Id     string
+	ID     string
 	From   string
-	Time   uint32
+	Time   int64
 }
 
 type EventMonitoringState struct {
 	sync.RWMutex
 	enabled   bool
-	lastSeen  uint32
+	lastSeen  int64
 	C         chan *APIEvents
 	errC      chan error
 	listeners []chan *APIEvents
@@ -33,7 +37,7 @@ type EventMonitoringState struct {
 var eventMonitor EventMonitoringState
 var ErrNoListeners = errors.New("No listeners to send event to...")
 
-func (c *Client) AddEventListener(listener *chan *APIEvents) error {
+func (c *Client) AddEventListener(listener chan *APIEvents) error {
 	err := eventMonitor.enableEventMonitoring(c)
 	if err != nil {
 		return err
@@ -45,7 +49,7 @@ func (c *Client) AddEventListener(listener *chan *APIEvents) error {
 	return nil
 }
 
-func (c *Client) RemoveEventListener(listener *chan *APIEvents) error {
+func (c *Client) RemoveEventListener(listener chan *APIEvents) error {
 	err := eventMonitor.removeListener(listener)
 	if err != nil {
 		return err
@@ -61,23 +65,23 @@ func (c *Client) RemoveEventListener(listener *chan *APIEvents) error {
 	return nil
 }
 
-func (eventState *EventMonitoringState) addListener(listener *chan *APIEvents) error {
+func (eventState *EventMonitoringState) addListener(listener chan *APIEvents) error {
 	eventState.Lock()
 	defer eventState.Unlock()
 	if listenerExists(listener, &eventState.listeners) {
 		return fmt.Errorf("Listener already exists")
 	}
-	eventState.listeners = append(eventState.listeners, *listener)
+	eventState.listeners = append(eventState.listeners, listener)
 	return nil
 }
 
-func (eventState *EventMonitoringState) removeListener(listener *chan *APIEvents) error {
+func (eventState *EventMonitoringState) removeListener(listener chan *APIEvents) error {
 	eventState.Lock()
 	defer eventState.Unlock()
 	var newListeners []chan *APIEvents
 	if listenerExists(listener, &eventState.listeners) {
 		for _, l := range eventState.listeners {
-			if l != *listener {
+			if l != listener {
 				newListeners = append(newListeners, l)
 			}
 		}
@@ -86,9 +90,9 @@ func (eventState *EventMonitoringState) removeListener(listener *chan *APIEvents
 	return nil
 }
 
-func listenerExists(a *chan *APIEvents, list *[]chan *APIEvents) bool {
+func listenerExists(a chan *APIEvents, list *[]chan *APIEvents) bool {
 	for _, b := range *list {
-		if b == *a {
+		if b == a {
 			return true
 		}
 	}
@@ -127,11 +131,11 @@ func (eventState *EventMonitoringState) monitorEvents(c *Client) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	for err = c.eventHijack(eventState.lastSeen, eventState.C, eventState.errC); err != nil && retries < 5; retries++ {
+	for err = c.eventHijack(uint32(eventState.lastSeen), eventState.C, eventState.errC); err != nil && retries < 5; retries++ {
 		waitTime := float64(time.Duration(100*time.Millisecond)) * math.Pow(2, float64(retries))
 		eventState.errC <- fmt.Errorf("connection to event stream failed, retrying in %n: %s", waitTime, err)
 		time.Sleep(time.Duration(int64(waitTime)))
-		err = c.eventHijack(eventState.lastSeen, eventState.C, eventState.errC)
+		err = c.eventHijack(uint32(eventState.lastSeen), eventState.C, eventState.errC)
 	}
 
 	if err != nil {
