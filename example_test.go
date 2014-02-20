@@ -11,8 +11,6 @@ import (
 	"io"
 	"log"
 	"time"
-	"bufio"
-	"strings"
 )
 
 func ExampleClient_AttachToContainer() {
@@ -95,20 +93,10 @@ func ExampleClient_BuildImage() {
 		InputStream: inputbuf,
 		OutputStream: outputbuf,
 	}
-	if err := client.BuildImage(opts); err != nil {
-		log.Fatal(err)
-	}
 
-	var id string
-	scanner := bufio.NewScanner(outputbuf)
-	for scanner.Scan() {
-        text := scanner.Text()
-        if strings.Index(text, "Successfully built") == -1 { continue }
-        //dangerous:docker build API does not return a specific image id field.it just return as
-        //{"stream": "Successfully built 002d68f7b74d\n"}
-        if l := strings.Split(text, " "); len(l) > 0 {
-            id = strings.Trim(l[len(l)-1], "\\n}\"")
-        }
-    }
-	log.Println("build image success, imageid:", id)
+	if image, err := client.BuildImage(opts); err != nil {
+		log.Fatal(err)
+	}else{
+		log.Println("build image success, imageid:", image.ID)
+	}
 }

@@ -5,7 +5,9 @@
 package docker
 
 import (
+	"bufio"
 	"bytes"
+	"strings"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -210,17 +212,40 @@ type BuildImageOptions struct {
 }
 
 // BuildImage builds an image from a tarball's url.
-func (c *Client) BuildImage(opts BuildImageOptions) error {
+func (c *Client) BuildImage(opts BuildImageOptions) (image *Image, err error) {
 	if opts.InputStream == nil {
-		return ErrMissingInputStream
+		return nil, ErrMissingInputStream
 	}
 
 	if opts.OutputStream == nil {
-		return ErrMissingOutputStream
+		return nil, ErrMissingOutputStream
 	}
 	// Call api server.
-	err := c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, opts.OutputStream)
-	return err
+	tmpbuf := bytes.NewBuffer(nil)
+	multiwriter := io.MultiWriter(opts.OutputStream, tmpbuf)
+	if err = c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, multiwriter); err != nil {
+		return
+	}
+
+	//parse the image id
+	id := ""
+	scanner := bufio.NewScanner(tmpbuf)
+	if scanner == nil {
+		return nil, errors.New("new scanner to parse imageid fail")
+	}
+
+	for scanner.Scan() {
+		text := scanner.Text()
+		if strings.Index(text, "Successfully built") == -1 { continue }
+		if l := strings.Split(text, " "); len(l) > 0 {
+			id = l[len(l)-1]
+		}
+	}
+
+	if id == "" {
+		return nil, errors.New("build image fail, details in output stream")
+	}
+	return c.InspectImage(id)
 }
 
 func isUrl(u string) bool {

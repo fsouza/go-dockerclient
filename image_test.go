@@ -477,8 +477,9 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 		InputStream:	&buf,
 		OutputStream:   &buf,
 	}
-	err := client.BuildImage(opts)
-	if err != nil {
+
+	_, err := client.BuildImage(opts)
+	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
@@ -500,7 +501,7 @@ func TestBuildImageShouldReturnErrorWhenInputstreamIsMissing(t *testing.T) {
 		OutputStream:   &buf,
 	}
 
-	err := client.BuildImage(opts)
+	_, err := client.BuildImage(opts)
 	if err != ErrMissingInputStream {
 		t.Errorf("BuildImage: wrong match. Want %#v. Got %#v.", ErrMissingInputStream, err)
 	}
@@ -515,8 +516,9 @@ func TestBuildImageShouldEnableQuietIfQuietIsMissing(t *testing.T) {
 		InputStream:  &buf,
 		OutputStream: &buf,
 	}
-	err := client.BuildImage(opts)
-	if err != nil {
+
+    _, err := client.BuildImage(opts)
+	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
@@ -537,7 +539,8 @@ func TestBuildImageShouldReturnErrorWhenOutputStreamIsMissing(t *testing.T) {
 		InputStream:    buf,
 		SuppressOutput: true,
 	}
-	err := client.BuildImage(opts)
+
+	_, err := client.BuildImage(opts)
 	expected := ErrMissingOutputStream
 	got := err
 	if !reflect.DeepEqual(got, expected) {
