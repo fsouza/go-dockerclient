@@ -142,8 +142,10 @@ func (eventState *EventMonitoringState) monitorEvents(c *Client) {
 		timeout := time.After(100 * time.Millisecond)
 		select {
 		case ev := <-eventState.C:
-			err = eventState.sendEvent(ev)
+			// send the event
+			go eventState.sendEvent(ev)
 
+			// update lastSeen if appropriate
 			go func(e *APIEvents) {
 				eventState.Lock()
 				defer eventState.Unlock()
@@ -152,38 +154,36 @@ func (eventState *EventMonitoringState) monitorEvents(c *Client) {
 				}
 			}(ev)
 
+		case err = <-eventState.errC:
 			if err == ErrNoListeners {
-				eventState.RLock()
-				defer eventState.RUnlock()
-				eventState.disableEventMonitoring()
+				// if there are no listeners, exit normally
+				eventState.terminate(nil)
 				return
 			} else if err != nil {
-				eventState.errC <- err
+				// otherwise, trigger a restart via the error channel
+				defer func() { go eventState.monitorEvents(c) }()
+				return
 			}
-		case <-eventState.errC:
-			defer func() { go eventState.monitorEvents(c) }()
-			return
 		case <-timeout:
 			continue
 		}
 	}
 }
 
-func (eventState *EventMonitoringState) sendEvent(event *APIEvents) error {
+func (eventState *EventMonitoringState) sendEvent(event *APIEvents) {
 	eventState.RLock()
 	defer eventState.RUnlock()
 	if len(eventState.listeners) == 0 {
-		return ErrNoListeners
+		eventState.errC <- ErrNoListeners
 	}
 	for _, listener := range eventState.listeners {
 		listener <- event
 	}
-	return nil
 }
 
 func (eventState *EventMonitoringState) terminate(err error) {
 	if err != nil {
-		eventState.errC <- err
+		fmt.Printf("terminating montoring", err)
 	}
 	eventState.disableEventMonitoring()
 }
