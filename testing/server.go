@@ -11,9 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/fsouza/go-dockerclient/utils"
-	"github.com/gorilla/mux"
 	mathrand "math/rand"
 	"net"
 	"net/http"
@@ -21,6 +18,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fsouza/go-dockerclient"
+	"github.com/fsouza/go-dockerclient/utils"
+	"github.com/gorilla/mux"
 )
 
 // DockerServer represents a programmable, concurrent (not much), HTTP server
@@ -71,6 +72,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/images/json").Methods("GET").HandlerFunc(s.listImages)
 	s.mux.Path("/images/{id:.*}").Methods("DELETE").HandlerFunc(s.removeImage)
 	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.pushImage)
+	s.mux.Path("/events").Methods("GET").HandlerFunc(s.listEvents)
 }
 
 // Stop stops the server.
@@ -400,4 +402,47 @@ func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
 	defer s.iMut.Unlock()
 	s.images[index] = s.images[len(s.images)-1]
 	s.images = s.images[:len(s.images)-1]
+}
+
+func (s *DockerServer) listEvents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var events [][]byte
+	count := mathrand.Intn(20)
+	for i := 0; i < count; i++ {
+		data, err := json.Marshal(s.generateEvent())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		events = append(events, data)
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	for _, d := range events {
+		fmt.Fprintln(w, d)
+		time.Sleep(time.Duration(mathrand.Intn(200)) * time.Millisecond)
+	}
+}
+
+func (s *DockerServer) generateEvent() *docker.APIEvents {
+	var eventType string
+
+	switch mathrand.Intn(4) {
+	case 0:
+		eventType = "create"
+	case 1:
+		eventType = "start"
+	case 2:
+		eventType = "stop"
+	case 3:
+		eventType = "destroy"
+	}
+
+	return &docker.APIEvents{
+		ID:     s.generateID(),
+		Status: eventType,
+		From:   "mybase:latest",
+		Time:   time.Now().Unix()}
 }
