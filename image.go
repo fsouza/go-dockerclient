@@ -215,7 +215,6 @@ func (c *Client) BuildImage(opts BuildImageOptions) (image *Image, err error) {
 	if opts.InputStream == nil {
 		return nil, ErrMissingInputStream
 	}
-
 	// Call api server.
 	tmpbuf := bytes.NewBuffer(nil)
 	var multiwriter io.Writer
@@ -224,11 +223,9 @@ func (c *Client) BuildImage(opts BuildImageOptions) (image *Image, err error) {
 	} else {
 		multiwriter = io.MultiWriter(tmpbuf)
 	}
-
 	if err = c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, multiwriter, false); err != nil {
 		return
 	}
-
 	//parse the image id
 	id := ""
 	retmsg := tmpbuf.String()

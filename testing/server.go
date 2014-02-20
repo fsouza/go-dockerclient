@@ -365,7 +365,6 @@ func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("The stream must be a tar archive compressed with one of the following algorithms: identity (no compression), gzip, bzip2, xz."))
 		return
 	}
-
 	gotDockerFile := false
 	tr := tar.NewReader(r.Body)
 	for {
@@ -375,13 +374,11 @@ func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 			gotDockerFile = true
 		}
 	}
-
 	if !gotDockerFile {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("miss Dockerfile"))
 		return
 	}
-
 	//we did not use that Dockerfile to build image cause we are a fake Docker daemon
 	image := docker.Image{
 		ID: s.generateID(),
