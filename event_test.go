@@ -5,9 +5,11 @@
 package docker
 
 import (
+	"bufio"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -21,13 +23,15 @@ func TestEventListeners(t *testing.T) {
 
 	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("test server recieved %s %s\n", r.Method, r.URL.String())
-		w.Write([]byte(response))
+		rsc := bufio.NewScanner(strings.NewReader(response))
+		for rsc.Scan() {
+			w.Write([]byte(rsc.Text()))
+			w.(http.Flusher).Flush()
+			time.Sleep(10 * time.Millisecond)
+		}
 		req = *r
 	}))
 	defer server.Close()
-
-	t.Logf("created test server: %s", server.URL)
 
 	client, err := NewClient(server.URL)
 	if err != nil {
@@ -55,7 +59,7 @@ func TestEventListeners(t *testing.T) {
 				t.Fatalf("Check event failed: %s", err)
 			}
 			if count == 4 {
-				break
+				return
 			}
 		case <-timeout:
 			t.Fatal("TestAddEventListener timed out waiting on events")
