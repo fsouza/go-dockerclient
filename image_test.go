@@ -312,8 +312,8 @@ func TestPullImageWithoutOutputStream(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	opts := PullImageOptions{
-		Repository:   "base",
-		Registry:     "docker.tsuru.io",
+		Repository: "base",
+		Registry:   "docker.tsuru.io",
 	}
 	err := client.PullImage(opts, AuthConfiguration{})
 	if err != nil {
@@ -490,10 +490,10 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
 		Name:           "testImage",
-		NoCache:		true,
+		NoCache:        true,
 		SuppressOutput: true,
 		RmTmpContainer: true,
-		InputStream:	&buf,
+		InputStream:    &buf,
 		OutputStream:   &buf,
 	}
 	_, err := client.BuildImage(opts)
@@ -532,7 +532,7 @@ func TestBuildImageShouldEnableQuietIfQuietIsMissing(t *testing.T) {
 		InputStream:  &buf,
 		OutputStream: &buf,
 	}
-    _, err := client.BuildImage(opts)
+	_, err := client.BuildImage(opts)
 	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
 	}

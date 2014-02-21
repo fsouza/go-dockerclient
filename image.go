@@ -34,7 +34,7 @@ type APIImages struct {
 var (
 	ErrNoSuchImage         = errors.New("No such image")
 	ErrMissingRepo         = errors.New("Missing remote repository e.g. 'github.com/user/repo'")
-	ErrMissingInputStream = errors.New("Missing input-stream")
+	ErrMissingInputStream  = errors.New("Missing input-stream")
 	ErrMissingOutputStream = errors.New("Missing output-stream")
 )
 
@@ -223,7 +223,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) (imageid string, err error) 
 	} else {
 		multiwriter = io.MultiWriter(tmpbuf)
 	}
-	if err = c.purestream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, multiwriter); err != nil {
+	if err = c.purestream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type": "application/tar"}, opts.InputStream, multiwriter); err != nil {
 		return
 	}
 	//parse the image id

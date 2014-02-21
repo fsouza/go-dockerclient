@@ -83,17 +83,17 @@ func ExampleClient_BuildImage() {
 	t := time.Now()
 	inputbuf, outputbuf := bytes.NewBuffer(nil), bytes.NewBuffer(nil)
 	tr := tar.NewWriter(inputbuf)
-	tr.WriteHeader(&tar.Header{Name:"Dockerfile", Size:10, ModTime : t, AccessTime : t, ChangeTime : t})
+	tr.WriteHeader(&tar.Header{Name: "Dockerfile", Size: 10, ModTime: t, AccessTime: t, ChangeTime: t})
 	tr.Write([]byte("FROM base\n"))
 	tr.Close()
 	opts := docker.BuildImageOptions{
-		Name : "test",
-		InputStream: inputbuf,
+		Name:         "test",
+		InputStream:  inputbuf,
 		OutputStream: outputbuf,
 	}
 	if imageid, err := client.BuildImage(opts); err != nil {
 		log.Fatal(err)
-	}else{
+	} else {
 		log.Println("build image success, imageid:", imageid)
 	}
 }

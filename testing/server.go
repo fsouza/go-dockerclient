@@ -369,7 +369,9 @@ func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 	tr := tar.NewReader(r.Body)
 	for {
 		header, err := tr.Next()
-		if err != nil { break }
+		if err != nil {
+			break
+		}
 		if header.Name == "Dockerfile" {
 			gotDockerFile = true
 		}
