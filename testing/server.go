@@ -7,6 +7,7 @@
 package testing
 
 import (
+	"archive/tar"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
@@ -68,6 +69,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/containers/{id:.*}/attach").Methods("POST").HandlerFunc(s.attachContainer)
 	s.mux.Path("/containers/{id:.*}").Methods("DELETE").HandlerFunc(s.removeContainer)
 	s.mux.Path("/images/create").Methods("POST").HandlerFunc(s.pullImage)
+	s.mux.Path("/build").Methods("POST").HandlerFunc(s.buildImage)
 	s.mux.Path("/images/json").Methods("GET").HandlerFunc(s.listImages)
 	s.mux.Path("/images/{id:.*}").Methods("DELETE").HandlerFunc(s.removeImage)
 	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.pushImage)
@@ -355,6 +357,43 @@ func (s *DockerServer) findContainer(id string) (*docker.Container, int, error) 
 		}
 	}
 	return nil, -1, errors.New("No such container")
+}
+
+func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
+	if ct := r.Header.Get("Content-Type"); ct != "application/tar" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("The stream must be a tar archive compressed with one of the following algorithms: identity (no compression), gzip, bzip2, xz."))
+		return
+	}
+	gotDockerFile := false
+	tr := tar.NewReader(r.Body)
+	for {
+		header, err := tr.Next()
+		if err != nil { break }
+		if header.Name == "Dockerfile" {
+			gotDockerFile = true
+		}
+	}
+	if !gotDockerFile {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("miss Dockerfile"))
+		return
+	}
+	//we did not use that Dockerfile to build image cause we are a fake Docker daemon
+	image := docker.Image{
+		ID: s.generateID(),
+	}
+	query := r.URL.Query()
+	repository := image.ID
+	if t := query.Get("t"); t != "" {
+		repository = t
+	}
+	s.iMut.Lock()
+	s.images = append(s.images, image)
+	s.imgIDs[repository] = image.ID
+	s.iMut.Unlock()
+	w.Write([]byte(fmt.Sprintf("Successfully built %s", image.ID)))
+	return
 }
 
 func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
