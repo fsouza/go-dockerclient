@@ -477,7 +477,6 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 		InputStream:	&buf,
 		OutputStream:   &buf,
 	}
-
 	_, err := client.BuildImage(opts)
 	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
@@ -493,14 +492,12 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 func TestBuildImageShouldReturnErrorWhenInputstreamIsMissing(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
 		Name:           "testImage",
 		SuppressOutput: true,
 		OutputStream:   &buf,
 	}
-
 	_, err := client.BuildImage(opts)
 	if err != ErrMissingInputStream {
 		t.Errorf("BuildImage: wrong match. Want %#v. Got %#v.", ErrMissingInputStream, err)
@@ -516,7 +513,6 @@ func TestBuildImageShouldEnableQuietIfQuietIsMissing(t *testing.T) {
 		InputStream:  &buf,
 		OutputStream: &buf,
 	}
-
     _, err := client.BuildImage(opts)
 	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
