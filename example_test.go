@@ -10,6 +10,7 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"io"
 	"log"
+	"time"
 )
 
 func ExampleClient_AttachToContainer() {
@@ -72,4 +73,27 @@ func ExampleClient_CopyFromContainer() {
 		log.Fatal(err)
 	}
 	log.Println(buf.String())
+}
+
+func ExampleClient_BuildImage() {
+	client, err := docker.NewClient("http://localhost:4243")
+	if err != nil {
+		log.Fatal(err)
+	}
+	t := time.Now()
+	inputbuf, outputbuf := bytes.NewBuffer(nil), bytes.NewBuffer(nil)
+	tr := tar.NewWriter(inputbuf)
+	tr.WriteHeader(&tar.Header{Name:"Dockerfile", Size:10, ModTime : t, AccessTime : t, ChangeTime : t})
+	tr.Write([]byte("FROM base\n"))
+	tr.Close()
+	opts := docker.BuildImageOptions{
+		Name : "test",
+		InputStream: inputbuf,
+		OutputStream: outputbuf,
+	}
+	if imageid, err := client.BuildImage(opts); err != nil {
+		log.Fatal(err)
+	}else{
+		log.Println("build image success, imageid:", imageid)
+	}
 }

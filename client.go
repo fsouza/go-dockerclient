@@ -179,6 +179,57 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 	return nil
 }
 
+func (c *Client) purestream(method, path string, headers map[string]string, in io.Reader, out io.Writer) error {
+	if (method == "POST" || method == "PUT") && in == nil {
+		in = bytes.NewReader(nil)
+	}
+	req, err := http.NewRequest(method, c.getURL(path), in)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	if method == "POST" {
+		req.Header.Set("Content-Type", "plain/text")
+	}
+	for key, val := range headers {
+		req.Header.Set(key, val)
+	}
+	var resp *http.Response
+	protocol := c.endpointURL.Scheme
+	address := c.endpointURL.Path
+	if protocol == "unix" {
+		dial, err := net.Dial(protocol, address)
+		if err != nil {
+			return err
+		}
+		clientconn := httputil.NewClientConn(dial, nil)
+		resp, err = clientconn.Do(req)
+		defer clientconn.Close()
+	} else {
+		resp, err = c.client.Do(req)
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "connection refused") {
+			return ErrConnectionRefused
+		}
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return newError(resp.StatusCode, body)
+	}
+	if out != nil {
+		if _, err := io.Copy(out, resp.Body); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Client) hijack(method, path string, setRawTerminal bool, in io.Reader, errStream io.Writer, out io.Writer) error {
 	req, err := http.NewRequest(method, c.getURL(path), nil)
 	if err != nil {
