@@ -7,9 +7,11 @@ package docker_test
 import (
 	"archive/tar"
 	"bytes"
-	"github.com/fsouza/go-dockerclient"
 	"io"
 	"log"
+	"time"
+
+	"github.com/fsouza/go-dockerclient"
 )
 
 func ExampleClient_AttachToContainer() {
@@ -72,4 +74,38 @@ func ExampleClient_CopyFromContainer() {
 		log.Fatal(err)
 	}
 	log.Println(buf.String())
+}
+
+func ExampleClient_ListenEvents() {
+	client, err := docker.NewClient("http://localhost:4243")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	listener := make(chan *docker.APIEvents)
+	err = client.AddEventListener(listener)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer func() {
+
+		err = client.RemoveEventListener(listener)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	}()
+
+	timeout := time.After(1 * time.Second)
+
+	for {
+		select {
+		case msg := <-listener:
+			log.Println(msg)
+		case <-timeout:
+			break
+		}
+	}
+
 }
