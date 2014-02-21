@@ -94,9 +94,9 @@ func ExampleClient_BuildImage() {
 		OutputStream: outputbuf,
 	}
 
-	if image, err := client.BuildImage(opts); err != nil {
+	if imageid, err := client.BuildImage(opts); err != nil {
 		log.Fatal(err)
 	}else{
-		log.Println("build image success, imageid:", image.ID)
+		log.Println("build image success, imageid:", imageid)
 	}
 }

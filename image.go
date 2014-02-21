@@ -6,7 +6,6 @@ package docker
 
 import (
 	"bytes"
-	"strings"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -16,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 )
 
 // This work with api verion < v1.7 and > v1.9
@@ -130,7 +130,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 
 	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 
-	return c.stream("POST", path, headers, nil, opts.OutputStream, true)
+	return c.stream("POST", path, headers, nil, opts.OutputStream)
 }
 
 // PullImageOptions present the set of options available for pulling an image
@@ -161,7 +161,7 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 
 func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer) error {
 	path := "/images/create?" + qs
-	return c.stream("POST", path, headers, in, w, true)
+	return c.stream("POST", path, headers, in, w)
 }
 
 // ImportImageOptions present the set of informations available for importing
@@ -211,9 +211,9 @@ type BuildImageOptions struct {
 }
 
 // BuildImage builds an image from a tarball's url.
-func (c *Client) BuildImage(opts BuildImageOptions) (image *Image, err error) {
+func (c *Client) BuildImage(opts BuildImageOptions) (imageid string, err error) {
 	if opts.InputStream == nil {
-		return nil, ErrMissingInputStream
+		return "", ErrMissingInputStream
 	}
 	// Call api server.
 	tmpbuf := bytes.NewBuffer(nil)
@@ -223,20 +223,21 @@ func (c *Client) BuildImage(opts BuildImageOptions) (image *Image, err error) {
 	} else {
 		multiwriter = io.MultiWriter(tmpbuf)
 	}
-	if err = c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, multiwriter, false); err != nil {
+	if err = c.purestream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type":"application/tar"}, opts.InputStream, multiwriter); err != nil {
 		return
 	}
 	//parse the image id
-	id := ""
-	retmsg := tmpbuf.String()
-	if pos := strings.Index(retmsg, "Successfully built"); pos != -1 {
-		start_pos := pos+len("Successfully built") + 1
-		end_pos := start_pos + 12
-		id = retmsg[start_pos:end_pos]
+	if re, err := regexp.Compile(".*Successfully built ([0-9a-z]{12}).*"); err != nil {
+		return "", err
 	} else {
-		return nil, errors.New("build image fail, details in output stream")
+		matches := re.FindAllStringSubmatch(tmpbuf.String(), -1)
+		if len(matches) > 0 && len(matches[0]) > 1 {
+			imageid = matches[0][1]
+		} else {
+			return "", errors.New("build image fail, details in output stream")
+		}
 	}
-	return c.InspectImage(id)
+	return
 }
 
 func isUrl(u string) bool {

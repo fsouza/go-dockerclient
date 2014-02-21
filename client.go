@@ -108,7 +108,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, headers map[string]string, in io.Reader, out io.Writer, jsonmessage bool) error {
+func (c *Client) stream(method, path string, headers map[string]string, in io.Reader, out io.Writer) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
@@ -151,7 +151,7 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 		}
 		return newError(resp.StatusCode, body)
 	}
-	if resp.Header.Get("Content-Type") == "application/json" && jsonmessage{
+	if resp.Header.Get("Content-Type") == "application/json" {
 		dec := json.NewDecoder(resp.Body)
 		for {
 			var m jsonMessage
@@ -169,6 +169,57 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 			}
 		}
 	} else {
+		if _, err := io.Copy(out, resp.Body); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Client) purestream(method, path string, headers map[string]string, in io.Reader, out io.Writer) error {
+	if (method == "POST" || method == "PUT") && in == nil {
+		in = bytes.NewReader(nil)
+	}
+	req, err := http.NewRequest(method, c.getURL(path), in)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	if method == "POST" {
+		req.Header.Set("Content-Type", "plain/text")
+	}
+	for key, val := range headers {
+		req.Header.Set(key, val)
+	}
+	var resp *http.Response
+	protocol := c.endpointURL.Scheme
+	address := c.endpointURL.Path
+	if protocol == "unix" {
+		dial, err := net.Dial(protocol, address)
+		if err != nil {
+			return err
+		}
+		clientconn := httputil.NewClientConn(dial, nil)
+		resp, err = clientconn.Do(req)
+		defer clientconn.Close()
+	} else {
+		resp, err = c.client.Do(req)
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "connection refused") {
+			return ErrConnectionRefused
+		}
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return newError(resp.StatusCode, body)
+	}
+	if out != nil {
 		if _, err := io.Copy(out, resp.Body); err != nil {
 			return err
 		}
