@@ -115,7 +115,7 @@ func (eventState *EventMonitoringState) enableEventMonitoring(c *Client) error {
 func (eventState *EventMonitoringState) disableEventMonitoring() error {
 	eventState.Lock()
 	defer eventState.Unlock()
-	if !eventState.enabled {
+	if eventState.enabled {
 		eventState.enabled = false
 		close(eventState.C)
 		close(eventState.errC)
