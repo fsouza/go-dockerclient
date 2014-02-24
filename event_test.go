@@ -39,7 +39,7 @@ func TestEventListeners(t *testing.T) {
 	}
 
 	listener := make(chan *APIEvents, 10)
-	defer client.RemoveEventListener(listener)
+	defer func() { time.Sleep(10 * time.Millisecond); client.RemoveEventListener(listener) }()
 
 	err = client.AddEventListener(listener)
 	if err != nil {
