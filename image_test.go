@@ -508,6 +508,65 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 	}
 }
 
+func TestBuildImageShouldParseAllParametersOldStyle(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Name:           "testImage",
+		Remote:         "testing/data/container.tar",
+		SuppressOutput: true,
+		OutputStream:   &buf,
+	}
+	_, err := client.BuildImage(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {"1"}}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+func TestBuildImageShouldNotReturnErrorWhenRemoteIsMissing(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Name:           "testImage",
+		SuppressOutput: true,
+		OutputStream:   &buf,
+		InputStream:	&buf,
+	}
+	_, err := client.BuildImage(opts)
+	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
+		t.Fatal(err)
+	}
+}
+
+func TestBuildImageShouldSetTagToRemoteIfTagIsMissingOldStyle(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Remote:         "testing/data/container.tar",
+		SuppressOutput: true,
+		OutputStream:   &buf,
+	}
+	_, err := client.BuildImage(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := map[string][]string{"t": {opts.Remote}, "remote": {opts.Remote}, "q": {"1"}}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
 func TestBuildImageShouldReturnErrorWhenInputstreamIsMissing(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
