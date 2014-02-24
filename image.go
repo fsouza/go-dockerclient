@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 )
 
 // This work with api verion < v1.7 and > v1.9
@@ -34,8 +33,7 @@ type APIImages struct {
 var (
 	ErrNoSuchImage         = errors.New("No such image")
 	ErrMissingRepo         = errors.New("Missing remote repository e.g. 'github.com/user/repo'")
-	ErrMissingInputStream  = errors.New("Missing input-stream")
-	ErrMissingOutputStream = errors.New("Missing output-stream")
+	ErrMissingOutputStream = errors.New("Missing output stream")
 )
 
 // ListImages returns the list of available images in the server.
@@ -211,43 +209,23 @@ type BuildImageOptions struct {
 	Remote         string    `qs:"remote"`
 }
 
-// BuildImage builds an image from a tarball's url.
-func (c *Client) BuildImage(opts BuildImageOptions) (imageid string, err error) {
-	if opts.Remote != "" {
-		if opts.Name == "" {
-			opts.Name = opts.Remote
-		}
-		if opts.OutputStream == nil {
-			return "", ErrMissingOutputStream
-		}
-		// Call api server.
-		err = c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, nil, opts.OutputStream)
-		return
+// BuildImage builds an image from a tarball's url or a Dockerfile in the input
+// stream.
+func (c *Client) BuildImage(opts BuildImageOptions) error {
+	if opts.OutputStream == nil {
+		return ErrMissingOutputStream
 	}
-	if opts.InputStream == nil {
-		return "", ErrMissingInputStream
+	var headers map[string]string
+	if opts.Remote != "" && opts.Name == "" {
+		opts.Name = opts.Remote
 	}
-	var tmpbuf bytes.Buffer
-	var multiwriter io.Writer
-	if opts.OutputStream != nil {
-		multiwriter = io.MultiWriter(opts.OutputStream, &tmpbuf)
-	} else {
-		multiwriter = io.MultiWriter(&tmpbuf)
+	if opts.InputStream != nil {
+		headers = map[string]string{"Content-Type": "application/tar"}
+	} else if opts.Remote == "" {
+		return ErrMissingRepo
 	}
-	if err = c.purestream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type": "application/tar"}, opts.InputStream, multiwriter); err != nil {
-		return
-	}
-	if re, err := regexp.Compile(".*Successfully built ([0-9a-z]{12}).*"); err != nil {
-		return "", err
-	} else {
-		matches := re.FindAllStringSubmatch(tmpbuf.String(), -1)
-		if len(matches) > 0 && len(matches[0]) > 1 {
-			imageid = matches[0][1]
-		} else {
-			return "", errors.New("build image fail, details in output stream")
-		}
-	}
-	return
+	return c.stream("POST", fmt.Sprintf("/build?%s",
+		queryString(&opts)), headers, opts.InputStream, opts.OutputStream)
 }
 
 func isUrl(u string) bool {

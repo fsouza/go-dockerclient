@@ -163,66 +163,17 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 			} else if err != nil {
 				return err
 			}
-			if m.Progress != "" {
+			if m.Stream != "" {
+				fmt.Fprintln(out, m.Stream)
+			} else if m.Progress != "" {
 				fmt.Fprintf(out, "%s %s\r", m.Status, m.Progress)
 			} else if m.Error != "" {
 				return errors.New(m.Error)
 			} else {
-				fmt.Fprintf(out, "%s\n", m.Status)
+				fmt.Fprintln(out, m.Status)
 			}
 		}
 	} else {
-		if _, err := io.Copy(out, resp.Body); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Client) purestream(method, path string, headers map[string]string, in io.Reader, out io.Writer) error {
-	if (method == "POST" || method == "PUT") && in == nil {
-		in = bytes.NewReader(nil)
-	}
-	req, err := http.NewRequest(method, c.getURL(path), in)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("User-Agent", userAgent)
-	if method == "POST" {
-		req.Header.Set("Content-Type", "plain/text")
-	}
-	for key, val := range headers {
-		req.Header.Set(key, val)
-	}
-	var resp *http.Response
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
-	if protocol == "unix" {
-		dial, err := net.Dial(protocol, address)
-		if err != nil {
-			return err
-		}
-		clientconn := httputil.NewClientConn(dial, nil)
-		resp, err = clientconn.Do(req)
-		defer clientconn.Close()
-	} else {
-		resp, err = c.client.Do(req)
-	}
-	if err != nil {
-		if strings.Contains(err.Error(), "connection refused") {
-			return ErrConnectionRefused
-		}
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		return newError(resp.StatusCode, body)
-	}
-	if out != nil {
 		if _, err := io.Copy(out, resp.Body); err != nil {
 			return err
 		}
@@ -296,6 +247,7 @@ type jsonMessage struct {
 	Status   string `json:"status,omitempty"`
 	Progress string `json:"progress,omitempty"`
 	Error    string `json:"error,omitempty"`
+	Stream   string `json:"stream,omitempty"`
 }
 
 func queryString(opts interface{}) string {

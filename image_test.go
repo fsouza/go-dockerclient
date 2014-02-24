@@ -484,7 +484,7 @@ func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
 	}
 }
 
-func TestBuildImageShouldParseAllParameters(t *testing.T) {
+func TestBuildImageParameters(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
@@ -496,7 +496,7 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 		InputStream:    &buf,
 		OutputStream:   &buf,
 	}
-	_, err := client.BuildImage(opts)
+	err := client.BuildImage(opts)
 	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
 	}
@@ -508,7 +508,7 @@ func TestBuildImageShouldParseAllParameters(t *testing.T) {
 	}
 }
 
-func TestBuildImageShouldParseAllParametersOldStyle(t *testing.T) {
+func TestBuildImageParametersForRemoteBuild(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
@@ -518,7 +518,7 @@ func TestBuildImageShouldParseAllParametersOldStyle(t *testing.T) {
 		SuppressOutput: true,
 		OutputStream:   &buf,
 	}
-	_, err := client.BuildImage(opts)
+	err := client.BuildImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -530,7 +530,7 @@ func TestBuildImageShouldParseAllParametersOldStyle(t *testing.T) {
 	}
 }
 
-func TestBuildImageShouldNotReturnErrorWhenRemoteIsMissing(t *testing.T) {
+func TestBuildImageMissingRepoAndNilInput(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
@@ -538,15 +538,24 @@ func TestBuildImageShouldNotReturnErrorWhenRemoteIsMissing(t *testing.T) {
 		Name:           "testImage",
 		SuppressOutput: true,
 		OutputStream:   &buf,
-		InputStream:    &buf,
 	}
-	_, err := client.BuildImage(opts)
-	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
-		t.Fatal(err)
+	err := client.BuildImage(opts)
+	if err != ErrMissingRepo {
+		t.Errorf("BuildImage: wrong error returned. Want %#v. Got %#v.", ErrMissingRepo, err)
 	}
 }
 
-func TestBuildImageShouldSetTagToRemoteIfTagIsMissingOldStyle(t *testing.T) {
+func TestBuildImageMissingOutputStream(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := BuildImageOptions{Name: "testImage"}
+	err := client.BuildImage(opts)
+	if err != ErrMissingOutputStream {
+		t.Errorf("BuildImage: wrong error returned. Want %#v. Got %#v.", ErrMissingOutputStream, err)
+	}
+}
+
+func TestBuildImageRemoteWithoutName(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
@@ -555,48 +564,12 @@ func TestBuildImageShouldSetTagToRemoteIfTagIsMissingOldStyle(t *testing.T) {
 		SuppressOutput: true,
 		OutputStream:   &buf,
 	}
-	_, err := client.BuildImage(opts)
+	err := client.BuildImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
 	expected := map[string][]string{"t": {opts.Remote}, "remote": {opts.Remote}, "q": {"1"}}
-	got := map[string][]string(req.URL.Query())
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
-	}
-}
-
-func TestBuildImageShouldReturnErrorWhenInputstreamIsMissing(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
-	var buf bytes.Buffer
-	opts := BuildImageOptions{
-		Name:           "testImage",
-		SuppressOutput: true,
-		OutputStream:   &buf,
-	}
-	_, err := client.BuildImage(opts)
-	if err != ErrMissingInputStream {
-		t.Errorf("BuildImage: wrong match. Want %#v. Got %#v.", ErrMissingInputStream, err)
-	}
-}
-
-func TestBuildImageShouldEnableQuietIfQuietIsMissing(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
-	var buf bytes.Buffer
-	opts := BuildImageOptions{
-		Name:         "testImage",
-		InputStream:  &buf,
-		OutputStream: &buf,
-	}
-	_, err := client.BuildImage(opts)
-	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
-		t.Fatal(err)
-	}
-	req := fakeRT.requests[0]
-	expected := map[string][]string{"t": {opts.Name}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
