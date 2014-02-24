@@ -208,10 +208,25 @@ type BuildImageOptions struct {
 	RmTmpContainer bool      `qs:"rm"`
 	InputStream    io.Reader `qs:"-"`
 	OutputStream   io.Writer `qs:"-"`
+	Remote         string    `qs:"remote"`
 }
 
 // BuildImage builds an image from a tarball's url.
 func (c *Client) BuildImage(opts BuildImageOptions) (imageid string, err error) {
+	//backward compatibility
+	if opts.Remote != "" {
+		if opts.Name == "" {
+			opts.Name = opts.Remote
+		}
+		if opts.OutputStream == nil {
+			return "", ErrMissingOutputStream
+		}
+		// Call api server.
+		err = c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, nil, opts.OutputStream)
+		return
+	}
+
+	//new style with Dockerfile
 	if opts.InputStream == nil {
 		return "", ErrMissingInputStream
 	}
