@@ -213,7 +213,6 @@ type BuildImageOptions struct {
 
 // BuildImage builds an image from a tarball's url.
 func (c *Client) BuildImage(opts BuildImageOptions) (imageid string, err error) {
-	//backward compatibility
 	if opts.Remote != "" {
 		if opts.Name == "" {
 			opts.Name = opts.Remote
@@ -225,23 +224,19 @@ func (c *Client) BuildImage(opts BuildImageOptions) (imageid string, err error) 
 		err = c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), nil, nil, opts.OutputStream)
 		return
 	}
-
-	//new style with Dockerfile
 	if opts.InputStream == nil {
 		return "", ErrMissingInputStream
 	}
-	// Call api server.
-	tmpbuf := bytes.NewBuffer(nil)
+	var tmpbuf bytes.Buffer
 	var multiwriter io.Writer
 	if opts.OutputStream != nil {
-		multiwriter = io.MultiWriter(opts.OutputStream, tmpbuf)
+		multiwriter = io.MultiWriter(opts.OutputStream, &tmpbuf)
 	} else {
-		multiwriter = io.MultiWriter(tmpbuf)
+		multiwriter = io.MultiWriter(&tmpbuf)
 	}
 	if err = c.purestream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), map[string]string{"Content-Type": "application/tar"}, opts.InputStream, multiwriter); err != nil {
 		return
 	}
-	//parse the image id
 	if re, err := regexp.Compile(".*Successfully built ([0-9a-z]{12}).*"); err != nil {
 		return "", err
 	} else {
