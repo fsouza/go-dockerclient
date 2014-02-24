@@ -181,7 +181,11 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 	for eventState.isEnabled() {
 		timeout := time.After(100 * time.Millisecond)
 		select {
-		case ev := <-eventState.C:
+		case ev, ok := <-eventState.C:
+			if !ok {
+				// channel has been closed, exiting
+				return
+			}
 			// send the event
 			go eventState.sendEvent(ev)
 
