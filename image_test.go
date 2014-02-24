@@ -538,7 +538,7 @@ func TestBuildImageShouldNotReturnErrorWhenRemoteIsMissing(t *testing.T) {
 		Name:           "testImage",
 		SuppressOutput: true,
 		OutputStream:   &buf,
-		InputStream:	&buf,
+		InputStream:    &buf,
 	}
 	_, err := client.BuildImage(opts)
 	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
