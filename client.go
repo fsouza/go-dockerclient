@@ -164,7 +164,7 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 				return err
 			}
 			if m.Stream != "" {
-				fmt.Fprintln(out, m.Stream)
+				fmt.Fprint(out, m.Stream)
 			} else if m.Progress != "" {
 				fmt.Fprintf(out, "%s %s\r", m.Status, m.Progress)
 			} else if m.Error != "" {
