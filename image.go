@@ -15,12 +15,28 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
+
+type RepoTag string
+
+func (r RepoTag) Repo() string {
+	return strings.Split(string(r), ":")[0]
+}
+
+func (r RepoTag) Tag() string {
+	parts := strings.Split(string(r), ":")
+	if len(parts) > 1 {
+		return parts[1]
+	}
+
+	return ""
+}
 
 // This work with api verion < v1.7 and > v1.9
 type APIImages struct {
-	ID          string   `json:"Id"`
-	RepoTags    []string `json:",omitempty"`
+	ID          string    `json:"Id"`
+	RepoTags    []RepoTag `json:",omitempty"`
 	Created     int64
 	Size        int64
 	VirtualSize int64
@@ -226,6 +242,21 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	}
 	return c.stream("POST", fmt.Sprintf("/build?%s",
 		queryString(&opts)), headers, opts.InputStream, opts.OutputStream)
+}
+
+type TagImageOptions struct {
+	Repo  string `qs:"repo"`
+	Force bool   `qs:"force,omitempty"`
+}
+
+func (c *Client) TagImage(name string, opts TagImageOptions) error {
+	_, status, err := c.do("POST", fmt.Sprintf("/images/"+name+"/tag?%s",
+		queryString(&opts)), nil)
+	if status == http.StatusNotFound {
+		return ErrNoSuchImage
+	}
+
+	return err
 }
 
 func isUrl(u string) bool {
