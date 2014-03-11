@@ -484,7 +484,6 @@ type AttachToContainerOptions struct {
 	InputStream  io.Reader `qs:"-"`
 	OutputStream io.Writer `qs:"-"`
 	ErrorStream  io.Writer `qs:"-"`
-	RawTerminal  bool      `qs:"-"`
 
 	// Get container logs, sending it to OutputStream.
 	Logs bool
@@ -510,7 +509,7 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 		return &NoSuchContainer{ID: opts.Container}
 	}
 	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
-	return c.hijack("POST", path, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream)
+	return c.hijack("POST", path, opts.InputStream, opts.ErrorStream, opts.OutputStream)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
