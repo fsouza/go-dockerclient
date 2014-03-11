@@ -179,7 +179,7 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 	return nil
 }
 
-func (c *Client) hijack(method, path string, in io.Reader, errStream io.Writer, out io.Writer) error {
+func (c *Client) hijack(method, path string, success chan struct{}, in io.Reader, errStream io.Writer, out io.Writer) error {
 	req, err := http.NewRequest(method, c.getURL(path), nil)
 	if err != nil {
 		return err
@@ -195,11 +195,14 @@ func (c *Client) hijack(method, path string, in io.Reader, errStream io.Writer, 
 	if err != nil {
 		return err
 	}
+	defer dial.Close()
 	clientconn := httputil.NewClientConn(dial, nil)
 	clientconn.Do(req)
-	defer clientconn.Close()
+	if success != nil {
+		success <- struct{}{}
+		<-success
+	}
 	rwc, br := clientconn.Hijack()
-	defer rwc.Close()
 	errStdout := make(chan error, 1)
 	go func() {
 		var err error

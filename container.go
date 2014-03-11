@@ -499,6 +499,10 @@ type AttachToContainerOptions struct {
 
 	// Attach to stderr, and use ErrorStream.
 	Stderr bool
+
+	// If set, after a successful connect, a sentinel will be sent and then the
+	// client will block on receive before continuing.
+	Success chan struct{}
 }
 
 // AttachToContainer attaches to a container, using the given options.
@@ -509,7 +513,7 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 		return &NoSuchContainer{ID: opts.Container}
 	}
 	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
-	return c.hijack("POST", path, opts.InputStream, opts.ErrorStream, opts.OutputStream)
+	return c.hijack("POST", path, opts.Success, opts.InputStream, opts.ErrorStream, opts.OutputStream)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
