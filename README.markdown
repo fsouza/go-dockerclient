@@ -38,3 +38,10 @@ For more details, check the [remote API documentation](http://docs.docker.io/en/
                     fmt.Println("Repository: ", img.Repository)
             }
     }
+
+## Developing
+
+You can run the tests with:
+
+    go get -d ./...
+    go test ./...
