@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fsouza/go-dockerclient/utils"
 	"io"
 	"io/ioutil"
 	"net"
@@ -202,8 +201,7 @@ func (c *Client) hijack(method, path string, in io.Reader, errStream io.Writer, 
 	defer rwc.Close()
 	errStdout := make(chan error, 1)
 	go func() {
-		var err error
-		_, err = utils.StdCopy(out, errStream, br)
+		_, err = io.Copy(out, br)
 		errStdout <- err
 	}()
 	go func() {
