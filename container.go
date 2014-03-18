@@ -502,6 +502,9 @@ type AttachToContainerOptions struct {
 
 	// If set, after a successful connect, a sentinel will be sent and then the
 	// client will block on receive before continuing.
+	//
+	// It must be an unbuffered channel. Using a buffered channel can lead
+	// to unexpected behavior.
 	Success chan struct{}
 }
 
