@@ -228,6 +228,22 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		queryString(&opts)), headers, opts.InputStream, opts.OutputStream)
 }
 
+type TagImageOptions struct {
+	Repo  string `qs:"repo"`
+	Force bool   `qs:"force,omitempty"`
+	Tag   string `qs:"tag"`
+}
+
+func (c *Client) TagImage(name string, opts TagImageOptions) error {
+	_, status, err := c.do("POST", fmt.Sprintf("/images/"+name+"/tag?%s",
+		queryString(&opts)), nil)
+	if status == http.StatusNotFound {
+		return ErrNoSuchImage
+	}
+
+	return err
+}
+
 func isUrl(u string) bool {
 	p, err := url.Parse(u)
 	if err != nil {
