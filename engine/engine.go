@@ -6,7 +6,7 @@ package engine
 
 import (
 	"fmt"
-	"github.com/fsouza/go-dockerclient/utils"
+	"github.com/zenoss/go-dockerclient/utils"
 	"io"
 	"log"
 	"os"

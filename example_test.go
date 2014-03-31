@@ -7,7 +7,7 @@ package docker_test
 import (
 	"archive/tar"
 	"bytes"
-	"github.com/fsouza/go-dockerclient"
+	"github.com/zenoss/go-dockerclient"
 	"io"
 	"log"
 	"time"
