@@ -42,12 +42,15 @@ type DockerServer struct {
 	hook       func(*http.Request)
 }
 
+//This makes the third-party caller can use this as one part of their unit-test,and specified the desinated port
+var TestServerHost = "127.0.0.1:0"
+
 // NewServer returns a new instance of the fake server, in standalone mode. Use
 // the method URL to get the URL of the server.
 //
 // Hook is a function that will be called on every request.
 func NewServer(hook func(*http.Request)) (*DockerServer, error) {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := net.Listen("tcp", TestServerHost)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +75,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/build").Methods("POST").HandlerFunc(s.buildImage)
 	s.mux.Path("/images/json").Methods("GET").HandlerFunc(s.listImages)
 	s.mux.Path("/images/{id:.*}").Methods("DELETE").HandlerFunc(s.removeImage)
+	s.mux.Path("/images/{name:.*}/json").Methods("GET").HandlerFunc(s.inspectImage)
 	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.pushImage)
 }
 
@@ -178,11 +182,22 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 			HostPort: strconv.Itoa(mathrand.Int() % 65536),
 		}}
 	}
+
+	//the container may not have cmd when using a Dockerfile
+	var path string
+	var args []string
+	if len(config.Cmd) == 1 {
+		path = config.Cmd[0]
+	} else if len(config.Cmd) > 1 {
+		path = config.Cmd[0]
+		args = config.Cmd[1:]
+	}
+
 	container := docker.Container{
 		ID:      s.generateID(),
 		Created: time.Now(),
-		Path:    config.Cmd[0],
-		Args:    config.Cmd[1:],
+		Path:    path,
+		Args:    args,
 		Config:  &config,
 		State: docker.State{
 			Running:   false,
@@ -441,4 +456,25 @@ func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
 	defer s.iMut.Unlock()
 	s.images[index] = s.images[len(s.images)-1]
 	s.images = s.images[:len(s.images)-1]
+}
+
+func (s *DockerServer) inspectImage(w http.ResponseWriter, r *http.Request) {
+	
+	name := mux.Vars(r)["name"]
+
+	if id, ok := s.imgIDs[name]; ok {
+		s.iMut.Lock()
+		defer s.iMut.Unlock()
+
+		for _, img := range s.images {
+			if img.ID == id {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(img)
+				return
+			}
+		}
+	}
+	http.Error(w, "not found", http.StatusNotFound)
+	return
 }
