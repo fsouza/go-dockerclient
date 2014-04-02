@@ -42,9 +42,6 @@ type DockerServer struct {
 	hook       func(*http.Request)
 }
 
-//This makes the third-party caller can use this as one part of their unit-test,and specified the desinated port
-var TestServerHost = "127.0.0.1:0"
-
 // NewServer returns a new instance of the fake server, in standalone mode. Use
 // the method URL to get the URL of the server.
 //
