@@ -19,7 +19,7 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
-	server, err := NewServer(nil)
+	server, err := NewServer("127.0.0.1:0", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestServerStop(t *testing.T) {
-	server, err := NewServer(nil)
+	server, err := NewServer("127.0.0.1:0", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestServerStopNoListener(t *testing.T) {
 }
 
 func TestServerURL(t *testing.T) {
-	server, err := NewServer(nil)
+	server, err := NewServer("127.0.0.1:0", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestServerURLNoListener(t *testing.T) {
 
 func TestHandleWithHook(t *testing.T) {
 	var called bool
-	server, _ := NewServer(func(*http.Request) { called = true })
+	server, _ := NewServer("127.0.0.1:0", func(*http.Request) { called = true })
 	defer server.Stop()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
