@@ -45,9 +45,10 @@ type DockerServer struct {
 // NewServer returns a new instance of the fake server, in standalone mode. Use
 // the method URL to get the URL of the server.
 //
-// Hook is a function that will be called on every request.
-func NewServer(hook func(*http.Request)) (*DockerServer, error) {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+// It receives the bind address (use 127.0.0.1:0 for getting an available port
+// on the host) and a hook function, that will be called on every request.
+func NewServer(bind string, hook func(*http.Request)) (*DockerServer, error) {
+	listener, err := net.Listen("tcp", bind)
 	if err != nil {
 		return nil, err
 	}
