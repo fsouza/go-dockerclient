@@ -6,7 +6,7 @@ package docker
 
 import (
 	"bytes"
-	"github.com/fsouza/go-dockerclient/engine"
+	"github.com/zenoss/go-dockerclient/engine"
 	"io"
 )
 
