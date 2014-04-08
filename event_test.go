@@ -20,12 +20,7 @@ func TestMonitorEvents(t *testing.T) {
 		t.Fatalf("can't create event monitor: %v", err)
 	}
 
-	status := em.Status()
-	if status == nil {
-		t.Fatal("nil event monitor status")
-	}
-
-	if !status.Active {
+	if !em.IsActive() {
 		t.Fatal("event monitor is inactive")
 	}
 
@@ -34,12 +29,7 @@ func TestMonitorEvents(t *testing.T) {
 		t.Fatalf("can't close event monitor")
 	}
 
-	status = em.Status()
-	if status == nil {
-		t.Fatal("nil event monitor status")
-	}
-
-	if status.Active {
+	if em.IsActive() {
 		t.Fatal("event monitor is active")
 	}
 }
@@ -65,10 +55,15 @@ func TestUniversalEventSubscription(t *testing.T) {
 		cc <- e["status"].(string)
 		return nil
 	})
+	s.Handle(Destroy, func(e Event) error {
+		cc <- e["status"].(string)
+		return nil
+	})
 
 	c, err := dc.CreateContainer(CreateContainerOptions{"testues", &Config{
-		Image: "ubuntu",
-		Cmd:   []string{"/bin/bash"},
+		Image:        "ubuntu",
+		Cmd:          []string{"/bin/bash"},
+		AttachStdout: true,
 	}})
 	if err != nil {
 		t.Fatalf("couldn't create test container: %v", err)
@@ -77,19 +72,22 @@ func TestUniversalEventSubscription(t *testing.T) {
 	to := time.After(10 * time.Second)
 	select {
 	case <-cc:
-		t.Log("container got created")
+		t.Log("container created")
 	case <-to:
 		t.Fatal("container creation timed out")
-	}
-
-	err = dc.StopContainer(c.ID, 10)
-	if err != nil {
-		t.Fatalf("unable to stop container %s: %v", c.ID, err)
 	}
 
 	err = dc.RemoveContainer(RemoveContainerOptions{ID: c.ID})
 	if err != nil {
 		t.Fatalf("unable to remove container %s: %v", c.ID, err)
+	}
+
+	to = time.After(10 * time.Second)
+	select {
+	case <-cc:
+		t.Log("container removed")
+	case <-to:
+		t.Fatal("container removal timed out")
 	}
 
 	err = em.Close()
@@ -146,7 +144,7 @@ func TestContainerEventSubscription(t *testing.T) {
 		t.Fatal("start test container timed out")
 	}
 
-	err = dc.StopContainer(c.ID, 10)
+	err = dc.StopContainer(c.ID, 1)
 	if err != nil {
 		t.Fatalf("couldn't stop test container: %v", err)
 	}
