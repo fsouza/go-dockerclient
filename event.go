@@ -193,6 +193,7 @@ func (em *clientEventMonitor) dispatch(e string) error {
 // listenAndDispatch reads the Docker event stream and dispatches the events
 // it receives.
 func listenAndDispatch(c *Client, em *clientEventMonitor) {
+	// TODO: figure out how to cleanly shutdown the hijacked connection and exit the scan loop.
 	pr, pw := io.Pipe()
 
 	go c.hijack("GET", "/events", true, nil, nil, pw)
