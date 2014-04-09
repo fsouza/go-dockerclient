@@ -659,3 +659,76 @@ func TestRemoveImageByName(t *testing.T) {
 		t.Error("RemoveImage: did not remove the image.")
 	}
 }
+
+func TestPrepareFailure(t *testing.T) {
+	server := DockerServer{failures: make(map[string]FailureSpec)}
+	server.buildMuxer()
+	errorId := "my_error"
+	failure := FailureSpec{UrlRegex: "containers/json"}
+	server.PrepareFailure(errorId, failure)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("PrepareFailure: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
+	}
+	if recorder.Body.String() != errorId+"\n" {
+		t.Errorf("PrepareFailure: wrong message. Want %s. Got %s.", errorId, recorder.Body.String())
+	}
+}
+
+func TestPrepareFailureUsingContainerPath(t *testing.T) {
+	server := DockerServer{failures: make(map[string]FailureSpec)}
+	addContainers(&server, 1)
+	server.buildMuxer()
+	errorId := "my_path_error"
+	failure := FailureSpec{UrlRegex: "containers/.*?/start", ContainerPath: "ls"}
+	server.PrepareFailure(errorId, failure)
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("TestPrepareFailureUsingContainerPath: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
+	}
+	if recorder.Body.String() != errorId+"\n" {
+		t.Errorf("TestPrepareFailureUsingContainerPath: wrong message. Want %s. Got %s.", errorId, recorder.Body.String())
+	}
+}
+
+func TestPrepareFailureUsingContainerPathWithWrongPath(t *testing.T) {
+	server := DockerServer{failures: make(map[string]FailureSpec)}
+	addContainers(&server, 1)
+	server.buildMuxer()
+	errorId := "my_path_error"
+	failure := FailureSpec{UrlRegex: "containers/.*?/start", ContainerPath: "xxx"}
+	server.PrepareFailure(errorId, failure)
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}
+
+func TestRemoveFailure(t *testing.T) {
+	server := DockerServer{failures: make(map[string]FailureSpec)}
+	server.buildMuxer()
+	errorId := "my_error"
+	failure := FailureSpec{UrlRegex: "containers/json"}
+	server.PrepareFailure(errorId, failure)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("PrepareFailure: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
+	}
+	server.ResetFailure(errorId)
+	recorder = httptest.NewRecorder()
+	request, _ = http.NewRequest("GET", "/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("RemoveFailure: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}
