@@ -113,7 +113,6 @@ func (em *clientEventMonitor) Close() error {
 	case <-crc:
 		em.active = false
 		em.subscriptions = make(map[string][]chan Event)
-		close(em.done)
 		em.done = make(chan struct{})
 		return nil
 	}
@@ -158,6 +157,7 @@ func (em *clientEventMonitor) run(c *Client) error {
 
 		select {
 		case crc := <-em.closeChannel:
+			close(em.done)
 			crc <- struct{}{}
 			return
 		}
