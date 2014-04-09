@@ -211,7 +211,7 @@ func listenAndDispatch(c *Client, em *clientEventMonitor) {
 	scanner := bufio.NewScanner(pr)
 	for scanner.Scan() {
 		et := scanner.Text()
-		if et[0] == '{' {
+		if et != "" && et[0] == '{' {
 			if err := em.dispatch(et); err != nil {
 				utils.Debugf("unable to dispatch: %s (%v)", et, err)
 			}
