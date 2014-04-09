@@ -54,6 +54,7 @@ type clientEventMonitor struct {
 	sync.Mutex
 	active        bool
 	closeChannel  chan chan struct{}
+	done          chan struct{}
 	subscriptions map[string][]chan Event
 }
 
@@ -61,18 +62,20 @@ type clientEventMonitor struct {
 // event stream. The AllThingsDocker ID can be used to subscribe to all container and image
 // event streams.
 type Subscription struct {
-	ID           string
-	active       bool
-	closeChannel chan chan struct{}
-	eventChannel chan Event
-	handlers     map[string]HandlerFunc
-	monitor      *clientEventMonitor
+	ID            string
+	active        bool
+	cancelChannel chan chan struct{}
+	eventChannel  chan Event
+	monitorDone   chan struct{}
+	handlers      map[string]HandlerFunc
+	monitor       *clientEventMonitor
 }
 
 // eventMonitor is used by the client to monitor Docker lifecycle events
 var eventMonitor = &clientEventMonitor{
 	active:        false,
 	closeChannel:  make(chan chan struct{}),
+	done:          make(chan struct{}),
 	subscriptions: make(map[string][]chan Event),
 }
 
@@ -110,6 +113,8 @@ func (em *clientEventMonitor) Close() error {
 	case <-crc:
 		em.active = false
 		em.subscriptions = make(map[string][]chan Event)
+		close(em.done)
+		em.done = make(chan struct{})
 		return nil
 	}
 
@@ -124,14 +129,13 @@ func (em *clientEventMonitor) Subscribe(ID string) (*Subscription, error) {
 	defer em.Unlock()
 
 	s := &Subscription{
-		ID:           ID,
-		closeChannel: make(chan chan struct{}),
-		eventChannel: make(chan Event),
-		handlers:     make(map[string]HandlerFunc),
-		monitor:      em,
+		ID:            ID,
+		cancelChannel: make(chan chan struct{}),
+		eventChannel:  make(chan Event),
+		monitorDone:   em.done,
+		handlers:      make(map[string]HandlerFunc),
+		monitor:       em,
 	}
-
-	utils.Debugf("adding subscription for %s", ID)
 
 	em.subscriptions[ID] = append(em.subscriptions[ID], s.eventChannel)
 	s.run()
@@ -181,7 +185,6 @@ func (em *clientEventMonitor) dispatch(e string) error {
 
 	// send the event to subscribers interested in everything
 	if ecs, ok := em.subscriptions[AllThingsDocker]; ok {
-		utils.Debugf("dispatching to AllThingsDocker subscribers: %v", evt)
 		for _, ec := range ecs {
 			ec <- evt
 		}
@@ -189,7 +192,6 @@ func (em *clientEventMonitor) dispatch(e string) error {
 
 	// send the event to subscribers interested in the particular ID
 	if ecs, ok := em.subscriptions[evt["id"].(string)]; ok {
-		utils.Debugf("dispatching to %s subscribers: %v", evt["id"].(string), evt)
 		for _, ec := range ecs {
 			ec <- evt
 		}
@@ -210,7 +212,6 @@ func listenAndDispatch(c *Client, em *clientEventMonitor) {
 	for scanner.Scan() {
 		et := scanner.Text()
 		if et[0] == '{' {
-			utils.Debugf("dispatching: %s", et)
 			if err := em.dispatch(et); err != nil {
 				utils.Debugf("unable to dispatch: %s (%v)", et, err)
 			}
@@ -225,14 +226,16 @@ func (s *Subscription) Handle(es string, h HandlerFunc) error {
 	return nil
 }
 
-// Close causes the Subscription to stop receiving and dispatching Docker container and
+// Cancel causes the Subscription to stop receiving and dispatching Docker container and
 // image lifecycle events.
-func (s *Subscription) Close() error {
+func (s *Subscription) Cancel() error {
 	if !s.active {
 		return nil
 	}
 
 	// remove this subscriber from the event monitor's subscription list
+	// TODO: none event monitor things shouldn't manipulate its state, find a
+	// better way to do this.
 	ecs := s.monitor.subscriptions[s.ID]
 	if len(ecs) == 1 {
 		s.monitor.subscriptions[s.ID] = []chan Event{}
@@ -245,7 +248,7 @@ func (s *Subscription) Close() error {
 	}
 
 	crc := make(chan struct{})
-	s.closeChannel <- crc
+	s.cancelChannel <- crc
 
 	select {
 	case <-crc:
@@ -263,8 +266,6 @@ func (s *Subscription) run() error {
 		return nil
 	}
 
-	utils.Debugf("running subscription for %s", s.ID)
-
 	go func() {
 		for {
 			select {
@@ -272,8 +273,11 @@ func (s *Subscription) run() error {
 				if h, ok := s.handlers[e["status"].(string)]; ok {
 					h(e)
 				}
-			case crc := <-s.closeChannel:
+			case crc := <-s.cancelChannel:
 				crc <- struct{}{}
+				return
+			case <-s.monitorDone:
+				s.active = false
 				return
 			}
 		}

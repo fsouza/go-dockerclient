@@ -1,10 +1,11 @@
 package docker
 
 import (
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/zenoss/go-dockerclient/utils"
+	"github.com/dotcloud/docker/utils"
 )
 
 const (
@@ -93,7 +94,7 @@ func TestUniversalEventSubscription(t *testing.T) {
 		t.Fatal("container removal timed out")
 	}
 
-	err = s.Close()
+	err = s.Cancel()
 	if err != nil {
 		t.Fatal("can't close subscription: %v", err)
 	}
@@ -294,5 +295,54 @@ func TestCombinedEventSubscription(t *testing.T) {
 	if err != nil {
 		t.Fatalf("can't close event monitor: %v", err)
 	}
+}
 
+func TestEventMonitorSubscriptionCancelation(t *testing.T) {
+	dc, err := NewClient(DockerEndpoint)
+	if err != nil {
+		t.Fatalf("can't create docker client: %v", err)
+	}
+
+	em, err := dc.MonitorEvents()
+	if err != nil {
+		t.Fatalf("can't create event monitor: %v", err)
+	}
+
+	var wg sync.WaitGroup
+
+	subscriptions := []*Subscription{}
+	for _, n := range []int{1, 2, 3, 4, 5} {
+		s, err := em.Subscribe(AllThingsDocker)
+		if err != nil {
+			t.Fatal("subscription %d failed: %v", n, err)
+		}
+		subscriptions = append(subscriptions, s)
+		wg.Add(1)
+	}
+
+	hf := func(e Event) error {
+		wg.Done()
+		return nil
+	}
+
+	for _, s := range subscriptions {
+		s.Handle(Create, hf)
+	}
+
+	c, err := dc.CreateContainer(CreateContainerOptions{"testemsc", &Config{
+		Image: "ubuntu",
+		Cmd:   []string{"/bin/bash"},
+	}})
+	if err != nil {
+		t.Fatalf("couldn't create test container: %v", err)
+	}
+
+	wg.Wait()
+
+	err = dc.RemoveContainer(RemoveContainerOptions{ID: c.ID})
+	if err != nil {
+		t.Fatalf("unable to remove container %s: %v", c.ID, err)
+	}
+
+	em.Close()
 }
