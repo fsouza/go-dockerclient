@@ -35,8 +35,9 @@ type EventMonitor interface {
 	// IsActive reports whether or not an EventMonitor is active, i.e., listening for Docker events.
 	IsActive() bool
 
-	// Subscribe returns a subscription to which handlers for the various events in the Docker
-	// container and image lifecycles may be added.
+	// Subscribe returns a subscription to which handlers for the various Docker lifecycle events
+	// for the container or image specified by ID (or all containers and images if AllThingsDocker
+	// is passed) may be added.
 	Subscribe(ID string) (*Subscription, error)
 
 	// Close causes the EventMonitor to stop listening for Docker lifecycle events.
@@ -115,8 +116,9 @@ func (em *clientEventMonitor) Close() error {
 	return fmt.Errorf("unable to close %v", em)
 }
 
-// Subscribe returns a subscription to which handlers for the various events
-// in the Docker container and image lifecycles may be added.
+// Subscribe returns a subscription to which handlers for the various Docker lifecycle events
+// for the container or image specified by ID (or all containers and images if AllThingsDocker
+// is passed) may be added.
 func (em *clientEventMonitor) Subscribe(ID string) (*Subscription, error) {
 	em.Lock()
 	defer em.Unlock()
@@ -209,7 +211,9 @@ func listenAndDispatch(c *Client, em *clientEventMonitor) {
 		et := scanner.Text()
 		if et[0] == '{' {
 			utils.Debugf("dispatching: %s", et)
-			_ = em.dispatch(et)
+			if err := em.dispatch(et); err != nil {
+				utils.Debugf("unable to dispatch: %s (%v)", et, err)
+			}
 		}
 	}
 }
