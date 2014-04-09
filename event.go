@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"sync"
+
+	"github.com/zenoss/go-dockerclient/utils"
 )
 
 const (
@@ -86,6 +88,7 @@ func (em *clientEventMonitor) Close() error {
 	select {
 	case <-crc:
 		em.active = false
+		em.subscriptions = make(map[string][]chan Event)
 		return nil
 	}
 
@@ -104,6 +107,8 @@ func (em *clientEventMonitor) Subscribe(ID string) (*Subscription, error) {
 		eventChannel: make(chan Event),
 		handlers:     make(map[string]HandlerFunc),
 	}
+
+	utils.Debugf("adding subscription for %s", ID)
 
 	em.subscriptions[ID] = append(em.subscriptions[ID], s.eventChannel)
 	s.run()
@@ -149,6 +154,7 @@ func (em *clientEventMonitor) dispatch(e string) error {
 
 	// send the event to subscribers interested in everything
 	if ecs, ok := em.subscriptions[AllThingsDocker]; ok {
+		utils.Debugf("dispatching to AllThingsDocker subscribers: %v", evt)
 		for _, ec := range ecs {
 			ec <- evt
 		}
@@ -156,6 +162,7 @@ func (em *clientEventMonitor) dispatch(e string) error {
 
 	// send the event to subscribers interested in the particular ID
 	if ecs, ok := em.subscriptions[evt["id"].(string)]; ok {
+		utils.Debugf("dispatching to %s subscribers: %v", evt["id"].(string), evt)
 		for _, ec := range ecs {
 			ec <- evt
 		}
@@ -169,12 +176,13 @@ func (em *clientEventMonitor) dispatch(e string) error {
 func listenAndDispatch(c *Client, em *clientEventMonitor) {
 	pr, pw := io.Pipe()
 
-	go c.Hijack("GET", "/events", true, nil, nil, pw)
+	go c.hijack("GET", "/events", true, nil, nil, pw)
 
 	scanner := bufio.NewScanner(pr)
 	for scanner.Scan() {
 		et := scanner.Text()
 		if et[0] == '{' {
+			utils.Debugf("dispatching: %s", et)
 			_ = em.dispatch(et)
 		}
 	}
@@ -215,17 +223,19 @@ func (s *Subscription) run() error {
 		return nil
 	}
 
+	utils.Debugf("running subscription for %s", s.ID)
+
 	go func() {
-		select {
-		case e := <-s.eventChannel:
-			fmt.Printf("received: %v\n", e)
-			if h, ok := s.handlers[e["status"].(string)]; ok {
-				fmt.Printf("dispatching to %v\n", h)
-				h(e)
+		for {
+			select {
+			case e := <-s.eventChannel:
+				if h, ok := s.handlers[e["status"].(string)]; ok {
+					h(e)
+				}
+			case crc := <-s.closeChannel:
+				crc <- struct{}{}
+				return
 			}
-		case crc := <-s.closeChannel:
-			crc <- struct{}{}
-			return
 		}
 	}()
 
