@@ -32,8 +32,14 @@ const (
 // lifecycle events. This package provides such an implementation.
 // Instances of it may be retreived via the client.EventMonitor() method.
 type EventMonitor interface {
+	// IsActive reports whether or not an EventMonitor is active, i.e., listening for Docker events.
 	IsActive() bool
+
+	// Subscribe returns a subscription to which handlers for the various events in the Docker
+	// container and image lifecycles may be added.
 	Subscribe(ID string) (*Subscription, error)
+
+	// Close causes the EventMonitor to stop listening for Docker lifecycle events.
 	Close() error
 }
 
