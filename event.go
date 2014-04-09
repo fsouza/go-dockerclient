@@ -10,27 +10,37 @@ import (
 	"github.com/zenoss/go-dockerclient/utils"
 )
 
+// AllThingsDocker is a wildcard used to express interest in the Docker
+// lifecycle event streams of all containers and images.
+const AllThingsDocker = "*"
+
+// Selectors for the various Docker lifecycle events.
 const (
-	AllThingsDocker = "*"
-	Create          = "create"
-	Delete          = "delete"
-	Destroy         = "destroy"
-	Die             = "die"
-	Export          = "export"
-	Kill            = "kill"
-	Restart         = "restart"
-	Start           = "start"
-	Stop            = "stop"
-	Untag           = "untag"
+	Create  = "create"
+	Delete  = "delete"
+	Destroy = "destroy"
+	Die     = "die"
+	Export  = "export"
+	Kill    = "kill"
+	Restart = "restart"
+	Start   = "start"
+	Stop    = "stop"
+	Untag   = "untag"
 )
 
+// EventMonitor implementations may be used to subscribe to Docker
+// lifecycle events. This package provides such an implementation.
+// Instances of it may be retreived via the client.EventMonitor() method.
 type EventMonitor interface {
 	IsActive() bool
 	Subscribe(ID string) (*Subscription, error)
 	Close() error
 }
 
+// Event represents a Docker lifecycle event.
 type Event map[string]interface{}
+
+// A HandlerFunc is used to receive Docker lifecycle events.
 type HandlerFunc func(e Event) error
 
 type clientEventMonitor struct {
@@ -40,12 +50,16 @@ type clientEventMonitor struct {
 	subscriptions map[string][]chan Event
 }
 
+// Subscription represents a subscription to a particular container or image's Docker lifecycle
+// event stream. The AllThingsDocker ID can be used to subscribe to all container and image
+// event streams.
 type Subscription struct {
 	ID           string
 	active       bool
 	closeChannel chan chan struct{}
 	eventChannel chan Event
 	handlers     map[string]HandlerFunc
+	monitor      *clientEventMonitor
 }
 
 // eventMonitor is used by the client to monitor Docker lifecycle events
@@ -106,6 +120,7 @@ func (em *clientEventMonitor) Subscribe(ID string) (*Subscription, error) {
 		closeChannel: make(chan chan struct{}),
 		eventChannel: make(chan Event),
 		handlers:     make(map[string]HandlerFunc),
+		monitor:      em,
 	}
 
 	utils.Debugf("adding subscription for %s", ID)
@@ -144,6 +159,10 @@ func (em *clientEventMonitor) run(c *Client) error {
 func (em *clientEventMonitor) dispatch(e string) error {
 	em.Lock()
 	defer em.Unlock()
+
+	if !em.active {
+		return nil
+	}
 
 	var evt Event
 
@@ -186,8 +205,6 @@ func listenAndDispatch(c *Client, em *clientEventMonitor) {
 			_ = em.dispatch(et)
 		}
 	}
-
-	panic("here are the stacks")
 }
 
 // Handle associates a HandlerFunc with a give Docker container or image lifecycle
@@ -202,6 +219,18 @@ func (s *Subscription) Handle(es string, h HandlerFunc) error {
 func (s *Subscription) Close() error {
 	if !s.active {
 		return nil
+	}
+
+	// remove this subscriber from the event monitor's subscription list
+	ecs := s.monitor.subscriptions[s.ID]
+	if len(ecs) == 1 {
+		s.monitor.subscriptions[s.ID] = []chan Event{}
+	} else {
+		for i := 0; i < len(ecs); i++ {
+			if ecs[i] == s.eventChannel {
+				s.monitor.subscriptions[s.ID] = append(ecs[:i], ecs[i+1:]...)
+			}
+		}
 	}
 
 	crc := make(chan struct{})
