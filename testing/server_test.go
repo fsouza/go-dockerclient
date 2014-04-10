@@ -397,7 +397,7 @@ func TestWaitContainer(t *testing.T) {
 	path := fmt.Sprintf("/containers/%s/wait", server.containers[0].ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	go func() {
-		time.Sleep(200e6)
+		time.Sleep(1)
 		server.cMut.Lock()
 		server.containers[0].State.Running = false
 		server.cMut.Unlock()

@@ -353,7 +353,7 @@ func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
 	}
 	for {
 		s.cMut.RLock()
-		if container.State.Running {
+		if !container.State.Running {
 			s.cMut.RUnlock()
 			break
 		}
