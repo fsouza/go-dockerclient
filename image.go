@@ -168,6 +168,7 @@ func (c *Client) createImage(qs string, headers map[string]string, in io.Reader,
 // See http://goo.gl/PhBKnS for more details.
 type ImportImageOptions struct {
 	Repository string `qs:"repo"`
+	Tag        string `qs:"tag"`
 	Source     string `qs:"fromSrc"`
 
 	InputStream  io.Reader `qs:"-"`
