@@ -153,10 +153,14 @@ func (em *clientEventMonitor) run(c *Client) error {
 	}
 
 	go func() {
-		go listenAndDispatch(c, em)
+		r, w := io.Pipe()
+
+		go listenAndDispatch(c, em, r, w)
 
 		select {
 		case crc := <-em.closeChannel:
+			w.Close()
+			r.Close()
 			close(em.done)
 			crc <- struct{}{}
 			return
@@ -219,13 +223,11 @@ func (em *clientEventMonitor) unsubscribe(s *Subscription) error {
 
 // listenAndDispatch reads the Docker event stream and dispatches the events
 // it receives.
-func listenAndDispatch(c *Client, em *clientEventMonitor) {
-	// TODO: figure out how to cleanly shutdown the hijacked connection and exit the scan loop.
-	pr, pw := io.Pipe()
+func listenAndDispatch(c *Client, em *clientEventMonitor, r *io.PipeReader, w *io.PipeWriter) {
+	// TODO: figure out how to cleanly shutdown the hijacked connection
+	go c.hijack("GET", "/events", true, nil, nil, w)
 
-	go c.hijack("GET", "/events", true, nil, nil, pw)
-
-	scanner := bufio.NewScanner(pr)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		et := scanner.Text()
 		if et != "" && et[0] == '{' {
