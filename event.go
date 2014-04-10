@@ -55,7 +55,7 @@ type clientEventMonitor struct {
 	active        bool
 	closeChannel  chan chan struct{}
 	done          chan struct{}
-	subscriptions map[string][]chan Event
+	subscriptions map[string][]*Subscription
 }
 
 // Subscription represents a subscription to a particular container or image's Docker lifecycle
@@ -76,7 +76,7 @@ var eventMonitor = &clientEventMonitor{
 	active:        false,
 	closeChannel:  make(chan chan struct{}),
 	done:          make(chan struct{}),
-	subscriptions: make(map[string][]chan Event),
+	subscriptions: make(map[string][]*Subscription),
 }
 
 // MonitorEvents returns an EventMonitor that can be used to listen for and respond to
@@ -112,7 +112,7 @@ func (em *clientEventMonitor) Close() error {
 	select {
 	case <-crc:
 		em.active = false
-		em.subscriptions = make(map[string][]chan Event)
+		em.subscriptions = make(map[string][]*Subscription)
 		em.done = make(chan struct{})
 		return nil
 	}
@@ -136,7 +136,7 @@ func (em *clientEventMonitor) Subscribe(ID string) (*Subscription, error) {
 		monitor:       em,
 	}
 
-	em.subscriptions[ID] = append(em.subscriptions[ID], s.eventChannel)
+	em.subscriptions[ID] = append(em.subscriptions[ID], s)
 	s.run()
 
 	return s, nil
@@ -184,18 +184,35 @@ func (em *clientEventMonitor) dispatch(e string) error {
 	}
 
 	// send the event to subscribers interested in everything
-	if ecs, ok := em.subscriptions[AllThingsDocker]; ok {
-		for _, ec := range ecs {
-			ec <- evt
+	if subs, ok := em.subscriptions[AllThingsDocker]; ok {
+		for _, sub := range subs {
+			sub.eventChannel <- evt
 		}
 	}
 
 	// send the event to subscribers interested in the particular ID
-	if ecs, ok := em.subscriptions[evt["id"].(string)]; ok {
-		for _, ec := range ecs {
-			ec <- evt
+	if subs, ok := em.subscriptions[evt["id"].(string)]; ok {
+		for _, sub := range subs {
+			sub.eventChannel <- evt
 		}
 	}
+
+	return nil
+}
+
+// unsubscribe removes the given Subscription from the event monitor's list of subscribers
+func (em *clientEventMonitor) unsubscribe(s *Subscription) error {
+	em.Lock()
+	defer em.Unlock()
+
+	ns := []*Subscription{}
+	for _, sub := range em.subscriptions[s.ID] {
+		if sub != s {
+			ns = append(ns, sub)
+		}
+	}
+
+	em.subscriptions[s.ID] = ns
 
 	return nil
 }
@@ -233,25 +250,14 @@ func (s *Subscription) Cancel() error {
 		return nil
 	}
 
-	// remove this subscriber from the event monitor's subscription list
-	// TODO: none event monitor things shouldn't manipulate its state, find a
-	// better way to do this.
-	ecs := s.monitor.subscriptions[s.ID]
-	if len(ecs) == 1 {
-		s.monitor.subscriptions[s.ID] = []chan Event{}
-	} else {
-		for i := 0; i < len(ecs); i++ {
-			if ecs[i] == s.eventChannel {
-				s.monitor.subscriptions[s.ID] = append(ecs[:i], ecs[i+1:]...)
-			}
-		}
-	}
-
 	crc := make(chan struct{})
 	s.cancelChannel <- crc
 
 	select {
 	case <-crc:
+		if err := s.monitor.unsubscribe(s); err != nil {
+			utils.Debugf("could not unsubscribe %v (%v)", s, err)
+		}
 		s.active = false
 		return nil
 	}
