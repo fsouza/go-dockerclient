@@ -79,6 +79,20 @@ var eventMonitor = &clientEventMonitor{
 	subscriptions: make(map[string][]*Subscription),
 }
 
+// validEvents is a map used to check event strings for validity
+var validEvents = map[string]struct{}{
+	Create:  struct{}{},
+	Delete:  struct{}{},
+	Destroy: struct{}{},
+	Die:     struct{}{},
+	Export:  struct{}{},
+	Kill:    struct{}{},
+	Restart: struct{}{},
+	Start:   struct{}{},
+	Stop:    struct{}{},
+	Untag:   struct{}{},
+}
+
 // MonitorEvents returns an EventMonitor that can be used to listen for and respond to
 // the various events in the Docker container and image lifecycles.
 func (c *Client) MonitorEvents() (EventMonitor, error) {
@@ -238,9 +252,13 @@ func listenAndDispatch(c *Client, em *clientEventMonitor, r *io.PipeReader, w *i
 	}
 }
 
-// Handle associates a HandlerFunc with a give Docker container or image lifecycle
-// event. Any HandlerFunc previously associated the the specified event is replaced.
+// Handle associates a HandlerFunc h with a given Docker container or image lifecycle
+// event es. Any HandlerFunc previously associated with es is replaced.
 func (s *Subscription) Handle(es string, h HandlerFunc) error {
+	if _, ok := validEvents[es]; !ok {
+		return fmt.Errorf("unknown event: %s", es)
+	}
+
 	s.handlers[es] = h
 	return nil
 }

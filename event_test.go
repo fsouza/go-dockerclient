@@ -37,6 +37,32 @@ func TestMonitorEvents(t *testing.T) {
 	}
 }
 
+func TestUnknownEventHandler(t *testing.T) {
+	dc, err := NewClient(DockerEndpoint)
+	if err != nil {
+		t.Fatalf("can't create docker client: %v", err)
+	}
+
+	em, err := dc.MonitorEvents()
+	if err != nil {
+		t.Fatalf("can't create event monitor: %v", err)
+	}
+
+	s, err := em.Subscribe(AllThingsDocker)
+	if err != nil {
+		t.Fatalf("universal subscription failed: %f", err)
+	}
+
+	err = s.Handle("BooYa!", func(e Event) error {
+		return nil
+	})
+	if err == nil {
+		t.Fatal("expecting unknown event error")
+	}
+
+	em.Close()
+}
+
 func TestUniversalEventSubscription(t *testing.T) {
 	dc, err := NewClient(DockerEndpoint)
 	if err != nil {
