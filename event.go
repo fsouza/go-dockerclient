@@ -252,8 +252,8 @@ func listenAndDispatch(c *Client, em *clientEventMonitor, r *io.PipeReader, w *i
 	}
 }
 
-// Handle associates a HandlerFunc h with a given Docker container or image lifecycle
-// event es. Any HandlerFunc previously associated with es is replaced.
+// Handle associates a HandlerFunc h with a the Docker container or image lifecycle
+// event specified by es. Any HandlerFunc previously associated with es is replaced.
 func (s *Subscription) Handle(es string, h HandlerFunc) error {
 	if _, ok := validEvents[es]; !ok {
 		return fmt.Errorf("unknown event: %s", es)
