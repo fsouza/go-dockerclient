@@ -67,13 +67,16 @@ func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, er
 	return containers, nil
 }
 
-// 80/tcp
+// Port represents the port number and the protocol, in the form
+// <number>/<protocol>. For example: 80/tcp.
 type Port string
 
+// Port returns the number of the port.
 func (p Port) Port() string {
 	return strings.Split(string(p), "/")[0]
 }
 
+// Proto returns the name of the protocol.
 func (p Port) Proto() string {
 	parts := strings.Split(string(p), "/")
 	if len(parts) == 1 {
@@ -82,6 +85,7 @@ func (p Port) Proto() string {
 	return parts[1]
 }
 
+// State represents the state of a container.
 type State struct {
 	sync.RWMutex
 	Running    bool
@@ -92,10 +96,10 @@ type State struct {
 	Ghost      bool
 }
 
+// String returns the string representation of a state.
 func (s *State) String() string {
 	s.RLock()
 	defer s.RUnlock()
-
 	if s.Running {
 		if s.Ghost {
 			return fmt.Sprintf("Ghost")

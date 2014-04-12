@@ -578,13 +578,13 @@ func TestBuildImageRemoteWithoutName(t *testing.T) {
 
 func TestIsUrl(t *testing.T) {
 	url := "http://foo.bar/"
-	result := isUrl(url)
+	result := isURL(url)
 	if !result {
-		t.Errorf("isUrl: wrong match. Expected %#v to be a url. Got %#v.", url, result)
+		t.Errorf("isURL: wrong match. Expected %#v to be a url. Got %#v.", url, result)
 	}
 	url = "/foo/bar.tar"
-	result = isUrl(url)
+	result = isURL(url)
 	if result {
-		t.Errorf("isUrl: wrong match. Expected %#v to not be a url. Got %#v", url, result)
+		t.Errorf("isURL: wrong match. Expected %#v to not be a url. Got %#v", url, result)
 	}
 }

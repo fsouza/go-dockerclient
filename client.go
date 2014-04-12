@@ -28,10 +28,10 @@ const userAgent = "go-dockerclient"
 
 var (
 	// ErrInvalidEndpoint is returned when the endpoint is not a valid HTTP URL.
-	ErrInvalidEndpoint = errors.New("Invalid endpoint")
+	ErrInvalidEndpoint = errors.New("invalid endpoint")
 
 	// ErrConnectionRefused is returned when the client cannot connect to the given endpoint.
-	ErrConnectionRefused = errors.New("Cannot connect to Docker endpoint")
+	ErrConnectionRefused = errors.New("cannot connect to Docker endpoint")
 )
 
 // Client is the basic type of this package. It provides methods for
@@ -167,9 +167,8 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 				fmt.Fprintf(out, "%s %s\r", m.Status, m.Progress)
 			} else if m.Error != "" {
 				return errors.New(m.Error)
-			} else {
-				fmt.Fprintln(out, m.Status)
 			}
+			fmt.Fprintln(out, m.Status)
 		}
 	} else {
 		if _, err := io.Copy(out, resp.Body); err != nil {
