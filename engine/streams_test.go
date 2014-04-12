@@ -169,7 +169,7 @@ func TestTail(t *testing.T) {
 			var output []string
 			Tail(strings.NewReader(input), n, &output)
 			if fmt.Sprintf("%v", output) != fmt.Sprintf("%v", expectedOutput) {
-				t.Errorf("Tail n=%d returned wrong result.\nExpected: '%s'\nGot     : '%s'", expectedOutput, output)
+				t.Errorf("Tail n=%d returned wrong result.\nExpected: '%s'\nGot     : '%s'", n, expectedOutput, output)
 			}
 		}
 	}
@@ -229,7 +229,7 @@ func TestOutputAdd(t *testing.T) {
 		t.Fatalf("Expected %d, got %d", len(input), n)
 	}
 	if output := b.String(); output != input {
-		t.Fatal("Received wrong data from Add.\nExpected: '%s'\nGot:     '%s'", input, output)
+		t.Fatalf("Received wrong data from Add.\nExpected: '%s'\nGot:     '%s'", input, output)
 	}
 }
 
