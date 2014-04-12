@@ -88,6 +88,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/images/{id:.*}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.removeImage))
 	s.mux.Path("/images/{name:.*}/json").Methods("GET").HandlerFunc(s.handlerWrapper(s.inspectImage))
 	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.handlerWrapper(s.pushImage))
+	s.mux.Path("/events").Methods("GET").HandlerFunc(s.listEvents)
 }
 
 // PrepareFailure adds a new expected failure based on a FailureSpec
@@ -513,9 +514,7 @@ func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) inspectImage(w http.ResponseWriter, r *http.Request) {
-
 	name := mux.Vars(r)["name"]
-
 	if id, ok := s.imgIDs[name]; ok {
 		s.iMut.Lock()
 		defer s.iMut.Unlock()
@@ -530,5 +529,43 @@ func (s *DockerServer) inspectImage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.Error(w, "not found", http.StatusNotFound)
-	return
+}
+
+func (s *DockerServer) listEvents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var events [][]byte
+	count := mathrand.Intn(20)
+	for i := 0; i < count; i++ {
+		data, err := json.Marshal(s.generateEvent())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		events = append(events, data)
+	}
+	w.WriteHeader(http.StatusOK)
+	for _, d := range events {
+		fmt.Fprintln(w, d)
+		time.Sleep(time.Duration(mathrand.Intn(200)) * time.Millisecond)
+	}
+}
+
+func (s *DockerServer) generateEvent() *docker.APIEvents {
+	var eventType string
+	switch mathrand.Intn(4) {
+	case 0:
+		eventType = "create"
+	case 1:
+		eventType = "start"
+	case 2:
+		eventType = "stop"
+	case 3:
+		eventType = "destroy"
+	}
+	return &docker.APIEvents{
+		ID:     s.generateID(),
+		Status: eventType,
+		From:   "mybase:latest",
+		Time:   time.Now().Unix(),
+	}
 }
