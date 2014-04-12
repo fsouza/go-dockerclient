@@ -20,6 +20,7 @@ import (
 	"time"
 )
 
+// APIEvents represents an event returned by the API.
 type APIEvents struct {
 	Status string
 	ID     string
@@ -34,7 +35,7 @@ type eventMonitoringState struct {
 	lastSeen  *int64
 	C         chan *APIEvents
 	errC      chan error
-	listeners []chan *APIEvents
+	listeners []chan<- *APIEvents
 }
 
 const (
@@ -43,12 +44,21 @@ const (
 )
 
 var (
-	eventMonitor      eventMonitoringState
-	ErrNoListeners    = errors.New("No listeners present to recieve event")
-	ErrListenerExists = errors.New("Listener already exists for docker events")
+	eventMonitor eventMonitoringState
+
+	// ErrNoListeners is the error returned when no listeners are available
+	// to receive an event.
+	ErrNoListeners = errors.New("no listeners present to receive event")
+
+	// ErrListenerAlreadyExists is the error returned when the listerner already
+	// exists.
+	ErrListenerAlreadyExists = errors.New("listener already exists for docker events")
 )
 
-func (c *Client) AddEventListener(listener chan *APIEvents) error {
+// AddEventListener adds a new listener to container events in the Docker API.
+//
+// The parameter is a channel through which events will be sent.
+func (c *Client) AddEventListener(listener chan<- *APIEvents) error {
 	var err error
 	if !eventMonitor.isEnabled() {
 		err = eventMonitor.enableEventMonitoring(c)
@@ -63,38 +73,37 @@ func (c *Client) AddEventListener(listener chan *APIEvents) error {
 	return nil
 }
 
+// RemoveEventListener removes a listener from the monitor.
 func (c *Client) RemoveEventListener(listener chan *APIEvents) error {
 	err := eventMonitor.removeListener(listener)
 	if err != nil {
 		return err
 	}
-
 	if len(eventMonitor.listeners) == 0 {
 		err = eventMonitor.disableEventMonitoring()
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
-func (eventState *eventMonitoringState) addListener(listener chan *APIEvents) error {
+func (eventState *eventMonitoringState) addListener(listener chan<- *APIEvents) error {
 	eventState.Lock()
 	defer eventState.Unlock()
 	if listenerExists(listener, &eventState.listeners) {
-		return ErrListenerExists
+		return ErrListenerAlreadyExists
 	}
 	eventState.Add(1)
 	eventState.listeners = append(eventState.listeners, listener)
 	return nil
 }
 
-func (eventState *eventMonitoringState) removeListener(listener chan *APIEvents) error {
+func (eventState *eventMonitoringState) removeListener(listener chan<- *APIEvents) error {
 	eventState.Lock()
 	defer eventState.Unlock()
 	if listenerExists(listener, &eventState.listeners) {
-		var newListeners []chan *APIEvents
+		var newListeners []chan<- *APIEvents
 		for _, l := range eventState.listeners {
 			if l != listener {
 				newListeners = append(newListeners, l)
@@ -106,7 +115,7 @@ func (eventState *eventMonitoringState) removeListener(listener chan *APIEvents)
 	return nil
 }
 
-func listenerExists(a chan *APIEvents, list *[]chan *APIEvents) bool {
+func listenerExists(a chan<- *APIEvents, list *[]chan<- *APIEvents) bool {
 	for _, b := range *list {
 		if b == a {
 			return true
@@ -158,7 +167,6 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 			}
 			go eventState.sendEvent(ev)
 			go eventState.updateLastSeen(ev)
-
 		case err = <-eventState.errC:
 			if err == ErrNoListeners {
 				eventState.terminate(nil)
