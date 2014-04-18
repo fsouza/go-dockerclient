@@ -346,8 +346,12 @@ func (c *Client) RestartContainer(id string, timeout uint) error {
 // KillContainer kills a container, returning an error in case of failure.
 //
 // See http://goo.gl/DPbbBy for more details.
-func (c *Client) KillContainer(id string) error {
+func (c *Client) KillContainer(id string, signal ...int) error {
 	path := "/containers/" + id + "/kill"
+	if len(signal) == 1 {
+		path += fmt.Sprintf("?signal=%d", signal[0])
+	}
+
 	_, status, err := c.do("POST", path, nil)
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
