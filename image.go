@@ -144,6 +144,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 type PullImageOptions struct {
 	Repository   string `qs:"fromImage"`
 	Registry     string
+	Tag          string
 	OutputStream io.Writer `qs:"-"`
 }
 

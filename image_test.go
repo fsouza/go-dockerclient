@@ -348,6 +348,28 @@ func TestPullImageCustomRegistry(t *testing.T) {
 	}
 }
 
+func TestPullImageTag(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := PullImageOptions{
+		Repository:   "base",
+		Registry:     "docker.tsuru.io",
+		Tag:          "latest",
+		OutputStream: &buf,
+	}
+	err := client.PullImage(opts, AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := map[string][]string{"fromImage": {"base"}, "registry": {"docker.tsuru.io"}, "tag": {"latest"}}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("PullImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
 func TestPullImageNoRepository(t *testing.T) {
 	var opts PullImageOptions
 	client := Client{}
