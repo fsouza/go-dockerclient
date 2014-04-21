@@ -66,6 +66,7 @@ func TestGetURL(t *testing.T) {
 		{"http://localhost:4243/", "/", "http://localhost:4243/"},
 		{"http://localhost:4243", "/", "http://localhost:4243/"},
 		{"http://localhost:4243", "/containers/ps", "http://localhost:4243/containers/ps"},
+		{"tcp://localhost:4243", "/containers/ps", "http://localhost:4243/containers/ps"},
 		{"http://localhost:4243/////", "/", "http://localhost:4243/"},
 		{"unix:///var/run/docker.socket", "/containers", "/containers"},
 	}

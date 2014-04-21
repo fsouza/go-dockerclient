@@ -229,7 +229,7 @@ func (c *Client) hijack(method, path string, success chan struct{}, in io.Reader
 }
 
 func (c *Client) getURL(path string) string {
-	urlStr := strings.TrimRight(c.endpoint, "/")
+	urlStr := strings.TrimRight(c.endpointURL.String(), "/")
 	if c.endpointURL.Scheme == "unix" {
 		urlStr = ""
 	}
@@ -313,6 +313,9 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, ErrInvalidEndpoint
+	}
+	if u.Scheme == "tcp" {
+		u.Scheme = "http"
 	}
 	if u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "unix" {
 		return nil, ErrInvalidEndpoint
