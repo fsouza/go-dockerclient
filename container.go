@@ -366,6 +366,10 @@ type RemoveContainerOptions struct {
 	// A flag that indicates whether Docker should remove the volumes
 	// associated to the container.
 	RemoveVolumes bool `qs:"v"`
+
+	// A flag that indicates whether Docker should remove the container
+	// even if it is currently running.
+	Force bool `qs:"force"`
 }
 
 // RemoveContainer removes a container, returning an error in case of failure.
