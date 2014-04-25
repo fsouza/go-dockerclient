@@ -446,7 +446,7 @@ type CommitContainerOptions struct {
 	Tag        string
 	Message    string `qs:"m"`
 	Author     string
-	Run        *Config
+	Run        *Config `qs:"-"`
 }
 
 type Image struct {
@@ -468,7 +468,7 @@ type Image struct {
 // See http://goo.gl/628gxm for more details.
 func (c *Client) CommitContainer(opts CommitContainerOptions) (*Image, error) {
 	path := "/commit?" + queryString(opts)
-	body, status, err := c.do("POST", path, nil)
+	body, status, err := c.do("POST", path, opts.Run)
 	if status == http.StatusNotFound {
 		return nil, &NoSuchContainer{ID: opts.Container}
 	}
