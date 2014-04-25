@@ -7,6 +7,7 @@ package docker
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -572,20 +573,23 @@ func TestCommitContainer(t *testing.T) {
 
 func TestCommitContainerParams(t *testing.T) {
 	cfg := Config{Memory: 67108864}
-	b, _ := json.Marshal(&cfg)
+	json, _ := json.Marshal(&cfg)
 	var tests = []struct {
 		input  CommitContainerOptions
 		params map[string][]string
+		body   []byte
 	}{
-		{CommitContainerOptions{}, map[string][]string{}},
-		{CommitContainerOptions{Container: "44c004db4b17"}, map[string][]string{"container": {"44c004db4b17"}}},
+		{CommitContainerOptions{}, map[string][]string{}, nil},
+		{CommitContainerOptions{Container: "44c004db4b17"}, map[string][]string{"container": {"44c004db4b17"}}, nil},
 		{
 			CommitContainerOptions{Container: "44c004db4b17", Repository: "tsuru/python", Message: "something"},
 			map[string][]string{"container": {"44c004db4b17"}, "repo": {"tsuru/python"}, "m": {"something"}},
+			nil,
 		},
 		{
 			CommitContainerOptions{Container: "44c004db4b17", Run: &cfg},
-			map[string][]string{"container": {"44c004db4b17"}, "run": {string(b)}},
+			map[string][]string{"container": {"44c004db4b17"}},
+			json,
 		},
 	}
 	fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
@@ -602,6 +606,15 @@ func TestCommitContainerParams(t *testing.T) {
 		}
 		if meth := fakeRT.requests[0].Method; meth != "POST" {
 			t.Errorf("Wrong HTTP method. Want POST. Got %s.", meth)
+		}
+		if tt.body != nil {
+			if requestBody, err := ioutil.ReadAll(fakeRT.requests[0].Body); err == nil {
+				if bytes.Compare(requestBody, tt.body) != 0 {
+					t.Errorf("Expected body %#v, got %#v", tt.body, requestBody)
+				}
+			} else {
+				t.Errorf("Error reading request body: %#v", err)
+			}
 		}
 		fakeRT.Reset()
 	}
