@@ -168,7 +168,9 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 			} else if m.Error != "" {
 				return errors.New(m.Error)
 			}
-			fmt.Fprintln(out, m.Status)
+			if m.Status != "" {
+				fmt.Fprintln(out, m.Status)
+			}
 		}
 	} else {
 		if _, err := io.Copy(out, resp.Body); err != nil {
