@@ -452,7 +452,7 @@ func TestKillContainerSignal(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
 	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
-	err := client.KillContainer(KillContainerOptions{ID: id, Signal: 15})
+	err := client.KillContainer(KillContainerOptions{ID: id, Signal: SIGTERM})
 	if err != nil {
 		t.Fatal(err)
 	}

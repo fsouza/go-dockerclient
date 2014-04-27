@@ -351,7 +351,7 @@ type KillContainerOptions struct {
 
 	// The signal to send to the container. When omitted, Docker server
 	// will assume SIGKILL.
-	Signal int
+	Signal Signal
 }
 
 // KillContainer kills a container, returning an error in case of failure.
