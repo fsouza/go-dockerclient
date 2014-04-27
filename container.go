@@ -380,7 +380,7 @@ type RemoveContainerOptions struct {
 
 	// A flag that indicates whether Docker should remove the container
 	// even if it is currently running.
-	Force bool `qs:"force"`
+	Force bool
 }
 
 // RemoveContainer removes a container, returning an error in case of failure.
