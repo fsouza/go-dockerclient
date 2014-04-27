@@ -102,7 +102,7 @@ func (s *State) String() string {
 	defer s.RUnlock()
 	if s.Running {
 		if s.Ghost {
-			return fmt.Sprintf("Ghost")
+			return "Ghost"
 		}
 		return fmt.Sprintf("Up %s", time.Now().UTC().Sub(s.StartedAt))
 	}
