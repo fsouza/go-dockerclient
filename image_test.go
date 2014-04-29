@@ -386,6 +386,7 @@ func TestImportImageFromUrl(t *testing.T) {
 	opts := ImportImageOptions{
 		Source:       "http://mycompany.com/file.tar",
 		Repository:   "testimage",
+		Tag:          "tag",
 		OutputStream: &buf,
 	}
 	err := client.ImportImage(opts)
@@ -393,7 +394,7 @@ func TestImportImageFromUrl(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}}
+	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}, "tag": {opts.Tag}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
@@ -408,13 +409,14 @@ func TestImportImageFromInput(t *testing.T) {
 	opts := ImportImageOptions{
 		Source: "-", Repository: "testimage",
 		InputStream: in, OutputStream: &buf,
+		Tag: "tag",
 	}
 	err := client.ImportImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}}
+	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}, "tag": {opts.Tag}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
