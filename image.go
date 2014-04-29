@@ -176,6 +176,7 @@ func (c *Client) createImage(qs string, headers map[string]string, in io.Reader,
 type ImportImageOptions struct {
 	Repository string `qs:"repo"`
 	Source     string `qs:"fromSrc"`
+	Tag        string `qs:"tag"`
 
 	InputStream  io.Reader `qs:"-"`
 	OutputStream io.Writer `qs:"-"`
