@@ -16,6 +16,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+    "os"
 )
 
 func TestNewServer(t *testing.T) {
@@ -730,5 +731,26 @@ func TestRemoveFailure(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("RemoveFailure: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}
+
+func TestBuildImageWithContentTypeTar(t *testing.T) {
+    server := DockerServer{imgIDs: make(map[string]string)}
+    imageName := "teste"
+    recorder := httptest.NewRecorder()
+    tarFile, err := os.Open("data/dockerfile.tar")
+    if err != nil {
+        t.Fatal(err)
+    }
+    defer tarFile.Close()
+    request, _ := http.NewRequest("POST", "/build?t=teste", tarFile)
+    request.Header.Add("Content-Type", "application/tar")
+    server.buildImage(recorder, request)
+    if recorder.Body.String() == "miss Dockerfile" {
+		t.Errorf("BuildImage: miss Dockerfile")
+        return
+    }
+    if _, ok := server.imgIDs[imageName]; ok == false {
+		t.Errorf("BuildImage: image %s not builded", imageName)
 	}
 }
