@@ -431,37 +431,37 @@ func (s *DockerServer) findContainer(id string) (*docker.Container, int, error) 
 
 func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 	if ct := r.Header.Get("Content-Type"); ct == "application/tar" {
-        gotDockerFile := false
-        tr := tar.NewReader(r.Body)
-        for {
-            header, err := tr.Next()
-            if err != nil {
-                break
-            }
-            if header.Name == "Dockerfile" {
-                gotDockerFile = true
-            }
-        }
-        if !gotDockerFile {
-            w.WriteHeader(http.StatusBadRequest)
-            w.Write([]byte("miss Dockerfile"))
-            return
-        }
+		gotDockerFile := false
+		tr := tar.NewReader(r.Body)
+		for {
+			header, err := tr.Next()
+			if err != nil {
+				break
+			}
+			if header.Name == "Dockerfile" {
+				gotDockerFile = true
+			}
+		}
+		if !gotDockerFile {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("miss Dockerfile"))
+			return
+		}
 	}
-    //we did not use that Dockerfile to build image cause we are a fake Docker daemon
-    image := docker.Image{
-        ID: s.generateID(),
-    }
-    query := r.URL.Query()
-    repository := image.ID
-    if t := query.Get("t"); t != "" {
-        repository = t
-    }
-    s.iMut.Lock()
-    s.images = append(s.images, image)
-    s.imgIDs[repository] = image.ID
-    s.iMut.Unlock()
-    w.Write([]byte(fmt.Sprintf("Successfully built %s", image.ID)))
+	//we did not use that Dockerfile to build image cause we are a fake Docker daemon
+	image := docker.Image{
+		ID: s.generateID(),
+	}
+	query := r.URL.Query()
+	repository := image.ID
+	if t := query.Get("t"); t != "" {
+		repository = t
+	}
+	s.iMut.Lock()
+	s.images = append(s.images, image)
+	s.imgIDs[repository] = image.ID
+	s.iMut.Unlock()
+	w.Write([]byte(fmt.Sprintf("Successfully built %s", image.ID)))
 }
 
 func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
