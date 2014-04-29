@@ -754,3 +754,14 @@ func TestBuildImageWithContentTypeTar(t *testing.T) {
 		t.Errorf("BuildImage: image %s not builded", imageName)
 	}
 }
+
+func TestBuildImageWithRemoteDockerfile(t *testing.T) {
+    server := DockerServer{imgIDs: make(map[string]string)}
+    imageName := "teste"
+    recorder := httptest.NewRecorder()
+    request, _ := http.NewRequest("POST", "/build?t=teste&remote=http://localhost/Dockerfile", nil)
+    server.buildImage(recorder, request)
+    if _, ok := server.imgIDs[imageName]; ok == false {
+		t.Errorf("BuildImage: image %s not builded", imageName)
+	}
+}
