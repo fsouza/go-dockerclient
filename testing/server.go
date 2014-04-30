@@ -353,6 +353,7 @@ func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for {
+		time.Sleep(1e6)
 		s.cMut.RLock()
 		if !container.State.Running {
 			s.cMut.RUnlock()
