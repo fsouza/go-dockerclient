@@ -269,7 +269,9 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 				if err != nil {
 					errChan <- err
 				}
-				eventChan <- &e
+				if !eventMonitor.noListeners() {
+					eventMonitor.C <- &e
+				}
 			}
 		}
 		if err := scanner.Err(); err != nil {
