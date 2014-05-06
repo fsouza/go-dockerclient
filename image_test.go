@@ -600,6 +600,35 @@ func TestBuildImageRemoteWithoutName(t *testing.T) {
 	}
 }
 
+func TestTagImageParameters(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := TagImageOptions{Repo: "testImage"}
+	err := client.TagImage("base", opts)
+	if err != nil && strings.Index(err.Error(), "tag image fail") == -1 {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := "http://localhost:4243/images/base/tag?repo=testImage"
+	got := req.URL.String()
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("TagImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+func TestTagImageMissingRepo(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := TagImageOptions{Repo: "testImage"}
+	err := client.TagImage("", opts)
+	if err != ErrNoSuchImage {
+		t.Errorf("TestTag: wrong error returned. Want %#v. Got %#v.",
+			ErrNoSuchImage, err)
+	}
+}
+
+
+
 func TestIsUrl(t *testing.T) {
 	url := "http://foo.bar/"
 	result := isURL(url)
