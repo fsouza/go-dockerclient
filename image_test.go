@@ -627,8 +627,6 @@ func TestTagImageMissingRepo(t *testing.T) {
 	}
 }
 
-
-
 func TestIsUrl(t *testing.T) {
 	url := "http://foo.bar/"
 	result := isURL(url)
