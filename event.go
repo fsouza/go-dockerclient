@@ -5,7 +5,6 @@
 package docker
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,7 +13,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -236,47 +234,60 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 	if startTime != 0 {
 		uri += fmt.Sprintf("?since=%d", startTime)
 	}
-	req, err := http.NewRequest("GET", c.getURL(uri), nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "plain/text")
+
 	protocol := c.endpointURL.Scheme
 	address := c.endpointURL.Path
 	if protocol != "unix" {
 		protocol = "tcp"
 		address = c.endpointURL.Host
 	}
+
 	dial, err := net.Dial(protocol, address)
 	if err != nil {
 		return err
 	}
-	clientconn := httputil.NewClientConn(dial, nil)
-	clientconn.Do(req)
-	conn, rwc := clientconn.Hijack()
+
+	conn := httputil.NewClientConn(dial, nil)
+	if conn == nil {
+		return fmt.Errorf("Error establishing http connection to %s", address)
+	}
+
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return err
 	}
-	go func(rwc io.Reader) {
-		defer clientconn.Close()
+
+	res, err := conn.Do(req)
+	if err != nil {
+		return err
+	}
+
+	go func(res *http.Response, conn *httputil.ClientConn) {
 		defer conn.Close()
-		scanner := bufio.NewScanner(rwc)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "{") {
-				var e APIEvents
-				err = json.Unmarshal([]byte(line), &e)
-				if err != nil {
-					errChan <- err
+		defer res.Body.Close()
+
+		decoder := json.NewDecoder(res.Body)
+
+		for {
+			var event APIEvents
+			if err = decoder.Decode(&event); err != nil {
+				if err == io.EOF {
+					break
 				}
-				if !eventMonitor.noListeners() {
-					eventMonitor.C <- &e
-				}
+				errChan <- err
+			}
+
+			// Discard garbage events
+			if event.Time == 0 {
+				continue
+			}
+
+			if !c.eventMonitor.isEnabled() {
+				return
+			} else {
+				c.eventMonitor.C <- &event
 			}
 		}
-		if err := scanner.Err(); err != nil {
-			errChan <- err
-		}
-	}(rwc)
+	}(res, conn)
 	return nil
 }
