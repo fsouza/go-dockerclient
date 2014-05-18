@@ -44,8 +44,6 @@ const (
 )
 
 var (
-	eventMonitor eventMonitoringState
-
 	// ErrNoListeners is the error returned when no listeners are available
 	// to receive an event.
 	ErrNoListeners = errors.New("no listeners present to receive event")
@@ -60,13 +58,13 @@ var (
 // The parameter is a channel through which events will be sent.
 func (c *Client) AddEventListener(listener chan<- *APIEvents) error {
 	var err error
-	if !eventMonitor.isEnabled() {
-		err = eventMonitor.enableEventMonitoring(c)
+	if !c.eventMonitor.isEnabled() {
+		err = c.eventMonitor.enableEventMonitoring(c)
 		if err != nil {
 			return err
 		}
 	}
-	err = eventMonitor.addListener(listener)
+	err = c.eventMonitor.addListener(listener)
 	if err != nil {
 		return err
 	}
@@ -75,12 +73,12 @@ func (c *Client) AddEventListener(listener chan<- *APIEvents) error {
 
 // RemoveEventListener removes a listener from the monitor.
 func (c *Client) RemoveEventListener(listener chan *APIEvents) error {
-	err := eventMonitor.removeListener(listener)
+	err := c.eventMonitor.removeListener(listener)
 	if err != nil {
 		return err
 	}
-	if len(eventMonitor.listeners) == 0 {
-		err = eventMonitor.disableEventMonitoring()
+	if len(c.eventMonitor.listeners) == 0 {
+		err = c.eventMonitor.disableEventMonitoring()
 		if err != nil {
 			return err
 		}
