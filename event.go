@@ -210,7 +210,9 @@ func (eventState *eventMonitoringState) sendEvent(event *APIEvents) {
 	if eventState.isEnabled() {
 		if eventState.noListeners() {
 			eventState.errC <- ErrNoListeners
+			return
 		}
+
 		for _, listener := range eventState.listeners {
 			listener <- event
 		}
