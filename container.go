@@ -276,7 +276,6 @@ func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error
 		return nil, err
 	}
 
-	// Set name since we know it, but it's not returned
 	container.Name = opts.Name
 
 	return &container, nil

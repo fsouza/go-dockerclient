@@ -853,3 +853,21 @@ func TestCopyFromContainerEmptyContainer(t *testing.T) {
 		t.Errorf("CopyFromContainer: invalid error returned. Want NoSuchContainer, got %#v.", err)
 	}
 }
+
+func TestPassingNameOptToCreateContainerReturnsItInContainer(t *testing.T) {
+	jsonContainer := `{
+             "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
+	     "Warnings": []
+}`
+	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	config := Config{AttachStdout: true, AttachStdin: true}
+	opts := CreateContainerOptions{Name: "TestCreateContainer", Config: &config}
+	container, err := client.CreateContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if container.Name != "TestCreateContainer" {
+		t.Errorf("Container name expected to be TestCreateContainer, was %s", container.Name)
+	}
+}
