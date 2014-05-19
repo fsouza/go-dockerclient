@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const userAgent = "go-dockerclient"
@@ -206,15 +207,18 @@ func (c *Client) hijack(method, path string, success chan struct{}, in io.Reader
 		<-success
 	}
 	rwc, br := clientconn.Hijack()
+	var wg sync.WaitGroup
+	wg.Add(2)
 	errs := make(chan error, 2)
 	go func() {
 		var err error
 		if in != nil {
 			_, err = io.Copy(out, br)
 		} else {
-			_, err = utils.StdCopy(out, errs, br)
+			_, err = utils.StdCopy(out, errStream, br)
 		}
 		errs <- err
+		wg.Done()
 	}()
 	go func() {
 		var err error
@@ -225,12 +229,12 @@ func (c *Client) hijack(method, path string, success chan struct{}, in io.Reader
 			CloseWrite() error
 		}).CloseWrite()
 		errs <- err
+		wg.Done()
 	}()
-	var connErr error
-	for i := 0; i < cap(errs); i++ {
-		if err := <-errs; connErr == nil {
-			connErr = err
-		}
+	wg.Wait()
+	close(errs)
+	if err := <-errs; err != nil {
+		return err
 	}
 	return nil
 }
