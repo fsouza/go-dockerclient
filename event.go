@@ -234,40 +234,29 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 	if startTime != 0 {
 		uri += fmt.Sprintf("?since=%d", startTime)
 	}
-
 	protocol := c.endpointURL.Scheme
 	address := c.endpointURL.Path
 	if protocol != "unix" {
 		protocol = "tcp"
 		address = c.endpointURL.Host
 	}
-
 	dial, err := net.Dial(protocol, address)
 	if err != nil {
 		return err
 	}
-
 	conn := httputil.NewClientConn(dial, nil)
-	if conn == nil {
-		return fmt.Errorf("Error establishing http connection to %s", address)
-	}
-
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return err
 	}
-
 	res, err := conn.Do(req)
 	if err != nil {
 		return err
 	}
-
 	go func(res *http.Response, conn *httputil.ClientConn) {
 		defer conn.Close()
 		defer res.Body.Close()
-
 		decoder := json.NewDecoder(res.Body)
-
 		for {
 			var event APIEvents
 			if err = decoder.Decode(&event); err != nil {
@@ -276,12 +265,9 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 				}
 				errChan <- err
 			}
-
-			// Discard garbage events
 			if event.Time == 0 {
 				continue
 			}
-
 			if !c.eventMonitor.isEnabled() {
 				return
 			} else {
