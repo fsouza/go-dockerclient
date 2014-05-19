@@ -37,9 +37,10 @@ var (
 // Client is the basic type of this package. It provides methods for
 // interaction with the API.
 type Client struct {
-	endpoint    string
-	endpointURL *url.URL
-	client      *http.Client
+	endpoint     string
+	endpointURL  *url.URL
+	eventMonitor *eventMonitoringState
+	client       *http.Client
 }
 
 // NewClient returns a Client instance ready for communication with the
@@ -50,9 +51,10 @@ func NewClient(endpoint string) (*Client, error) {
 		return nil, err
 	}
 	return &Client{
-		endpoint:    endpoint,
-		endpointURL: u,
-		client:      http.DefaultClient,
+		endpoint:     endpoint,
+		endpointURL:  u,
+		client:       http.DefaultClient,
+		eventMonitor: new(eventMonitoringState),
 	}, nil
 }
 
