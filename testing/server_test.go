@@ -138,8 +138,7 @@ func TestCreateContainer(t *testing.T) {
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Hostname":"", "User":"", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
-"PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"],
-"Dns":null, "Image":"base", "Volumes":{}, "VolumesFrom":""}`
+"PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"], "Image":"base", "Volumes":{}, "VolumesFrom":""}`
 	request, _ := http.NewRequest("POST", "/containers/create", strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusCreated {
@@ -176,7 +175,7 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	body := `{"Hostname":"", "User":"", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
 "PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"],
-"Dns":null, "Image":"base", "Volumes":{}, "VolumesFrom":""}`
+"Image":"base", "Volumes":{}, "VolumesFrom":""}`
 	request, _ := http.NewRequest("POST", "/containers/create", strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
@@ -556,7 +555,6 @@ func addContainers(server *DockerServer, n int) {
 				AttachStderr: true,
 				Env:          []string{"ME=you", fmt.Sprintf("NUMBER=%d", i)},
 				Cmd:          []string{"ls", "-la", ".."},
-				Dns:          nil,
 				Image:        "base",
 			},
 			State: docker.State{
