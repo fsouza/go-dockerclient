@@ -175,7 +175,7 @@ type Config struct {
 	StdinOnce       bool
 	Env             []string
 	Cmd             []string
-	Dns             []string
+	Dns             []string  // For Docker API v1.9 and below only
 	Image           string
 	Volumes         map[string]struct{}
 	VolumesFrom     string
@@ -294,7 +294,7 @@ type HostConfig struct {
 	PortBindings    map[Port][]PortBinding
 	Links           []string
 	PublishAllPorts bool
-	Dns             []string
+	Dns             []string  // For Docker API v1.10 and above only
 }
 
 // StartContainer starts a container, returning an errror in case of failure.
