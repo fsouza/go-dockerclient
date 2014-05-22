@@ -175,7 +175,6 @@ type Config struct {
 	StdinOnce       bool
 	Env             []string
 	Cmd             []string
-	Dns             []string
 	Image           string
 	Volumes         map[string]struct{}
 	VolumesFrom     string
@@ -294,6 +293,7 @@ type HostConfig struct {
 	PortBindings    map[Port][]PortBinding
 	Links           []string
 	PublishAllPorts bool
+	Dns             []string
 }
 
 // StartContainer starts a container, returning an errror in case of failure.
