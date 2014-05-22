@@ -145,7 +145,6 @@ func TestInspectContainer(t *testing.T) {
                      "Cmd": [
                              "date"
                      ],
-                     "Dns": null,
                      "Image": "base",
                      "Volumes": {},
                      "VolumesFrom": ""
