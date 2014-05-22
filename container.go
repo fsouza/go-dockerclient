@@ -205,8 +205,9 @@ type Container struct {
 	Name           string
 	Driver         string
 
-	Volumes   map[string]string
-	VolumesRW map[string]bool
+	Volumes    map[string]string
+	VolumesRW  map[string]bool
+	HostConfig *HostConfig
 }
 
 // InspectContainer returns information about a container by its ID.
