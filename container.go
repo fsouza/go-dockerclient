@@ -175,6 +175,7 @@ type Config struct {
 	StdinOnce       bool
 	Env             []string
 	Cmd             []string
+	Dns             []string
 	Image           string
 	Volumes         map[string]struct{}
 	VolumesFrom     string
