@@ -88,6 +88,9 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 		}
 		clientconn := httputil.NewClientConn(dial, nil)
 		resp, err = clientconn.Do(req)
+		if err != nil {
+			return nil, -1, err
+		}
 		defer clientconn.Close()
 	} else {
 		resp, err = c.client.Do(req)
