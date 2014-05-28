@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	DockerEndpoint = "unix:///var/run/docker.sock"
+	DockerEndpoint = "http://127.0.0.1:3006"
 )
 
 func TestMonitorEvents(t *testing.T) {
@@ -90,7 +90,7 @@ func TestUniversalEventSubscription(t *testing.T) {
 		return nil
 	})
 
-	c, err := dc.CreateContainer(CreateContainerOptions{"testues", &Config{
+	c, err := dc.CreateContainer(CreateContainerOptions{"", &Config{
 		Image:        "ubuntu",
 		Cmd:          []string{"/bin/bash"},
 		AttachStdout: true,
@@ -142,7 +142,7 @@ func TestContainerEventSubscription(t *testing.T) {
 		t.Fatalf("can't create event monitor: %v", err)
 	}
 
-	c, err := dc.CreateContainer(CreateContainerOptions{"testces", &Config{
+	c, err := dc.CreateContainer(CreateContainerOptions{"", &Config{
 		Image: "ubuntu",
 		Cmd:   []string{"/bin/bash"},
 	}})
@@ -242,7 +242,7 @@ func TestCombinedEventSubscription(t *testing.T) {
 		return nil
 	})
 
-	c, err := dc.CreateContainer(CreateContainerOptions{"testces", &Config{
+	c, err := dc.CreateContainer(CreateContainerOptions{"", &Config{
 		Image: "ubuntu",
 		Cmd:   []string{"/bin/bash"},
 	}})
@@ -355,7 +355,7 @@ func TestEventMonitorSubscriptionCancelation(t *testing.T) {
 		s.Handle(Create, hf)
 	}
 
-	c, err := dc.CreateContainer(CreateContainerOptions{"testemsc", &Config{
+	c, err := dc.CreateContainer(CreateContainerOptions{"", &Config{
 		Image: "ubuntu",
 		Cmd:   []string{"/bin/bash"},
 	}})
