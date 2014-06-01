@@ -298,6 +298,7 @@ type HostConfig struct {
 	Dns             []string // For Docker API v1.10 and above only
 	DnsSearch       []string
 	VolumesFrom     []string
+	NetworkMode     string
 }
 
 // StartContainer starts a container, returning an errror in case of failure.
