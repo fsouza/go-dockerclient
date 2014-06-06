@@ -73,6 +73,7 @@ func TestGetURL(t *testing.T) {
 	for _, tt := range tests {
 		client, _ := NewClient(tt.endpoint)
 		client.endpoint = tt.endpoint
+		client.SkipServerVersionCheck = true
 		got := client.getURL(tt.path)
 		if got != tt.expected {
 			t.Errorf("getURL(%q): Got %s. Want %s.", tt.path, got, tt.expected)
@@ -118,6 +119,50 @@ func TestQueryString(t *testing.T) {
 		got := queryString(tt.input)
 		if got != tt.want {
 			t.Errorf("queryString(%v). Want %q. Got %q.", tt.input, tt.want, got)
+		}
+	}
+}
+
+func TestApiVersions(t *testing.T) {
+	var tests = []struct {
+		a                              string
+		b                              string
+		expectedALessThanB             bool
+		expectedALessThanOrEqualToB    bool
+		expectedAGreaterThanB          bool
+		expectedAGreaterThanOrEqualToB bool
+	}{
+		{"1.11", "1.11", false, true, false, true},
+		{"1.10", "1.11", true, true, false, false},
+		{"1.11", "1.10", false, false, true, true},
+
+		{"1.9", "1.11", true, true, false, false},
+		{"1.11", "1.9", false, false, true, true},
+
+		{"1.1.1", "1.1", false, false, true, true},
+		{"1.1", "1.1.1", true, true, false, false},
+
+		{"2.1", "1.1.1", false, false, true, true},
+		{"2.1", "1.3.1", false, false, true, true},
+		{"1.1.1", "2.1", true, true, false, false},
+		{"1.3.1", "2.1", true, true, false, false},
+	}
+
+	for _, tt := range tests {
+		a, _ := NewApiVersion(tt.a)
+		b, _ := NewApiVersion(tt.b)
+
+		if tt.expectedALessThanB && !a.LessThan(b) {
+			t.Errorf("Expected %#v < %#v", a, b)
+		}
+		if tt.expectedALessThanOrEqualToB && !a.LessThanOrEqualTo(b) {
+			t.Errorf("Expected %#v <= %#v", a, b)
+		}
+		if tt.expectedAGreaterThanB && !a.GreaterThan(b) {
+			t.Errorf("Expected %#v > %#v", a, b)
+		}
+		if tt.expectedAGreaterThanOrEqualToB && !a.GreaterThanOrEqualTo(b) {
+			t.Errorf("Expected %#v >= %#v", a, b)
 		}
 	}
 }

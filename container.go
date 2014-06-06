@@ -468,20 +468,6 @@ type CommitContainerOptions struct {
 	Run        *Config `qs:"-"`
 }
 
-type Image struct {
-	ID              string    `json:"id"`
-	Parent          string    `json:"parent,omitempty"`
-	Comment         string    `json:"comment,omitempty"`
-	Created         time.Time `json:"created"`
-	Container       string    `json:"container,omitempty"`
-	ContainerConfig Config    `json:"container_config,omitempty"`
-	DockerVersion   string    `json:"docker_version,omitempty"`
-	Author          string    `json:"author,omitempty"`
-	Config          *Config   `json:"config,omitempty"`
-	Architecture    string    `json:"architecture,omitempty"`
-	Size            int64
-}
-
 // CommitContainer creates a new image from a container's changes.
 //
 // See http://goo.gl/628gxm for more details.

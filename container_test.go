@@ -678,6 +678,7 @@ func TestAttachToContainerLogs(t *testing.T) {
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
 	var buf bytes.Buffer
 	opts := AttachToContainerOptions{
 		Container:    "a123456",
@@ -722,6 +723,7 @@ func TestAttachToContainer(t *testing.T) {
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
 	var stdout, stderr bytes.Buffer
 	opts := AttachToContainerOptions{
 		Container:    "a123456",
@@ -761,6 +763,7 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
 	var stdout, stderr bytes.Buffer
 	opts := AttachToContainerOptions{
 		Container:    "a123456",
@@ -811,6 +814,7 @@ func TestLogs(t *testing.T) {
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
 	var buf bytes.Buffer
 	opts := LogsOptions{
 		Container:    "a123456",
