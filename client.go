@@ -100,21 +100,12 @@ func (version ApiVersion) compare(other ApiVersion) int {
 			}
 		}
 	}
-
-	// this has more elements than other
-	// e.g. 1.2.3 vs 1.2
-	// therefore this is greater
 	if len(version) > len(other) {
 		return 1
 	}
-
-	// this has fewer elements than other
-	// e.g. 1.2 vs 1.2.3
-	// therefore this is less
 	if len(version) < len(other) {
 		return -1
 	}
-
 	return 0
 }
 
