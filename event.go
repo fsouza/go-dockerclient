@@ -270,9 +270,8 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 			}
 			if !c.eventMonitor.isEnabled() {
 				return
-			} else {
-				c.eventMonitor.C <- &event
 			}
+			c.eventMonitor.C <- &event
 		}
 	}(res, conn)
 	return nil
