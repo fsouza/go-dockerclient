@@ -88,8 +88,6 @@ func (version ApiVersion) GreaterThanOrEqualTo(other ApiVersion) bool {
 
 func (version ApiVersion) compare(other ApiVersion) int {
 	for i, v := range version {
-		// do the comparison as long as the other version has at least as many
-		// elements as this version
 		if i <= len(other)-1 {
 			otherVersion := other[i]
 
@@ -123,14 +121,15 @@ type Client struct {
 	expectedApiVersion  ApiVersion
 }
 
-// NewClient returns a Client instance ready for communication with the
-// given server endpoint.
+// NewClient returns a Client instance ready for communication with the given
+// server endpoint. It will use the latest remote API version available in the
+// server.
 func NewClient(endpoint string) (*Client, error) {
 	return NewVersionedClient(endpoint, "")
 }
 
-// NewVersionedClient returns a Client instance ready for communication
-// with the given server endpoint, using a specific remote API version.
+// NewVersionedClient returns a Client instance ready for communication with
+// the given server endpoint, using a specific remote API version.
 func NewVersionedClient(endpoint string, apiVersionString string) (*Client, error) {
 	u, err := parseEndpoint(endpoint)
 	if err != nil {
@@ -138,8 +137,6 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	}
 
 	var requestedApiVersion ApiVersion
-
-	// parse the requested API version string if possible
 	if strings.Contains(apiVersionString, ".") {
 		requestedApiVersion, err = NewApiVersion(apiVersionString)
 		if err != nil {
@@ -157,24 +154,19 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 }
 
 func (c *Client) checkApiVersion() error {
-	// look up the latest API version the server supports
 	serverApiVersionString, err := c.getServerApiVersionString()
 	if err != nil {
 		return err
 	}
-
-	// parse the server's API version string
 	c.serverApiVersion, err = NewApiVersion(serverApiVersionString)
 	if err != nil {
 		return err
 	}
-
 	if c.requestedApiVersion == nil {
 		c.expectedApiVersion = c.serverApiVersion
 	} else {
 		c.expectedApiVersion = c.requestedApiVersion
 	}
-
 	return nil
 }
 
@@ -230,7 +222,6 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 		params = bytes.NewBuffer(buf)
 	}
 
-	// lazily validate the API version, unless instructed to skip it
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedApiVersion == nil {
 		err := c.checkApiVersion()
 		if err != nil {
@@ -287,7 +278,6 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 		in = bytes.NewReader(nil)
 	}
 
-	// lazily validate the API version, unless instructed to skip it
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedApiVersion == nil {
 		err := c.checkApiVersion()
 		if err != nil {
@@ -365,7 +355,6 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 }
 
 func (c *Client) hijack(method, path string, setRawTerminal bool, in io.Reader, stderr, stdout io.Writer) error {
-	// lazily validate the API version, unless instructed to skip it
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedApiVersion == nil {
 		err := c.checkApiVersion()
 		if err != nil {
