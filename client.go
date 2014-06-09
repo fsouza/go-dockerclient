@@ -130,7 +130,12 @@ type Client struct {
 // server endpoint. It will use the latest remote API version available in the
 // server.
 func NewClient(endpoint string) (*Client, error) {
-	return NewVersionedClient(endpoint, "")
+	client, err := NewVersionedClient(endpoint, "")
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
 }
 
 // NewVersionedClient returns a Client instance ready for communication with

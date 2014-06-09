@@ -37,7 +37,32 @@ func TestNewAPIClient(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
+	if !client.SkipServerVersionCheck {
+		t.Error("Expected SkipServerVersionCheck to be true, got false")
+	}
+	if client.requestedApiVersion != nil {
+		t.Errorf("Expected requestedApiVersion to be nil, got %#v.", client.requestedApiVersion)
+	}
+}
 
+func TestNewVersionedClient(t *testing.T) {
+	endpoint := "http://localhost:4243"
+	client, err := NewVersionedClient(endpoint, "1.12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	}
+	if client.client != http.DefaultClient {
+		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.client)
+	}
+	if reqVersion := client.requestedApiVersion.String(); reqVersion != "1.12" {
+		t.Errorf("Wrong requestApiVersion. Want %q. Got %q.", "1.12", reqVersion)
+	}
+	if client.SkipServerVersionCheck {
+		t.Error("Expected SkipServerVersionCheck to be false, got true")
+	}
 }
 
 func TestNewClientInvalidEndpoint(t *testing.T) {
