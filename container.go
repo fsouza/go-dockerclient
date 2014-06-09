@@ -546,6 +546,30 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 	return c.hijack("POST", path, opts.Success, opts.InputStream, opts.ErrorStream, opts.OutputStream)
 }
 
+// LogsOptions represents the set of options used when getting logs from a
+// container.
+//
+// See http://goo.gl/rLhKSU for more details.
+type LogsOptions struct {
+	Container    string    `qs:"-"`
+	OutputStream io.Writer `qs:"-"`
+	Follow       bool
+	Stdout       bool
+	Stderr       bool
+	Timestamps   bool
+}
+
+// Logs gets stdout and stderr logs from the specified container.
+//
+// See http://goo.gl/rLhKSU for more details.
+func (c *Client) Logs(opts LogsOptions) error {
+	if opts.Container == "" {
+		return &NoSuchContainer{ID: opts.Container}
+	}
+	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
+	return c.stream("GET", path, nil, nil, opts.OutputStream)
+}
+
 // ResizeContainerTTY resizes the terminal to the given height and width.
 func (c *Client) ResizeContainerTTY(id string, height, width int) error {
 	params := make(url.Values)

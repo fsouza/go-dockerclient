@@ -758,6 +758,59 @@ func TestAttachToContainerWithoutContainer(t *testing.T) {
 	}
 }
 
+func TestLogs(t *testing.T) {
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("something happened!"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	var buf bytes.Buffer
+	opts := LogsOptions{
+		Container:    "a123456",
+		OutputStream: &buf,
+		Follow:       true,
+		Stdout:       true,
+		Stderr:       true,
+		Timestamps:   true,
+	}
+	err := client.Logs(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "something happened!"
+	if buf.String() != expected {
+		t.Errorf("Logs: wrong output. Want %q. Got %q.", expected, buf.String())
+	}
+	if req.Method != "GET" {
+		t.Errorf("Logs: wrong HTTP method. Want GET. Got %s.", req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/containers/a123456/logs"))
+	if req.URL.Path != u.Path {
+		t.Errorf("AttachToContainer for logs: wrong HTTP path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+	expectedQs := map[string][]string{
+		"follow":     {"1"},
+		"stdout":     {"1"},
+		"stderr":     {"1"},
+		"timestamps": {"1"},
+	}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expectedQs) {
+		t.Errorf("Logs: wrong query string. Want %#v. Got %#v.", expectedQs, got)
+	}
+}
+
+func TestLogsNoContainer(t *testing.T) {
+	var client Client
+	err := client.Logs(LogsOptions{})
+	expected := &NoSuchContainer{ID: ""}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("AttachToContainer: wrong error. Want %#v. Got %#v.", expected, err)
+	}
+}
+
 func TestNoSuchContainerError(t *testing.T) {
 	var err error = &NoSuchContainer{ID: "i345"}
 	expected := "No such container: i345"
