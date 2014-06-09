@@ -186,7 +186,7 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 	return nil
 }
 
-func (c *Client) hijack(method, path string, success chan struct{}, in io.Reader, errStream io.Writer, out io.Writer) error {
+func (c *Client) hijack(method, path string, setRawTerminal bool, in io.Reader, stderr, stdout io.Writer) error {
 	req, err := http.NewRequest(method, c.getURL(path), nil)
 	if err != nil {
 		return err
@@ -205,20 +205,16 @@ func (c *Client) hijack(method, path string, success chan struct{}, in io.Reader
 	defer dial.Close()
 	clientconn := httputil.NewClientConn(dial, nil)
 	clientconn.Do(req)
-	if success != nil {
-		success <- struct{}{}
-		<-success
-	}
 	rwc, br := clientconn.Hijack()
 	var wg sync.WaitGroup
 	wg.Add(2)
 	errs := make(chan error, 2)
 	go func() {
 		var err error
-		if in != nil {
-			_, err = io.Copy(out, br)
+		if setRawTerminal {
+			_, err = io.Copy(stdout, br)
 		} else {
-			_, err = utils.StdCopy(out, errStream, br)
+			_, err = utils.StdCopy(stdout, stderr, br)
 		}
 		errs <- err
 		wg.Done()

@@ -732,6 +732,7 @@ func TestAttachToContainer(t *testing.T) {
 		Stdout:       true,
 		Stderr:       true,
 		Stream:       true,
+		RawTerminal:  true,
 	}
 	var err = client.AttachToContainer(opts)
 	if err != nil {
@@ -746,6 +747,50 @@ func TestAttachToContainer(t *testing.T) {
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+func TestAttachToContainerRawTerminalFalse(t *testing.T) {
+	input := strings.NewReader("send value")
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		prefix := []byte{1, 0, 0, 0, 0, 0, 0, 5}
+		w.Write(prefix)
+		w.Write([]byte("hello"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	var stdout, stderr bytes.Buffer
+	opts := AttachToContainerOptions{
+		Container:    "a123456",
+		OutputStream: &stdout,
+		ErrorStream:  &stderr,
+		InputStream:  input,
+		Stdin:        true,
+		Stdout:       true,
+		Stderr:       true,
+		Stream:       true,
+		RawTerminal:  false,
+	}
+	err := client.AttachToContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]string{
+		"stdin":  {"1"},
+		"stdout": {"1"},
+		"stderr": {"1"},
+		"stream": {"1"},
+	}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+	t.Log(stderr.String())
+	t.Log(stdout.String())
+	if stdout.String() != "hello" {
+		t.Errorf("AttachToContainer: wrong content written to stdout. Want %q. Got %q.", "hello", stderr.String())
 	}
 }
 

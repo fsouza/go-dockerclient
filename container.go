@@ -527,12 +527,8 @@ type AttachToContainerOptions struct {
 	// Attach to stderr, and use ErrorStream.
 	Stderr bool
 
-	// If set, after a successful connect, a sentinel will be sent and then the
-	// client will block on receive before continuing.
-	//
-	// It must be an unbuffered channel. Using a buffered channel can lead
-	// to unexpected behavior.
-	Success chan struct{}
+	// Use raw terminal? Usually true when the container contains a TTY.
+	RawTerminal bool `qs:"-"`
 }
 
 // AttachToContainer attaches to a container, using the given options.
@@ -543,7 +539,7 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 		return &NoSuchContainer{ID: opts.Container}
 	}
 	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
-	return c.hijack("POST", path, opts.Success, opts.InputStream, opts.ErrorStream, opts.OutputStream)
+	return c.hijack("POST", path, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream)
 }
 
 // LogsOptions represents the set of options used when getting logs from a
