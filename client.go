@@ -38,8 +38,13 @@ var (
 	apiVersion_1_12, _ = NewApiVersion("1.12")
 )
 
+// ApiVersion is an internal representation of a version of the Remote API.
 type ApiVersion []int
 
+// NewApiVersion returns an instance of ApiVersion for the given string.
+//
+// The given string must be in the form <major>.<minor>.<patch>, where <major>,
+// <minor> and <patch> are integer numbers.
 func NewApiVersion(input string) (ApiVersion, error) {
 	if !strings.Contains(input, ".") {
 		return nil, fmt.Errorf("Unable to parse version '%s'", input)
