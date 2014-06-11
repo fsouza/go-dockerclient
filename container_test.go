@@ -752,6 +752,35 @@ func TestAttachToContainer(t *testing.T) {
 	}
 }
 
+func TestAttachToContainerSentinel(t *testing.T) {
+	var reader = strings.NewReader("send value")
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
+		w.Write([]byte("hello"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
+	var stdout, stderr bytes.Buffer
+	success := make(chan struct{})
+	opts := AttachToContainerOptions{
+		Container:    "a123456",
+		OutputStream: &stdout,
+		ErrorStream:  &stderr,
+		InputStream:  reader,
+		Stdin:        true,
+		Stdout:       true,
+		Stderr:       true,
+		Stream:       true,
+		RawTerminal:  true,
+		Success:      success,
+	}
+	go client.AttachToContainer(opts)
+	success <- <-success
+}
+
 func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 	input := strings.NewReader("send value")
 	var req http.Request

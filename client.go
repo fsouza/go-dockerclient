@@ -364,7 +364,7 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 	return nil
 }
 
-func (c *Client) hijack(method, path string, setRawTerminal bool, in io.Reader, stderr, stdout io.Writer) error {
+func (c *Client) hijack(method, path string, success chan struct{}, setRawTerminal bool, in io.Reader, stderr, stdout io.Writer) error {
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedApiVersion == nil {
 		err := c.checkApiVersion()
 		if err != nil {
@@ -389,6 +389,10 @@ func (c *Client) hijack(method, path string, setRawTerminal bool, in io.Reader, 
 	defer dial.Close()
 	clientconn := httputil.NewClientConn(dial, nil)
 	clientconn.Do(req)
+	if success != nil {
+		success <- struct{}{}
+		<-success
+	}
 	rwc, br := clientconn.Hijack()
 	var wg sync.WaitGroup
 	wg.Add(2)
