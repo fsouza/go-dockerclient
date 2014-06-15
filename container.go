@@ -504,7 +504,7 @@ type AttachToContainerOptions struct {
 	// Stream the response?
 	Stream bool
 
-	// Attach to stdin, and use InputFile.
+	// Attach to stdin, and use InputStream.
 	Stdin bool
 
 	// Attach to stdout, and use OutputStream.
