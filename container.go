@@ -162,7 +162,7 @@ type Config struct {
 	Hostname        string
 	Domainname      string
 	User            string
-	Memory          int64
+	Memory          float64
 	MemorySwap      int64
 	CpuShares       int64
 	AttachStdin     bool
