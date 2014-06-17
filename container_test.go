@@ -132,7 +132,7 @@ func TestInspectContainer(t *testing.T) {
              "Config": {
                      "Hostname": "4fa6e0f0c678",
                      "User": "",
-                     "Memory": 0,
+                     "Memory": 2.68435456e+08,
                      "MemorySwap": 0,
                      "AttachStdin": false,
                      "AttachStdout": true,
