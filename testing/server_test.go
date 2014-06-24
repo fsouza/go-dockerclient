@@ -731,6 +731,34 @@ func TestRemoveFailure(t *testing.T) {
 	}
 }
 
+func TestMutateContainer(t *testing.T) {
+	server := DockerServer{failures: make(map[string]FailureSpec)}
+	server.buildMuxer()
+	server.containers = append(server.containers, &docker.Container{ID: "id123"})
+	state := docker.State{Running: false, ExitCode: 1}
+	err := server.MutateContainer("id123", state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(server.containers[0].State, state) {
+		t.Errorf("Wrong state after mutation.\nWant %#v.\nGot %#v.",
+			state, server.containers[0].State)
+	}
+}
+
+func TestMutateContainerNotFound(t *testing.T) {
+	server := DockerServer{failures: make(map[string]FailureSpec)}
+	server.buildMuxer()
+	state := docker.State{Running: false, ExitCode: 1}
+	err := server.MutateContainer("id123", state)
+	if err == nil {
+		t.Error("Unexpected <nil> error")
+	}
+	if err.Error() != "container not found" {
+		t.Errorf("wrong error message. Want %q. Got %q.", "container not found", err)
+	}
+}
+
 func TestBuildImageWithContentTypeTar(t *testing.T) {
 	server := DockerServer{imgIDs: make(map[string]string)}
 	imageName := "teste"

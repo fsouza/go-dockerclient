@@ -102,6 +102,16 @@ func (s *DockerServer) ResetFailure(id string) {
 	delete(s.failures, id)
 }
 
+func (s *DockerServer) MutateContainer(id string, state docker.State) error {
+	for _, container := range s.containers {
+		if container.ID == id {
+			container.State = state
+			return nil
+		}
+	}
+	return errors.New("container not found")
+}
+
 // Stop stops the server.
 func (s *DockerServer) Stop() {
 	if s.listener != nil {
