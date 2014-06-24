@@ -405,7 +405,25 @@ func TestWaitContainer(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Errorf("WaitContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	expected := `{"StatusCode":0}`
+	expected := `{"StatusCode":0}` + "\n"
+	if body := recorder.Body.String(); body != expected {
+		t.Errorf("WaitContainer: wrong body. Want %q. Got %q.", expected, body)
+	}
+}
+
+func TestWaitContainerStatus(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.buildMuxer()
+	server.containers[0].State.ExitCode = 63
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/wait", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("WaitContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	expected := `{"StatusCode":63}` + "\n"
 	if body := recorder.Body.String(); body != expected {
 		t.Errorf("WaitContainer: wrong body. Want %q. Got %q.", expected, body)
 	}

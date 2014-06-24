@@ -371,7 +371,8 @@ func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
 		}
 		s.cMut.RUnlock()
 	}
-	w.Write([]byte(`{"StatusCode":0}`))
+	result := map[string]int{"StatusCode": container.State.ExitCode}
+	json.NewEncoder(w).Encode(result)
 }
 
 func (s *DockerServer) removeContainer(w http.ResponseWriter, r *http.Request) {
