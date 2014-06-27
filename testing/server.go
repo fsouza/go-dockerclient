@@ -102,6 +102,8 @@ func (s *DockerServer) ResetFailure(id string) {
 	delete(s.failures, id)
 }
 
+// MutateContainer changes the state of a container, returning an error if the
+// given id does not match to any container "running" in the server.
 func (s *DockerServer) MutateContainer(id string, state docker.State) error {
 	for _, container := range s.containers {
 		if container.ID == id {
