@@ -42,23 +42,41 @@ type DockerServer struct {
 	mux        *mux.Router
 	hook       func(*http.Request)
 	failures   map[string]string
+	cChan      chan<- *docker.Container
 }
 
 // NewServer returns a new instance of the fake server, in standalone mode. Use
 // the method URL to get the URL of the server.
 //
 // It receives the bind address (use 127.0.0.1:0 for getting an available port
-// on the host) and a hook function, that will be called on every request.
-func NewServer(bind string, hook func(*http.Request)) (*DockerServer, error) {
+// on the host), a channel of containers and a hook function, that will be
+// called on every request.
+//
+// The fake server will send containers in the channel whenever the container
+// changes its state, via the HTTP API (i.e.: create, start and stop). This
+// channel may be nil, which means that the server won't notify on state
+// changes.
+func NewServer(bind string, containerChan chan<- *docker.Container, hook func(*http.Request)) (*DockerServer, error) {
 	listener, err := net.Listen("tcp", bind)
 	if err != nil {
 		return nil, err
 	}
-	server := DockerServer{listener: listener, imgIDs: make(map[string]string), hook: hook,
-		failures: make(map[string]string)}
+	server := DockerServer{
+		listener: listener,
+		imgIDs:   make(map[string]string),
+		hook:     hook,
+		failures: make(map[string]string),
+		cChan:    containerChan,
+	}
 	server.buildMuxer()
 	go http.Serve(listener, &server)
 	return &server, nil
+}
+
+func (s *DockerServer) notify(container *docker.Container) {
+	if s.cChan != nil {
+		s.cChan <- container
+	}
 }
 
 func (s *DockerServer) buildMuxer() {
@@ -262,6 +280,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 	s.cMut.Lock()
 	s.containers = append(s.containers, &container)
 	s.cMut.Unlock()
+	s.notify(&container)
 	var c = struct{ ID string }{ID: container.ID}
 	json.NewEncoder(w).Encode(c)
 }
@@ -298,6 +317,7 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	container.State.Running = true
+	s.notify(container)
 }
 
 func (s *DockerServer) stopContainer(w http.ResponseWriter, r *http.Request) {
@@ -315,6 +335,7 @@ func (s *DockerServer) stopContainer(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 	container.State.Running = false
+	s.notify(container)
 }
 
 func (s *DockerServer) pauseContainer(w http.ResponseWriter, r *http.Request) {
