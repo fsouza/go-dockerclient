@@ -47,20 +47,17 @@ type ApiVersion []int
 // <minor> and <patch> are integer numbers.
 func NewApiVersion(input string) (ApiVersion, error) {
 	if !strings.Contains(input, ".") {
-		return nil, fmt.Errorf("Unable to parse version '%s'", input)
+		return nil, fmt.Errorf("Unable to parse version %q", input)
 	}
-
 	arr := strings.Split(input, ".")
 	ret := make(ApiVersion, len(arr))
-
 	var err error
 	for i, val := range arr {
 		ret[i], err = strconv.Atoi(val)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Unable to parse version %q: %q is not an integer", input, val)
 		}
 	}
-
 	return ret, nil
 }
 
