@@ -18,7 +18,6 @@ import (
 	mathrand "math/rand"
 	"net"
 	"net/http"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -42,16 +41,7 @@ type DockerServer struct {
 	listener   net.Listener
 	mux        *mux.Router
 	hook       func(*http.Request)
-	failures   map[string]FailureSpec
-}
-
-// FailureSpec is used with PrepareFailure and describes in which situations
-// the request should fail. UrlRegex is mandatory, if a container id is sent
-// on the request you can also specify the other properties.
-type FailureSpec struct {
-	UrlRegex      string
-	ContainerPath string
-	ContainerArgs []string
+	failures   map[string]string
 }
 
 // NewServer returns a new instance of the fake server, in standalone mode. Use
@@ -65,7 +55,7 @@ func NewServer(bind string, hook func(*http.Request)) (*DockerServer, error) {
 		return nil, err
 	}
 	server := DockerServer{listener: listener, imgIDs: make(map[string]string), hook: hook,
-		failures: make(map[string]FailureSpec)}
+		failures: make(map[string]string)}
 	server.buildMuxer()
 	go http.Serve(listener, &server)
 	return &server, nil
@@ -91,13 +81,13 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/events").Methods("GET").HandlerFunc(s.listEvents)
 }
 
-// PrepareFailure adds a new expected failure based on a FailureSpec
-// it receives an id for the failure and the spec.
-func (s *DockerServer) PrepareFailure(id string, spec FailureSpec) {
-	s.failures[id] = spec
+// PrepareFailure adds a new expected failure based on a URL regexp it receives
+// an id for the failure.
+func (s *DockerServer) PrepareFailure(id string, urlRegexp string) {
+	s.failures[id] = urlRegexp
 }
 
-// ResetFailure removes an expected failure identified by the id
+// ResetFailure removes an expected failure identified by the given id.
 func (s *DockerServer) ResetFailure(id string) {
 	delete(s.failures, id)
 }
@@ -139,8 +129,8 @@ func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) handlerWrapper(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		for errorId, spec := range s.failures {
-			matched, err := regexp.MatchString(spec.UrlRegex, r.URL.Path)
+		for errorID, urlRegexp := range s.failures {
+			matched, err := regexp.MatchString(urlRegexp, r.URL.Path)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
@@ -148,21 +138,7 @@ func (s *DockerServer) handlerWrapper(f func(http.ResponseWriter, *http.Request)
 			if !matched {
 				continue
 			}
-			id := mux.Vars(r)["id"]
-			if id != "" {
-				container, _, err := s.findContainer(id)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusBadRequest)
-					return
-				}
-				if spec.ContainerPath != "" && container.Path != spec.ContainerPath {
-					continue
-				}
-				if spec.ContainerArgs != nil && reflect.DeepEqual(container.Args, spec.ContainerArgs) {
-					continue
-				}
-			}
-			http.Error(w, errorId, http.StatusBadRequest)
+			http.Error(w, errorID, http.StatusBadRequest)
 			return
 		}
 		f(w, r)
