@@ -679,31 +679,31 @@ func TestRemoveImageByName(t *testing.T) {
 func TestPrepareFailure(t *testing.T) {
 	server := DockerServer{failures: make(map[string]string)}
 	server.buildMuxer()
-	errorId := "my_error"
-	server.PrepareFailure(errorId, "containers/json")
+	errorID := "my_error"
+	server.PrepareFailure(errorID, "containers/json")
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
 		t.Errorf("PrepareFailure: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
 	}
-	if recorder.Body.String() != errorId+"\n" {
-		t.Errorf("PrepareFailure: wrong message. Want %s. Got %s.", errorId, recorder.Body.String())
+	if recorder.Body.String() != errorID+"\n" {
+		t.Errorf("PrepareFailure: wrong message. Want %s. Got %s.", errorID, recorder.Body.String())
 	}
 }
 
 func TestRemoveFailure(t *testing.T) {
 	server := DockerServer{failures: make(map[string]string)}
 	server.buildMuxer()
-	errorId := "my_error"
-	server.PrepareFailure(errorId, "containers/json")
+	errorID := "my_error"
+	server.PrepareFailure(errorID, "containers/json")
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
 		t.Errorf("PrepareFailure: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
 	}
-	server.ResetFailure(errorId)
+	server.ResetFailure(errorID)
 	recorder = httptest.NewRecorder()
 	request, _ = http.NewRequest("GET", "/containers/json?all=1", nil)
 	server.ServeHTTP(recorder, request)
