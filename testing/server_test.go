@@ -20,7 +20,7 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
-	server, err := NewServer("127.0.0.1:0", nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestServerStop(t *testing.T) {
-	server, err := NewServer("127.0.0.1:0", nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func TestServerStopNoListener(t *testing.T) {
 }
 
 func TestServerURL(t *testing.T) {
-	server, err := NewServer("127.0.0.1:0", nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestServerURLNoListener(t *testing.T) {
 
 func TestHandleWithHook(t *testing.T) {
 	var called bool
-	server, _ := NewServer("127.0.0.1:0", func(*http.Request) { called = true })
+	server, _ := NewServer("127.0.0.1:0", nil, func(*http.Request) { called = true })
 	defer server.Stop()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
@@ -155,6 +155,25 @@ func TestCreateContainer(t *testing.T) {
 	}
 	if stored.State.Running {
 		t.Errorf("CreateContainer should not set container to running state.")
+	}
+}
+
+func TestCreateContainerWithNotifyChannel(t *testing.T) {
+	ch := make(chan *docker.Container, 1)
+	server := DockerServer{}
+	server.imgIDs = map[string]string{"base": "a1234"}
+	server.cChan = ch
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	body := `{"Hostname":"", "User":"", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
+"PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"], "Image":"base", "Volumes":{}, "VolumesFrom":""}`
+	request, _ := http.NewRequest("POST", "/containers/create", strings.NewReader(body))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusCreated {
+		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusCreated, recorder.Code)
+	}
+	if notified := <-ch; notified != server.containers[0] {
+		t.Errorf("CreateContainer: did not notify the proper container. Want %q. Got %q.", server.containers[0].ID, notified.ID)
 	}
 }
 
@@ -320,6 +339,25 @@ func TestStartContainer(t *testing.T) {
 	}
 }
 
+func TestStartContainerWithNotifyChannel(t *testing.T) {
+	ch := make(chan *docker.Container, 1)
+	server := DockerServer{}
+	server.cChan = ch
+	addContainers(&server, 1)
+	addContainers(&server, 1)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/start", server.containers[1].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if notified := <-ch; notified != server.containers[1] {
+		t.Errorf("StartContainer: did not notify the proper container. Want %q. Got %q.", server.containers[1].ID, notified.ID)
+	}
+}
+
 func TestStartContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
@@ -360,6 +398,26 @@ func TestStopContainer(t *testing.T) {
 	}
 	if server.containers[0].State.Running {
 		t.Error("StopContainer: did not stop the container")
+	}
+}
+
+func TestStopContainerWithNotifyChannel(t *testing.T) {
+	ch := make(chan *docker.Container, 1)
+	server := DockerServer{}
+	server.cChan = ch
+	addContainers(&server, 1)
+	addContainers(&server, 1)
+	server.containers[1].State.Running = true
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/stop", server.containers[1].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("StopContainer: wrong status code. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	if notified := <-ch; notified != server.containers[1] {
+		t.Errorf("StopContainer: did not notify the proper container. Want %q. Got %q.", server.containers[1].ID, notified.ID)
 	}
 }
 
