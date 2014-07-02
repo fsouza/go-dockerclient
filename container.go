@@ -89,11 +89,11 @@ func (p Port) Proto() string {
 type State struct {
 	sync.RWMutex
 	Running    bool
+	Paused     bool
 	Pid        int
 	ExitCode   int
 	StartedAt  time.Time
 	FinishedAt time.Time
-	Ghost      bool
 }
 
 // String returns the string representation of a state.
@@ -101,8 +101,8 @@ func (s *State) String() string {
 	s.RLock()
 	defer s.RUnlock()
 	if s.Running {
-		if s.Ghost {
-			return "Ghost"
+		if s.Paused {
+			return "Paused"
 		}
 		return fmt.Sprintf("Up %s", time.Now().UTC().Sub(s.StartedAt))
 	}
