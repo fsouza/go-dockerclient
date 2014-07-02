@@ -351,6 +351,21 @@ func (c *Client) RestartContainer(id string, timeout uint) error {
 	return nil
 }
 
+// PauseContainer pauses the given container.
+//
+// See http://goo.gl/AM5t42 for more details.
+func (c *Client) PauseContainer(id string) error {
+	path := fmt.Sprintf("/containers/%s/pause", id)
+	_, status, err := c.do("POST", path, nil)
+	if status == http.StatusNotFound {
+		return &NoSuchContainer{ID: id}
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // KillContainerOptions represents the set of options that can be used in a
 // call to KillContainer.
 type KillContainerOptions struct {
