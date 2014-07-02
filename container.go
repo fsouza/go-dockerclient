@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -87,7 +86,6 @@ func (p Port) Proto() string {
 
 // State represents the state of a container.
 type State struct {
-	sync.RWMutex
 	Running    bool
 	Paused     bool
 	Pid        int
@@ -98,11 +96,9 @@ type State struct {
 
 // String returns the string representation of a state.
 func (s *State) String() string {
-	s.RLock()
-	defer s.RUnlock()
 	if s.Running {
 		if s.Paused {
-			return "Paused"
+			return "paused"
 		}
 		return fmt.Sprintf("Up %s", time.Now().UTC().Sub(s.StartedAt))
 	}

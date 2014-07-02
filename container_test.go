@@ -14,11 +14,31 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestStateString(t *testing.T) {
+	started := time.Now().Add(-3 * time.Hour)
+	var tests = []struct {
+		input    State
+		expected string
+	}{
+		{State{Running: true, Paused: true}, "^paused$"},
+		{State{Running: true, StartedAt: started}, "^Up 3h.*$"},
+		{State{Running: false, ExitCode: 7}, "^Exit 7$"},
+	}
+	for _, tt := range tests {
+		re := regexp.MustCompile(tt.expected)
+		if got := tt.input.String(); !re.MatchString(got) {
+			t.Errorf("State.String(): wrong result. Want %q. Got %q.", tt.expected, got)
+		}
+	}
+}
 
 func TestListContainers(t *testing.T) {
 	jsonContainers := `[
