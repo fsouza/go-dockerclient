@@ -33,16 +33,18 @@ import (
 //
 // For more details on the remote API, check http://goo.gl/yMI1S.
 type DockerServer struct {
-	containers []*docker.Container
-	cMut       sync.RWMutex
-	images     []docker.Image
-	iMut       sync.RWMutex
-	imgIDs     map[string]string
-	listener   net.Listener
-	mux        *mux.Router
-	hook       func(*http.Request)
-	failures   map[string]string
-	cChan      chan<- *docker.Container
+	containers     []*docker.Container
+	cMut           sync.RWMutex
+	images         []docker.Image
+	iMut           sync.RWMutex
+	imgIDs         map[string]string
+	listener       net.Listener
+	mux            *mux.Router
+	hook           func(*http.Request)
+	failures       map[string]string
+	customHandlers map[string]http.Handler
+	handlerMutex   sync.RWMutex
+	cChan          chan<- *docker.Container
 }
 
 // NewServer returns a new instance of the fake server, in standalone mode. Use
@@ -62,11 +64,12 @@ func NewServer(bind string, containerChan chan<- *docker.Container, hook func(*h
 		return nil, err
 	}
 	server := DockerServer{
-		listener: listener,
-		imgIDs:   make(map[string]string),
-		hook:     hook,
-		failures: make(map[string]string),
-		cChan:    containerChan,
+		listener:       listener,
+		imgIDs:         make(map[string]string),
+		hook:           hook,
+		failures:       make(map[string]string),
+		customHandlers: make(map[string]http.Handler),
+		cChan:          containerChan,
 	}
 	server.buildMuxer()
 	go http.Serve(listener, &server)
@@ -112,6 +115,12 @@ func (s *DockerServer) ResetFailure(id string) {
 	delete(s.failures, id)
 }
 
+func (s *DockerServer) CustomHandler(path string, handler http.Handler) {
+	s.handlerMutex.Lock()
+	s.customHandlers[path] = handler
+	s.handlerMutex.Unlock()
+}
+
 // MutateContainer changes the state of a container, returning an error if the
 // given id does not match to any container "running" in the server.
 func (s *DockerServer) MutateContainer(id string, state docker.State) error {
@@ -141,6 +150,12 @@ func (s *DockerServer) URL() string {
 
 // ServeHTTP handles HTTP requests sent to the server.
 func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.handlerMutex.RLock()
+	defer s.handlerMutex.RUnlock()
+	if handler, ok := s.customHandlers[r.URL.Path]; ok {
+		handler.ServeHTTP(w, r)
+		return
+	}
 	s.mux.ServeHTTP(w, r)
 	if s.hook != nil {
 		s.hook(r)
