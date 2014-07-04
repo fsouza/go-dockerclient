@@ -115,6 +115,13 @@ func (s *DockerServer) ResetFailure(id string) {
 	delete(s.failures, id)
 }
 
+// CustomHandler registers a custom handler for a specific path.
+//
+// For example:
+//
+//     server.CustomHandler("/containers/json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//         http.Error(w, "Something wrong is not right", http.StatusInternalServerError)
+//     }))
 func (s *DockerServer) CustomHandler(path string, handler http.Handler) {
 	s.handlerMutex.Lock()
 	s.customHandlers[path] = handler
