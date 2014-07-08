@@ -572,6 +572,7 @@ type LogsOptions struct {
 	Stdout       bool
 	Stderr       bool
 	Timestamps   bool
+	Tail         string
 }
 
 // Logs gets stdout and stderr logs from the specified container.
@@ -580,6 +581,9 @@ type LogsOptions struct {
 func (c *Client) Logs(opts LogsOptions) error {
 	if opts.Container == "" {
 		return &NoSuchContainer{ID: opts.Container}
+	}
+	if opts.Tail == "" {
+		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
 	return c.stream("GET", path, nil, nil, opts.OutputStream)
