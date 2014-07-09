@@ -87,9 +87,10 @@ func StdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error)
 			var nr2 int
 			nr2, er = src.Read(buf[nr:])
 			if er == io.EOF {
-				return written, nil
-			}
-			if er != nil {
+				if nr < StdWriterPrefixLen && nr2 < StdWriterPrefixLen {
+					return written, nil
+				}
+			} else if er != nil {
 				return 0, er
 			}
 			nr += nr2
