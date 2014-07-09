@@ -912,6 +912,8 @@ func TestAttachToContainerWithoutContainer(t *testing.T) {
 func TestLogs(t *testing.T) {
 	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		prefix := []byte{1, 0, 0, 0, 0, 0, 0, 19}
+		w.Write(prefix)
 		w.Write([]byte("something happened!"))
 		req = *r
 	}))
@@ -958,6 +960,8 @@ func TestLogs(t *testing.T) {
 func TestLogsSpecifyingTail(t *testing.T) {
 	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		prefix := []byte{1, 0, 0, 0, 0, 0, 0, 19}
+		w.Write(prefix)
 		w.Write([]byte("something happened!"))
 		req = *r
 	}))
@@ -999,6 +1003,36 @@ func TestLogsSpecifyingTail(t *testing.T) {
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expectedQs) {
 		t.Errorf("Logs: wrong query string. Want %#v. Got %#v.", expectedQs, got)
+	}
+}
+
+func TestLogsRawTerminal(t *testing.T) {
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("something happened!"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
+	var buf bytes.Buffer
+	opts := LogsOptions{
+		Container:    "a123456",
+		OutputStream: &buf,
+		Follow:       true,
+		RawTerminal:  true,
+		Stdout:       true,
+		Stderr:       true,
+		Timestamps:   true,
+		Tail:         "100",
+	}
+	err := client.Logs(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "something happened!"
+	if buf.String() != expected {
+		t.Errorf("Logs: wrong output. Want %q. Got %q.", expected, buf.String())
 	}
 }
 

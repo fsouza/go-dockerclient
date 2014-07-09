@@ -280,11 +280,10 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, headers map[string]string, in io.Reader, out io.Writer) error {
+func (c *Client) stream(method, path string, setRawTerminal bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
-
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedApiVersion == nil {
 		err := c.checkApiVersion()
 		if err != nil {
@@ -305,8 +304,11 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 	var resp *http.Response
 	protocol := c.endpointURL.Scheme
 	address := c.endpointURL.Path
-	if out == nil {
-		out = ioutil.Discard
+	if stdout == nil {
+		stdout = ioutil.Discard
+	}
+	if stderr == nil {
+		stderr = ioutil.Discard
 	}
 	if protocol == "unix" {
 		dial, err := net.Dial(protocol, address)
@@ -343,20 +345,23 @@ func (c *Client) stream(method, path string, headers map[string]string, in io.Re
 				return err
 			}
 			if m.Stream != "" {
-				fmt.Fprint(out, m.Stream)
+				fmt.Fprint(stdout, m.Stream)
 			} else if m.Progress != "" {
-				fmt.Fprintf(out, "%s %s\r", m.Status, m.Progress)
+				fmt.Fprintf(stdout, "%s %s\r", m.Status, m.Progress)
 			} else if m.Error != "" {
 				return errors.New(m.Error)
 			}
 			if m.Status != "" {
-				fmt.Fprintln(out, m.Status)
+				fmt.Fprintln(stdout, m.Status)
 			}
 		}
 	} else {
-		if _, err := io.Copy(out, resp.Body); err != nil {
-			return err
+		if setRawTerminal {
+			_, err = io.Copy(stdout, resp.Body)
+		} else {
+			_, err = utils.StdCopy(stdout, stderr, resp.Body)
 		}
+		return err
 	}
 	return nil
 }

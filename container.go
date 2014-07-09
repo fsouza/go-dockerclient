@@ -568,11 +568,15 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 type LogsOptions struct {
 	Container    string    `qs:"-"`
 	OutputStream io.Writer `qs:"-"`
+	ErrorStream  io.Writer `qs:"-"`
 	Follow       bool
 	Stdout       bool
 	Stderr       bool
 	Timestamps   bool
 	Tail         string
+
+	// Use raw terminal? Usually true when the container contains a TTY.
+	RawTerminal bool `qs:"-"`
 }
 
 // Logs gets stdout and stderr logs from the specified container.
@@ -586,7 +590,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream("GET", path, nil, nil, opts.OutputStream)
+	return c.stream("GET", path, opts.RawTerminal, nil, nil, opts.OutputStream, opts.ErrorStream)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
@@ -616,7 +620,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, nil, nil, opts.OutputStream)
+	return c.stream("GET", url, true, nil, nil, opts.OutputStream, nil)
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.
