@@ -254,6 +254,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 		if err != nil {
 			return nil, -1, err
 		}
+		defer dial.Close()
 		clientconn := httputil.NewClientConn(dial, nil)
 		resp, err = clientconn.Do(req)
 		if err != nil {
