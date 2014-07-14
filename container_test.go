@@ -810,7 +810,7 @@ func TestAttachToContainer(t *testing.T) {
 		Stream:       true,
 		RawTerminal:  true,
 	}
-	var err = client.AttachToContainer(opts)
+	err := client.AttachToContainer(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -853,6 +853,63 @@ func TestAttachToContainerSentinel(t *testing.T) {
 	}
 	go client.AttachToContainer(opts)
 	success <- <-success
+}
+
+func TestAttachToContainerNilStdout(t *testing.T) {
+	var reader = strings.NewReader("send value")
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
+		w.Write([]byte("hello"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
+	var stderr bytes.Buffer
+	opts := AttachToContainerOptions{
+		Container:    "a123456",
+		OutputStream: nil,
+		ErrorStream:  &stderr,
+		InputStream:  reader,
+		Stdin:        true,
+		Stdout:       true,
+		Stderr:       true,
+		Stream:       true,
+		RawTerminal:  true,
+	}
+	err := client.AttachToContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestAttachToContainerNilStderr(t *testing.T) {
+	var reader = strings.NewReader("send value")
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
+		w.Write([]byte("hello"))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
+	var stdout bytes.Buffer
+	opts := AttachToContainerOptions{
+		Container:    "a123456",
+		OutputStream: &stdout,
+		InputStream:  reader,
+		Stdin:        true,
+		Stdout:       true,
+		Stderr:       true,
+		Stream:       true,
+		RawTerminal:  true,
+	}
+	err := client.AttachToContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestAttachToContainerRawTerminalFalse(t *testing.T) {
@@ -969,11 +1026,11 @@ func TestLogsNilStdoutDoesntFail(t *testing.T) {
 	client, _ := NewClient(server.URL)
 	client.SkipServerVersionCheck = true
 	opts := LogsOptions{
-		Container:    "a123456",
-		Follow:       true,
-		Stdout:       true,
-		Stderr:       true,
-		Timestamps:   true,
+		Container:  "a123456",
+		Follow:     true,
+		Stdout:     true,
+		Stderr:     true,
+		Timestamps: true,
 	}
 	err := client.Logs(opts)
 	if err != nil {
@@ -993,11 +1050,11 @@ func TestLogsNilStderrDoesntFail(t *testing.T) {
 	client, _ := NewClient(server.URL)
 	client.SkipServerVersionCheck = true
 	opts := LogsOptions{
-		Container:    "a123456",
-		Follow:       true,
-		Stdout:       true,
-		Stderr:       true,
-		Timestamps:   true,
+		Container:  "a123456",
+		Follow:     true,
+		Stdout:     true,
+		Stderr:     true,
+		Timestamps: true,
 	}
 	err := client.Logs(opts)
 	if err != nil {

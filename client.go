@@ -374,6 +374,12 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 			return err
 		}
 	}
+	if stdout == nil {
+		stdout = ioutil.Discard
+	}
+	if stderr == nil {
+		stderr = ioutil.Discard
+	}
 	req, err := http.NewRequest(method, c.getURL(path), nil)
 	if err != nil {
 		return err
