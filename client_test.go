@@ -211,6 +211,41 @@ func TestApiVersions(t *testing.T) {
 	}
 }
 
+func TestPing(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	err := client.Ping()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPingFailing(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusInternalServerError}
+	client := newTestClient(fakeRT)
+	err := client.Ping()
+	if err == nil {
+		t.Fatal("Expected non nil error, got nil")
+	}
+	expectedErrMsg := "API error (500): "
+	if err.Error() != expectedErrMsg {
+		t.Fatalf("Expected error to be %q, got: %q", expectedErrMsg, err.Error())
+	}
+}
+
+func TestPingFailingWrongStatus(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusAccepted}
+	client := newTestClient(fakeRT)
+	err := client.Ping()
+	if err == nil {
+		t.Fatal("Expected non nil error, got nil")
+	}
+	expectedErrMsg := "API error (202): "
+	if err.Error() != expectedErrMsg {
+		t.Fatalf("Expected error to be %q, got: %q", expectedErrMsg, err.Error())
+	}
+}
+
 type FakeRoundTripper struct {
 	message  string
 	status   int

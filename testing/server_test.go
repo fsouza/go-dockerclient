@@ -932,3 +932,16 @@ func TestBuildImageWithRemoteDockerfile(t *testing.T) {
 		t.Errorf("BuildImage: image %s not builded", imageName)
 	}
 }
+
+func TestPing(t *testing.T) {
+	server := DockerServer{}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/_ping", nil)
+	server.pingDocker(recorder, request)
+	if recorder.Body.String() != "" {
+		t.Errorf("Ping: Unexpected body: %s", recorder.Body.String())
+	}
+	if recorder.Code != http.StatusOK {
+		t.Errorf("Ping: Expected code %d, got: %d", http.StatusOK, recorder.Code)
+	}
+}

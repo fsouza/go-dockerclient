@@ -102,6 +102,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/images/{name:.*}/json").Methods("GET").HandlerFunc(s.handlerWrapper(s.inspectImage))
 	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.handlerWrapper(s.pushImage))
 	s.mux.Path("/events").Methods("GET").HandlerFunc(s.listEvents)
+	s.mux.Path("/_ping").Methods("GET").HandlerFunc(s.handlerWrapper(s.pingDocker))
 }
 
 // PrepareFailure adds a new expected failure based on a URL regexp it receives
@@ -613,6 +614,10 @@ func (s *DockerServer) listEvents(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, d)
 		time.Sleep(time.Duration(mathrand.Intn(200)) * time.Millisecond)
 	}
+}
+
+func (s *DockerServer) pingDocker(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *DockerServer) generateEvent() *docker.APIEvents {

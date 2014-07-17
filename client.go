@@ -200,6 +200,21 @@ func parseApiVersionString(input string) (version uint16, err error) {
 	return version, nil
 }
 
+// Ping pings the docker server
+//
+// See http://goo.gl/stJENm for more details.
+func (c *Client) Ping() error {
+	path := "/_ping"
+	body, status, err := c.do("GET", path, nil)
+	if err != nil {
+		return err
+	}
+	if status != http.StatusOK {
+		return newError(status, body)
+	}
+	return nil
+}
+
 func (c *Client) getServerApiVersionString() (version string, err error) {
 	body, status, err := c.do("GET", "/version", nil)
 	if err != nil {
