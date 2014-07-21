@@ -154,6 +154,9 @@ type PushImageOptions struct {
 	// Name of the image
 	Name string
 
+	// Tag of the image
+	Tag string
+
 	// Registry server to push the image
 	Registry string
 
