@@ -826,7 +826,8 @@ func TestRemoveImageByName(t *testing.T) {
 	addImages(&server, 1, true)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := "/images/docker/python-" + server.images[0].ID
+	imgName := "docker/python-" + server.images[0].ID
+	path := "/images/" + imgName
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
@@ -834,6 +835,10 @@ func TestRemoveImageByName(t *testing.T) {
 	}
 	if len(server.images) > 0 {
 		t.Error("RemoveImage: did not remove the image.")
+	}
+	_, ok := server.imgIDs[imgName]
+	if ok {
+		t.Error("RemoveImage: did not remove image tag name.")
 	}
 }
 
