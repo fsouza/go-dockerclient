@@ -950,3 +950,14 @@ func TestPing(t *testing.T) {
 		t.Errorf("Ping: Expected code %d, got: %d", http.StatusOK, recorder.Code)
 	}
 }
+
+func TestDefaultHandler(t *testing.T) {
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.listener.Close()
+	if server.mux != server.DefaultHandler() {
+		t.Fatalf("DefaultHandler: Expected to return server.mux, got: %#v", server.DefaultHandler())
+	}
+}

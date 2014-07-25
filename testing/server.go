@@ -170,6 +170,12 @@ func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Returns default http.Handler mux, it allows customHandlers to call the
+// default behavior if wanted.
+func (s *DockerServer) DefaultHandler() http.Handler {
+	return s.mux
+}
+
 func (s *DockerServer) handlerWrapper(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		for errorID, urlRegexp := range s.failures {
