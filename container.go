@@ -297,7 +297,7 @@ type HostConfig struct {
 	NetworkMode     string
 }
 
-// StartContainer starts a container, returning an errror in case of failure.
+// StartContainer starts a container, returning an error in case of failure.
 //
 // See http://goo.gl/y5GZlE for more details.
 func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
