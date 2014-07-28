@@ -780,7 +780,7 @@ func addImages(server *DockerServer, n int, repo bool) {
 
 func TestListImages(t *testing.T) {
 	server := DockerServer{}
-	addImages(&server, 2, false)
+	addImages(&server, 2, true)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/images/json?all=1", nil)
@@ -793,6 +793,7 @@ func TestListImages(t *testing.T) {
 		expected[i] = docker.APIImages{
 			ID:      image.ID,
 			Created: image.Created.Unix(),
+			Tag:     "docker/python-" + image.ID,
 		}
 	}
 	var got []docker.APIImages

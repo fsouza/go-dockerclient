@@ -224,6 +224,12 @@ func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
 			ID:      image.ID,
 			Created: image.Created.Unix(),
 		}
+		for tag, id := range s.imgIDs {
+			if id == image.ID {
+				result[i].Tag = tag
+				break
+			}
+		}
 	}
 	s.cMut.RUnlock()
 	w.Header().Set("Content-Type", "application/json")
