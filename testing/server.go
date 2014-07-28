@@ -226,8 +226,7 @@ func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
 		}
 		for tag, id := range s.imgIDs {
 			if id == image.ID {
-				result[i].Tag = tag
-				break
+				result[i].RepoTags = append(result[i].RepoTags, tag)
 			}
 		}
 	}

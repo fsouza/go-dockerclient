@@ -791,9 +791,9 @@ func TestListImages(t *testing.T) {
 	expected := make([]docker.APIImages, 2)
 	for i, image := range server.images {
 		expected[i] = docker.APIImages{
-			ID:      image.ID,
-			Created: image.Created.Unix(),
-			Tag:     "docker/python-" + image.ID,
+			ID:       image.ID,
+			Created:  image.Created.Unix(),
+			RepoTags: []string{"docker/python-" + image.ID},
 		}
 	}
 	var got []docker.APIImages
