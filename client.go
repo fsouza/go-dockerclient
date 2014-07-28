@@ -21,7 +21,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/fsouza/go-dockerclient/utils"
 )
@@ -418,10 +417,10 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 		<-success
 	}
 	rwc, br := clientconn.Hijack()
-	var wg sync.WaitGroup
-	wg.Add(2)
 	errs := make(chan error, 2)
+	exit := make(chan bool)
 	go func() {
+		defer close(exit)
 		var err error
 		if setRawTerminal {
 			_, err = io.Copy(stdout, br)
@@ -429,7 +428,6 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 			_, err = utils.StdCopy(stdout, stderr, br)
 		}
 		errs <- err
-		wg.Done()
 	}()
 	go func() {
 		var err error
@@ -440,14 +438,10 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 			CloseWrite() error
 		}).CloseWrite()
 		errs <- err
-		wg.Done()
 	}()
-	wg.Wait()
+	<-exit
 	close(errs)
-	if err := <-errs; err != nil {
-		return err
-	}
-	return nil
+	return <-errs
 }
 
 func (c *Client) getURL(path string) string {
