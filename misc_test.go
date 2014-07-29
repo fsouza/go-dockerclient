@@ -26,9 +26,8 @@ func TestVersion(t *testing.T) {
      "GitCommit":"5a2a5cc+CHANGES",
      "GoVersion":"go1.0.3"
 }`
-	fakeServer.handler = jsonHandler(body)
-	defer resetFakeServer()
-	client := newTestClient(fakeServer.URL)
+	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
+	client := newTestClient(&fakeRT)
 	expected := DockerVersion{
 		Version:   "0.2.2",
 		GitCommit: "5a2a5cc+CHANGES",
@@ -48,7 +47,7 @@ func TestVersion(t *testing.T) {
 	if result := version.Get("GoVersion"); result != expected.GoVersion {
 		t.Errorf("GoVersion(): Wrong result. Want %#v. Got %#v.", expected.GoVersion, version.Get("GoVersion"))
 	}
-	req := fakeServer.lastRequest
+	req := fakeRT.requests[0]
 	if req.Method != "GET" {
 		t.Errorf("Version(): wrong request method. Want GET. Got %s.", req.Method)
 	}
@@ -59,9 +58,8 @@ func TestVersion(t *testing.T) {
 }
 
 func TestVersionError(t *testing.T) {
-	fakeServer.handler = statusHandler(http.StatusInternalServerError, "internal error")
-	defer resetFakeServer()
-	client := newTestClient(fakeServer.URL)
+	fakeRT := &FakeRoundTripper{message: "internal error", status: http.StatusInternalServerError}
+	client := newTestClient(fakeRT)
 	version, err := client.Version()
 	if version != nil {
 		t.Errorf("Version(): expected <nil> value, got %#v.", version)
@@ -81,9 +79,8 @@ func TestInfo(t *testing.T) {
      "MemoryLimit":1,
      "SwapLimit":0
 }`
-	fakeServer.handler = jsonHandler(body)
-	defer resetFakeServer()
-	client := newTestClient(fakeServer.URL)
+	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
+	client := newTestClient(&fakeRT)
 	expected := engine.Env{}
 	expected.SetInt("Containers", 11)
 	expected.SetInt("Images", 16)
@@ -103,7 +100,7 @@ func TestInfo(t *testing.T) {
 	if !reflect.DeepEqual(expectedSlice, infoSlice) {
 		t.Errorf("Info(): Wrong result.\nWant %#v.\nGot %#v.", expected, *info)
 	}
-	req := fakeServer.lastRequest
+	req := fakeRT.requests[0]
 	if req.Method != "GET" {
 		t.Errorf("Info(): Wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
@@ -114,9 +111,8 @@ func TestInfo(t *testing.T) {
 }
 
 func TestInfoError(t *testing.T) {
-	fakeServer.handler = statusHandler(http.StatusInternalServerError, "internal error")
-	defer resetFakeServer()
-	client := newTestClient(fakeServer.URL)
+	fakeRT := &FakeRoundTripper{message: "internal error", status: http.StatusInternalServerError}
+	client := newTestClient(fakeRT)
 	version, err := client.Info()
 	if version != nil {
 		t.Errorf("Info(): expected <nil> value, got %#v.", version)
