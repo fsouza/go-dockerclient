@@ -17,18 +17,6 @@ import (
 	"testing"
 )
 
-func newTestClient(rt *FakeRoundTripper) Client {
-	endpoint := "http://localhost:4243"
-	u, _ := parseEndpoint("http://localhost:4243")
-	client := Client{
-		endpoint:               endpoint,
-		endpointURL:            u,
-		client:                 &http.Client{Transport: rt},
-		SkipServerVersionCheck: true,
-	}
-	return client
-}
-
 type stdoutMock struct {
 	*bytes.Buffer
 }
@@ -87,7 +75,9 @@ func TestListImages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
+	fakeServer.handler = jsonHandler(body)
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	images, err := client.ListImages(false)
 	if err != nil {
 		t.Error(err)
@@ -98,25 +88,25 @@ func TestListImages(t *testing.T) {
 }
 
 func TestListImagesParameters(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "null", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = jsonHandler("null")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	_, err := client.ListImages(false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "GET" {
 		t.Errorf("ListImages(false: Wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
 	if all := req.URL.Query().Get("all"); all != "0" {
 		t.Errorf("ListImages(false): Wrong parameter. Want all=0. Got all=%s", all)
 	}
-	fakeRT.Reset()
 	_, err = client.ListImages(true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req = fakeRT.requests[0]
+	req = fakeServer.lastRequest
 	if all := req.URL.Query().Get("all"); all != "1" {
 		t.Errorf("ListImages(true): Wrong parameter. Want all=1. Got all=%s", all)
 	}
@@ -124,13 +114,14 @@ func TestListImagesParameters(t *testing.T) {
 
 func TestRemoveImage(t *testing.T) {
 	name := "test"
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusNoContent, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.RemoveImage(name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expectedMethod := "DELETE"
 	if req.Method != expectedMethod {
 		t.Errorf("RemoveImage(%q): Wrong HTTP method. Want %s. Got %s.", name, expectedMethod, req.Method)
@@ -142,7 +133,9 @@ func TestRemoveImage(t *testing.T) {
 }
 
 func TestRemoveImageNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such image", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such image")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.RemoveImage("test:")
 	if err != ErrNoSuchImage {
 		t.Errorf("RemoveImage: wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
@@ -159,8 +152,9 @@ func TestInspectImage(t *testing.T) {
 }`
 	var expected Image
 	json.Unmarshal([]byte(body), &expected)
-	fakeRT := &FakeRoundTripper{message: body, status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = jsonHandler(body)
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	image, err := client.InspectImage(expected.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -168,7 +162,7 @@ func TestInspectImage(t *testing.T) {
 	if !reflect.DeepEqual(*image, expected) {
 		t.Errorf("InspectImage(%q): Wrong image returned. Want %#v. Got %#v.", expected.ID, expected, *image)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "GET" {
 		t.Errorf("InspectImage(%q): Wrong HTTP method. Want GET. Got %s.", expected.ID, req.Method)
 	}
@@ -179,7 +173,9 @@ func TestInspectImage(t *testing.T) {
 }
 
 func TestInspectImageNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such image", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such image")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	name := "test"
 	image, err := client.InspectImage(name)
 	if image != nil {
@@ -191,8 +187,9 @@ func TestInspectImageNotFound(t *testing.T) {
 }
 
 func TestPushImage(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "Pushing 1/100")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	err := client.PushImage(PushImageOptions{Name: "test", OutputStream: &buf}, AuthConfiguration{})
 	if err != nil {
@@ -202,7 +199,7 @@ func TestPushImage(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("PushImage: Wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("PushImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
 	}
@@ -213,7 +210,6 @@ func TestPushImage(t *testing.T) {
 	if query := req.URL.Query().Encode(); query != "" {
 		t.Errorf("PushImage: Wrong query string. Want no parameters, got %q.", query)
 	}
-
 	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
 	if err != nil {
 		t.Errorf("PushImage: caught error decoding auth. %#v", err.Error())
@@ -225,8 +221,9 @@ func TestPushImage(t *testing.T) {
 }
 
 func TestPushImageWithAuthentication(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "Pushing 1/100")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	inputAuth := AuthConfiguration{
 		Username: "gopher",
@@ -237,9 +234,8 @@ func TestPushImageWithAuthentication(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	var gotAuth AuthConfiguration
-
 	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
 	if err != nil {
 		t.Errorf("PushImage: caught error decoding auth. %#v", err.Error())
@@ -255,8 +251,9 @@ func TestPushImageWithAuthentication(t *testing.T) {
 }
 
 func TestPushImageCustomRegistry(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "Pushing 1/100")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var authConfig AuthConfiguration
 	var buf bytes.Buffer
 	opts := PushImageOptions{
@@ -267,7 +264,7 @@ func TestPushImageCustomRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expectedQuery := "registry=docker.tsuru.io"
 	if query := req.URL.Query().Encode(); query != expectedQuery {
 		t.Errorf("PushImage: Wrong query string. Want %q. Got %q.", expectedQuery, query)
@@ -283,8 +280,9 @@ func TestPushImageNoName(t *testing.T) {
 }
 
 func TestPullImage(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "Pulling 1/100")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	err := client.PullImage(PullImageOptions{Repository: "base", OutputStream: &buf},
 		AuthConfiguration{})
@@ -295,7 +293,7 @@ func TestPullImage(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("PullImage: Wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("PullImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
 	}
@@ -310,8 +308,9 @@ func TestPullImage(t *testing.T) {
 }
 
 func TestPullImageWithoutOutputStream(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "Pulling 1/100")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	opts := PullImageOptions{
 		Repository: "base",
 		Registry:   "docker.tsuru.io",
@@ -320,7 +319,7 @@ func TestPullImageWithoutOutputStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"fromImage": {"base"}, "registry": {"docker.tsuru.io"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -329,8 +328,9 @@ func TestPullImageWithoutOutputStream(t *testing.T) {
 }
 
 func TestPullImageCustomRegistry(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "Pulling 1/100")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	opts := PullImageOptions{
 		Repository:   "base",
@@ -341,7 +341,7 @@ func TestPullImageCustomRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"fromImage": {"base"}, "registry": {"docker.tsuru.io"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -350,8 +350,9 @@ func TestPullImageCustomRegistry(t *testing.T) {
 }
 
 func TestPullImageTag(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "Pulling 1/100")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	opts := PullImageOptions{
 		Repository:   "base",
@@ -363,7 +364,7 @@ func TestPullImageTag(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"fromImage": {"base"}, "registry": {"docker.tsuru.io"}, "tag": {"latest"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -381,8 +382,9 @@ func TestPullImageNoRepository(t *testing.T) {
 }
 
 func TestImportImageFromUrl(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	opts := ImportImageOptions{
 		Source:       "http://mycompany.com/file.tar",
@@ -394,7 +396,7 @@ func TestImportImageFromUrl(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}, "tag": {opts.Tag}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -403,8 +405,9 @@ func TestImportImageFromUrl(t *testing.T) {
 }
 
 func TestImportImageFromInput(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	in := bytes.NewBufferString("tar content")
 	var buf bytes.Buffer
 	opts := ImportImageOptions{
@@ -416,7 +419,7 @@ func TestImportImageFromInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}, "tag": {opts.Tag}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -433,8 +436,9 @@ func TestImportImageFromInput(t *testing.T) {
 }
 
 func TestImportImageDoesNotPassesInputIfSourceIsNotDash(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	in := bytes.NewBufferString("foo")
 	opts := ImportImageOptions{
@@ -445,7 +449,7 @@ func TestImportImageDoesNotPassesInputIfSourceIsNotDash(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"fromSrc": {opts.Source}, "repo": {opts.Repository}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -461,8 +465,9 @@ func TestImportImageDoesNotPassesInputIfSourceIsNotDash(t *testing.T) {
 }
 
 func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	tarPath := "testing/data/container.tar"
 	opts := ImportImageOptions{
@@ -477,7 +482,7 @@ func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	tarContent, err := ioutil.ReadAll(tar)
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -489,8 +494,9 @@ func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T)
 }
 
 func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	tarPath := "testing/data/container.tar"
 	opts := ImportImageOptions{
@@ -501,7 +507,7 @@ func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"fromSrc": {"-"}, "repo": {opts.Repository}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -510,8 +516,9 @@ func TestImportImageShouldChangeSourceToDashWhenItsAFilePath(t *testing.T) {
 }
 
 func TestBuildImageParameters(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
 		Name:           "testImage",
@@ -525,7 +532,7 @@ func TestBuildImageParameters(t *testing.T) {
 	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"t": {opts.Name}, "nocache": {"1"}, "q": {"1"}, "rm": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -534,8 +541,9 @@ func TestBuildImageParameters(t *testing.T) {
 }
 
 func TestBuildImageParametersForRemoteBuild(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
 		Name:           "testImage",
@@ -547,7 +555,7 @@ func TestBuildImageParametersForRemoteBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -556,8 +564,9 @@ func TestBuildImageParametersForRemoteBuild(t *testing.T) {
 }
 
 func TestBuildImageMissingRepoAndNilInput(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
 		Name:           "testImage",
@@ -571,8 +580,9 @@ func TestBuildImageMissingRepoAndNilInput(t *testing.T) {
 }
 
 func TestBuildImageMissingOutputStream(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	opts := BuildImageOptions{Name: "testImage"}
 	err := client.BuildImage(opts)
 	if err != ErrMissingOutputStream {
@@ -581,8 +591,9 @@ func TestBuildImageMissingOutputStream(t *testing.T) {
 }
 
 func TestBuildImageRemoteWithoutName(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
 		Remote:         "testing/data/container.tar",
@@ -593,7 +604,7 @@ func TestBuildImageRemoteWithoutName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	expected := map[string][]string{"t": {opts.Remote}, "remote": {opts.Remote}, "q": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
@@ -602,24 +613,24 @@ func TestBuildImageRemoteWithoutName(t *testing.T) {
 }
 
 func TestTagImageParameters(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	opts := TagImageOptions{Repo: "testImage"}
 	err := client.TagImage("base", opts)
 	if err != nil && strings.Index(err.Error(), "tag image fail") == -1 {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
-	expected := "http://localhost:4243/images/base/tag?repo=testImage"
+	req := fakeServer.lastRequest
+	expected := "/images/base/tag?repo=testImage"
 	got := req.URL.String()
-	if !reflect.DeepEqual(got, expected) {
+	if got != expected {
 		t.Errorf("TagImage: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
 }
 
 func TestTagImageMissingRepo(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	client := newTestClient("")
 	opts := TagImageOptions{Repo: "testImage"}
 	err := client.TagImage("", opts)
 	if err != ErrNoSuchImage {

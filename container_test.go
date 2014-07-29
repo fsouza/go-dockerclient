@@ -75,12 +75,14 @@ func TestListContainers(t *testing.T) {
              "Status": "Exit 0"
      }
 ]`
+	fakeServer.handler = jsonHandler(jsonContainers)
+	defer resetFakeServer()
 	var expected []APIContainers
 	err := json.Unmarshal([]byte(jsonContainers), &expected)
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := newTestClient(&FakeRoundTripper{message: jsonContainers, status: http.StatusOK})
+	client := newTestClient(fakeServer.URL)
 	containers, err := client.ListContainers(ListContainersOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -103,22 +105,23 @@ func TestListContainersParams(t *testing.T) {
 			map[string][]string{"all": {"1"}, "limit": {"10"}, "since": {"adf9983"}, "before": {"abdeef"}},
 		},
 	}
-	fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = jsonHandler("[]")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	u, _ := url.Parse(client.getURL("/containers/json"))
 	for _, tt := range tests {
 		client.ListContainers(tt.input)
-		got := map[string][]string(fakeRT.requests[0].URL.Query())
+		lastRequest := fakeServer.lastRequest
+		got := map[string][]string(lastRequest.URL.Query())
 		if !reflect.DeepEqual(got, tt.params) {
 			t.Errorf("Expected %#v, got %#v.", tt.params, got)
 		}
-		if path := fakeRT.requests[0].URL.Path; path != u.Path {
+		if path := lastRequest.URL.Path; path != u.Path {
 			t.Errorf("Wrong path on request. Want %q. Got %q.", u.Path, path)
 		}
-		if meth := fakeRT.requests[0].Method; meth != "GET" {
+		if meth := lastRequest.Method; meth != "GET" {
 			t.Errorf("Wrong HTTP method. Want GET. Got %s.", meth)
 		}
-		fakeRT.Reset()
 	}
 }
 
@@ -130,8 +133,15 @@ func TestListContainersFailure(t *testing.T) {
 		{400, "bad parameter"},
 		{500, "internal server error"},
 	}
+	var count int
+	fakeServer.handler = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(tests[count].status)
+		w.Write([]byte(tests[count].message))
+		count++
+	}
+	defer resetFakeServer()
 	for _, tt := range tests {
-		client := newTestClient(&FakeRoundTripper{message: tt.message, status: tt.status})
+		client := newTestClient(fakeServer.URL)
 		expected := Error{Status: tt.status, Message: tt.message}
 		containers, err := client.ListContainers(ListContainersOptions{})
 		if !reflect.DeepEqual(expected, *err.(*Error)) {
@@ -204,13 +214,14 @@ func TestInspectContainer(t *testing.T) {
                "PublishAllPorts": false
              }
 }`
+	fakeServer.handler = jsonHandler(jsonContainer)
+	defer resetFakeServer()
 	var expected Container
 	err := json.Unmarshal([]byte(jsonContainer), &expected)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c678"
 	container, err := client.InspectContainer(id)
 	if err != nil {
@@ -220,13 +231,15 @@ func TestInspectContainer(t *testing.T) {
 		t.Errorf("InspectContainer(%q): Expected %#v. Got %#v.", id, expected, container)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/4fa6e0f0c678/json"))
-	if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {
+	if gotPath := fakeServer.lastRequest.URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("InspectContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
 	}
 }
 
 func TestInspectContainerFailure(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "server error", status: 500})
+	fakeServer.handler = statusHandler(500, "server error")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	expected := Error{Status: 500, Message: "server error"}
 	container, err := client.InspectContainer("abe033")
 	if container != nil {
@@ -238,7 +251,9 @@ func TestInspectContainerFailure(t *testing.T) {
 }
 
 func TestInspectContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: 404})
+	fakeServer.handler = statusHandler(404, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	container, err := client.InspectContainer("abe033")
 	if container != nil {
 		t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)
@@ -264,13 +279,14 @@ func TestContainerChanges(t *testing.T) {
              "Kind":1
      }
 ]`
+	fakeServer.handler = jsonHandler(jsonChanges)
+	defer resetFakeServer()
 	var expected []Change
 	err := json.Unmarshal([]byte(jsonChanges), &expected)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fakeRT := &FakeRoundTripper{message: jsonChanges, status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c678"
 	changes, err := client.ContainerChanges(id)
 	if err != nil {
@@ -280,13 +296,15 @@ func TestContainerChanges(t *testing.T) {
 		t.Errorf("ContainerChanges(%q): Expected %#v. Got %#v.", id, expected, changes)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/4fa6e0f0c678/changes"))
-	if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {
+	if gotPath := fakeServer.lastRequest.URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("ContainerChanges(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
 	}
 }
 
 func TestContainerChangesFailure(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "server error", status: 500})
+	fakeServer.handler = statusHandler(500, "server error")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	expected := Error{Status: 500, Message: "server error"}
 	changes, err := client.ContainerChanges("abe033")
 	if changes != nil {
@@ -298,7 +316,9 @@ func TestContainerChangesFailure(t *testing.T) {
 }
 
 func TestContainerChangesNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: 404})
+	fakeServer.handler = statusHandler(404, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	changes, err := client.ContainerChanges("abe033")
 	if changes != nil {
 		t.Errorf("ContainerChanges: Expected <nil> changes, got %#v", changes)
@@ -314,13 +334,14 @@ func TestCreateContainer(t *testing.T) {
              "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
 	     "Warnings": []
 }`
+	fakeServer.handler = jsonHandler(jsonContainer)
+	defer resetFakeServer()
 	var expected Container
 	err := json.Unmarshal([]byte(jsonContainer), &expected)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	client := newTestClient(fakeServer.URL)
 	config := Config{AttachStdout: true, AttachStdin: true}
 	opts := CreateContainerOptions{Name: "TestCreateContainer", Config: &config}
 	container, err := client.CreateContainer(opts)
@@ -331,7 +352,7 @@ func TestCreateContainer(t *testing.T) {
 	if container.ID != id {
 		t.Errorf("CreateContainer: wrong ID. Want %q. Got %q.", id, container.ID)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("CreateContainer: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
 	}
@@ -347,7 +368,9 @@ func TestCreateContainer(t *testing.T) {
 }
 
 func TestCreateContainerImageNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "No such image", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "No such image")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	config := Config{AttachStdout: true, AttachStdin: true}
 	container, err := client.CreateContainer(CreateContainerOptions{Config: &config})
 	if container != nil {
@@ -359,14 +382,15 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 }
 
 func TestStartContainer(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.StartContainer(id, &HostConfig{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -381,14 +405,15 @@ func TestStartContainer(t *testing.T) {
 }
 
 func TestStartContainerNilHostConfig(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.StartContainer(id, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -403,7 +428,9 @@ func TestStartContainerNilHostConfig(t *testing.T) {
 }
 
 func TestStartContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.StartContainer("a2344", &HostConfig{})
 	expected := &NoSuchContainer{ID: "a2344"}
 	if !reflect.DeepEqual(err, expected) {
@@ -412,14 +439,15 @@ func TestStartContainerNotFound(t *testing.T) {
 }
 
 func TestStopContainer(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusNoContent, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.StopContainer(id, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("StopContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -430,7 +458,9 @@ func TestStopContainer(t *testing.T) {
 }
 
 func TestStopContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.StopContainer("a2334", 10)
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -439,14 +469,15 @@ func TestStopContainerNotFound(t *testing.T) {
 }
 
 func TestRestartContainer(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusNoContent, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.RestartContainer(id, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("RestartContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -457,7 +488,9 @@ func TestRestartContainer(t *testing.T) {
 }
 
 func TestRestartContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.RestartContainer("a2334", 10)
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -466,14 +499,15 @@ func TestRestartContainerNotFound(t *testing.T) {
 }
 
 func TestPauseContainer(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusNoContent, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.PauseContainer(id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("PauseContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -484,7 +518,9 @@ func TestPauseContainer(t *testing.T) {
 }
 
 func TestPauseContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.PauseContainer("a2334")
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -493,14 +529,15 @@ func TestPauseContainerNotFound(t *testing.T) {
 }
 
 func TestUnpauseContainer(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusNoContent, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.UnpauseContainer(id)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("PauseContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -511,7 +548,9 @@ func TestUnpauseContainer(t *testing.T) {
 }
 
 func TestUnpauseContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.UnpauseContainer("a2334")
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -520,14 +559,15 @@ func TestUnpauseContainerNotFound(t *testing.T) {
 }
 
 func TestKillContainer(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusNoContent, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.KillContainer(KillContainerOptions{ID: id})
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("KillContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -538,14 +578,15 @@ func TestKillContainer(t *testing.T) {
 }
 
 func TestKillContainerSignal(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusNoContent, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.KillContainer(KillContainerOptions{ID: id, Signal: SIGTERM})
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("KillContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -555,7 +596,9 @@ func TestKillContainerSignal(t *testing.T) {
 }
 
 func TestKillContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.KillContainer(KillContainerOptions{ID: "a2334"})
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -564,15 +607,16 @@ func TestKillContainerNotFound(t *testing.T) {
 }
 
 func TestRemoveContainer(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	opts := RemoveContainerOptions{ID: id}
 	err := client.RemoveContainer(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "DELETE" {
 		t.Errorf("RemoveContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "DELETE", req.Method)
 	}
@@ -583,15 +627,16 @@ func TestRemoveContainer(t *testing.T) {
 }
 
 func TestRemoveContainerRemoveVolumes(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	opts := RemoveContainerOptions{ID: id, RemoveVolumes: true}
 	err := client.RemoveContainer(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	params := map[string][]string(req.URL.Query())
 	expected := map[string][]string{"v": {"1"}}
 	if !reflect.DeepEqual(params, expected) {
@@ -600,7 +645,9 @@ func TestRemoveContainerRemoveVolumes(t *testing.T) {
 }
 
 func TestRemoveContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.RemoveContainer(RemoveContainerOptions{ID: "a2334"})
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -609,14 +656,15 @@ func TestRemoveContainerNotFound(t *testing.T) {
 }
 
 func TestResizeContainerTTY(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.ResizeContainerTTY(id, 40, 80)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("ResizeContainerTTY(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -635,8 +683,9 @@ func TestResizeContainerTTY(t *testing.T) {
 }
 
 func TestWaitContainer(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: `{"StatusCode": 56}`, status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = jsonHandler(`{"StatusCode": 56}`)
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	status, err := client.WaitContainer(id)
 	if err != nil {
@@ -645,7 +694,7 @@ func TestWaitContainer(t *testing.T) {
 	if status != 56 {
 		t.Errorf("WaitContainer(%q): wrong return. Want 56. Got %d.", id, status)
 	}
-	req := fakeRT.requests[0]
+	req := fakeServer.lastRequest
 	if req.Method != "POST" {
 		t.Errorf("WaitContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
 	}
@@ -656,7 +705,9 @@ func TestWaitContainer(t *testing.T) {
 }
 
 func TestWaitContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	_, err := client.WaitContainer("a2334")
 	expected := &NoSuchContainer{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
@@ -666,7 +717,9 @@ func TestWaitContainerNotFound(t *testing.T) {
 
 func TestCommitContainer(t *testing.T) {
 	response := `{"Id":"596069db4bf5"}`
-	client := newTestClient(&FakeRoundTripper{message: response, status: http.StatusOK})
+	fakeServer.handler = jsonHandler(response)
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	id := "596069db4bf5"
 	image, err := client.CommitContainer(CommitContainerOptions{})
 	if err != nil {
@@ -698,23 +751,25 @@ func TestCommitContainerParams(t *testing.T) {
 			json,
 		},
 	}
-	fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	u, _ := url.Parse(client.getURL("/commit"))
 	for _, tt := range tests {
 		client.CommitContainer(tt.input)
-		got := map[string][]string(fakeRT.requests[0].URL.Query())
+		req := fakeServer.lastRequest
+		got := map[string][]string(req.URL.Query())
 		if !reflect.DeepEqual(got, tt.params) {
 			t.Errorf("Expected %#v, got %#v.", tt.params, got)
 		}
-		if path := fakeRT.requests[0].URL.Path; path != u.Path {
+		if path := req.URL.Path; path != u.Path {
 			t.Errorf("Wrong path on request. Want %q. Got %q.", u.Path, path)
 		}
-		if meth := fakeRT.requests[0].Method; meth != "POST" {
+		if meth := req.Method; meth != "POST" {
 			t.Errorf("Wrong HTTP method. Want POST. Got %s.", meth)
 		}
 		if tt.body != nil {
-			if requestBody, err := ioutil.ReadAll(fakeRT.requests[0].Body); err == nil {
+			if requestBody, err := ioutil.ReadAll(req.Body); err == nil {
 				if bytes.Compare(requestBody, tt.body) != 0 {
 					t.Errorf("Expected body %#v, got %#v", tt.body, requestBody)
 				}
@@ -722,12 +777,13 @@ func TestCommitContainerParams(t *testing.T) {
 				t.Errorf("Error reading request body: %#v", err)
 			}
 		}
-		fakeRT.Reset()
 	}
 }
 
 func TestCommitContainerFailure(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusInternalServerError})
+	fakeServer.handler = statusHandler(http.StatusInternalServerError, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	_, err := client.CommitContainer(CommitContainerOptions{})
 	if err == nil {
 		t.Error("Expected non-nil error, got <nil>.")
@@ -735,7 +791,9 @@ func TestCommitContainerFailure(t *testing.T) {
 }
 
 func TestCommitContainerNotFound(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	fakeServer.handler = statusHandler(http.StatusNotFound, "no such container")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	_, err := client.CommitContainer(CommitContainerOptions{})
 	expected := &NoSuchContainer{ID: ""}
 	if !reflect.DeepEqual(err, expected) {
@@ -1161,7 +1219,9 @@ func TestNoSuchContainerError(t *testing.T) {
 func TestExportContainer(t *testing.T) {
 	content := "exported container tar content"
 	out := stdoutMock{bytes.NewBufferString(content)}
-	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	opts := ExportContainerOptions{ID: "4fa6e0f0c678", OutputStream: out}
 	err := client.ExportContainer(opts)
 	if err != nil {
@@ -1186,7 +1246,6 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	client := Client{
 		endpoint:               endpoint,
 		endpointURL:            u,
-		client:                 http.DefaultClient,
 		SkipServerVersionCheck: true,
 	}
 	listening := make(chan string)
@@ -1197,7 +1256,7 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	err := client.ExportContainer(opts)
 	<-done // make sure server stopped
 	if err != nil {
-		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
+		t.Errorf("ExportContainer: caught error %#v while exporting container, expected nil", err.Error())
 	}
 	if out.String() != content {
 		t.Errorf("ExportContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
@@ -1239,7 +1298,9 @@ func TestExportContainerNoId(t *testing.T) {
 func TestCopyFromContainer(t *testing.T) {
 	content := "File content"
 	out := stdoutMock{bytes.NewBufferString(content)}
-	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	opts := CopyFromContainerOptions{
 		Container:    "a123456",
 		OutputStream: out,
@@ -1254,7 +1315,9 @@ func TestCopyFromContainer(t *testing.T) {
 }
 
 func TestCopyFromContainerEmptyContainer(t *testing.T) {
-	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	fakeServer.handler = statusHandler(http.StatusOK, "")
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.CopyFromContainer(CopyFromContainerOptions{})
 	_, ok := err.(*NoSuchContainer)
 	if !ok {
@@ -1267,8 +1330,9 @@ func TestPassingNameOptToCreateContainerReturnsItInContainer(t *testing.T) {
              "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
 	     "Warnings": []
 }`
-	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = jsonHandler(jsonContainer)
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	config := Config{AttachStdout: true, AttachStdin: true}
 	opts := CreateContainerOptions{Name: "TestCreateContainer", Config: &config}
 	container, err := client.CreateContainer(opts)

@@ -113,10 +113,10 @@ func (version ApiVersion) compare(other ApiVersion) int {
 type Client struct {
 	SkipServerVersionCheck bool
 
+	conn                net.Conn
 	endpoint            string
 	endpointURL         *url.URL
 	eventMonitor        *eventMonitoringState
-	client              *http.Client
 	requestedApiVersion ApiVersion
 	serverApiVersion    ApiVersion
 	expectedApiVersion  ApiVersion
@@ -134,26 +134,45 @@ func NewClient(endpoint string) (*Client, error) {
 	return client, nil
 }
 
+// NewClientFromConn returns a Client that uses the provided connection for
+// issuing requests.
+//
+// It works like versioned client, in order to make the version checking
+// optional, just pass an empty string to the parameter apiVersion.
+func NewClientFromConn(conn net.Conn, apiVersion string) (*Client, error) {
+	client := Client{
+		conn:         conn,
+		eventMonitor: new(eventMonitoringState),
+	}
+	if apiVersion == "" {
+		client.SkipServerVersionCheck = true
+	} else {
+		requestedApiVersion, err := NewApiVersion(apiVersion)
+		if err != nil {
+			return nil, err
+		}
+		client.requestedApiVersion = requestedApiVersion
+	}
+	return &client, nil
+}
+
 // NewVersionedClient returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version.
-func NewVersionedClient(endpoint string, apiVersionString string) (*Client, error) {
+func NewVersionedClient(endpoint string, apiVersion string) (*Client, error) {
 	u, err := parseEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
-
 	var requestedApiVersion ApiVersion
-	if strings.Contains(apiVersionString, ".") {
-		requestedApiVersion, err = NewApiVersion(apiVersionString)
+	if strings.Contains(apiVersion, ".") {
+		requestedApiVersion, err = NewApiVersion(apiVersion)
 		if err != nil {
 			return nil, err
 		}
 	}
-
 	return &Client{
 		endpoint:            endpoint,
 		endpointURL:         u,
-		client:              http.DefaultClient,
 		eventMonitor:        new(eventMonitoringState),
 		requestedApiVersion: requestedApiVersion,
 	}, nil
@@ -260,23 +279,24 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	} else if method == "POST" {
 		req.Header.Set("Content-Type", "plain/text")
 	}
-	var resp *http.Response
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
-	if protocol == "unix" {
-		dial, err := net.Dial(protocol, address)
+	conn := c.conn
+	if conn == nil {
+		protocol := c.endpointURL.Scheme
+		address := c.endpointURL.Path
+		if protocol != "unix" {
+			protocol = "tcp"
+			address = c.endpointURL.Host
+		}
+		conn, err = net.Dial(protocol, address)
 		if err != nil {
 			return nil, -1, err
 		}
-		defer dial.Close()
-		clientconn := httputil.NewClientConn(dial, nil)
-		resp, err = clientconn.Do(req)
-		if err != nil {
-			return nil, -1, err
-		}
-		defer clientconn.Close()
-	} else {
-		resp, err = c.client.Do(req)
+		defer conn.Close()
+	}
+	clientconn := httputil.NewClientConn(conn, nil)
+	resp, err := clientconn.Do(req)
+	if err != nil && err != httputil.ErrPersistEOF {
+		return nil, -1, err
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
@@ -316,27 +336,29 @@ func (c *Client) stream(method, path string, setRawTerminal bool, headers map[st
 	for key, val := range headers {
 		req.Header.Set(key, val)
 	}
-	var resp *http.Response
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
 	if stdout == nil {
 		stdout = ioutil.Discard
 	}
 	if stderr == nil {
 		stderr = ioutil.Discard
 	}
-	if protocol == "unix" {
-		dial, err := net.Dial(protocol, address)
+	conn := c.conn
+	if conn == nil {
+		protocol := c.endpointURL.Scheme
+		address := c.endpointURL.Path
+		if protocol != "unix" {
+			protocol = "tcp"
+			address = c.endpointURL.Host
+		}
+		conn, err = net.Dial(protocol, address)
 		if err != nil {
 			return err
 		}
-		clientconn := httputil.NewClientConn(dial, nil)
-		resp, err = clientconn.Do(req)
-		defer clientconn.Close()
-	} else {
-		resp, err = c.client.Do(req)
+		defer conn.Close()
 	}
-	if err != nil {
+	clientconn := httputil.NewClientConn(conn, nil)
+	resp, err := clientconn.Do(req)
+	if err != nil && err != httputil.ErrPersistEOF {
 		if strings.Contains(err.Error(), "connection refused") {
 			return ErrConnectionRefused
 		}
@@ -399,18 +421,21 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 		return err
 	}
 	req.Header.Set("Content-Type", "plain/text")
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
-	if protocol != "unix" {
-		protocol = "tcp"
-		address = c.endpointURL.Host
+	conn := c.conn
+	if conn == nil {
+		protocol := c.endpointURL.Scheme
+		address := c.endpointURL.Path
+		if protocol != "unix" {
+			protocol = "tcp"
+			address = c.endpointURL.Host
+		}
+		conn, err = net.Dial(protocol, address)
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
 	}
-	dial, err := net.Dial(protocol, address)
-	if err != nil {
-		return err
-	}
-	defer dial.Close()
-	clientconn := httputil.NewClientConn(dial, nil)
+	clientconn := httputil.NewClientConn(conn, nil)
 	clientconn.Do(req)
 	if success != nil {
 		success <- struct{}{}
@@ -445,11 +470,10 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 }
 
 func (c *Client) getURL(path string) string {
-	urlStr := strings.TrimRight(c.endpointURL.String(), "/")
-	if c.endpointURL.Scheme == "unix" {
-		urlStr = ""
+	var urlStr string
+	if c.endpointURL != nil && c.endpointURL.Scheme != "unix" {
+		urlStr = strings.TrimRight(c.endpointURL.String(), "/")
 	}
-
 	if c.requestedApiVersion != nil {
 		return fmt.Sprintf("%s/v%s%s", urlStr, c.requestedApiVersion, path)
 	} else {

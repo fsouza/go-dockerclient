@@ -6,7 +6,7 @@ package docker
 
 import (
 	"fmt"
-	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -24,8 +24,11 @@ func TestNewAPIClient(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
-	if client.client != http.DefaultClient {
-		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.client)
+	if !client.SkipServerVersionCheck {
+		t.Error("Expected SkipServerVersionCheck to be true, got false")
+	}
+	if client.requestedApiVersion != nil {
+		t.Errorf("Expected requestedApiVersion to be nil, got %#v.", client.requestedApiVersion)
 	}
 
 	// test unix socket endpoints
@@ -54,14 +57,79 @@ func TestNewVersionedClient(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
-	if client.client != http.DefaultClient {
-		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.client)
-	}
 	if reqVersion := client.requestedApiVersion.String(); reqVersion != "1.12" {
 		t.Errorf("Wrong requestApiVersion. Want %q. Got %q.", "1.12", reqVersion)
 	}
 	if client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be false, got true")
+	}
+}
+
+func TestNewClientFromConn(t *testing.T) {
+	fakeServer.handler = func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.HasSuffix(r.URL.Path, "/version") {
+			w.Write([]byte(`{"ApiVersion":"1.12"}`))
+		} else {
+			w.Write([]byte{'[', ']'})
+		}
+	}
+	defer resetFakeServer()
+	conn, err := net.Dial("tcp", fakeServer.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := NewClientFromConn(conn, "1.12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.SkipServerVersionCheck {
+		t.Error("NewClientFromConn: should not skip server version check, but it is configured to do so")
+	}
+	containers, err := client.ListContainers(ListContainersOptions{})
+	if err != nil {
+		t.Error(err)
+	}
+	if len(containers) > 0 {
+		t.Errorf("NewClientfromConn: got unexpected list of containers from ListContainers %v", containers)
+	}
+}
+
+func TestNewClientFromConnDisabledVersionCheck(t *testing.T) {
+	conn, err := net.Dial("tcp", fakeServer.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := NewClientFromConn(conn, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !client.SkipServerVersionCheck {
+		t.Error("NewClientfromConn: wanted SkipServerVersionCheck to be true, got false")
+	}
+}
+
+func TestNewClientFromConnKeepConnOpenAfterRequest(t *testing.T) {
+	fakeServer.handler = jsonHandler("[]")
+	defer resetFakeServer()
+	conn, err := net.Dial("tcp", fakeServer.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := NewClientFromConn(conn, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.ListContainers(ListContainersOptions{})
+	if err != nil {
+		t.Error(err)
+	}
+	n, err := conn.Write([]byte("ping"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 4 {
+		t.Errorf("NewClientFromConn: misbehaviour on write. Want 4 bytes. Got %d.", n)
 	}
 }
 
@@ -212,8 +280,11 @@ func TestApiVersions(t *testing.T) {
 }
 
 func TestPing(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.Ping()
 	if err != nil {
 		t.Fatal(err)
@@ -221,8 +292,11 @@ func TestPing(t *testing.T) {
 }
 
 func TestPingFailing(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusInternalServerError}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.Ping()
 	if err == nil {
 		t.Fatal("Expected non nil error, got nil")
@@ -234,8 +308,11 @@ func TestPingFailing(t *testing.T) {
 }
 
 func TestPingFailingWrongStatus(t *testing.T) {
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusAccepted}
-	client := newTestClient(fakeRT)
+	fakeServer.handler = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	}
+	defer resetFakeServer()
+	client := newTestClient(fakeServer.URL)
 	err := client.Ping()
 	if err == nil {
 		t.Fatal("Expected non nil error, got nil")
@@ -244,25 +321,6 @@ func TestPingFailingWrongStatus(t *testing.T) {
 	if err.Error() != expectedErrMsg {
 		t.Fatalf("Expected error to be %q, got: %q", expectedErrMsg, err.Error())
 	}
-}
-
-type FakeRoundTripper struct {
-	message  string
-	status   int
-	requests []*http.Request
-}
-
-func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	body := strings.NewReader(rt.message)
-	rt.requests = append(rt.requests, r)
-	return &http.Response{
-		StatusCode: rt.status,
-		Body:       ioutil.NopCloser(body),
-	}, nil
-}
-
-func (rt *FakeRoundTripper) Reset() {
-	rt.requests = nil
 }
 
 type person struct {
@@ -280,6 +338,12 @@ type dumb struct {
 	Person *person `qs:"p"`
 }
 
-type fakeEndpointURL struct {
-	Scheme string
+func newTestClient(endpoint string) Client {
+	u, _ := parseEndpoint(endpoint)
+	client := Client{
+		endpoint:               endpoint,
+		endpointURL:            u,
+		SkipServerVersionCheck: true,
+	}
+	return client
 }
