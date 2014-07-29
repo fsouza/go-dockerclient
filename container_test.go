@@ -1184,9 +1184,9 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	endpoint := "unix://" + tempSocket
 	u, _ := parseEndpoint(endpoint)
 	client := Client{
+		HTTPClient:             http.DefaultClient,
 		endpoint:               endpoint,
 		endpointURL:            u,
-		client:                 http.DefaultClient,
 		SkipServerVersionCheck: true,
 	}
 	listening := make(chan string)

@@ -112,11 +112,11 @@ func (version ApiVersion) compare(other ApiVersion) int {
 // interaction with the API.
 type Client struct {
 	SkipServerVersionCheck bool
+	HTTPClient             *http.Client
 
 	endpoint            string
 	endpointURL         *url.URL
 	eventMonitor        *eventMonitoringState
-	client              *http.Client
 	requestedApiVersion ApiVersion
 	serverApiVersion    ApiVersion
 	expectedApiVersion  ApiVersion
@@ -141,7 +141,6 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	if err != nil {
 		return nil, err
 	}
-
 	var requestedApiVersion ApiVersion
 	if strings.Contains(apiVersionString, ".") {
 		requestedApiVersion, err = NewApiVersion(apiVersionString)
@@ -149,11 +148,10 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 			return nil, err
 		}
 	}
-
 	return &Client{
+		HTTPClient:          http.DefaultClient,
 		endpoint:            endpoint,
 		endpointURL:         u,
-		client:              http.DefaultClient,
 		eventMonitor:        new(eventMonitoringState),
 		requestedApiVersion: requestedApiVersion,
 	}, nil
@@ -199,13 +197,11 @@ func (c *Client) getServerApiVersionString() (version string, err error) {
 	if status != http.StatusOK {
 		return "", fmt.Errorf("Received unexpected status %d while trying to retrieve the server version", status)
 	}
-
 	var versionResponse map[string]string
 	err = json.Unmarshal(body, &versionResponse)
 	if err != nil {
 		return "", err
 	}
-
 	version = versionResponse["ApiVersion"]
 	return version, nil
 }
@@ -219,14 +215,12 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 		}
 		params = bytes.NewBuffer(buf)
 	}
-
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedApiVersion == nil {
 		err := c.checkApiVersion()
 		if err != nil {
 			return nil, -1, err
 		}
 	}
-
 	req, err := http.NewRequest(method, c.getURL(path), params)
 	if err != nil {
 		return nil, -1, err
@@ -253,7 +247,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 		}
 		defer clientconn.Close()
 	} else {
-		resp, err = c.client.Do(req)
+		resp, err = c.HTTPClient.Do(req)
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
@@ -311,7 +305,7 @@ func (c *Client) stream(method, path string, setRawTerminal bool, headers map[st
 		resp, err = clientconn.Do(req)
 		defer clientconn.Close()
 	} else {
-		resp, err = c.client.Do(req)
+		resp, err = c.HTTPClient.Do(req)
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
