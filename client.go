@@ -411,7 +411,6 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 		errs <- err
 	}()
 	<-exit
-	close(errs)
 	return <-errs
 }
 
