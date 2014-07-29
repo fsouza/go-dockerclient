@@ -195,29 +195,6 @@ func (c *Client) checkApiVersion() error {
 	return nil
 }
 
-func parseApiVersionString(input string) (version uint16, err error) {
-	version = 0
-
-	if !strings.Contains(input, ".") {
-		return 0, fmt.Errorf("Unable to parse version '%s'", input)
-	}
-
-	arr := strings.Split(input, ".")
-
-	major, err := strconv.Atoi(arr[0])
-	if err != nil {
-		return version, err
-	}
-
-	minor, err := strconv.Atoi(arr[1])
-	if err != nil {
-		return version, err
-	}
-
-	version = uint16(major)<<8 | uint16(minor)
-	return version, nil
-}
-
 // Ping pings the docker server
 //
 // See http://goo.gl/stJENm for more details.
