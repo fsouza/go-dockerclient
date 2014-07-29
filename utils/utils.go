@@ -1079,8 +1079,6 @@ func PartParser(template, data string) (map[string]string, error) {
 	return out, nil
 }
 
-var globalTestID string
-
 // GetCallerName introspects the call stack and returns the name of the
 // function `depth` levels down in the stack.
 func GetCallerName(depth int) string {
