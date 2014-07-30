@@ -678,7 +678,7 @@ func TestCommitContainer(t *testing.T) {
 }
 
 func TestCommitContainerParams(t *testing.T) {
-	cfg := Config{Memory: 67108864}
+	cfg := Config{Memory: 67108864.0}
 	json, _ := json.Marshal(&cfg)
 	var tests = []struct {
 		input  CommitContainerOptions
