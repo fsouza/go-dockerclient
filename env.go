@@ -43,6 +43,10 @@ func (env *Env) GetInt(key string) int {
 	return int(env.GetInt64(key))
 }
 
+func (env *Env) SetInt(key string, value int) {
+	env.Set(key, strconv.Itoa(value))
+}
+
 func (env *Env) GetInt64(key string) int64 {
 	s := strings.Trim(env.Get(key), " \t")
 	val, err := strconv.ParseInt(s, 10, 64)
@@ -52,24 +56,8 @@ func (env *Env) GetInt64(key string) int64 {
 	return val
 }
 
-func (env *Env) SetInt(key string, value int) {
-	env.Set(key, fmt.Sprintf("%d", value))
-}
-
 func (env *Env) SetInt64(key string, value int64) {
-	env.Set(key, fmt.Sprintf("%d", value))
-}
-
-func (env *Env) GetList(key string) []string {
-	sval := env.Get(key)
-	if sval == "" {
-		return nil
-	}
-	l := make([]string, 0, 1)
-	if err := json.Unmarshal([]byte(sval), &l); err != nil {
-		l = append(l, sval)
-	}
-	return l
+	env.Set(key, strconv.FormatInt(value, 10))
 }
 
 func (env *Env) GetJson(key string, iface interface{}) error {
@@ -87,6 +75,18 @@ func (env *Env) SetJson(key string, value interface{}) error {
 	}
 	env.Set(key, string(sval))
 	return nil
+}
+
+func (env *Env) GetList(key string) []string {
+	sval := env.Get(key)
+	if sval == "" {
+		return nil
+	}
+	var l []string
+	if err := json.Unmarshal([]byte(sval), &l); err != nil {
+		l = append(l, sval)
+	}
+	return l
 }
 
 func (env *Env) SetList(key string, value []string) error {
@@ -125,6 +125,9 @@ func (env *Env) SetAuto(k string, v interface{}) {
 }
 
 func (env *Env) Map() map[string]string {
+	if len(*env) == 0 {
+		return nil
+	}
 	m := make(map[string]string)
 	for _, kv := range *env {
 		parts := strings.SplitN(kv, "=", 2)
