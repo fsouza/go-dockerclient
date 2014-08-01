@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"reflect"
 	"strings"
 	"testing"
@@ -238,6 +239,103 @@ func TestPushImageWithAuthentication(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
+	var gotAuth AuthConfiguration
+
+	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
+	if err != nil {
+		t.Errorf("PushImage: caught error decoding auth. %#v", err.Error())
+	}
+
+	err = json.Unmarshal(auth, &gotAuth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(gotAuth, inputAuth) {
+		t.Errorf("PushImage: wrong auth configuration. Want %#v. Got %#v.", inputAuth, gotAuth)
+	}
+}
+
+func TestPushImageWithDockercfg(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+
+	// setup .dockercfg with mutliple registries
+	f, _ := ioutil.TempDir("", "go-dockerclient-tmp")
+	err := ioutil.WriteFile(path.Join(f, ".dockercfg"),
+		[]byte(`{"https://index.docker.io/v1/":
+        {"auth":"Z29waGVyOmdvcGhlcjEyMw==","email":"gopher@tsuru.io"}}`),
+		0644)
+	if err != nil {
+		t.Errorf("PushImage: Could not create temp .dockercfg for test")
+	}
+	DOCKERCFG_PATH = f
+
+	err = client.PushImage(
+		PushImageOptions{
+			Name:         "test",
+			OutputStream: &buf,
+		},
+		AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	inputAuth := AuthConfiguration{ // AuthConfiguration format for the dockercfg contents
+		Username: "gopher",
+		Password: "gopher123",
+		Email:    "gopher@tsuru.io",
+	}
+	var gotAuth AuthConfiguration
+
+	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
+	if err != nil {
+		t.Errorf("PushImage: caught error decoding auth. %#v", err.Error())
+	}
+
+	err = json.Unmarshal(auth, &gotAuth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(gotAuth, inputAuth) {
+		t.Errorf("PushImage: wrong auth configuration. Want %#v. Got %#v.", inputAuth, gotAuth)
+	}
+}
+
+func TestPushImageWithDockercfgAndRegistry(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+
+	// setup .dockercfg with mutliple registries
+	f, _ := ioutil.TempDir("", "go-dockerclient-tmp")
+	err := ioutil.WriteFile(path.Join(f, ".dockercfg"),
+		[]byte(`{"https://index.docker.io/v1/":
+        {"auth":"Z29waGVyOmdvcGhlcjEyMw==","email":"gopher@tsuru.io"},
+        "https://custom.docker.index/":
+        {"auth":"Z29waGVyOmdvcGhlcjEyMw==","email":"gopher-custom@tsuru.io"}}`),
+		0644)
+	if err != nil {
+		t.Errorf("PushImage: Could not create temp .dockercfg for test")
+	}
+	DOCKERCFG_PATH = f
+
+	err = client.PushImage(
+		PushImageOptions{
+			Name:         "test",
+			Registry:     "https://custom.docker.index/",
+			OutputStream: &buf,
+		},
+		AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	inputAuth := AuthConfiguration{ // AuthConfiguration format for the dockercfg contents
+		Username: "gopher",
+		Password: "gopher123",
+		Email:    "gopher-custom@tsuru.io",
+	}
 	var gotAuth AuthConfiguration
 
 	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
