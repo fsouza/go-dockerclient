@@ -1,10 +1,13 @@
 // Copyright 2014 Docker authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the DOCKER-LICENSE file.
-
+//
 // This file is a partial mirror of (based on)
-// https://github.com/docker/docker/blob/master/registry/auth.go
-// at tag v1.1.2
+// https://github.com/docker/docker/blob/v1.1.2/registry/auth.go
+//
+// Only parts relevant to decoding the .dockercfg file are mirrored,
+// and the helpers for writing the configuration are ignored since
+// they are beyond the scope of a docker client library
 
 package utils
 
@@ -31,8 +34,8 @@ func IndexServerAddress() string {
 type AuthConfig struct {
 	Username      string `json:"username,omitempty"`
 	Password      string `json:"password,omitempty"`
-	Auth          string `json:"auth"`
-	Email         string `json:"email"`
+	Auth          string `json:"auth,omitempty"`
+	Email         string `json:"email,omitempty"`
 	ServerAddress string `json:"serveraddress,omitempty"`
 }
 
@@ -67,7 +70,7 @@ func LoadConfig(rootPath string) (*ConfigFile, error) {
 	configFile := ConfigFile{Configs: make(map[string]AuthConfig), rootPath: rootPath}
 	confFile := path.Join(rootPath, CONFIGFILE)
 	if _, err := os.Stat(confFile); err != nil {
-		return &configFile, nil //missing file is not an error
+		return &configFile, err
 	}
 	b, err := ioutil.ReadFile(confFile)
 	if err != nil {

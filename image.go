@@ -20,6 +20,8 @@ import (
 	"github.com/fsouza/go-dockerclient/utils"
 )
 
+var DOCKERCFG_PATH = os.Getenv("DOCKERCFG_PATH")
+
 // APIImages represent an image returned in the ListImages call.
 type APIImages struct {
 	ID          string   `json:"Id"`
@@ -175,33 +177,26 @@ type AuthConfiguration struct {
 
 func authHeader(auth AuthConfiguration, registry string) string {
 
-	// use AuthConfiguration if set
-	if auth.Username != "" || auth.Password != "" || auth.Email != "" {
-		var buf bytes.Buffer
+	var buf bytes.Buffer
+	config, err := utils.LoadConfig(DOCKERCFG_PATH)
+
+	// use AuthConfiguration if set or when dockercfg can not load
+	if (auth.Username != "" || auth.Password != "" || auth.Email != "") ||
+		err != nil {
+
 		json.NewEncoder(&buf).Encode(auth)
 		return base64.URLEncoding.EncodeToString(buf.Bytes())
 	}
 
-	// try .dockercfg for authentication when AuthConfiguration is not set
-	config, err := utils.LoadConfig(os.Getenv("HOME"))
-	if err != nil {
-		return "" // failing to load config is not an error
+	// use custom registry if auth can be found
+	if creds, ok := config.Configs[registry]; ok {
+		json.NewEncoder(&buf).Encode(creds)
+		return base64.URLEncoding.EncodeToString(buf.Bytes())
 	}
 
-	var buf bytes.Buffer
-	var creds utils.AuthConfig
-
-	if registry != "" {
-		// pull credentials from configFile for the right registry
-		creds = config.Configs[registry]
-	} else {
-		// no registry or default auth was set. Use defaults
-		creds = config.Configs[utils.IndexServerAddress()]
-	}
-
-	json.NewEncoder(&buf).Encode(creds)
+	// return default dockercfg
+	json.NewEncoder(&buf).Encode(config.Configs[utils.IndexServerAddress()])
 	return base64.URLEncoding.EncodeToString(buf.Bytes())
-
 }
 
 // PushImage pushes an image to a remote registry, logging progress to w.
