@@ -17,12 +17,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"strings"
 )
-
-// Where we store the config file
-const CONFIGFILE = ".dockercfg"
 
 // Only used for user auth + account creation
 const INDEXSERVER = "https://index.docker.io/v1/"
@@ -40,8 +36,7 @@ type AuthConfig struct {
 }
 
 type ConfigFile struct {
-	Configs  map[string]AuthConfig `json:"configs,omitempty"`
-	rootPath string
+	Configs map[string]AuthConfig `json:"configs,omitempty"`
 }
 
 // decode the auth string
@@ -65,14 +60,12 @@ func decodeAuth(authStr string) (string, string, error) {
 }
 
 // load up the auth config information and return values
-// FIXME: use the internal golang config parser
-func LoadConfig(rootPath string) (*ConfigFile, error) {
-	configFile := ConfigFile{Configs: make(map[string]AuthConfig), rootPath: rootPath}
-	confFile := path.Join(rootPath, CONFIGFILE)
-	if _, err := os.Stat(confFile); err != nil {
+func LoadConfig(configPath string) (*ConfigFile, error) {
+	configFile := ConfigFile{Configs: make(map[string]AuthConfig)}
+	if _, err := os.Stat(configPath); err != nil {
 		return &configFile, err
 	}
-	b, err := ioutil.ReadFile(confFile)
+	b, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return &configFile, err
 	}

@@ -153,6 +153,8 @@ func (c *Client) InspectImage(name string) (*Image, error) {
 
 // PushImageOptions represents options to use in the PushImage method.
 //
+// Optionally uses the environment variable `DOCKERCFG_PATH` to load .dockercfg
+//
 // See http://goo.gl/GBmyhc for more details.
 type PushImageOptions struct {
 	// Name of the image
@@ -222,6 +224,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 // PullImageOptions present the set of options available for pulling an image
 // from a registry.
 //
+// Optionally uses the environment variable `DOCKERCFG_PATH` to load .dockercfg
 // See http://goo.gl/PhBKnS for more details.
 type PullImageOptions struct {
 	Repository   string `qs:"fromImage"`

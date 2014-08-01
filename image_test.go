@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"reflect"
 	"strings"
 	"testing"
@@ -261,15 +260,15 @@ func TestPushImageWithDockercfg(t *testing.T) {
 	var buf bytes.Buffer
 
 	// setup .dockercfg with mutliple registries
-	f, _ := ioutil.TempDir("", "go-dockerclient-tmp")
-	err := ioutil.WriteFile(path.Join(f, ".dockercfg"),
+	f, _ := ioutil.TempFile("", "go-dockerclient-tmp")
+	err := ioutil.WriteFile(f.Name(),
 		[]byte(`{"https://index.docker.io/v1/":
         {"auth":"Z29waGVyOmdvcGhlcjEyMw==","email":"gopher@tsuru.io"}}`),
 		0644)
 	if err != nil {
 		t.Errorf("PushImage: Could not create temp .dockercfg for test")
 	}
-	DOCKERCFG_PATH = f
+	DOCKERCFG_PATH = f.Name()
 
 	err = client.PushImage(
 		PushImageOptions{
@@ -308,8 +307,8 @@ func TestPushImageWithDockercfgAndRegistry(t *testing.T) {
 	var buf bytes.Buffer
 
 	// setup .dockercfg with mutliple registries
-	f, _ := ioutil.TempDir("", "go-dockerclient-tmp")
-	err := ioutil.WriteFile(path.Join(f, ".dockercfg"),
+	f, _ := ioutil.TempFile("", "go-dockerclient-tmp")
+	err := ioutil.WriteFile(f.Name(),
 		[]byte(`{"https://index.docker.io/v1/":
         {"auth":"Z29waGVyOmdvcGhlcjEyMw==","email":"gopher@tsuru.io"},
         "https://custom.docker.index/":
@@ -318,7 +317,7 @@ func TestPushImageWithDockercfgAndRegistry(t *testing.T) {
 	if err != nil {
 		t.Errorf("PushImage: Could not create temp .dockercfg for test")
 	}
-	DOCKERCFG_PATH = f
+	DOCKERCFG_PATH = f.Name()
 
 	err = client.PushImage(
 		PushImageOptions{
