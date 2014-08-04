@@ -39,10 +39,5 @@ func newStdWriter(w io.Writer, t stdType) *stdWriter {
 	if len(t) != 8 {
 		return nil
 	}
-
-	return &stdWriter{
-		Writer:  w,
-		prefix:  t,
-		sizeBuf: make([]byte, 4),
-	}
+	return &stdWriter{Writer: w, prefix: t, sizeBuf: make([]byte, 4)}
 }
