@@ -20,7 +20,7 @@ import (
 	"github.com/fsouza/go-dockerclient/utils"
 )
 
-var DOCKERCFG_PATH = os.Getenv("DOCKERCFG_PATH")
+var dockercfgPath = os.Getenv("DOCKERCFG_PATH")
 
 // APIImages represent an image returned in the ListImages call.
 type APIImages struct {
@@ -180,7 +180,7 @@ type AuthConfiguration struct {
 func authHeader(auth AuthConfiguration, registry string) string {
 
 	var buf bytes.Buffer
-	config, err := utils.LoadConfig(DOCKERCFG_PATH)
+	config, err := utils.LoadConfig(dockercfgPath)
 
 	// use AuthConfiguration if set or when dockercfg can not load
 	if (auth.Username != "" || auth.Password != "" || auth.Email != "") ||
@@ -190,7 +190,7 @@ func authHeader(auth AuthConfiguration, registry string) string {
 		return base64.URLEncoding.EncodeToString(buf.Bytes())
 	}
 
-	// use custom registry if auth can be found
+	// use custom registry if auth can be found in dockercfg
 	if creds, ok := config.Configs[registry]; ok {
 		json.NewEncoder(&buf).Encode(creds)
 		return base64.URLEncoding.EncodeToString(buf.Bytes())
