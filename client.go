@@ -21,8 +21,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/fsouza/go-dockerclient/utils"
 )
 
 const userAgent = "go-dockerclient"
@@ -345,7 +343,7 @@ func (c *Client) stream(method, path string, setRawTerminal bool, headers map[st
 		if setRawTerminal {
 			_, err = io.Copy(stdout, resp.Body)
 		} else {
-			_, err = utils.StdCopy(stdout, stderr, resp.Body)
+			_, err = stdCopy(stdout, stderr, resp.Body)
 		}
 		return err
 	}
@@ -396,7 +394,7 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 		if setRawTerminal {
 			_, err = io.Copy(stdout, br)
 		} else {
-			_, err = utils.StdCopy(stdout, stderr, br)
+			_, err = stdCopy(stdout, stderr, br)
 		}
 		errs <- err
 	}()

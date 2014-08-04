@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fsouza/go-dockerclient"
-	"github.com/fsouza/go-dockerclient/utils"
 	"github.com/gorilla/mux"
 	mathrand "math/rand"
 	"net"
@@ -413,7 +412,7 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	outStream := utils.NewStdWriter(w, utils.Stdout)
+	outStream := newStdWriter(w, stdout)
 	fmt.Fprintf(outStream, "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.docker.raw-stream\r\n\r\n")
 	if container.State.Running {
 		fmt.Fprintf(outStream, "Container %q is running\n", container.ID)
