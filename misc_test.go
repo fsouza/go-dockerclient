@@ -119,3 +119,41 @@ func TestInfoError(t *testing.T) {
 		t.Error("Info(): unexpected <nil> error")
 	}
 }
+
+func TestParseRepositoryTag(t *testing.T) {
+	var tests = []struct {
+		input        string
+		expectedRepo string
+		expectedTag  string
+	}{
+		{
+			"localhost.localdomain:5000/samalba/hipache:latest",
+			"localhost.localdomain:5000/samalba/hipache",
+			"latest",
+		},
+		{
+			"localhost.localdomain:5000/samalba/hipache",
+			"localhost.localdomain:5000/samalba/hipache",
+			"",
+		},
+		{
+			"tsuru/python",
+			"tsuru/python",
+			"",
+		},
+		{
+			"tsuru/python:2.7",
+			"tsuru/python",
+			"2.7",
+		},
+	}
+	for _, tt := range tests {
+		repo, tag := ParseRepositoryTag(tt.input)
+		if repo != tt.expectedRepo {
+			t.Errorf("ParseRepositoryTag(%q): wrong repository. Want %q. Got %q", tt.input, tt.expectedRepo, repo)
+		}
+		if tag != tt.expectedTag {
+			t.Errorf("ParseRepositoryTag(%q): wrong tag. Want %q. Got %q", tt.input, tt.expectedTag, tag)
+		}
+	}
+}
