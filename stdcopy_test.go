@@ -220,9 +220,9 @@ func TestStdCopyWriteError(t *testing.T) {
 type StdType [8]byte
 
 var (
-	Stdin  StdType = StdType{0: 0}
-	Stdout StdType = StdType{0: 1}
-	Stderr StdType = StdType{0: 2}
+	Stdin  = StdType{0: 0}
+	Stdout = StdType{0: 1}
+	Stderr = StdType{0: 2}
 )
 
 type StdWriter struct {
