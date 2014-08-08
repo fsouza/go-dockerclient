@@ -7,11 +7,11 @@ package docker_test
 import (
 	"archive/tar"
 	"bytes"
+	"fmt"
+	"github.com/fsouza/go-dockerclient"
 	"io"
 	"log"
 	"time"
-
-	"github.com/fsouza/go-dockerclient"
 )
 
 func ExampleClient_AttachToContainer() {
@@ -33,7 +33,6 @@ func ExampleClient_AttachToContainer() {
 		log.Fatal(err)
 	}
 	log.Println(buf.String())
-	// Attaching to stdout and streaming.
 	buf.Reset()
 	err = client.AttachToContainer(docker.AttachToContainerOptions{
 		Container:    "a84849",
@@ -53,7 +52,6 @@ func ExampleClient_CopyFromContainer() {
 		log.Fatal(err)
 	}
 	cid := "a84849"
-	// Copy resulting file
 	var buf bytes.Buffer
 	filename := "/tmp/output.txt"
 	err = client.CopyFromContainer(docker.CopyFromContainerOptions{
@@ -131,4 +129,39 @@ func ExampleClient_ListenEvents() {
 		}
 	}
 
+}
+
+func ExampleEnv_Map() {
+	e := docker.Env([]string{"A=1", "B=2", "C=3"})
+	envs := e.Map()
+	for k, v := range envs {
+		fmt.Printf("%s=%q\n", k, v)
+	}
+}
+
+func ExampleEnv_SetJSON() {
+	type Person struct {
+		Name string
+		Age  int
+	}
+	p := Person{Name: "Gopher", Age: 4}
+	var e docker.Env
+	err := e.SetJSON("person", p)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func ExampleEnv_GetJSON() {
+	type Person struct {
+		Name string
+		Age  int
+	}
+	p := Person{Name: "Gopher", Age: 4}
+	var e docker.Env
+	e.Set("person", `{"name":"Gopher","age":4}`)
+	err := e.GetJSON("person", &p)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
