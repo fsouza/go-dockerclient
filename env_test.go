@@ -155,54 +155,54 @@ func TestSetInt64(t *testing.T) {
 	}
 }
 
-func TestGetJson(t *testing.T) {
+func TestGetJSON(t *testing.T) {
 	var p struct {
 		Name string `json:"name"`
 		Age  int    `json:"age"`
 	}
 	var env Env
 	env.Set("person", `{"name":"Gopher","age":5}`)
-	err := env.GetJson("person", &p)
+	err := env.GetJSON("person", &p)
 	if err != nil {
 		t.Error(err)
 	}
 	if p.Name != "Gopher" {
-		t.Errorf("Env.GetJson(%q): wrong name. Want %q. Got %q", "person", "Gopher", p.Name)
+		t.Errorf("Env.GetJSON(%q): wrong name. Want %q. Got %q", "person", "Gopher", p.Name)
 	}
 	if p.Age != 5 {
-		t.Errorf("Env.GetJson(%q): wrong age. Want %d. Got %d", "person", 5, p.Age)
+		t.Errorf("Env.GetJSON(%q): wrong age. Want %d. Got %d", "person", 5, p.Age)
 	}
 }
 
-func TestGetJsonAbsent(t *testing.T) {
+func TestGetJSONAbsent(t *testing.T) {
 	var l []string
 	var env Env
-	err := env.GetJson("person", &l)
+	err := env.GetJSON("person", &l)
 	if err != nil {
 		t.Error(err)
 	}
 	if l != nil {
-		t.Errorf("Env.GetJson(): get unexpected list %v", l)
+		t.Errorf("Env.GetJSON(): get unexpected list %v", l)
 	}
 }
 
-func TestGetJsonFailure(t *testing.T) {
+func TestGetJSONFailure(t *testing.T) {
 	var p []string
 	var env Env
 	env.Set("list-person", `{"name":"Gopher","age":5}`)
-	err := env.GetJson("list-person", &p)
+	err := env.GetJSON("list-person", &p)
 	if err == nil {
-		t.Errorf("Env.GetJson(%q): got unexpected <nil> error.", "list-person")
+		t.Errorf("Env.GetJSON(%q): got unexpected <nil> error.", "list-person")
 	}
 }
 
-func TestSetJson(t *testing.T) {
+func TestSetJSON(t *testing.T) {
 	var p1 = struct {
 		Name string `json:"name"`
 		Age  int    `json:"age"`
 	}{Name: "Gopher", Age: 5}
 	var env Env
-	err := env.SetJson("person", p1)
+	err := env.SetJSON("person", p1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -210,23 +210,23 @@ func TestSetJson(t *testing.T) {
 		Name string `json:"name"`
 		Age  int    `json:"age"`
 	}
-	err = env.GetJson("person", &p2)
+	err = env.GetJSON("person", &p2)
 	if err != nil {
 		t.Error(err)
 	}
 	if !reflect.DeepEqual(p1, p2) {
-		t.Errorf("Env.SetJson(%q): wrong result. Want %v. Got %v", "person", p1, p2)
+		t.Errorf("Env.SetJSON(%q): wrong result. Want %v. Got %v", "person", p1, p2)
 	}
 }
 
-func TestSetJsonFailure(t *testing.T) {
+func TestSetJSONFailure(t *testing.T) {
 	var env Env
-	err := env.SetJson("person", unmarshable{})
+	err := env.SetJSON("person", unmarshable{})
 	if err == nil {
-		t.Error("Env.SetJson(): got unexpected <nil> error")
+		t.Error("Env.SetJSON(): got unexpected <nil> error")
 	}
 	if env.Exists("person") {
-		t.Errorf("Env.SetJson(): should not define the key %q, but did", "person")
+		t.Errorf("Env.SetJSON(): should not define the key %q, but did", "person")
 	}
 }
 

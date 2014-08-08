@@ -12,17 +12,24 @@ import (
 	"strings"
 )
 
+// Env represents a list of key-pair represented in the form KEY=VALUE.
 type Env []string
 
+// Get returns the string value of the given key.
 func (env *Env) Get(key string) (value string) {
 	return env.Map()[key]
 }
 
+// Exists checks whether the given key is defined in the internal Env
+// representation.
 func (env *Env) Exists(key string) bool {
 	_, exists := env.Map()[key]
 	return exists
 }
 
+// GetBool returns a boolean representation of the given key. The key is false
+// whenever its value if 0, no, false, none or an empty string. Any other value
+// will be interpreted as true.
 func (env *Env) GetBool(key string) (value bool) {
 	s := strings.ToLower(strings.Trim(env.Get(key), " \t"))
 	if s == "" || s == "0" || s == "no" || s == "false" || s == "none" {
@@ -31,6 +38,7 @@ func (env *Env) GetBool(key string) (value bool) {
 	return true
 }
 
+// SetBool defines a boolean value to the given key.
 func (env *Env) SetBool(key string, value bool) {
 	if value {
 		env.Set(key, "1")
@@ -39,14 +47,21 @@ func (env *Env) SetBool(key string, value bool) {
 	}
 }
 
+// GetInt returns the value of the provided key, converted to int.
+//
+// It the value cannot be represented as an integer, it returns -1.
 func (env *Env) GetInt(key string) int {
 	return int(env.GetInt64(key))
 }
 
+// SetInt defines an integer value to the given key.
 func (env *Env) SetInt(key string, value int) {
 	env.Set(key, strconv.Itoa(value))
 }
 
+// GetInt64 returns the value of the provided key, converted to int64.
+//
+// It the value cannot be represented as an integer, it returns -1.
 func (env *Env) GetInt64(key string) int64 {
 	s := strings.Trim(env.Get(key), " \t")
 	val, err := strconv.ParseInt(s, 10, 64)
@@ -56,11 +71,15 @@ func (env *Env) GetInt64(key string) int64 {
 	return val
 }
 
+// SetInt64 defines an integer (64-bit wide) value to the given key.
 func (env *Env) SetInt64(key string, value int64) {
 	env.Set(key, strconv.FormatInt(value, 10))
 }
 
-func (env *Env) GetJson(key string, iface interface{}) error {
+// GetJSON unmarshals the value of the provided key in the provided iface.
+//
+// iface is a value that can be provided to the json.Unmarshal function.
+func (env *Env) GetJSON(key string, iface interface{}) error {
 	sval := env.Get(key)
 	if sval == "" {
 		return nil
@@ -68,7 +87,9 @@ func (env *Env) GetJson(key string, iface interface{}) error {
 	return json.Unmarshal([]byte(sval), iface)
 }
 
-func (env *Env) SetJson(key string, value interface{}) error {
+// SetJSON marshals the given value to JSON format and stores it using the
+// provided key.
+func (env *Env) SetJSON(key string, value interface{}) error {
 	sval, err := json.Marshal(value)
 	if err != nil {
 		return err
@@ -77,6 +98,11 @@ func (env *Env) SetJson(key string, value interface{}) error {
 	return nil
 }
 
+// GetList returns a list of strings matching the provided key. It handles the
+// list as a JSON representation of a list of strings.
+//
+// If the given key matches to a single string, it will return a list
+// containing only the value that matches the key.
 func (env *Env) GetList(key string) []string {
 	sval := env.Get(key)
 	if sval == "" {
@@ -89,10 +115,13 @@ func (env *Env) GetList(key string) []string {
 	return l
 }
 
+// SetList stores the given list in the provided key, after serializing it to
+// JSON format.
 func (env *Env) SetList(key string, value []string) error {
-	return env.SetJson(key, value)
+	return env.SetJSON(key, value)
 }
 
+// Set defines the value of a key to the given string.
 func (env *Env) Set(key, value string) {
 	*env = append(*env, key+"="+value)
 }
@@ -112,18 +141,20 @@ func (env *Env) Decode(src io.Reader) error {
 	return nil
 }
 
-func (env *Env) SetAuto(k string, v interface{}) {
-	if fval, ok := v.(float64); ok {
-		env.SetInt64(k, int64(fval))
-	} else if sval, ok := v.(string); ok {
-		env.Set(k, sval)
-	} else if val, err := json.Marshal(v); err == nil {
-		env.Set(k, string(val))
+// SetAuto will try to define the Set* method to call based on the given value.
+func (env *Env) SetAuto(key string, value interface{}) {
+	if fval, ok := value.(float64); ok {
+		env.SetInt64(key, int64(fval))
+	} else if sval, ok := value.(string); ok {
+		env.Set(key, sval)
+	} else if val, err := json.Marshal(value); err == nil {
+		env.Set(key, string(val))
 	} else {
-		env.Set(k, fmt.Sprintf("%v", v))
+		env.Set(key, fmt.Sprintf("%v", value))
 	}
 }
 
+// Map returns the map representation of the env.
 func (env *Env) Map() map[string]string {
 	if len(*env) == 0 {
 		return nil
