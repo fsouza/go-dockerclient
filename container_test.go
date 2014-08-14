@@ -1361,3 +1361,34 @@ func TestPassingNameOptToCreateContainerReturnsItInContainer(t *testing.T) {
 		t.Errorf("Container name expected to be TestCreateContainer, was %s", container.Name)
 	}
 }
+
+func TestAlwaysRestart(t *testing.T) {
+	policy := AlwaysRestart()
+	if policy.Name != "always" {
+		t.Errorf("AlwaysRestart(): wrong policy name. Want %q. Got %q", "always", policy.Name)
+	}
+	if policy.MaxRetry != 0 {
+		t.Errorf("AlwaysRestart(): wrong MaxRetry. Want 0. Got %d", policy.MaxRetry)
+	}
+}
+
+func TestRestartOnFailure(t* testing.T) {
+	const retry = 5
+	policy := RestartOnFailure(retry)
+	if policy.Name != "on-failure" {
+		t.Errorf("RestartOnFailure(%d): wrong policy name. Want %q. Got %q", retry, "on-failure", policy.Name)
+	}
+	if policy.MaxRetry != retry {
+		t.Errorf("RestartOnFailure(%d): wrong MaxRetry. Want %d. Got %d", retry, retry, policy.MaxRetry)
+	}
+}
+
+func TestNeverRestart(t *testing.T) {
+	policy := NeverRestart()
+	if policy.Name != "no" {
+		t.Errorf("NeverRestart(): wrong policy name. Want %q. Got %q", "always", policy.Name)
+	}
+	if policy.MaxRetry != 0 {
+		t.Errorf("NeverRestart(): wrong MaxRetry. Want 0. Got %d", policy.MaxRetry)
+	}
+}

@@ -296,6 +296,24 @@ type RestartPolicy struct {
 	MaxRetry int `json:"MaximumRetryCount"`
 }
 
+// AlwaysRestart returns a restart policy that tells the Docker daemon to
+// always restart the container.
+func AlwaysRestart() RestartPolicy {
+	return RestartPolicy{Name: "always"}
+}
+
+// RestartOnFailure returns a restart policy that tells the Docker daemon to
+// restart the container on failures, trying at most maxRetry times.
+func RestartOnFailure(maxRetry int) RestartPolicy {
+	return RestartPolicy{Name: "on-failure", MaxRetry: maxRetry}
+}
+
+// NeverRestart returns a restart policy that tells the Docker daemon to never
+// restart the container on failures.
+func NeverRestart() RestartPolicy {
+	return RestartPolicy{Name: "no"}
+}
+
 type HostConfig struct {
 	Binds           []string
 	ContainerIDFile string
