@@ -283,6 +283,19 @@ type KeyValuePair struct {
 	Value string
 }
 
+// RestartPolicy represents the policy for automatically restarting a container.
+//
+// Possible values are:
+//
+//   - always: the docker daemon will always restart the container
+//   - on-failure: the docker daemon will restart the container on failures, at
+//                 most MaximumRetryCount times
+//   - no: the docker daemon will not restart the container automatically
+type RestartPolicy struct {
+	Name     string
+	MaxRetry int `json:"MaximumRetryCount"`
+}
+
 type HostConfig struct {
 	Binds           []string
 	ContainerIDFile string
@@ -295,6 +308,7 @@ type HostConfig struct {
 	DnsSearch       []string
 	VolumesFrom     []string
 	NetworkMode     string
+	RestartPolicy   RestartPolicy
 }
 
 // StartContainer starts a container, returning an error in case of failure.
