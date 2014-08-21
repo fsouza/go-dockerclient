@@ -190,7 +190,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 
 	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 
-	return c.stream("POST", path, true, headers, nil, opts.OutputStream, nil)
+	return c.stream("POST", path, true, false, headers, nil, opts.OutputStream, nil)
 }
 
 // PullImageOptions present the set of options available for pulling an image
@@ -198,10 +198,11 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 //
 // See http://goo.gl/PhBKnS for more details.
 type PullImageOptions struct {
-	Repository   string `qs:"fromImage"`
-	Registry     string
-	Tag          string
-	OutputStream io.Writer `qs:"-"`
+	Repository    string `qs:"fromImage"`
+	Registry      string
+	Tag           string
+	OutputStream  io.Writer `qs:"-"`
+	RawJSONStream bool      `qs:"-"`
 }
 
 // PullImage pulls an image from a remote registry, logging progress to w.
@@ -217,12 +218,12 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 	json.NewEncoder(&buf).Encode(auth)
 	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 
-	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream)
+	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
 }
 
-func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer) error {
+func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool) error {
 	path := "/images/create?" + qs
-	return c.stream("POST", path, true, headers, in, w, nil)
+	return c.stream("POST", path, true, rawJSONStream, headers, in, w, nil)
 }
 
 // ImportImageOptions present the set of informations available for importing
@@ -257,7 +258,7 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 		opts.InputStream = bytes.NewBuffer(b)
 		opts.Source = "-"
 	}
-	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream)
+	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream, false)
 }
 
 // BuildImageOptions present the set of informations available for building
@@ -290,7 +291,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		return ErrMissingRepo
 	}
 	return c.stream("POST", fmt.Sprintf("/build?%s",
-		queryString(&opts)), true, headers, opts.InputStream, opts.OutputStream, nil)
+		queryString(&opts)), true, false, headers, opts.InputStream, opts.OutputStream, nil)
 }
 
 // TagImageOptions present the set of options to tag an image

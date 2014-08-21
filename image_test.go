@@ -309,6 +309,33 @@ func TestPullImage(t *testing.T) {
 	}
 }
 
+func TestPullImageWithRawJSON(t *testing.T) {
+	body := `
+	{"status":"Pulling..."}
+	{"status":"Pulling", "progress":"1 B/ 100 B", "progressDetail":{"current":1, "total":100}}
+	`
+	fakeRT := &FakeRoundTripper{
+		message: body,
+		status:  http.StatusOK,
+		header: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	err := client.PullImage(PullImageOptions{
+		Repository:    "base",
+		OutputStream:  &buf,
+		RawJSONStream: true,
+	}, AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if buf.String() != body {
+		t.Errorf("PullImage: Wrong raw output. Want %q. Got %q", body, buf.String())
+	}
+}
+
 func TestPullImageWithoutOutputStream(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
 	client := newTestClient(fakeRT)
