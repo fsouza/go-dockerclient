@@ -493,6 +493,15 @@ func TestStartContainerNotFound(t *testing.T) {
 	}
 }
 
+func TestStartContainerAlreadyRunning(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "container already running", status: http.StatusNotModified})
+	err := client.StartContainer("a2334", &HostConfig{})
+	expected := &ContainerAlreadyRunning{ID: "a2334"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("StartContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
+	}
+}
+
 func TestStopContainer(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
 	client := newTestClient(fakeRT)
@@ -515,6 +524,15 @@ func TestStopContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.StopContainer("a2334", 10)
 	expected := &NoSuchContainer{ID: "a2334"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("StopContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
+	}
+}
+
+func TestStopContainerNotRunning(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "container not running", status: http.StatusNotModified})
+	err := client.StopContainer("a2334", 10)
+	expected := &ContainerNotRunning{ID: "a2334"}
 	if !reflect.DeepEqual(err, expected) {
 		t.Errorf("StopContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}

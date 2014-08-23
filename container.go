@@ -341,6 +341,9 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
 	}
+	if status == http.StatusNotModified {
+		return &ContainerAlreadyRunning{ID: id}
+	}
 	if err != nil {
 		return err
 	}
@@ -356,6 +359,9 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 	_, status, err := c.do("POST", path, nil)
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
+	}
+	if status == http.StatusNotModified {
+		return &ContainerNotRunning{ID: id}
 	}
 	if err != nil {
 		return err
@@ -662,4 +668,22 @@ type NoSuchContainer struct {
 
 func (err NoSuchContainer) Error() string {
 	return "No such container: " + err.ID
+}
+
+// ContainerAlreadyRunning is the error returned when a given container is already running
+type ContainerAlreadyRunning struct {
+	ID string
+}
+
+func (err ContainerAlreadyRunning) Error() string {
+	return "Container alraedy running: " + err.ID
+}
+
+// ContainerNotRunning is the error returned when a given container is no running
+type ContainerNotRunning struct {
+	ID string
+}
+
+func (err ContainerNotRunning) Error() string {
+	return "Container not running: " + err.ID
 }
