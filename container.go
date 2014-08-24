@@ -676,7 +676,7 @@ type ContainerAlreadyRunning struct {
 }
 
 func (err ContainerAlreadyRunning) Error() string {
-	return "Container alraedy running: " + err.ID
+	return "Container already running: " + err.ID
 }
 
 // ContainerNotRunning is the error returned when a given container is no running
