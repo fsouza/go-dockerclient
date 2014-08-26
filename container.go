@@ -670,7 +670,8 @@ func (err NoSuchContainer) Error() string {
 	return "No such container: " + err.ID
 }
 
-// ContainerAlreadyRunning is the error returned when a given container is already running
+// ContainerAlreadyRunning is the error returned when a given container is
+// already running.
 type ContainerAlreadyRunning struct {
 	ID string
 }
@@ -679,7 +680,8 @@ func (err ContainerAlreadyRunning) Error() string {
 	return "Container already running: " + err.ID
 }
 
-// ContainerNotRunning is the error returned when a given container is no running
+// ContainerNotRunning is the error returned when a given container is not
+// running.
 type ContainerNotRunning struct {
 	ID string
 }
