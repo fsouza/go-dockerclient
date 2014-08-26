@@ -655,7 +655,7 @@ type ExportContainerOptions struct {
 // See http://goo.gl/Lqk0FZ for more details.
 func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 	if opts.ID == "" {
-		return NoSuchContainer{ID: opts.ID}
+		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
 	return c.stream("GET", url, true, nil, nil, opts.OutputStream, nil)
@@ -666,7 +666,7 @@ type NoSuchContainer struct {
 	ID string
 }
 
-func (err NoSuchContainer) Error() string {
+func (err *NoSuchContainer) Error() string {
 	return "No such container: " + err.ID
 }
 
@@ -676,7 +676,7 @@ type ContainerAlreadyRunning struct {
 	ID string
 }
 
-func (err ContainerAlreadyRunning) Error() string {
+func (err *ContainerAlreadyRunning) Error() string {
 	return "Container already running: " + err.ID
 }
 
@@ -686,6 +686,6 @@ type ContainerNotRunning struct {
 	ID string
 }
 
-func (err ContainerNotRunning) Error() string {
+func (err *ContainerNotRunning) Error() string {
 	return "Container not running: " + err.ID
 }

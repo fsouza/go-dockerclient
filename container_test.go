@@ -1331,8 +1331,12 @@ func TestExportContainerNoId(t *testing.T) {
 	client := Client{}
 	out := stdoutMock{bytes.NewBufferString("")}
 	err := client.ExportContainer(ExportContainerOptions{OutputStream: out})
-	if err != (NoSuchContainer{}) {
-		t.Errorf("ExportContainer: wrong error. Want %#v. Got %#v.", NoSuchContainer{}, err)
+	e, ok := err.(*NoSuchContainer)
+	if !ok {
+		t.Errorf("ExportContainer: wrong error. Want NoSuchContainer. Got %#v.", e)
+	}
+	if e.ID != "" {
+		t.Errorf("ExportContainer: wrong ID. Want %q. Got %q", "", e.ID)
 	}
 }
 
