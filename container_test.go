@@ -1394,7 +1394,7 @@ func TestAlwaysRestart(t *testing.T) {
 	}
 }
 
-func TestRestartOnFailure(t* testing.T) {
+func TestRestartOnFailure(t *testing.T) {
 	const retry = 5
 	policy := RestartOnFailure(retry)
 	if policy.Name != "on-failure" {
