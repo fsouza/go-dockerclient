@@ -12,8 +12,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/gorilla/mux"
 	mathrand "math/rand"
 	"net"
 	"net/http"
@@ -22,6 +20,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fsouza/go-dockerclient"
+	"github.com/gorilla/mux"
 )
 
 // DockerServer represents a programmable, concurrent (not much), HTTP server
