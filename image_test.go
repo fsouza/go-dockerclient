@@ -514,19 +514,20 @@ func TestBuildImageParameters(t *testing.T) {
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
-		Name:           "testImage",
-		NoCache:        true,
-		SuppressOutput: true,
-		RmTmpContainer: true,
-		InputStream:    &buf,
-		OutputStream:   &buf,
+		Name:                "testImage",
+		NoCache:             true,
+		SuppressOutput:      true,
+		RmTmpContainer:      true,
+		ForceRmTmpContainer: true,
+		InputStream:         &buf,
+		OutputStream:        &buf,
 	}
 	err := client.BuildImage(opts)
 	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"t": {opts.Name}, "nocache": {"1"}, "q": {"1"}, "rm": {"1"}}
+	expected := map[string][]string{"t": {opts.Name}, "nocache": {"1"}, "q": {"1"}, "rm": {"1"}, "forcerm": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)

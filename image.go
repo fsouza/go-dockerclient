@@ -264,13 +264,14 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 // an image from a tarfile with a Dockerfile in it,the details about Dockerfile
 // see http://docs.docker.io/en/latest/reference/builder/
 type BuildImageOptions struct {
-	Name           string    `qs:"t"`
-	NoCache        bool      `qs:"nocache"`
-	SuppressOutput bool      `qs:"q"`
-	RmTmpContainer bool      `qs:"rm"`
-	InputStream    io.Reader `qs:"-"`
-	OutputStream   io.Writer `qs:"-"`
-	Remote         string    `qs:"remote"`
+	Name                string    `qs:"t"`
+	NoCache             bool      `qs:"nocache"`
+	SuppressOutput      bool      `qs:"q"`
+	RmTmpContainer      bool      `qs:"rm"`
+	ForceRmTmpContainer bool      `qs:"forcerm"`
+	InputStream         io.Reader `qs:"-"`
+	OutputStream        io.Writer `qs:"-"`
+	Remote              string    `qs:"remote"`
 }
 
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
