@@ -16,7 +16,11 @@ import (
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/fsouza/go-dockerclient/utils"
 )
+
+var dockercfgPath = os.Getenv("DOCKERCFG_PATH")
 
 // APIImages represent an image returned in the ListImages call.
 type APIImages struct {
@@ -149,6 +153,8 @@ func (c *Client) InspectImage(name string) (*Image, error) {
 
 // PushImageOptions represents options to use in the PushImage method.
 //
+// Optionally uses the environment variable `DOCKERCFG_PATH` to load .dockercfg
+//
 // See http://goo.gl/GBmyhc for more details.
 type PushImageOptions struct {
 	// Name of the image
@@ -171,6 +177,30 @@ type AuthConfiguration struct {
 	Email    string `json:"email,omitempty"`
 }
 
+func authHeader(auth AuthConfiguration, registry string) string {
+
+	var buf bytes.Buffer
+	config, err := utils.LoadConfig(dockercfgPath)
+
+	// use AuthConfiguration if set or when dockercfg can not load
+	if (auth.Username != "" || auth.Password != "" || auth.Email != "") ||
+		err != nil {
+
+		json.NewEncoder(&buf).Encode(auth)
+		return base64.URLEncoding.EncodeToString(buf.Bytes())
+	}
+
+	// use custom registry if auth can be found in dockercfg
+	if creds, ok := config.Configs[registry]; ok {
+		json.NewEncoder(&buf).Encode(creds)
+		return base64.URLEncoding.EncodeToString(buf.Bytes())
+	}
+
+	// return default dockercfg
+	json.NewEncoder(&buf).Encode(config.Configs[utils.IndexServerAddress()])
+	return base64.URLEncoding.EncodeToString(buf.Bytes())
+}
+
 // PushImage pushes an image to a remote registry, logging progress to w.
 //
 // An empty instance of AuthConfiguration may be used for unauthenticated
@@ -184,11 +214,9 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	name := opts.Name
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
-	var headers = make(map[string]string)
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(auth)
 
-	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+	var headers = make(map[string]string)
+	headers["X-Registry-Auth"] = authHeader(auth, opts.Registry)
 
 	return c.stream("POST", path, true, false, headers, nil, opts.OutputStream, nil)
 }
@@ -196,6 +224,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 // PullImageOptions present the set of options available for pulling an image
 // from a registry.
 //
+// Optionally uses the environment variable `DOCKERCFG_PATH` to load .dockercfg
 // See http://goo.gl/PhBKnS for more details.
 type PullImageOptions struct {
 	Repository    string `qs:"fromImage"`
@@ -214,9 +243,7 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 	}
 
 	var headers = make(map[string]string)
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(auth)
-	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+	headers["X-Registry-Auth"] = authHeader(auth, opts.Registry)
 
 	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
 }
