@@ -221,6 +221,14 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
 }
 
+func (c *Client) LoadImage(in in.Reader) error {
+	return c.stream("POST", "/images/load", true, false, nil, in, nil, nil)
+}
+
+func (c *Client) ExportImage(imageName string, out io.Writer) error {
+	return c.stream("GET", fmt.Sprintf("/images/%s/get", imageName), true, false, nil, nil, out, nil)
+}
+
 func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool) error {
 	path := "/images/create?" + qs
 	return c.stream("POST", path, true, rawJSONStream, headers, in, w, nil)
