@@ -221,7 +221,7 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
 }
 
-func (c *Client) LoadImage(in in.Reader) error {
+func (c *Client) LoadImage(in io.Reader) error {
 	return c.stream("POST", "/images/load", true, false, nil, in, nil, nil)
 }
 
