@@ -668,3 +668,37 @@ func TestIsUrl(t *testing.T) {
 		t.Errorf("isURL: wrong match. Expected %#v to not be a url. Got %#v", url, result)
 	}
 }
+
+func TestLoadImage(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+
+	tar, err := os.Open("testing/data/container.tar")
+	if err != nil {
+		t.Fatal(err)
+	} else {
+		defer tar.Close()
+	}
+
+	opts := LoadImageOptions{InputStream: tar}
+
+	err = client.LoadImage(opts)
+
+	if nil != err {
+		t.Error(err)
+	}
+}
+
+func TestExportImage(t *testing.T) {
+	var buf bytes.Buffer
+
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := ExportImageOptions{Name: "testimage", OutputStream: &buf}
+
+	err := client.ExportImage(opts)
+
+	if nil != err {
+		t.Error(err)
+	}
+}
