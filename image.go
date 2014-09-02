@@ -221,12 +221,29 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
 }
 
-func (c *Client) LoadImage(in io.Reader) error {
-	return c.stream("POST", "/images/load", true, false, nil, in, nil, nil)
+// LoadImageOptions represents the options for LoadImage Docker API Call
+type LoadImageOptions struct {
+	In io.Reader
 }
 
-func (c *Client) ExportImage(imageName string, out io.Writer) error {
-	return c.stream("GET", fmt.Sprintf("/images/%s/get", imageName), true, false, nil, nil, out, nil)
+// LoadImage imports a tarball docker image
+//
+// See http://docs.docker.com/reference/api/docker_remote_api_v1.14/#load-a-tarball-with-a-set-of-images-and-tags-into-docker for more details
+func (c *Client) LoadImage(opts LoadImageOptions) error {
+	return c.stream("POST", "/images/load", true, false, nil, opts.In, nil, nil)
+}
+
+// ExportImageOptions represent the options for ExportImage Docker API call
+type ExportImageOptions struct {
+	ImageName string
+	Out       io.Writer
+}
+
+// ExportImage exports an image (as a tar file) into the stream
+//
+// See http://docs.docker.com/reference/api/docker_remote_api_v1.14/#get-a-tarball-containing-all-images-and-tags-in-a-repository for more details
+func (c *Client) ExportImage(opts ExportImageOptions) error {
+	return c.stream("GET", fmt.Sprintf("/images/%s/get", opts.ImageName), true, false, nil, nil, opts.Out, nil)
 }
 
 func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool) error {
