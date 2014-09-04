@@ -672,33 +672,41 @@ func TestIsUrl(t *testing.T) {
 func TestLoadImage(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-
 	tar, err := os.Open("testing/data/container.tar")
 	if err != nil {
 		t.Fatal(err)
 	} else {
 		defer tar.Close()
 	}
-
 	opts := LoadImageOptions{InputStream: tar}
-
 	err = client.LoadImage(opts)
-
 	if nil != err {
 		t.Error(err)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("LoadImage: wrong method. Expected %q. Got %q.", "POST", req.Method)
+	}
+	if req.URL.Path != "/images/load" {
+		t.Errorf("LoadImage: wrong URL. Expected %q. Got %q.", "/images/load", req.URL.Path)
 	}
 }
 
 func TestExportImage(t *testing.T) {
 	var buf bytes.Buffer
-
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	opts := ExportImageOptions{Name: "testimage", OutputStream: &buf}
-
 	err := client.ExportImage(opts)
-
 	if nil != err {
 		t.Error(err)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "GET" {
+		t.Errorf("ExportImage: wrong method. Expected %q. Got %q.", "GET", req.Method)
+	}
+	expectedPath := "/images/testimage/get"
+	if req.URL.Path != expectedPath {
+		t.Errorf("ExportIMage: wrong path. Expected %q. Got %q.", expectedPath, req.URL.Path)
 	}
 }
