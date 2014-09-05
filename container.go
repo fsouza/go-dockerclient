@@ -316,6 +316,8 @@ func NeverRestart() RestartPolicy {
 
 type HostConfig struct {
 	Binds           []string
+	CapAdd          []string
+	CapDrop         []string
 	ContainerIDFile string
 	LxcConf         []KeyValuePair
 	Privileged      bool
