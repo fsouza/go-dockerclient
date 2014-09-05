@@ -20,28 +20,26 @@ import (
 
 // APIImages represent an image returned in the ListImages call.
 type APIImages struct {
-	ID          string   `json:"Id"`
-	RepoTags    []string `json:",omitempty"`
-	Created     int64
-	Size        int64
-	VirtualSize int64
-	ParentId    string `json:",omitempty"`
-	Repository  string `json:",omitempty"`
-	Tag         string `json:",omitempty"`
+	ID          string   `json:"Id" yaml:"Id"`
+	RepoTags    []string `json:"RepoTags,omitempty" yaml:"RepoTags,omitempty"`
+	Created     int64    `json:"Created,omitempty" yaml:"Created,omitempty"`
+	Size        int64    `json:"Size,omitempty" yaml:"Size,omitempty"`
+	VirtualSize int64    `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty"`
+	ParentId    string   `json:"ParentId,omitempty" yaml:"ParentId,omitempty"`
 }
 
 type Image struct {
-	ID              string    `json:"id"`
-	Parent          string    `json:"parent,omitempty"`
-	Comment         string    `json:"comment,omitempty"`
-	Created         time.Time `json:"created"`
-	Container       string    `json:"container,omitempty"`
-	ContainerConfig Config    `json:"containerconfig,omitempty"`
-	DockerVersion   string    `json:"dockerversion,omitempty"`
-	Author          string    `json:"author,omitempty"`
-	Config          *Config   `json:"config,omitempty"`
-	Architecture    string    `json:"architecture,omitempty"`
-	Size            int64
+	ID              string    `json:"Id" yaml:"Id"`
+	Parent          string    `json:"Parent,omitempty" yaml:"Parent,omitempty"`
+	Comment         string    `json:"Comment,omitempty" yaml:"Comment,omitempty"`
+	Created         time.Time `json:"Created,omitempty" yaml:"Created,omitempty"`
+	Container       string    `json:"Container,omitempty" yaml:"Container,omitempty"`
+	ContainerConfig Config    `json:"ContainerConfig,omitempty" yaml:"ContainerConfig,omitempty"`
+	DockerVersion   string    `json:"DockerVersion,omitempty" yaml:"DockerVersion,omitempty"`
+	Author          string    `json:"Author,omitempty" yaml:"Author,omitempty"`
+	Config          *Config   `json:"Config,omitempty" yaml:"Config,omitempty"`
+	Architecture    string    `json:"Architecture,omitempty" yaml:"Architecture,omitempty"`
+	Size            int64     `json:"Size,omitempty" yaml:"Size,omitempty"`
 }
 
 type ImagePre012 struct {
@@ -55,7 +53,7 @@ type ImagePre012 struct {
 	Author          string    `json:"author,omitempty"`
 	Config          *Config   `json:"config,omitempty"`
 	Architecture    string    `json:"architecture,omitempty"`
-	Size            int64
+	Size            int64     `json:"size,omitempty"`
 }
 
 var (
@@ -164,7 +162,7 @@ type PushImageOptions struct {
 }
 
 // AuthConfiguration represents authentication options to use in the PushImage
-// method. It represents the authencation in the Docker index server.
+// method. It represents the authentication in the Docker index server.
 type AuthConfiguration struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
