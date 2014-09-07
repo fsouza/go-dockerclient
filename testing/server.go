@@ -31,7 +31,7 @@ import (
 // It can used in standalone mode, listening for connections or as an arbitrary
 // HTTP handler.
 //
-// For more details on the remote API, check http://goo.gl/yMI1S.
+// For more details on the remote API, check http://goo.gl/G3plxW.
 type DockerServer struct {
 	containers     []*docker.Container
 	cMut           sync.RWMutex

@@ -71,7 +71,7 @@ var (
 
 // ListImages returns the list of available images in the server.
 //
-// See http://goo.gl/dkMrwP for more details.
+// See http://goo.gl/VmcR6v for more details.
 func (c *Client) ListImages(all bool) ([]APIImages, error) {
 	path := "/images/json?all="
 	if all {
@@ -93,7 +93,7 @@ func (c *Client) ListImages(all bool) ([]APIImages, error) {
 
 // RemoveImage removes an image by its name or ID.
 //
-// See http://goo.gl/7hjHHy for more details.
+// See http://goo.gl/znj0wM for more details.
 func (c *Client) RemoveImage(name string) error {
 	_, status, err := c.do("DELETE", "/images/"+name, nil)
 	if status == http.StatusNotFound {
@@ -104,7 +104,7 @@ func (c *Client) RemoveImage(name string) error {
 
 // InspectImage returns an image by its name or ID.
 //
-// See http://goo.gl/pHEbma for more details.
+// See http://goo.gl/Q112NY for more details.
 func (c *Client) InspectImage(name string) (*Image, error) {
 	body, status, err := c.do("GET", "/images/"+name+"/json", nil)
 	if status == http.StatusNotFound {
@@ -147,7 +147,7 @@ func (c *Client) InspectImage(name string) (*Image, error) {
 
 // PushImageOptions represents options to use in the PushImage method.
 //
-// See http://goo.gl/GBmyhc for more details.
+// See http://goo.gl/pN8A3P for more details.
 type PushImageOptions struct {
 	// Name of the image
 	Name string
@@ -174,7 +174,7 @@ type AuthConfiguration struct {
 // An empty instance of AuthConfiguration may be used for unauthenticated
 // pushes.
 //
-// See http://goo.gl/GBmyhc for more details.
+// See http://goo.gl/pN8A3P for more details.
 func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error {
 	if opts.Name == "" {
 		return ErrNoSuchImage
@@ -194,7 +194,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 // PullImageOptions present the set of options available for pulling an image
 // from a registry.
 //
-// See http://goo.gl/PhBKnS for more details.
+// See http://goo.gl/ACyYNS for more details.
 type PullImageOptions struct {
 	Repository    string `qs:"fromImage"`
 	Registry      string
@@ -205,7 +205,7 @@ type PullImageOptions struct {
 
 // PullImage pulls an image from a remote registry, logging progress to w.
 //
-// See http://goo.gl/PhBKnS for more details.
+// See http://goo.gl/ACyYNS for more details.
 func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error {
 	if opts.Repository == "" {
 		return ErrNoSuchImage
@@ -288,9 +288,11 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream, false)
 }
 
-// BuildImageOptions present the set of informations available for building
-// an image from a tarfile with a Dockerfile in it,the details about Dockerfile
-// see http://docs.docker.io/en/latest/reference/builder/
+// BuildImageOptions present the set of informations available for building an
+// image from a tarfile with a Dockerfile in it.
+//
+// For more details about the Docker building process, see
+// http://goo.gl/tlPXPu.
 type BuildImageOptions struct {
 	Name                string    `qs:"t"`
 	NoCache             bool      `qs:"nocache"`
@@ -304,6 +306,8 @@ type BuildImageOptions struct {
 
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
 // stream.
+//
+// See http://goo.gl/wRsW76 for more details.
 func (c *Client) BuildImage(opts BuildImageOptions) error {
 	if opts.OutputStream == nil {
 		return ErrMissingOutputStream
@@ -321,14 +325,18 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		queryString(&opts)), true, false, headers, opts.InputStream, opts.OutputStream, nil)
 }
 
-// TagImageOptions present the set of options to tag an image
+// TagImageOptions present the set of options to tag an image.
+//
+// See http://goo.gl/5g6qFy for more details.
 type TagImageOptions struct {
 	Repo  string
 	Tag   string
 	Force bool
 }
 
-// TagImage adds a tag to the image 'name'
+// TagImage adds a tag to the image identified by the given name.
+//
+// See http://goo.gl/5g6qFy for more details.
 func (c *Client) TagImage(name string, opts TagImageOptions) error {
 	if name == "" {
 		return ErrNoSuchImage

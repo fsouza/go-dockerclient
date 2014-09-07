@@ -4,7 +4,7 @@
 
 // Package docker provides a client for the Docker remote API.
 //
-// See http://goo.gl/mxyql for more details on the remote API.
+// See http://goo.gl/G3plxW for more details on the remote API.
 package docker
 
 import (
