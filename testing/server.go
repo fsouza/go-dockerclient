@@ -31,7 +31,7 @@ import (
 // It can used in standalone mode, listening for connections or as an arbitrary
 // HTTP handler.
 //
-// For more details on the remote API, check http://goo.gl/yMI1S.
+// For more details on the remote API, check http://goo.gl/G3plxW.
 type DockerServer struct {
 	containers     []*docker.Container
 	cMut           sync.RWMutex
@@ -103,6 +103,8 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.handlerWrapper(s.pushImage))
 	s.mux.Path("/events").Methods("GET").HandlerFunc(s.listEvents)
 	s.mux.Path("/_ping").Methods("GET").HandlerFunc(s.handlerWrapper(s.pingDocker))
+	s.mux.Path("/images/load").Methods("POST").HandlerFunc(s.handlerWrapper(s.loadImage))
+	s.mux.Path("/images/{id:.*}/get").Methods("GET").HandlerFunc(s.handlerWrapper(s.getImage))
 }
 
 // PrepareFailure adds a new expected failure based on a URL regexp it receives
@@ -653,4 +655,14 @@ func (s *DockerServer) generateEvent() *docker.APIEvents {
 		From:   "mybase:latest",
 		Time:   time.Now().Unix(),
 	}
+}
+
+func (s *DockerServer) loadImage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *DockerServer) getImage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/tar")
+
 }

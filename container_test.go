@@ -1389,8 +1389,8 @@ func TestAlwaysRestart(t *testing.T) {
 	if policy.Name != "always" {
 		t.Errorf("AlwaysRestart(): wrong policy name. Want %q. Got %q", "always", policy.Name)
 	}
-	if policy.MaxRetry != 0 {
-		t.Errorf("AlwaysRestart(): wrong MaxRetry. Want 0. Got %d", policy.MaxRetry)
+	if policy.MaximumRetryCount != 0 {
+		t.Errorf("AlwaysRestart(): wrong MaximumRetryCount. Want 0. Got %d", policy.MaximumRetryCount)
 	}
 }
 
@@ -1400,8 +1400,8 @@ func TestRestartOnFailure(t *testing.T) {
 	if policy.Name != "on-failure" {
 		t.Errorf("RestartOnFailure(%d): wrong policy name. Want %q. Got %q", retry, "on-failure", policy.Name)
 	}
-	if policy.MaxRetry != retry {
-		t.Errorf("RestartOnFailure(%d): wrong MaxRetry. Want %d. Got %d", retry, retry, policy.MaxRetry)
+	if policy.MaximumRetryCount != retry {
+		t.Errorf("RestartOnFailure(%d): wrong MaximumRetryCount. Want %d. Got %d", retry, retry, policy.MaximumRetryCount)
 	}
 }
 
@@ -1410,7 +1410,7 @@ func TestNeverRestart(t *testing.T) {
 	if policy.Name != "no" {
 		t.Errorf("NeverRestart(): wrong policy name. Want %q. Got %q", "always", policy.Name)
 	}
-	if policy.MaxRetry != 0 {
-		t.Errorf("NeverRestart(): wrong MaxRetry. Want 0. Got %d", policy.MaxRetry)
+	if policy.MaximumRetryCount != 0 {
+		t.Errorf("NeverRestart(): wrong MaximumRetryCount. Want 0. Got %d", policy.MaximumRetryCount)
 	}
 }
