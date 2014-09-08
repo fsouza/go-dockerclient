@@ -301,6 +301,7 @@ type BuildImageOptions struct {
 	ForceRmTmpContainer bool      `qs:"forcerm"`
 	InputStream         io.Reader `qs:"-"`
 	OutputStream        io.Writer `qs:"-"`
+	RawJSONStream       bool      `qs:"-"`
 	Remote              string    `qs:"remote"`
 }
 
@@ -322,7 +323,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		return ErrMissingRepo
 	}
 	return c.stream("POST", fmt.Sprintf("/build?%s",
-		queryString(&opts)), true, false, headers, opts.InputStream, opts.OutputStream, nil)
+		queryString(&opts)), true, opts.RawJSONStream, headers, opts.InputStream, opts.OutputStream, nil)
 }
 
 // TagImageOptions present the set of options to tag an image.

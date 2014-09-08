@@ -579,7 +579,7 @@ func TestBuildImageParametersForRemoteBuild(t *testing.T) {
 	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
 }
 
@@ -605,6 +605,44 @@ func TestBuildImageMissingOutputStream(t *testing.T) {
 	err := client.BuildImage(opts)
 	if err != ErrMissingOutputStream {
 		t.Errorf("BuildImage: wrong error returned. Want %#v. Got %#v.", ErrMissingOutputStream, err)
+	}
+}
+
+func TestBuildImageWithRawJSON(t *testing.T) {
+	body := `
+	{"stream":"Step 0 : FROM ubuntu:latest\n"}
+	{"stream":" ---\u003e 4300eb9d3c8d\n"}
+	{"stream":"Step 1 : MAINTAINER docker <eng@docker.com>\n"}
+	{"stream":" ---\u003e Using cache\n"}
+	{"stream":" ---\u003e 3a3ed758c370\n"}
+	{"stream":"Step 2 : CMD /usr/bin/top\n"}
+	{"stream":" ---\u003e Running in 36b1479cc2e4\n"}
+	{"stream":" ---\u003e 4b6188aebe39\n"}
+	{"stream":"Removing intermediate container 36b1479cc2e4\n"}
+	{"stream":"Successfully built 4b6188aebe39\n"}
+    `
+	fakeRT := &FakeRoundTripper{
+		message: body,
+		status:  http.StatusOK,
+		header: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Name:           "testImage",
+		RmTmpContainer: true,
+		InputStream:    &buf,
+		OutputStream:   &buf,
+		RawJSONStream:  true,
+	}
+	err := client.BuildImage(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if buf.String() != body {
+		t.Errorf("BuildImage: Wrong raw output. Want %q. Got %q.", body, buf.String())
 	}
 }
 
