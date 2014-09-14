@@ -122,6 +122,48 @@ func TestListImagesParameters(t *testing.T) {
 	}
 }
 
+func TestImageHistory(t *testing.T) {
+	body := `[
+	{
+		"Id": "25daec02219d2d852f7526137213a9b199926b4b24e732eab5b8bc6c49bd470e",
+		"Tags": [
+			"debian:7.6",
+			"debian:latest",
+			"debian:7",
+			"debian:wheezy"
+		],
+		"Created": 1409856216,
+		"CreatedBy": "/bin/sh -c #(nop) CMD [/bin/bash]"
+	},
+	{
+		"Id": "41026a5347fb5be6ed16115bf22df8569697139f246186de9ae8d4f67c335dce",
+		"Created": 1409856213,
+		"CreatedBy": "/bin/sh -c #(nop) ADD file:1ee9e97209d00e3416a4543b23574cc7259684741a46bbcbc755909b8a053a38 in /",
+		"Size": 85178663
+	},
+	{
+		"Id": "511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158",
+		"Tags": [
+			"scratch:latest"
+		],
+		"Created": 1371157430
+	}
+]`
+	var expected []ImageHistory
+	err := json.Unmarshal([]byte(body), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
+	history, err := client.ImageHistory("debian:latest")
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(history, expected) {
+		t.Errorf("ImageHistory: Wrong return value. Want %#v. Got %#v.", expected, history)
+	}
+}
+
 func TestRemoveImage(t *testing.T) {
 	name := "test"
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}

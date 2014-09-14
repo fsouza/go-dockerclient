@@ -42,6 +42,16 @@ type Image struct {
 	Size            int64     `json:"Size,omitempty" yaml:"Size,omitempty"`
 }
 
+// ImageHistory represent a layer in an image's history returned by the
+// ImageHistory call.
+type ImageHistory struct {
+	ID        string   `json:"Id" yaml:"Id"`
+	Tags      []string `json:"Tags,omitempty" yaml:"Tags,omitempty"`
+	Created   int64    `json:"Created,omitempty" yaml:"Created,omitempty"`
+	CreatedBy string   `json:"CreatedBy,omitempty" yaml:"CreatedBy,omitempty"`
+	Size      int64    `json:"Size,omitempty" yaml:"Size,omitempty"`
+}
+
 type ImagePre012 struct {
 	ID              string    `json:"id"`
 	Parent          string    `json:"parent,omitempty"`
@@ -89,6 +99,25 @@ func (c *Client) ListImages(all bool) ([]APIImages, error) {
 		return nil, err
 	}
 	return images, nil
+}
+
+// ImageHistory returns the history of the image by its name or ID.
+//
+// See http://goo.gl/2oJmNs for more details.
+func (c *Client) ImageHistory(name string) ([]ImageHistory, error) {
+	body, status, err := c.do("GET", "/images/"+name+"/history", nil)
+	if status == http.StatusNotFound {
+		return nil, ErrNoSuchImage
+	}
+	if err != nil {
+		return nil, err
+	}
+	var history []ImageHistory
+	err = json.Unmarshal(body, &history)
+	if err != nil {
+		return nil, err
+	}
+	return history, nil
 }
 
 // RemoveImage removes an image by its name or ID.
