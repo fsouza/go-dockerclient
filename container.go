@@ -418,6 +418,39 @@ func (c *Client) UnpauseContainer(id string) error {
 	return nil
 }
 
+// TopResult represents the list of processes running in a container, as
+// returned by /containers/<id>/top.
+//
+// See http://goo.gl/qu4gse for more details.
+type TopResult struct {
+	Titles    []string
+	Processes [][]string
+}
+
+// TopContainer returns processes running inside a container
+//
+// See http://goo.gl/qu4gse for more details.
+func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
+	var args string
+	var result TopResult
+	if psArgs != "" {
+		args = fmt.Sprintf("?ps_args=%s", psArgs)
+	}
+	path := fmt.Sprintf("/containers/%s/top%s", id, args)
+	body, status, err := c.do("GET", path, nil)
+	if status == http.StatusNotFound {
+		return result, &NoSuchContainer{ID: id}
+	}
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
 // KillContainerOptions represents the set of options that can be used in a
 // call to KillContainer.
 //
