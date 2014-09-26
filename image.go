@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -66,17 +65,33 @@ type ImagePre012 struct {
 	Size            int64     `json:"size,omitempty"`
 }
 
+// ErrorNoSuchImage is the error returned when the image does not exist.
+type ErrorNoSuchImage struct {
+	DockerClientError
+
+	Message string
+}
+
+// ErrorMissingRepo is the error returned when the remote repository is
+// missing.
+type ErrorMissingRepo struct {
+	DockerClientError
+
+	Message string
+}
+
+// ErrorMissingOutputStream is the error returned when no output stream
+// is provided to some calls, like BuildImage.
+type ErrorMissingOutputStream struct {
+	DockerClientError
+
+	Message string
+}
+
 var (
-	// ErrNoSuchImage is the error returned when the image does not exist.
-	ErrNoSuchImage = errors.New("no such image")
-
-	// ErrMissingRepo is the error returned when the remote repository is
-	// missing.
-	ErrMissingRepo = errors.New("missing remote repository e.g. 'github.com/user/repo'")
-
-	// ErrMissingOutputStream is the error returned when no output stream
-	// is provided to some calls, like BuildImage.
-	ErrMissingOutputStream = errors.New("missing output stream")
+	ErrNoSuchImage         = &ErrorNoSuchImage{Message: "no such image"}
+	ErrMissingRepo         = &ErrorMissingRepo{Message: "missing remote repository e.g. 'github.com/user/repo'"}
+	ErrMissingOutputStream = &ErrorMissingOutputStream{Message: "missing output stream"}
 )
 
 // ListImages returns the list of available images in the server.
