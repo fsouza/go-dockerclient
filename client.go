@@ -25,12 +25,23 @@ import (
 
 const userAgent = "go-dockerclient"
 
-var (
-	// ErrInvalidEndpoint is returned when the endpoint is not a valid HTTP URL.
-	ErrInvalidEndpoint = errors.New("invalid endpoint")
+// ErrorInvalidEndpoint is returned when the endpoint is not a valid HTTP URL.
+type ErrorInvalidEndpoint struct {
+	DockerClientError
 
-	// ErrConnectionRefused is returned when the client cannot connect to the given endpoint.
-	ErrConnectionRefused = errors.New("cannot connect to Docker endpoint")
+	Message string
+}
+
+// ErrorConnectionRefused is returned when the client cannot connect to the given endpoint.
+type ErrorConnectionRefused struct {
+	DockerClientError
+
+	Message string
+}
+
+var (
+	ErrInvalidEndpoint   = &ErrorInvalidEndpoint{Message: "invalid endpoint"}
+	ErrConnectionRefused = &ErrorConnectionRefused{Message: "cannot connect to Docker endpoint"}
 
 	apiVersion_1_12, _ = NewApiVersion("1.12")
 )

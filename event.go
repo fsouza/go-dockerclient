@@ -6,7 +6,6 @@ package docker
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -41,14 +40,25 @@ const (
 	retryInitialWaitTime  = 10.
 )
 
-var (
-	// ErrNoListeners is the error returned when no listeners are available
-	// to receive an event.
-	ErrNoListeners = errors.New("no listeners present to receive event")
+// ErrorNoListeners is the error returned when no listeners are available
+// to receive an event.
+type ErrorNoListeners struct {
+	DockerClientError
 
-	// ErrListenerAlreadyExists is the error returned when the listerner already
-	// exists.
-	ErrListenerAlreadyExists = errors.New("listener already exists for docker events")
+	Message string
+}
+
+// ErrorListenerAlreadyExists is the error returned when the listerner already
+// exists.
+type ErrorListenerAlreadyExists struct {
+	DockerClientError
+
+	Message string
+}
+
+var (
+	ErrNoListeners           = &ErrorNoListeners{Message: "no listeners present to receive event"}
+	ErrListenerAlreadyExists = &ErrorListenerAlreadyExists{Message: "listener already exists for docker events"}
 )
 
 // AddEventListener adds a new listener to container events in the Docker API.
