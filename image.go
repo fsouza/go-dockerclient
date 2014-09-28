@@ -212,12 +212,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	name := opts.Name
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
-	var headers = make(map[string]string)
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(auth)
-
-	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
-
+	headers := headersWithAuth(&auth)
 	return c.stream("POST", path, true, opts.RawJSONStream, headers, nil, opts.OutputStream, nil)
 }
 
@@ -241,11 +236,7 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 		return ErrNoSuchImage
 	}
 
-	var headers = make(map[string]string)
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(auth)
-	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
-
+	headers := headersWithAuth(&auth)
 	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
 }
 
@@ -387,4 +378,16 @@ func isURL(u string) bool {
 		return false
 	}
 	return p.Scheme == "http" || p.Scheme == "https"
+}
+
+func headersWithAuth(auth *AuthConfiguration) map[string]string {
+	var headers = make(map[string]string)
+	if auth == nil {
+		return headers
+	}
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(*auth)
+
+	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+	return headers
 }
