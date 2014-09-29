@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	"github.com/docker/docker/pkg/pools"
-	"github.com/docker/docker/pkg/system"
 )
 
 func createTarStream(srcPath string) (io.ReadCloser, error) {
@@ -119,11 +118,7 @@ func addTarFile(path, name string, tw *tar.Writer, twBuf *bufio.Writer) error {
 		}
 	}
 
-	capability, _ := system.Lgetxattr(path, "security.capability")
-	if capability != nil {
-		hdr.Xattrs = make(map[string]string)
-		hdr.Xattrs["security.capability"] = string(capability)
-	}
+	hdr = addXattrs(hdr, path)
 
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
