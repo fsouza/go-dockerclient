@@ -187,7 +187,8 @@ type PushImageOptions struct {
 	// Registry server to push the image
 	Registry string
 
-	OutputStream io.Writer `qs:"-"`
+	OutputStream  io.Writer `qs:"-"`
+	RawJSONStream bool      `qs:"-"`
 }
 
 // AuthConfiguration represents authentication options to use in the PushImage
@@ -217,7 +218,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 
 	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 
-	return c.stream("POST", path, true, false, headers, nil, opts.OutputStream, nil)
+	return c.stream("POST", path, true, opts.RawJSONStream, headers, nil, opts.OutputStream, nil)
 }
 
 // PullImageOptions present the set of options available for pulling an image
