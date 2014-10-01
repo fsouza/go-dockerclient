@@ -266,6 +266,35 @@ func TestPushImage(t *testing.T) {
 	}
 }
 
+func TestPushImageWithRawJSON(t *testing.T) {
+	body := `
+	{"status":"Pushing..."}
+	{"status":"Pushing", "progress":"1/? (n/a)", "progressDetail":{"current":1}}}
+	{"status":"Image successfully pushed"}
+	`
+	fakeRT := &FakeRoundTripper{
+		message: body,
+		status:  http.StatusOK,
+		header: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+
+	err := client.PushImage(PushImageOptions{
+		Name:          "test",
+		OutputStream:  &buf,
+		RawJSONStream: true,
+	}, AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if buf.String() != body {
+		t.Errorf("PushImage: Wrong raw output. Want %q. Got %q.", body, buf.String())
+	}
+}
+
 func TestPushImageWithAuthentication(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "Pushing 1/100", status: http.StatusOK}
 	client := newTestClient(fakeRT)
