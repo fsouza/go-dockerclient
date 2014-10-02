@@ -19,7 +19,7 @@ func createTarStream(srcPath string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	//
+
 	if err := validateContextDirectory(srcPath, excludes); err != nil {
 		return nil, err
 	}
