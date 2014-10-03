@@ -14,7 +14,6 @@ import (
 )
 
 func createTarStream(srcPath string) (io.ReadCloser, error) {
-	// handle .dockerignore
 	excludes, err := parseDockerignore(srcPath)
 	if err != nil {
 		return nil, err
