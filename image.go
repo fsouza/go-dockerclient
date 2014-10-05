@@ -345,7 +345,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		opts.Name = opts.Remote
 	}
 	if opts.InputStream != nil || opts.ContextDir != "" {
-		headers = map[string]string{"Content-Type": "application/tar"}
+		headers["Content-Type"] = "application/tar"
 	} else if opts.Remote == "" {
 		return ErrMissingRepo
 	}
