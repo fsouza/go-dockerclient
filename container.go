@@ -636,7 +636,7 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 		return &NoSuchContainer{ID: opts.Container}
 	}
 	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
-	return c.hijack("POST", path, opts.Success, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream)
+	return c.hijack("POST", path, opts.Success, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream, nil)
 }
 
 // LogsOptions represents the set of options used when getting logs from a

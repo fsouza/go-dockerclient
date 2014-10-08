@@ -8,6 +8,7 @@ package docker
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -17,7 +18,6 @@ import (
 //
 // TODO: Add link to docs once Docker 1.3 is out
 type CreateExecOptions struct {
-	Detach       bool     `json:"Detach,omitempty" yaml:"Detach,omitempty"`
 	AttachStdin  bool     `json:"AttachStdin,omitempty" yaml:"AttachStdin,omitempty"`
 	AttachStdout bool     `json:"AttachStdout,omitempty" yaml:"AttachStdout,omitempty"`
 	AttachStderr bool     `json:"AttachStderr,omitempty" yaml:"AttachStderr,omitempty"`
@@ -31,7 +31,22 @@ type CreateExecOptions struct {
 // TODO: Add link to docs once Docker 1.3 is out
 type StartExecOptions struct {
 	Detach bool `json:"Detach,omitempty" yaml:"Detach,omitempty"`
-	Tty    bool `json:"Tty,omitempty" yaml:"Tty,omitempty"`
+
+	Tty bool `json:"Tty,omitempty" yaml:"Tty,omitempty"`
+
+	InputStream  io.Reader `qs:"-"`
+	OutputStream io.Writer `qs:"-"`
+	ErrorStream  io.Writer `qs:"-"`
+
+	// Use raw terminal? Usually true when the container contains a TTY.
+	RawTerminal bool `qs:"-"`
+
+	// If set, after a successful connect, a sentinel will be sent and then the
+	// client will block on receive before continuing.
+	//
+	// It must be an unbuffered channel. Using a buffered channel can lead
+	// to unexpected behavior.
+	Success chan struct{} `json:"-"`
 }
 
 type Exec struct {
@@ -67,14 +82,19 @@ func (c *Client) StartExec(id string, opts StartExecOptions) error {
 	}
 
 	path := "/exec/" + id + "/start"
-	_, status, err := c.do("POST", path, opts)
-	if status == http.StatusNotFound {
-		return &NoSuchExec{ID: id}
+
+	if opts.Detach {
+		_, status, err := c.do("POST", path, opts)
+		if status == http.StatusNotFound {
+			return &NoSuchExec{ID: id}
+		}
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		return c.hijack("POST", path, opts.Success, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream, opts)
 	}
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // TODO: Add link to docs once Docker 1.3 is out
