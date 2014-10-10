@@ -44,6 +44,14 @@ type DockerServer struct {
 	customHandlers map[string]http.Handler
 	handlerMutex   sync.RWMutex
 	cChan          chan<- *docker.Container
+	execStore      map[string]*execState
+}
+
+type execState struct {
+	container *docker.Container
+	id        string
+	running   bool
+	config    *docker.ExecConfig
 }
 
 // NewServer returns a new instance of the fake server, in standalone mode. Use
@@ -69,6 +77,7 @@ func NewServer(bind string, containerChan chan<- *docker.Container, hook func(*h
 		failures:       make(map[string]string),
 		customHandlers: make(map[string]http.Handler),
 		cChan:          containerChan,
+		execStore:      make(map[string]*execState, 0),
 	}
 	server.buildMuxer()
 	go http.Serve(listener, &server)
@@ -93,6 +102,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/containers/{id:.*}/unpause").Methods("POST").HandlerFunc(s.handlerWrapper(s.unpauseContainer))
 	s.mux.Path("/containers/{id:.*}/wait").Methods("POST").HandlerFunc(s.handlerWrapper(s.waitContainer))
 	s.mux.Path("/containers/{id:.*}/attach").Methods("POST").HandlerFunc(s.handlerWrapper(s.attachContainer))
+	s.mux.Path("/containers/{id:.*}/exec").Methods("POST").HandlerFunc(s.handlerWrapper(s.execContainer))
 	s.mux.Path("/containers/{id:.*}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.removeContainer))
 	s.mux.Path("/images/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.pullImage))
 	s.mux.Path("/build").Methods("POST").HandlerFunc(s.handlerWrapper(s.buildImage))
@@ -322,6 +332,47 @@ func (s *DockerServer) generateID() string {
 	var buf [16]byte
 	rand.Read(buf[:])
 	return fmt.Sprintf("%x", buf)
+}
+
+func (s *DockerServer) execContainer(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	container, _, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	var config docker.ExecConfig
+	defer r.Body.Close()
+	err = json.NewDecoder(r.Body).Decode(&config)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	execState := &execState{container, s.generateID(), false, &config}
+	s.cMut.Lock()
+	s.execStore[id] = execState
+	s.cMut.Unlock()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	var c = struct{ ID string }{ID: execState.id}
+	json.NewEncoder(w).Encode(c)
+}
+
+func (s *DockerServer) execStart(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	s.cMut.Lock()
+	execState, ok := s.execStore[id]
+	defer s.cMut.Unlock()
+	if !ok {
+		http.Error(w, fmt.Errorf("Exec with id: %s is not found", id).Error(), http.StatusNotFound)
+		return
+	}
+	if execState.running {
+		http.Error(w, fmt.Errorf("Exec with id: %s is already running", id).Error(), http.StatusBadRequest)
+		return
+	}
+	execState.running = true
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) {

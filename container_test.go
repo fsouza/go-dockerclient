@@ -1361,3 +1361,64 @@ func TestPassingNameOptToCreateContainerReturnsItInContainer(t *testing.T) {
 		t.Errorf("Container name expected to be TestCreateContainer, was %s", container.Name)
 	}
 }
+
+func TestExecCreate(t *testing.T) {
+	jsonContainer := `{"Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"}`
+	var expected struct{ Id string }
+	err := json.Unmarshal([]byte(jsonContainer), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	config := ExecConfig{Container: "test", Detach: true}
+	config.Cmd = []string{"bash"}
+	id, err := client.ExecCreate(&config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedId := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+	if id != expectedId {
+		t.Errorf("ExecCreate: wrong ID. Want %q. Got %q.", expectedId, id)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("ExecCreate: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	}
+	expectedURL, _ := url.Parse(client.getURL("/containers/test/exec"))
+	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+		t.Errorf("ExecCreate: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
+	}
+	var gotBody struct{ Id string }
+	err = json.NewDecoder(req.Body).Decode(&gotBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+func TestExecStart(t *testing.T) {
+	execId := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+	fakeRT := &FakeRoundTripper{status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	err := client.ExecStartInBackground(execId)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("ExecStart: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	}
+	expectedURL, _ := url.Parse(client.getURL("/exec/" + execId + "/start"))
+	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+		t.Errorf("ExecCreate: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
+	}
+	var gotBody struct{ Detach bool }
+	err = json.NewDecoder(req.Body).Decode(&gotBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !gotBody.Detach {
+		t.Fatal("Expected detach to be true in execConfig for ExecStartInBackground")
+	}
+}

@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -621,6 +622,54 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
 	return c.stream("GET", url, true, nil, nil, opts.OutputStream, nil)
+}
+
+// ExecConfig is the set of options that can be used when setting up an exec command.
+//
+// http://goo.gl/8izrzI
+type ExecConfig struct {
+	// The name of the container.
+	Container string
+	// Use tty
+	Tty bool
+	// Attach to stdin.
+	AttachStdin bool
+	// Attach to stderr.
+	AttachStderr bool
+	// Attach to stdout.
+	AttachStdout bool
+	// Detached mode. Specify this only when not specifying any Attach* options.
+	Detach bool
+	// The cmd to be run as part of exec.
+	Cmd []string
+}
+
+// ExecCreate sets up an exec command in an active container. It does not start the exec command.
+//
+// http://goo.gl/8izrzI
+func (c *Client) ExecCreate(execConfig *ExecConfig) (string, error) {
+	body, _, err := c.do("POST", path.Join("/containers", execConfig.Container, "exec"), *execConfig)
+	if err != nil {
+		return "", err
+	}
+
+	var r struct{ Id string }
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		return "", err
+	}
+
+	return r.Id, nil
+}
+
+// ExecStartInBackground runs an exec command referred to by 'id'. 'Detach' option must have been set to true as part of ExecConfig while setting up the exec command.
+//
+// http://goo.gl/rTWQNf
+func (c *Client) ExecStartInBackground(id string) error {
+	execConfig := ExecConfig{Detach: true}
+	_, _, err := c.do("POST", path.Join("/exec", id, "start"), execConfig)
+
+	return err
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.
