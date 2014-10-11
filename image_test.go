@@ -819,3 +819,41 @@ func TestExportImage(t *testing.T) {
 		t.Errorf("ExportIMage: wrong path. Expected %q. Got %q.", expectedPath, req.URL.Path)
 	}
 }
+
+func TestSearchImages(t *testing.T) {
+	body := `[
+	{
+		"description":"A container with Cassandra 2.0.3",
+		"is_official":false,"is_trusted":true,
+		"name":"poklet/cassandra",
+		"star_count":17
+	},
+	{
+		"description":"Cassandra images optimized for fast startup",
+		"is_official":false,
+		"is_trusted":true,
+		"name":"spotify/cassandra",
+		"star_count":9
+	},
+	{
+		"description":"No hassle Cassandra 2.1.0 (single or clustered).",
+		"is_official":false,
+		"is_trusted":true,
+		"name":"abh1nav/cassandra",
+		"star_count":6
+	}
+]`
+	var expected []APIImageSearch
+	err := json.Unmarshal([]byte(body), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
+	result, err := client.SearchImages("cassandra")
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("SearchImages: Wrong return value. Want %#v. Got %#v.", expected, result)
+	}
+}
