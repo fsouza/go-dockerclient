@@ -110,7 +110,9 @@ func (c *Client) ResizeExecTTY(id string, height, width int) error {
 	params := make(url.Values)
 	params.Set("h", strconv.Itoa(height))
 	params.Set("w", strconv.Itoa(width))
-	_, _, err := c.do("POST", "/exec/"+id+"/resize?"+params.Encode(), nil)
+
+	path := fmt.Sprintf("/exec/%s/resize?%s", id, params.Encode())
+	_, _, err := c.do("POST", path, nil)
 	return err
 }
 
