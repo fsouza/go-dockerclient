@@ -17,7 +17,7 @@ import (
 
 // CreateExecOptions specify parameters to the CreateExecContainer function.
 //
-// TODO: Add link to docs once Docker 1.3 is out
+// See http://goo.gl/8izrzI for more details
 type CreateExecOptions struct {
 	AttachStdin  bool     `json:"AttachStdin,omitempty" yaml:"AttachStdin,omitempty"`
 	AttachStdout bool     `json:"AttachStdout,omitempty" yaml:"AttachStdout,omitempty"`
@@ -29,7 +29,7 @@ type CreateExecOptions struct {
 
 // StartExecOptions specify parameters to the StartExecContainer function.
 //
-// TODO: Add link to docs once Docker 1.3 is out
+// See http://goo.gl/JW8Lxl for more details
 type StartExecOptions struct {
 	Detach bool `json:"Detach,omitempty" yaml:"Detach,omitempty"`
 
@@ -57,7 +57,7 @@ type Exec struct {
 // CreateExec sets up an exec instance in a running container `id`, returning the exec
 // instance, or an error in case of failure.
 //
-// TODO: Add link to docs once Docker 1.3 is out
+// See http://goo.gl/8izrzI for more details
 func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
 	path := fmt.Sprintf("/containers/%s/exec", opts.Container)
 	body, status, err := c.do("POST", path, opts)
@@ -80,7 +80,7 @@ func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
 // after starting the exec command. Otherwise, it sets up an interactive session
 // with the exec command.
 //
-// TODO: Add link to docs once Docker 1.3 is out
+// See http://goo.gl/JW8Lxl for more details
 func (c *Client) StartExec(id string, opts StartExecOptions) error {
 	if id == "" {
 		return &NoSuchExec{ID: id}
@@ -105,7 +105,7 @@ func (c *Client) StartExec(id string, opts StartExecOptions) error {
 // Resizes the tty session used by the exec command id. This API is valid only
 // if Tty was specified as part of creating and starting the exec command.
 //
-// TODO: Add link to docs once Docker 1.3 is out
+// See http://goo.gl/YDSx1f for more details
 func (c *Client) ResizeExecTTY(id string, height, width int) error {
 	params := make(url.Values)
 	params.Set("h", strconv.Itoa(height))
