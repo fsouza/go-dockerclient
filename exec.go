@@ -8,6 +8,7 @@ package docker
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -58,7 +59,7 @@ type Exec struct {
 //
 // TODO: Add link to docs once Docker 1.3 is out
 func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
-	path := "/containers/" + opts.Container + "/exec"
+	path := fmt.Sprintf("/containers/%s/exec", opts.Container)
 	body, status, err := c.do("POST", path, opts)
 	if status == http.StatusNotFound {
 		return nil, &NoSuchContainer{ID: opts.Container}
@@ -76,7 +77,7 @@ func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
 }
 
 // Starts a previously set up exec instance id. If opts.Detach is true, it returns
-// after starting the exec command. Otherwise, it sets up an interactive session 
+// after starting the exec command. Otherwise, it sets up an interactive session
 // with the exec command.
 //
 // TODO: Add link to docs once Docker 1.3 is out
@@ -85,7 +86,7 @@ func (c *Client) StartExec(id string, opts StartExecOptions) error {
 		return &NoSuchExec{ID: id}
 	}
 
-	path := "/exec/" + id + "/start"
+	path := fmt.Sprintf("/exec/%s/start", id)
 
 	if opts.Detach {
 		_, status, err := c.do("POST", path, opts)
@@ -101,7 +102,7 @@ func (c *Client) StartExec(id string, opts StartExecOptions) error {
 	return c.hijack("POST", path, opts.Success, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream, opts)
 }
 
-// Resizes the tty session used by the exec command id. This API is valid only 
+// Resizes the tty session used by the exec command id. This API is valid only
 // if Tty was specified as part of creating and starting the exec command.
 //
 // TODO: Add link to docs once Docker 1.3 is out
