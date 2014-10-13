@@ -393,11 +393,11 @@ func isURL(u string) bool {
 //
 // See http://goo.gl/xI5lLZ for more details.
 type APIImageSearch struct {
-	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
-	IsOfficial  bool   `json:"IsOfficial,omitempty" yaml:"IsOfficial,omitempty"`
-	IsAutomated bool   `json:"IsAutomated,omitempty" yaml:"IsAutomated,omitempty"`
-	Name        string `json:"Name,omitempty" yaml:"Name,omitempty"`
-	StarCount   int    `json:"StarCount,omitempty" yaml:"StarCount,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	IsOfficial  bool   `json:"is_official,omitempty" yaml:"is_official,omitempty"`
+	IsAutomated bool   `json:"is_automated,omitempty" yaml:"is_automated,omitempty"`
+	Name        string `json:"name,omitempty" yaml:"name,omitempty"`
+	StarCount   int    `json:"star_count,omitempty" yaml:"star_count,omitempty"`
 }
 
 // SearchImages search the docker hub with a specific given term.

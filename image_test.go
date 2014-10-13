@@ -824,23 +824,25 @@ func TestSearchImages(t *testing.T) {
 	body := `[
 	{
 		"description":"A container with Cassandra 2.0.3",
-		"is_official":false,"is_trusted":true,
+		"is_official":true,
+		"is_automated":true,
 		"name":"poklet/cassandra",
 		"star_count":17
 	},
 	{
-		"description":"Cassandra images optimized for fast startup",
-		"is_official":false,
-		"is_trusted":true,
-		"name":"spotify/cassandra",
-		"star_count":9
-	},
+		"description":"A container with Cassandra 2.0.3",
+		"is_official":true,
+		"is_automated":false,
+		"name":"poklet/cassandra",
+		"star_count":17
+	}
+	,
 	{
-		"description":"No hassle Cassandra 2.1.0 (single or clustered).",
+		"description":"A container with Cassandra 2.0.3",
 		"is_official":false,
-		"is_trusted":true,
-		"name":"abh1nav/cassandra",
-		"star_count":6
+		"is_automated":true,
+		"name":"poklet/cassandra",
+		"star_count":17
 	}
 ]`
 	var expected []APIImageSearch
