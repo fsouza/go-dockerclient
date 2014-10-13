@@ -75,6 +75,10 @@ func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
 	return &exec, nil
 }
 
+// Starts a previously set up exec instance id. If opts.Detach is true, it returns
+// after starting the exec command. Otherwise, it sets up an interactive session 
+// with the exec command.
+//
 // TODO: Add link to docs once Docker 1.3 is out
 func (c *Client) StartExec(id string, opts StartExecOptions) error {
 	if id == "" {
@@ -97,6 +101,9 @@ func (c *Client) StartExec(id string, opts StartExecOptions) error {
 	}
 }
 
+// Resizes the tty session used by the exec command id. This API is valid only 
+// if Tty was specified as part of creating and starting the exec command.
+//
 // TODO: Add link to docs once Docker 1.3 is out
 func (c *Client) ResizeExecTTY(id string, height, width int) error {
 	params := make(url.Values)
