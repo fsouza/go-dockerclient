@@ -388,3 +388,30 @@ func isURL(u string) bool {
 	}
 	return p.Scheme == "http" || p.Scheme == "https"
 }
+
+// APIImageSearch reflect the result of a search on the dockerHub
+//
+// See http://goo.gl/xI5lLZ for more details.
+type APIImageSearch struct {
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	IsOfficial  bool   `json:"is_official,omitempty" yaml:"is_official,omitempty"`
+	IsAutomated bool   `json:"is_automated,omitempty" yaml:"is_automated,omitempty"`
+	Name        string `json:"name,omitempty" yaml:"name,omitempty"`
+	StarCount   int    `json:"star_count,omitempty" yaml:"star_count,omitempty"`
+}
+
+// SearchImages search the docker hub with a specific given term.
+//
+// See http://goo.gl/xI5lLZ for more details.
+func (c *Client) SearchImages(term string) ([]APIImageSearch, error) {
+	body, _, err := c.do("GET", "/images/search?term="+term, nil)
+	if err != nil {
+		return nil, err
+	}
+	var searchResult []APIImageSearch
+	err = json.Unmarshal(body, &searchResult)
+	if err != nil {
+		return nil, err
+	}
+	return searchResult, nil
+}
