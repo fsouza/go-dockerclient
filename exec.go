@@ -96,9 +96,9 @@ func (c *Client) StartExec(id string, opts StartExecOptions) error {
 			return err
 		}
 		return nil
-	} else {
-		return c.hijack("POST", path, opts.Success, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream, opts)
 	}
+
+	return c.hijack("POST", path, opts.Success, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream, opts)
 }
 
 // Resizes the tty session used by the exec command id. This API is valid only 
