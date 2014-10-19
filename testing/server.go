@@ -90,6 +90,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/containers/{id:.*}/json").Methods("GET").HandlerFunc(s.handlerWrapper(s.inspectContainer))
 	s.mux.Path("/containers/{id:.*}/top").Methods("GET").HandlerFunc(s.handlerWrapper(s.topContainer))
 	s.mux.Path("/containers/{id:.*}/start").Methods("POST").HandlerFunc(s.handlerWrapper(s.startContainer))
+	s.mux.Path("/containers/{id:.*}/kill").Methods("POST").HandlerFunc(s.handlerWrapper(s.stopContainer))
 	s.mux.Path("/containers/{id:.*}/stop").Methods("POST").HandlerFunc(s.handlerWrapper(s.stopContainer))
 	s.mux.Path("/containers/{id:.*}/pause").Methods("POST").HandlerFunc(s.handlerWrapper(s.pauseContainer))
 	s.mux.Path("/containers/{id:.*}/unpause").Methods("POST").HandlerFunc(s.handlerWrapper(s.unpauseContainer))
@@ -269,8 +270,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	image, err := s.findImage(config.Image)
-	if err != nil {
+	if _, err := s.findImage(config.Image); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -305,7 +305,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 			ExitCode:  0,
 			StartedAt: time.Now(),
 		},
-		Image: image,
+		Image: config.Image,
 		NetworkSettings: &docker.NetworkSettings{
 			IPAddress:   fmt.Sprintf("172.16.42.%d", mathrand.Int()%250+2),
 			IPPrefixLen: 24,

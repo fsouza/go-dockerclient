@@ -473,6 +473,23 @@ func TestStopContainer(t *testing.T) {
 	}
 }
 
+func TestKillContainer(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.containers[0].State.Running = true
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/kill", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("KillContainer: wrong status code. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	if server.containers[0].State.Running {
+		t.Error("KillContainer: did not stop the container")
+	}
+}
+
 func TestStopContainerWithNotifyChannel(t *testing.T) {
 	ch := make(chan *docker.Container, 1)
 	server := DockerServer{}
