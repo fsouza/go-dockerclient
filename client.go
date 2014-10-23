@@ -132,6 +132,18 @@ func NewClient(endpoint string) (*Client, error) {
 	return client, nil
 }
 
+// NewClient returns a Client instance ready for SSL communications with the givens
+// server endpoint, key and certificates . It will use the latest remote API version
+// available in the server.
+func NewTLSClient(endpoint string, cert, key string) (*Client, error) {
+	client, err := NewVersionnedTLSClient(endpoint, cert, key, "")
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
+}
+
 // NewVersionedClient returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version.
 func NewVersionedClient(endpoint string, apiVersionString string) (*Client, error) {
@@ -148,6 +160,40 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	}
 	return &Client{
 		HTTPClient:          http.DefaultClient,
+		endpoint:            endpoint,
+		endpointURL:         u,
+		eventMonitor:        new(eventMonitoringState),
+		requestedApiVersion: requestedApiVersion,
+	}, nil
+}
+
+// NewClient returns a Client instance ready for SSL communications with the givens
+// server endpoint, key and certificates, using a specific remote API version.
+func NewVersionnedTLSClient(endpoint string, cert, key, apiVersionString string) (*Client, error) {
+	u, err := parseEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	var requestedApiVersion ApiVersion
+	if cert == "" || key == "" {
+		return nil, errors.New("Both cert and key path are required")
+	}
+	tlsCert, err := tls.LoadX509KeyPair(cert, key)
+	if err != nil {
+		return nil, err
+	}
+	tlsConfig := &tls.Config{
+		Certificates:       []tls.Certificate{tlsCert},
+		InsecureSkipVerify: true,
+	}
+	tr := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		HTTPClient:          &http.Client{Transport: tr},
 		endpoint:            endpoint,
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
