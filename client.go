@@ -436,9 +436,8 @@ func (c *Client) getURL(path string) string {
 
 	if c.requestedApiVersion != nil {
 		return fmt.Sprintf("%s/v%s%s", urlStr, c.requestedApiVersion, path)
-	} else {
-		return fmt.Sprintf("%s%s", urlStr, path)
 	}
+	return fmt.Sprintf("%s%s", urlStr, path)
 }
 
 type jsonMessage struct {
