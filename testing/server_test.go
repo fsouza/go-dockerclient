@@ -120,6 +120,7 @@ func TestListContainers(t *testing.T) {
 			Created: container.Created.Unix(),
 			Status:  container.State.String(),
 			Ports:   container.NetworkSettings.PortMappingAPI(),
+			Names:   []string{container.Name},
 		}
 	}
 	var got []docker.APIContainers
@@ -794,6 +795,7 @@ func addContainers(server *DockerServer, n int) {
 	for i := 0; i < n; i++ {
 		date := time.Now().Add(time.Duration((rand.Int() % (i + 1))) * time.Hour)
 		container := docker.Container{
+			Name:    fmt.Sprintf("%x", rand.Int()%10000),
 			ID:      fmt.Sprintf("%x", rand.Int()%10000),
 			Created: date,
 			Path:    "ls",
