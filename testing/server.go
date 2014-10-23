@@ -559,8 +559,10 @@ func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 	}
 	//we did not use that Dockerfile to build image cause we are a fake Docker daemon
 	image := docker.Image{
-		ID: s.generateID(),
+		ID:      s.generateID(),
+		Created: time.Now(),
 	}
+
 	query := r.URL.Query()
 	repository := image.ID
 	if t := query.Get("t"); t != "" {
