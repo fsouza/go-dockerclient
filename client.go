@@ -191,7 +191,7 @@ func NewVersionnedTLSClient(endpoint string, cert, key, apiVersionString string)
 	}
 	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{tlsCert},
-		InsecureSkipVerify: false,
+		InsecureSkipVerify: true,
 	}
 	tr := &http.Transport{
 		TLSClientConfig: tlsConfig,
