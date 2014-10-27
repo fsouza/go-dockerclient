@@ -47,8 +47,9 @@ func TestNewAPIClient(t *testing.T) {
 func TestNewTSLAPIClient(t *testing.T) {
 	certPath := "testing/data/cert.pem"
 	keyPath := "testing/data/key.pem"
+	caPath := "testing/data/ca.pem"
 	endpoint := "https://localhost:4243"
-	client, err := NewTLSClient(endpoint, certPath, keyPath)
+	client, err := NewTLSClient(endpoint, certPath, keyPath, caPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,8 +87,9 @@ func TestNewVersionedClient(t *testing.T) {
 func TestNewTLSVersionedClient(t *testing.T) {
 	certPath := "testing/data/cert.pem"
 	keyPath := "testing/data/key.pem"
+	caPath := "testing/data/ca.pem"
 	endpoint := "https://localhost:4243"
-	client, err := NewVersionnedTLSClient(endpoint, certPath, keyPath, "1.14")
+	client, err := NewVersionnedTLSClient(endpoint, certPath, keyPath, caPath, "1.14")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,6 +101,17 @@ func TestNewTLSVersionedClient(t *testing.T) {
 	}
 	if client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be false, got true")
+	}
+}
+
+func TestNewTLSVersionedClientInvalidCA(t *testing.T) {
+	certPath := "testing/data/cert.pem"
+	keyPath := "testing/data/key.pem"
+	caPath := "testing/data/key.pem"
+	endpoint := "https://localhost:4243"
+	_, err := NewVersionnedTLSClient(endpoint, certPath, keyPath, caPath, "1.14")
+	if err == nil {
+		t.Errorf("Expected invalid ca at %s", caPath)
 	}
 }
 

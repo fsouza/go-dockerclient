@@ -10,6 +10,7 @@ package docker
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -136,8 +137,8 @@ func NewClient(endpoint string) (*Client, error) {
 // NewClient returns a Client instance ready for SSL communications with the givens
 // server endpoint, key and certificates . It will use the latest remote API version
 // available in the server.
-func NewTLSClient(endpoint string, cert, key string) (*Client, error) {
-	client, err := NewVersionnedTLSClient(endpoint, cert, key, "")
+func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
+	client, err := NewVersionnedTLSClient(endpoint, cert, key, ca, "")
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +171,7 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 
 // NewClient returns a Client instance ready for SSL communications with the givens
 // server endpoint, key and certificates, using a specific remote API version.
-func NewVersionnedTLSClient(endpoint string, cert, key, apiVersionString string) (*Client, error) {
+func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
 	u, err := parseEndpoint(endpoint)
 	if err != nil {
 		return nil, err
@@ -189,9 +190,17 @@ func NewVersionnedTLSClient(endpoint string, cert, key, apiVersionString string)
 	if err != nil {
 		return nil, err
 	}
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{tlsCert},
-		InsecureSkipVerify: true,
+	tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert}}
+	if ca != "" {
+		cert, err := ioutil.ReadFile(ca)
+		if err != nil {
+			return nil, err
+		}
+		caPool := x509.NewCertPool()
+		if !caPool.AppendCertsFromPEM(cert) {
+			return nil, errors.New("Could not add RootCA pem")
+		}
+		tlsConfig.RootCAs = caPool
 	}
 	tr := &http.Transport{
 		TLSClientConfig: tlsConfig,
