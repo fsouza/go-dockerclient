@@ -120,6 +120,7 @@ func TestListContainers(t *testing.T) {
 			Created: container.Created.Unix(),
 			Status:  container.State.String(),
 			Ports:   container.NetworkSettings.PortMappingAPI(),
+			Names:   []string{"/" + container.Name},
 		}
 	}
 	var got []docker.APIContainers
@@ -473,6 +474,23 @@ func TestStopContainer(t *testing.T) {
 	}
 }
 
+func TestKillContainer(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.containers[0].State.Running = true
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/kill", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("KillContainer: wrong status code. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	if server.containers[0].State.Running {
+		t.Error("KillContainer: did not stop the container")
+	}
+}
+
 func TestStopContainerWithNotifyChannel(t *testing.T) {
 	ch := make(chan *docker.Container, 1)
 	server := DockerServer{}
@@ -777,6 +795,7 @@ func addContainers(server *DockerServer, n int) {
 	for i := 0; i < n; i++ {
 		date := time.Now().Add(time.Duration((rand.Int() % (i + 1))) * time.Hour)
 		container := docker.Container{
+			Name:    fmt.Sprintf("%x", rand.Int()%10000),
 			ID:      fmt.Sprintf("%x", rand.Int()%10000),
 			Created: date,
 			Path:    "ls",
