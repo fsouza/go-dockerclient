@@ -403,7 +403,11 @@ func headersWithAuth(auth *AuthConfiguration) map[string]string {
 	}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(*auth)
-
 	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+
+	if registryConfig := os.Getenv("DOCKER_X_REGISTRY_CONFIG"); registryConfig != "" {
+		headers["X-Registry-Config"] = registryConfig
+	}
+
 	return headers
 }
