@@ -120,7 +120,7 @@ func TestListContainers(t *testing.T) {
 			Created: container.Created.Unix(),
 			Status:  container.State.String(),
 			Ports:   container.NetworkSettings.PortMappingAPI(),
-			Names:   []string{container.Name},
+			Names:   []string{"/" + container.Name},
 		}
 	}
 	var got []docker.APIContainers
