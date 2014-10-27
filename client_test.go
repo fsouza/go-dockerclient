@@ -44,6 +44,25 @@ func TestNewAPIClient(t *testing.T) {
 	}
 }
 
+func TestNewTSLAPIClient(t *testing.T) {
+	certPath := "testing/data/cert.pem"
+	keyPath := "testing/data/key.pem"
+	endpoint := "https://localhost:4243"
+	client, err := NewTLSClient(endpoint, certPath, keyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	}
+	if !client.SkipServerVersionCheck {
+		t.Error("Expected SkipServerVersionCheck to be true, got false")
+	}
+	if client.requestedApiVersion != nil {
+		t.Errorf("Expected requestedApiVersion to be nil, got %#v.", client.requestedApiVersion)
+	}
+}
+
 func TestNewVersionedClient(t *testing.T) {
 	endpoint := "http://localhost:4243"
 	client, err := NewVersionedClient(endpoint, "1.12")
@@ -58,6 +77,25 @@ func TestNewVersionedClient(t *testing.T) {
 	}
 	if reqVersion := client.requestedApiVersion.String(); reqVersion != "1.12" {
 		t.Errorf("Wrong requestApiVersion. Want %q. Got %q.", "1.12", reqVersion)
+	}
+	if client.SkipServerVersionCheck {
+		t.Error("Expected SkipServerVersionCheck to be false, got true")
+	}
+}
+
+func TestNewTLSVersionedClient(t *testing.T) {
+	certPath := "testing/data/cert.pem"
+	keyPath := "testing/data/key.pem"
+	endpoint := "https://localhost:4243"
+	client, err := NewVersionnedTLSClient(endpoint, certPath, keyPath, "1.14")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	}
+	if reqVersion := client.requestedApiVersion.String(); reqVersion != "1.14" {
+		t.Errorf("Wrong requestApiVersion. Want %q. Got %q.", "1.14", reqVersion)
 	}
 	if client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be false, got true")

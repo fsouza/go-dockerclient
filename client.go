@@ -176,6 +176,12 @@ func NewVersionnedTLSClient(endpoint string, cert, key, apiVersionString string)
 		return nil, err
 	}
 	var requestedApiVersion ApiVersion
+	if strings.Contains(apiVersionString, ".") {
+		requestedApiVersion, err = NewApiVersion(apiVersionString)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if cert == "" || key == "" {
 		return nil, errors.New("Both cert and key path are required")
 	}
@@ -185,7 +191,7 @@ func NewVersionnedTLSClient(endpoint string, cert, key, apiVersionString string)
 	}
 	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{tlsCert},
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false,
 	}
 	tr := &http.Transport{
 		TLSClientConfig: tlsConfig,
