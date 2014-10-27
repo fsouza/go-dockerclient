@@ -211,7 +211,7 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 				Created: container.Created.Unix(),
 				Status:  container.State.String(),
 				Ports:   container.NetworkSettings.PortMappingAPI(),
-				Names:   []string{container.Name},
+				Names:   []string{fmt.Sprintf("/%s", container.Name)},
 			}
 		}
 	}
