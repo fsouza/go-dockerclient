@@ -81,7 +81,7 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 	}
 }
 
-func TestBuildImageSendXRegistryConfigFromEnv(t *testing.T) {
+func TestBuildImageSendXRegistryConfig(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
@@ -93,22 +93,31 @@ func TestBuildImageSendXRegistryConfigFromEnv(t *testing.T) {
 		ForceRmTmpContainer: true,
 		OutputStream:        &buf,
 		ContextDir:          "testing/data",
+		AuthConfigs: AuthConfigurations{
+			Configs: map[string]AuthConfiguration{
+				"quay.io": AuthConfiguration{
+					Username:      "foo",
+					Password:      "bar",
+					Email:         "baz",
+					ServerAddress: "quay.io",
+				},
+			},
+		},
 	}
 
-	if err := os.Setenv("DOCKER_X_REGISTRY_CONFIG", "foobarbaz"); err != nil {
+	encodedConfig := "eyJjb25maWdzIjp7InF1YXkuaW8iOnsidXNlcm5hbWUiOiJmb28iLCJwYXNzd29yZCI6ImJhciIsImVtYWlsIjoiYmF6Iiwic2VydmVyYWRkcmVzcyI6InF1YXkuaW8ifX19Cg=="
+
+	if err := client.BuildImage(opts); err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		if err := os.Setenv("DOCKER_X_REGISTRY_CONFIG", ""); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	err := client.BuildImage(opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if fakeRT.requests[0].Header["X-Registry-Config"][0] != "foobarbaz" {
-		t.Errorf("BuildImage: X-Registry-Config not correctly set from the environment")
+
+	xRegistryConfig := fakeRT.requests[0].Header["X-Registry-Config"][0]
+	if xRegistryConfig != encodedConfig {
+		t.Errorf(
+			"BuildImage: X-Registry-Config not set currectly: expected %q, got %q",
+			encodedConfig,
+			xRegistryConfig,
+		)
 	}
 }
 

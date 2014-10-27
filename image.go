@@ -198,9 +198,16 @@ type PushImageOptions struct {
 // AuthConfiguration represents authentication options to use in the PushImage
 // method. It represents the authentication in the Docker index server.
 type AuthConfiguration struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-	Email    string `json:"email,omitempty"`
+	Username      string `json:"username,omitempty"`
+	Password      string `json:"password,omitempty"`
+	Email         string `json:"email,omitempty"`
+	ServerAddress string `json:"serveraddress,omitempty"`
+}
+
+// AuthConfigurations represents authentication options to use for the
+// PushImage method accommodating the new X-Registry-Config header
+type AuthConfigurations struct {
+	Configs map[string]AuthConfiguration `json:"configs"`
 }
 
 // PushImage pushes an image to a remote registry, logging progress to w.
@@ -216,7 +223,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	name := opts.Name
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
-	headers := headersWithAuth(&auth)
+	headers := headersWithAuth(auth)
 	return c.stream("POST", path, true, opts.RawJSONStream, headers, nil, opts.OutputStream, nil)
 }
 
@@ -240,7 +247,7 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 		return ErrNoSuchImage
 	}
 
-	headers := headersWithAuth(&auth)
+	headers := headersWithAuth(auth)
 	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
 }
 
@@ -319,17 +326,18 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 // For more details about the Docker building process, see
 // http://goo.gl/tlPXPu.
 type BuildImageOptions struct {
-	Name                string            `qs:"t"`
-	NoCache             bool              `qs:"nocache"`
-	SuppressOutput      bool              `qs:"q"`
-	RmTmpContainer      bool              `qs:"rm"`
-	ForceRmTmpContainer bool              `qs:"forcerm"`
-	InputStream         io.Reader         `qs:"-"`
-	OutputStream        io.Writer         `qs:"-"`
-	RawJSONStream       bool              `qs:"-"`
-	Remote              string            `qs:"remote"`
-	Auth                AuthConfiguration `qs:"-"` // for older docker X-Registry-Auth header
-	ContextDir          string            `qs:"-"`
+	Name                string             `qs:"t"`
+	NoCache             bool               `qs:"nocache"`
+	SuppressOutput      bool               `qs:"q"`
+	RmTmpContainer      bool               `qs:"rm"`
+	ForceRmTmpContainer bool               `qs:"forcerm"`
+	InputStream         io.Reader          `qs:"-"`
+	OutputStream        io.Writer          `qs:"-"`
+	RawJSONStream       bool               `qs:"-"`
+	Remote              string             `qs:"remote"`
+	Auth                AuthConfiguration  `qs:"-"` // for older docker X-Registry-Auth header
+	AuthConfigs         AuthConfigurations `qs:"-"` // for newer docker X-Registry-Config header
+	ContextDir          string             `qs:"-"`
 }
 
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
@@ -340,7 +348,8 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	if opts.OutputStream == nil {
 		return ErrMissingOutputStream
 	}
-	var headers = headersWithAuth(&opts.Auth)
+	var headers = headersWithAuth(opts.Auth, opts.AuthConfigs)
+
 	if opts.Remote != "" && opts.Name == "" {
 		opts.Name = opts.Remote
 	}
@@ -396,17 +405,20 @@ func isURL(u string) bool {
 	return p.Scheme == "http" || p.Scheme == "https"
 }
 
-func headersWithAuth(auth *AuthConfiguration) map[string]string {
+func headersWithAuth(auths ...interface{}) map[string]string {
 	var headers = make(map[string]string)
-	if auth == nil {
-		return headers
-	}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(*auth)
-	headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 
-	if registryConfig := os.Getenv("DOCKER_X_REGISTRY_CONFIG"); registryConfig != "" {
-		headers["X-Registry-Config"] = registryConfig
+	for _, auth := range auths {
+		switch auth.(type) {
+		case AuthConfiguration:
+			var buf bytes.Buffer
+			json.NewEncoder(&buf).Encode(auth)
+			headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+		case AuthConfigurations:
+			var buf bytes.Buffer
+			json.NewEncoder(&buf).Encode(auth)
+			headers["X-Registry-Config"] = base64.URLEncoding.EncodeToString(buf.Bytes())
+		}
 	}
 
 	return headers
