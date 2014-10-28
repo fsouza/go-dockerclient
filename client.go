@@ -134,7 +134,7 @@ func NewClient(endpoint string) (*Client, error) {
 	return client, nil
 }
 
-// NewClient returns a Client instance ready for SSL communications with the givens
+// NewTLSClient returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates . It will use the latest remote API version
 // available in the server.
 func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
@@ -169,7 +169,7 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	}, nil
 }
 
-// NewClient returns a Client instance ready for SSL communications with the givens
+// NewVersionnedTLSClient returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates, using a specific remote API version.
 func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
 	u, err := parseEndpoint(endpoint)
