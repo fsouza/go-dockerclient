@@ -59,10 +59,11 @@ func TestSortByCreatedDescending(t *testing.T) {
 		t.Fatal(err)
 	}
 	sort.Sort(ByCreatedDescending(images))
-	if images[0].ID != "8dbd9e392a964c" {
+	expectedID := "8dbd9e392a964c"
+	if images[0].ID != expectedID {
 		t.Errorf(
 			"wrong image is first when sorting by created descending: expected %q, got %q",
-			"8dbd9e392a964c",
+			expectedID,
 			images[0].ID,
 		)
 
@@ -81,10 +82,11 @@ func TestSortByCreatedAscending(t *testing.T) {
 		t.Fatal(err)
 	}
 	sort.Sort(ByCreatedAscending(images))
-	if images[0].ID != "b750fe79269d" {
+	expectedID := "b750fe79269d"
+	if images[0].ID != expectedID {
 		t.Errorf(
 			"wrong image is first when sorting by created ascending: expected %q, got %q",
-			"b750fe79269d",
+			expectedID,
 			images[0].ID,
 		)
 
