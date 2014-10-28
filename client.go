@@ -9,6 +9,8 @@ package docker
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -132,6 +134,18 @@ func NewClient(endpoint string) (*Client, error) {
 	return client, nil
 }
 
+// NewTLSClient returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates . It will use the latest remote API version
+// available in the server.
+func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
+	client, err := NewVersionnedTLSClient(endpoint, cert, key, ca, "")
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
+}
+
 // NewVersionedClient returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version.
 func NewVersionedClient(endpoint string, apiVersionString string) (*Client, error) {
@@ -148,6 +162,54 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	}
 	return &Client{
 		HTTPClient:          http.DefaultClient,
+		endpoint:            endpoint,
+		endpointURL:         u,
+		eventMonitor:        new(eventMonitoringState),
+		requestedApiVersion: requestedApiVersion,
+	}, nil
+}
+
+// NewVersionnedTLSClient returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates, using a specific remote API version.
+func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
+	u, err := parseEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	var requestedApiVersion ApiVersion
+	if strings.Contains(apiVersionString, ".") {
+		requestedApiVersion, err = NewApiVersion(apiVersionString)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if cert == "" || key == "" {
+		return nil, errors.New("Both cert and key path are required")
+	}
+	tlsCert, err := tls.LoadX509KeyPair(cert, key)
+	if err != nil {
+		return nil, err
+	}
+	tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert}}
+	if ca != "" {
+		cert, err := ioutil.ReadFile(ca)
+		if err != nil {
+			return nil, err
+		}
+		caPool := x509.NewCertPool()
+		if !caPool.AppendCertsFromPEM(cert) {
+			return nil, errors.New("Could not add RootCA pem")
+		}
+		tlsConfig.RootCAs = caPool
+	}
+	tr := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		HTTPClient:          &http.Client{Transport: tr},
 		endpoint:            endpoint,
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
