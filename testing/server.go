@@ -279,7 +279,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 	ports := map[docker.Port][]docker.PortBinding{}
 	for port := range config.ExposedPorts {
 		ports[port] = []docker.PortBinding{{
-			HostIp:   "0.0.0.0",
+			HostIP:   "0.0.0.0",
 			HostPort: strconv.Itoa(mathrand.Int() % 65536),
 		}}
 	}
