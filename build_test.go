@@ -71,7 +71,15 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 		foundFiles = append(foundFiles, file.Name())
 	}
 
-	expectedFiles := []string{".dockerignore", "Dockerfile", "barfile", "symlink"}
+	expectedFiles := []string{
+	  ".dockerignore",
+	  "Dockerfile",
+	  "barfile",
+	  "ca.pem",
+	  "cert.pem",
+	  "key.pem",
+	  "symlink",
+	}
 
 	if !reflect.DeepEqual(expectedFiles, foundFiles) {
 		t.Errorf(
