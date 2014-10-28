@@ -174,8 +174,8 @@ func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Returns default http.Handler mux, it allows customHandlers to call the
-// default behavior if wanted.
+// DefaultHandler returns default http.Handler mux, it allows customHandlers to
+// call the default behavior if wanted.
 func (s *DockerServer) DefaultHandler() http.Handler {
 	return s.mux
 }

@@ -25,9 +25,10 @@ type APIImages struct {
 	Created     int64    `json:"Created,omitempty" yaml:"Created,omitempty"`
 	Size        int64    `json:"Size,omitempty" yaml:"Size,omitempty"`
 	VirtualSize int64    `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty"`
-	ParentId    string   `json:"ParentId,omitempty" yaml:"ParentId,omitempty"`
+	ParentID    string   `json:"ParentId,omitempty" yaml:"ParentId,omitempty"`
 }
 
+// Image is the type representing a docker image and its various properties
 type Image struct {
 	ID              string    `json:"Id" yaml:"Id"`
 	Parent          string    `json:"Parent,omitempty" yaml:"Parent,omitempty"`
@@ -52,6 +53,8 @@ type ImageHistory struct {
 	Size      int64    `json:"Size,omitempty" yaml:"Size,omitempty"`
 }
 
+// ImagePre012 serves the same purpose as the Image type except that it is for
+// earlier versions of the Docker API (pre-012 to be specific)
 type ImagePre012 struct {
 	ID              string    `json:"id"`
 	Parent          string    `json:"parent,omitempty"`
@@ -150,7 +153,7 @@ func (c *Client) InspectImage(name string) (*Image, error) {
 	var image Image
 
 	// if the caller elected to skip checking the server's version, assume it's the latest
-	if c.SkipServerVersionCheck || c.expectedApiVersion.GreaterThanOrEqualTo(apiVersion_1_12) {
+	if c.SkipServerVersionCheck || c.expectedAPIVersion.GreaterThanOrEqualTo(apiVersion1_12) {
 		err = json.Unmarshal(body, &image)
 		if err != nil {
 			return nil, err

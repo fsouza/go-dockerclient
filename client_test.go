@@ -39,8 +39,8 @@ func TestNewAPIClient(t *testing.T) {
 	if !client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be true, got false")
 	}
-	if client.requestedApiVersion != nil {
-		t.Errorf("Expected requestedApiVersion to be nil, got %#v.", client.requestedApiVersion)
+	if client.requestedAPIVersion != nil {
+		t.Errorf("Expected requestedAPIVersion to be nil, got %#v.", client.requestedAPIVersion)
 	}
 }
 
@@ -59,8 +59,8 @@ func TestNewTSLAPIClient(t *testing.T) {
 	if !client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be true, got false")
 	}
-	if client.requestedApiVersion != nil {
-		t.Errorf("Expected requestedApiVersion to be nil, got %#v.", client.requestedApiVersion)
+	if client.requestedAPIVersion != nil {
+		t.Errorf("Expected requestedAPIVersion to be nil, got %#v.", client.requestedAPIVersion)
 	}
 }
 
@@ -76,8 +76,8 @@ func TestNewVersionedClient(t *testing.T) {
 	if client.HTTPClient != http.DefaultClient {
 		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.HTTPClient)
 	}
-	if reqVersion := client.requestedApiVersion.String(); reqVersion != "1.12" {
-		t.Errorf("Wrong requestApiVersion. Want %q. Got %q.", "1.12", reqVersion)
+	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.12" {
+		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.12", reqVersion)
 	}
 	if client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be false, got true")
@@ -96,8 +96,8 @@ func TestNewTLSVersionedClient(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
-	if reqVersion := client.requestedApiVersion.String(); reqVersion != "1.14" {
-		t.Errorf("Wrong requestApiVersion. Want %q. Got %q.", "1.14", reqVersion)
+	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.14" {
+		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.14", reqVersion)
 	}
 	if client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be false, got true")
@@ -198,7 +198,7 @@ func TestQueryString(t *testing.T) {
 	}
 }
 
-func TestNewApiVersionFailures(t *testing.T) {
+func TestNewAPIVersionFailures(t *testing.T) {
 	var tests = []struct {
 		input         string
 		expectedError string
@@ -207,17 +207,17 @@ func TestNewApiVersionFailures(t *testing.T) {
 		{"1.0-beta", `Unable to parse version "1.0-beta": "0-beta" is not an integer`},
 	}
 	for _, tt := range tests {
-		v, err := NewApiVersion(tt.input)
+		v, err := NewAPIVersion(tt.input)
 		if v != nil {
 			t.Errorf("Expected <nil> version, got %v.", v)
 		}
 		if err.Error() != tt.expectedError {
-			t.Errorf("NewApiVersion(%q): wrong error. Want %q. Got %q", tt.input, tt.expectedError, err.Error())
+			t.Errorf("NewAPIVersion(%q): wrong error. Want %q. Got %q", tt.input, tt.expectedError, err.Error())
 		}
 	}
 }
 
-func TestApiVersions(t *testing.T) {
+func TestAPIVersions(t *testing.T) {
 	var tests = []struct {
 		a                              string
 		b                              string
@@ -243,8 +243,8 @@ func TestApiVersions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		a, _ := NewApiVersion(tt.a)
-		b, _ := NewApiVersion(tt.b)
+		a, _ := NewAPIVersion(tt.a)
+		b, _ := NewAPIVersion(tt.b)
 
 		if tt.expectedALessThanB && !a.LessThan(b) {
 			t.Errorf("Expected %#v < %#v", a, b)
