@@ -6,6 +6,7 @@ package docker
 
 import (
 	"bufio"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -64,6 +65,62 @@ func TestEventListeners(t *testing.T) {
 			}
 		case <-timeout:
 			t.Fatal("TestEventListeners timed out waiting on events")
+		}
+	}
+}
+
+func TestTLSEventListeners(t *testing.T) {
+	response := `{"status":"create","id":"dfdf82bd3881","from":"base:latest","time":1374067924}
+{"status":"start","id":"dfdf82bd3881","from":"base:latest","time":1374067924}
+{"status":"stop","id":"dfdf82bd3881","from":"base:latest","time":1374067966}
+{"status":"destroy","id":"dfdf82bd3881","from":"base:latest","time":1374067970}
+`
+
+	var req http.Request
+	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rsc := bufio.NewScanner(strings.NewReader(response))
+		for rsc.Scan() {
+			w.Write([]byte(rsc.Text()))
+			w.(http.Flusher).Flush()
+			time.Sleep(10 * time.Millisecond)
+		}
+		req = *r
+	}))
+	server.TLS = &tls.Config{InsecureSkipVerify: true}
+	server.StartTLS()
+	defer server.Close()
+
+	client, err := NewTLSClient(server.URL, "testing/data/cert.pem", "testing/data/key.pem", "")
+	if err != nil {
+		t.Errorf("Failed to create client: %s", err)
+	}
+	client.SkipServerVersionCheck = true
+
+	listener := make(chan *APIEvents, 10)
+	defer func() { time.Sleep(10 * time.Millisecond); client.RemoveEventListener(listener) }()
+
+	err = client.AddEventListener(listener)
+	if err != nil {
+		t.Errorf("Failed to add event listener: %s", err)
+	}
+
+	timeout := time.After(1 * time.Second)
+	var count int
+
+	for {
+		select {
+		case msg := <-listener:
+			t.Logf("Recieved: %s", *msg)
+			count++
+			err = checkEvent(count, msg)
+			if err != nil {
+				t.Fatalf("Check event failed: %s", err)
+			}
+			if count == 4 {
+				return
+			}
+		case <-timeout:
+			t.Fatal("TestTLSEventListeners timed out waiting on events")
 		}
 	}
 }
