@@ -63,7 +63,7 @@ func TestEventListeners(t *testing.T) {
 				return
 			}
 		case <-timeout:
-			t.Fatal("TestAddEventListener timed out waiting on events")
+			t.Fatal("TestEventListeners timed out waiting on events")
 		}
 	}
 }
