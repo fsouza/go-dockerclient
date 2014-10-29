@@ -192,7 +192,9 @@ func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString str
 		return nil, err
 	}
 	tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert}}
-	if ca != "" {
+	if ca == "" {
+		tlsConfig.InsecureSkipVerify = true
+	} else {
 		cert, err := ioutil.ReadFile(ca)
 		if err != nil {
 			return nil, err
