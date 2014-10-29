@@ -120,6 +120,7 @@ type Client struct {
 	requestedApiVersion ApiVersion
 	serverApiVersion    ApiVersion
 	expectedApiVersion  ApiVersion
+	tlsConfig           *tls.Config
 }
 
 // NewClient returns a Client instance ready for communication with the given
@@ -214,6 +215,7 @@ func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString str
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedApiVersion: requestedApiVersion,
+		tlsConfig:           tlsConfig,
 	}, nil
 }
 
