@@ -113,6 +113,7 @@ func (version ApiVersion) compare(other ApiVersion) int {
 type Client struct {
 	SkipServerVersionCheck bool
 	HTTPClient             *http.Client
+	TLSConfig              *tls.Config
 
 	endpoint            string
 	endpointURL         *url.URL
@@ -120,7 +121,6 @@ type Client struct {
 	requestedApiVersion ApiVersion
 	serverApiVersion    ApiVersion
 	expectedApiVersion  ApiVersion
-	tlsConfig           *tls.Config
 }
 
 // NewClient returns a Client instance ready for communication with the given
@@ -211,11 +211,11 @@ func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString str
 	}
 	return &Client{
 		HTTPClient:          &http.Client{Transport: tr},
+		TLSConfig:           tlsConfig,
 		endpoint:            endpoint,
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedApiVersion: requestedApiVersion,
-		tlsConfig:           tlsConfig,
 	}, nil
 }
 
