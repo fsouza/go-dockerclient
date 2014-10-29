@@ -16,60 +16,21 @@ import (
 )
 
 func TestEventListeners(t *testing.T) {
-	response := `{"status":"create","id":"dfdf82bd3881","from":"base:latest","time":1374067924}
-{"status":"start","id":"dfdf82bd3881","from":"base:latest","time":1374067924}
-{"status":"stop","id":"dfdf82bd3881","from":"base:latest","time":1374067966}
-{"status":"destroy","id":"dfdf82bd3881","from":"base:latest","time":1374067970}
-`
-
-	var req http.Request
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rsc := bufio.NewScanner(strings.NewReader(response))
-		for rsc.Scan() {
-			w.Write([]byte(rsc.Text()))
-			w.(http.Flusher).Flush()
-			time.Sleep(10 * time.Millisecond)
-		}
-		req = *r
-	}))
-	defer server.Close()
-
-	client, err := NewClient(server.URL)
-	if err != nil {
-		t.Errorf("Failed to create client: %s", err)
-	}
-	client.SkipServerVersionCheck = true
-
-	listener := make(chan *APIEvents, 10)
-	defer func() { time.Sleep(10 * time.Millisecond); client.RemoveEventListener(listener) }()
-
-	err = client.AddEventListener(listener)
-	if err != nil {
-		t.Errorf("Failed to add event listener: %s", err)
-	}
-
-	timeout := time.After(1 * time.Second)
-	var count int
-
-	for {
-		select {
-		case msg := <-listener:
-			t.Logf("Recieved: %s", *msg)
-			count++
-			err = checkEvent(count, msg)
-			if err != nil {
-				t.Fatalf("Check event failed: %s", err)
-			}
-			if count == 4 {
-				return
-			}
-		case <-timeout:
-			t.Fatal("TestEventListeners timed out waiting on events")
-		}
-	}
+	testEventListeners("TestEventListeners", t, httptest.NewServer, NewClient)
 }
 
 func TestTLSEventListeners(t *testing.T) {
+	testEventListeners("TestTLSEventListeners", t, func(handler http.Handler) *httptest.Server {
+		server := httptest.NewUnstartedServer(handler)
+		server.TLS = &tls.Config{InsecureSkipVerify: true}
+		server.StartTLS()
+		return server
+	}, func(url string) (*Client, error) {
+		return NewTLSClient(url, "testing/data/cert.pem", "testing/data/key.pem", "")
+	})
+}
+
+func testEventListeners(testName string, t *testing.T, buildServer func(http.Handler) *httptest.Server, buildClient func(string) (*Client, error)) {
 	response := `{"status":"create","id":"dfdf82bd3881","from":"base:latest","time":1374067924}
 {"status":"start","id":"dfdf82bd3881","from":"base:latest","time":1374067924}
 {"status":"stop","id":"dfdf82bd3881","from":"base:latest","time":1374067966}
@@ -77,7 +38,7 @@ func TestTLSEventListeners(t *testing.T) {
 `
 
 	var req http.Request
-	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := buildServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rsc := bufio.NewScanner(strings.NewReader(response))
 		for rsc.Scan() {
 			w.Write([]byte(rsc.Text()))
@@ -86,11 +47,9 @@ func TestTLSEventListeners(t *testing.T) {
 		}
 		req = *r
 	}))
-	server.TLS = &tls.Config{InsecureSkipVerify: true}
-	server.StartTLS()
 	defer server.Close()
 
-	client, err := NewTLSClient(server.URL, "testing/data/cert.pem", "testing/data/key.pem", "")
+	client, err := buildClient(server.URL)
 	if err != nil {
 		t.Errorf("Failed to create client: %s", err)
 	}
@@ -120,7 +79,7 @@ func TestTLSEventListeners(t *testing.T) {
 				return
 			}
 		case <-timeout:
-			t.Fatal("TestTLSEventListeners timed out waiting on events")
+			t.Fatalf("%s timed out waiting on events", testName)
 		}
 	}
 }
