@@ -7,7 +7,9 @@ package docker
 import (
 	"bufio"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -22,11 +24,29 @@ func TestEventListeners(t *testing.T) {
 func TestTLSEventListeners(t *testing.T) {
 	testEventListeners("TestTLSEventListeners", t, func(handler http.Handler) *httptest.Server {
 		server := httptest.NewUnstartedServer(handler)
-		server.TLS = &tls.Config{InsecureSkipVerify: true}
+
+		cert, err := tls.LoadX509KeyPair("testing/data/server.pem", "testing/data/serverkey.pem")
+		if err != nil {
+			t.Fatalf("Error loading server key pair: %s", err)
+		}
+
+		caCert, err := ioutil.ReadFile("testing/data/ca.pem")
+		if err != nil {
+			t.Fatalf("Error loading ca certificate: %s", err)
+		}
+		caPool := x509.NewCertPool()
+		if !caPool.AppendCertsFromPEM(caCert) {
+			t.Fatalf("Could not add ca certificate")
+		}
+
+		server.TLS = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      caPool,
+		}
 		server.StartTLS()
 		return server
 	}, func(url string) (*Client, error) {
-		return NewTLSClient(url, "testing/data/cert.pem", "testing/data/key.pem", "")
+		return NewTLSClient(url, "testing/data/cert.pem", "testing/data/key.pem", "testing/data/ca.pem")
 	})
 }
 
