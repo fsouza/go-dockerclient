@@ -585,7 +585,11 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 		return nil, ErrInvalidEndpoint
 	}
 	if u.Scheme == "tcp" {
-		u.Scheme = "http"
+		if strings.HasSuffix(u.Host, ":2736") {
+			u.Scheme = "https"
+		} else {
+			u.Scheme = "http"
+		}
 	}
 	if u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "unix" {
 		return nil, ErrInvalidEndpoint
