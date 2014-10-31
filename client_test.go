@@ -44,12 +44,16 @@ func TestNewAPIClient(t *testing.T) {
 	}
 }
 
+func newTLSClient(endpoint string) (*Client, error) {
+	return NewTLSClient(endpoint,
+		"testing/data/cert.pem",
+		"testing/data/key.pem",
+		"testing/data/ca.pem")
+}
+
 func TestNewTSLAPIClient(t *testing.T) {
-	certPath := "testing/data/cert.pem"
-	keyPath := "testing/data/key.pem"
-	caPath := "testing/data/ca.pem"
 	endpoint := "https://localhost:4243"
-	client, err := NewTLSClient(endpoint, certPath, keyPath, caPath)
+	client, err := newTLSClient(endpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,6 +132,28 @@ func TestNewClientInvalidEndpoint(t *testing.T) {
 		}
 		if !reflect.DeepEqual(err, ErrInvalidEndpoint) {
 			t.Errorf("NewClient(%q): Got invalid error for invalid endpoint. Want %#v. Got %#v.", c, ErrInvalidEndpoint, err)
+		}
+	}
+}
+
+func TestNewTLSClient2736(t *testing.T) {
+	var tests = []struct {
+		endpoint string
+		expected string
+	}{
+		{"tcp://localhost:2376", "https"},
+		{"tcp://localhost:2375", "http"},
+		{"tcp://localhost:4000", "http"},
+	}
+
+	for _, tt := range tests {
+		client, err := newTLSClient(tt.endpoint)
+		if err != nil {
+			t.Error(err)
+		}
+		got := client.endpointURL.Scheme
+		if got != tt.expected {
+			t.Errorf("endpointURL.Scheme: Got %s. Want %s.", got, tt.expected)
 		}
 	}
 }
