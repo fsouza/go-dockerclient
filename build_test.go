@@ -105,7 +105,7 @@ func TestBuildImageSendXRegistryConfig(t *testing.T) {
 		ContextDir:          "testing/data",
 		AuthConfigs: AuthConfigurations{
 			Configs: map[string]AuthConfiguration{
-				"quay.io": AuthConfiguration{
+				"quay.io": {
 					Username:      "foo",
 					Password:      "bar",
 					Email:         "baz",
