@@ -136,7 +136,7 @@ func TestNewClientInvalidEndpoint(t *testing.T) {
 	}
 }
 
-func TestNewTLSClient2736(t *testing.T) {
+func TestNewTLSClient2376(t *testing.T) {
 	var tests = []struct {
 		endpoint string
 		expected string
