@@ -585,7 +585,18 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 		return nil, ErrInvalidEndpoint
 	}
 	if u.Scheme == "tcp" {
-		if strings.HasSuffix(u.Host, ":2376") {
+		_, port, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			if e, ok := err.(*net.AddrError); ok {
+				if e.Err == "missing port in address" {
+					return u, nil
+				}
+			}
+			return nil, ErrInvalidEndpoint
+		}
+
+		number, err := strconv.ParseInt(port, 10, 64)
+		if err == nil && number == 2376 {
 			u.Scheme = "https"
 		} else {
 			u.Scheme = "http"
