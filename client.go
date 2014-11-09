@@ -117,6 +117,7 @@ func (version APIVersion) compare(other APIVersion) int {
 type Client struct {
 	SkipServerVersionCheck bool
 	HTTPClient             *http.Client
+	TLSConfig              *tls.Config
 
 	endpoint            string
 	endpointURL         *url.URL
@@ -195,7 +196,9 @@ func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString str
 		return nil, err
 	}
 	tlsConfig := &tls.Config{Certificates: []tls.Certificate{tlsCert}}
-	if ca != "" {
+	if ca == "" {
+		tlsConfig.InsecureSkipVerify = true
+	} else {
 		cert, err := ioutil.ReadFile(ca)
 		if err != nil {
 			return nil, err
@@ -214,6 +217,7 @@ func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString str
 	}
 	return &Client{
 		HTTPClient:          &http.Client{Transport: tr},
+		TLSConfig:           tlsConfig,
 		endpoint:            endpoint,
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
@@ -585,7 +589,22 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 		return nil, ErrInvalidEndpoint
 	}
 	if u.Scheme == "tcp" {
-		u.Scheme = "http"
+		_, port, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			if e, ok := err.(*net.AddrError); ok {
+				if e.Err == "missing port in address" {
+					return u, nil
+				}
+			}
+			return nil, ErrInvalidEndpoint
+		}
+
+		number, err := strconv.ParseInt(port, 10, 64)
+		if err == nil && number == 2376 {
+			u.Scheme = "https"
+		} else {
+			u.Scheme = "http"
+		}
 	}
 	if u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "unix" {
 		return nil, ErrInvalidEndpoint

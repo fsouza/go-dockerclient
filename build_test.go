@@ -78,6 +78,8 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 		"ca.pem",
 		"cert.pem",
 		"key.pem",
+		"server.pem",
+		"serverkey.pem",
 		"symlink",
 	}
 
@@ -103,7 +105,7 @@ func TestBuildImageSendXRegistryConfig(t *testing.T) {
 		ContextDir:          "testing/data",
 		AuthConfigs: AuthConfigurations{
 			Configs: map[string]AuthConfiguration{
-				"quay.io": AuthConfiguration{
+				"quay.io": {
 					Username:      "foo",
 					Password:      "bar",
 					Email:         "baz",
