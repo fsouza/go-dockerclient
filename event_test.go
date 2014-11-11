@@ -89,7 +89,7 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 	for {
 		select {
 		case msg := <-listener:
-			t.Logf("Recieved: %s", *msg)
+			t.Logf("Received: %s", *msg)
 			count++
 			err = checkEvent(count, msg)
 			if err != nil {
