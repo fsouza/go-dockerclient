@@ -34,6 +34,10 @@ var (
 	// ErrConnectionRefused is returned when the client cannot connect to the given endpoint.
 	ErrConnectionRefused = errors.New("cannot connect to Docker endpoint")
 
+	// ErrCancelled is returned when the API-user requests an operation is
+	// cancelled.
+	ErrCancelled = errors.New("operation cancelled")
+
 	apiVersion1_12, _ = NewAPIVersion("1.12")
 )
 
@@ -334,7 +338,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
+func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer, cancelled <-chan struct{}) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
@@ -364,6 +368,9 @@ func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool,
 	if stderr == nil {
 		stderr = ioutil.Discard
 	}
+
+	var cancel, finish func()
+
 	if protocol == "unix" {
 		dial, err := net.Dial(protocol, address)
 		if err != nil {
@@ -371,10 +378,36 @@ func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool,
 		}
 		clientconn := httputil.NewClientConn(dial, nil)
 		resp, err = clientconn.Do(req)
-		defer clientconn.Close()
+		cancel = func() {
+			clientconn.Close()
+		}
+		finish = cancel
 	} else {
 		resp, err = c.HTTPClient.Do(req)
+		finish = func() {}
+		cancel = func() {
+			switch transport := c.HTTPClient.Transport.(type) {
+			case *http.Transport:
+				transport.CancelRequest(req)
+			default:
+				// TODO(pwaller):
+				// We should notify someone of the unexpected type here.
+				panic(fmt.Sprintf("Unexpected type: %T", transport))
+			}
+		}
 	}
+
+	finished := make(chan struct{})
+	defer close(finished)
+	go func() {
+		select {
+		case <-cancelled:
+			cancel()
+		case <-finished:
+			finish()
+		}
+	}()
+
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return ErrConnectionRefused
@@ -402,6 +435,11 @@ func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool,
 			if err := dec.Decode(&m); err == io.EOF {
 				break
 			} else if err != nil {
+				select {
+				case <-cancelled:
+					err = ErrCancelled
+				default:
+				}
 				return err
 			}
 			if m.Stream != "" {
@@ -420,6 +458,11 @@ func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool,
 			_, err = io.Copy(stdout, resp.Body)
 		} else {
 			_, err = stdCopy(stdout, stderr, resp.Body)
+		}
+		select {
+		case <-cancelled:
+			err = ErrCancelled
+		default:
 		}
 		return err
 	}

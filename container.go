@@ -686,7 +686,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream("GET", path, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream)
+	return c.stream("GET", path, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream, nil)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
@@ -716,7 +716,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, true, false, nil, nil, opts.OutputStream, nil)
+	return c.stream("GET", url, true, false, nil, nil, opts.OutputStream, nil, nil)
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.
