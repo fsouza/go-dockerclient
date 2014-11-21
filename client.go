@@ -339,7 +339,7 @@ func (c *Client) do(method, path string, data interface{}, forceJSON bool) ([]by
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
+func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer, cancelled <-chan struct{}) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
