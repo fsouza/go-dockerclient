@@ -352,6 +352,9 @@ type BuildImageOptions struct {
 	Auth                AuthConfiguration  `qs:"-"` // for older docker X-Registry-Auth header
 	AuthConfigs         AuthConfigurations `qs:"-"` // for newer docker X-Registry-Config header
 	ContextDir          string             `qs:"-"`
+	// User controlled channel to allow cancellation. If nil, cancellation is
+	// not possible. Otherwise, cancellation happens if the channel is closed.
+	Cancel <-chan struct{}
 }
 
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
@@ -383,7 +386,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	}
 
 	return c.stream("POST", fmt.Sprintf("/build?%s",
-		queryString(&opts)), true, opts.RawJSONStream, headers, opts.InputStream, opts.OutputStream, nil, nil)
+		queryString(&opts)), true, opts.RawJSONStream, headers, opts.InputStream, opts.OutputStream, nil, opts.Cancel)
 }
 
 // TagImageOptions present the set of options to tag an image.
