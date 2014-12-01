@@ -262,10 +262,11 @@ func (c *Client) ContainerChanges(id string) ([]Change, error) {
 
 // CreateContainerOptions specify parameters to the CreateContainer function.
 //
-// See http://goo.gl/mErxNp for more details.
+// See http://goo.gl/2xxQQK for more details.
 type CreateContainerOptions struct {
-	Name   string
-	Config *Config `qs:"-"`
+	Name       string
+	Config     *Config `qs:"-"`
+	HostConfig *HostConfig
 }
 
 // CreateContainer creates a new container, returning the container instance,
@@ -274,7 +275,14 @@ type CreateContainerOptions struct {
 // See http://goo.gl/mErxNp for more details.
 func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error) {
 	path := "/containers/create?" + queryString(opts)
-	body, status, err := c.do("POST", path, opts.Config)
+	body, status, err := c.do("POST", path, struct {
+		*Config
+		HostConfig *HostConfig `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
+	}{
+		opts.Config,
+		opts.HostConfig,
+	})
+
 	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
 	}

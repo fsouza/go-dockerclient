@@ -440,6 +440,27 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 	}
 }
 
+func TestCreateContainerWithHostConfig(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "{}", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	config := Config{}
+	hostConfig := HostConfig{PublishAllPorts: true}
+	opts := CreateContainerOptions{Name: "TestCreateContainerWithHostConfig", Config: &config, HostConfig: &hostConfig}
+	_, err := client.CreateContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	var gotBody map[string]interface{}
+	err = json.NewDecoder(req.Body).Decode(&gotBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := gotBody["HostConfig"]; !ok {
+		t.Errorf("CreateContainer: wrong body. HostConfig was not serialized")
+	}
+}
+
 func TestStartContainer(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
