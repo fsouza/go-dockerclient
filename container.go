@@ -172,7 +172,7 @@ type Config struct {
 	Memory          int64               `json:"Memory,omitempty" yaml:"Memory,omitempty"`
 	MemorySwap      int64               `json:"MemorySwap,omitempty" yaml:"MemorySwap,omitempty"`
 	CPUShares       int64               `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
-	CPUSet          string              `json:"CpuSet,omitempty" yaml:"CpuSet,omitempty"`
+	CPUSet          string              `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
 	AttachStdin     bool                `json:"AttachStdin,omitempty" yaml:"AttachStdin,omitempty"`
 	AttachStdout    bool                `json:"AttachStdout,omitempty" yaml:"AttachStdout,omitempty"`
 	AttachStderr    bool                `json:"AttachStderr,omitempty" yaml:"AttachStderr,omitempty"`
