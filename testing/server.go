@@ -106,6 +106,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/images/{id:.*}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.removeImage))
 	s.mux.Path("/images/{name:.*}/json").Methods("GET").HandlerFunc(s.handlerWrapper(s.inspectImage))
 	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.handlerWrapper(s.pushImage))
+	s.mux.Path("/images/{name:.*}/tag").Methods("POST").HandlerFunc(s.handlerWrapper(s.tagImage))
 	s.mux.Path("/events").Methods("GET").HandlerFunc(s.listEvents)
 	s.mux.Path("/_ping").Methods("GET").HandlerFunc(s.handlerWrapper(s.pingDocker))
 	s.mux.Path("/images/load").Methods("POST").HandlerFunc(s.handlerWrapper(s.loadImage))
@@ -602,6 +603,21 @@ func (s *DockerServer) pushImage(w http.ResponseWriter, r *http.Request) {
 	s.iMut.RUnlock()
 	fmt.Fprintln(w, "Pushing...")
 	fmt.Fprintln(w, "Pushed")
+}
+
+func (s *DockerServer) tagImage(w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	s.iMut.RLock()
+	if _, ok := s.imgIDs[name]; !ok {
+		s.iMut.RUnlock()
+		http.Error(w, "No such image", http.StatusNotFound)
+		return
+	}
+	s.iMut.RUnlock()
+	s.iMut.Lock()
+	newRepo := r.URL.Query().Get("repo")
+	s.imgIDs[newRepo] = s.imgIDs[name]
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {

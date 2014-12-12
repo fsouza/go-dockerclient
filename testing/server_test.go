@@ -789,6 +789,23 @@ func TestPushImageNotFound(t *testing.T) {
 	}
 }
 
+func TestTagImage(t *testing.T) {
+	server := DockerServer{imgIDs: map[string]string{"tsuru/python": "a123"}}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/images/tsuru/python/tag?repo=tsuru/new-python", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusCreated {
+		t.Errorf("TagImage: wrong status. Want %d. Got %d.", http.StatusCreated, recorder.Code)
+	}
+	if server.imgIDs["tsuru/python"] != server.imgIDs["tsuru/new-python"] {
+		t.Errorf("TagImage: did not tag the image")
+	}
+}
+
+func TestTagImageNotFound(t *testing.T) {
+}
+
 func addContainers(server *DockerServer, n int) {
 	server.cMut.Lock()
 	defer server.cMut.Unlock()
