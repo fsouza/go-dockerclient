@@ -940,6 +940,36 @@ func TestRemoveImageByName(t *testing.T) {
 	}
 }
 
+func TestRemoveImageWithMultipleTags(t *testing.T) {
+	server := DockerServer{}
+	addImages(&server, 1, true)
+	server.buildMuxer()
+	imgID := server.images[0].ID
+	imgName := "docker/python-" + imgID
+	server.imgIDs["docker/python-wat"] = imgID
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/images/%s", imgName)
+	request, _ := http.NewRequest("DELETE", path, nil)
+	server.ServeHTTP(recorder, request)
+	_, ok := server.imgIDs[imgName]
+	if ok {
+		t.Error("RemoveImage: did not remove image tag name.")
+	}
+	id, ok := server.imgIDs["docker/python-wat"]
+	if !ok {
+		t.Error("RemoveImage: removed the wrong tag name.")
+	}
+	if id != imgID {
+		t.Error("RemoveImage: disassociated the wrong ID from the tag")
+	}
+	if len(server.images) < 1 {
+		t.Fatal("RemoveImage: removed the image, but should keep it")
+	}
+	if server.images[0].ID != imgID {
+		t.Error("RemoveImage: changed the ID of the image!")
+	}
+}
+
 func TestPrepareFailure(t *testing.T) {
 	server := DockerServer{failures: make(map[string]string)}
 	server.buildMuxer()

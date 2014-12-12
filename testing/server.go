@@ -628,6 +628,12 @@ func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
 	if img, ok := s.imgIDs[id]; ok {
 		id, tag = img, id
 	}
+	var tags []string
+	for tag, taggedID := range s.imgIDs {
+		if taggedID == id {
+			tags = append(tags, tag)
+		}
+	}
 	s.iMut.RUnlock()
 	_, index, err := s.findImageByID(id)
 	if err != nil {
@@ -637,8 +643,10 @@ func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 	s.iMut.Lock()
 	defer s.iMut.Unlock()
-	s.images[index] = s.images[len(s.images)-1]
-	s.images = s.images[:len(s.images)-1]
+	if len(tags) < 2 {
+		s.images[index] = s.images[len(s.images)-1]
+		s.images = s.images[:len(s.images)-1]
+	}
 	if tag != "" {
 		delete(s.imgIDs, tag)
 	}
