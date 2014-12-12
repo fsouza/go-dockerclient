@@ -18,13 +18,14 @@ import (
 
 // ListContainersOptions specify parameters to the ListContainers function.
 //
-// See http://goo.gl/XqtcyU for more details.
+// See http://goo.gl/6Y4Gz7 for more details.
 type ListContainersOptions struct {
-	All    bool
-	Size   bool
-	Limit  int
-	Since  string
-	Before string
+	All     bool
+	Size    bool
+	Limit   int
+	Since   string
+	Before  string
+	Filters map[string][]string
 }
 
 // APIPort is a type that represents a port mapping returned by the Docker API
@@ -52,7 +53,7 @@ type APIContainers struct {
 
 // ListContainers returns a slice of containers matching the given criteria.
 //
-// See http://goo.gl/XqtcyU for more details.
+// See http://goo.gl/6Y4Gz7 for more details.
 func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, error) {
 	path := "/containers/json?" + queryString(opts)
 	body, _, err := c.do("GET", path, nil)

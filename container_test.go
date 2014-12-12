@@ -102,6 +102,14 @@ func TestListContainersParams(t *testing.T) {
 			ListContainersOptions{All: true, Limit: 10, Since: "adf9983", Before: "abdeef"},
 			map[string][]string{"all": {"1"}, "limit": {"10"}, "since": {"adf9983"}, "before": {"abdeef"}},
 		},
+		{
+			ListContainersOptions{Filters: map[string][]string{"status": {"paused", "running"}}},
+			map[string][]string{"filters": {"{\"status\":[\"paused\",\"running\"]}"}},
+		},
+		{
+			ListContainersOptions{All: true, Filters: map[string][]string{"exited": {"0"}, "status": {"exited"}}},
+			map[string][]string{"all": {"1"}, "filters": {"{\"exited\":[\"0\"],\"status\":[\"exited\"]}"}},
+		},
 	}
 	fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
 	client := newTestClient(fakeRT)
