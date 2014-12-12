@@ -615,6 +615,7 @@ func (s *DockerServer) tagImage(w http.ResponseWriter, r *http.Request) {
 	}
 	s.iMut.RUnlock()
 	s.iMut.Lock()
+	defer s.iMut.Unlock()
 	newRepo := r.URL.Query().Get("repo")
 	s.imgIDs[newRepo] = s.imgIDs[name]
 	w.WriteHeader(http.StatusCreated)
