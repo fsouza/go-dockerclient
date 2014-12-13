@@ -69,6 +69,14 @@ type ImagePre012 struct {
 	Size            int64     `json:"size,omitempty"`
 }
 
+// ListImagesOptions specify parameters to the ListImages function.
+//
+// See http://goo.gl/2rOLFF for more details.
+type ListImagesOptions struct {
+	All     bool
+	Filters map[string][]string
+}
+
 var (
 	// ErrNoSuchImage is the error returned when the image does not exist.
 	ErrNoSuchImage = errors.New("no such image")
@@ -88,14 +96,9 @@ var (
 
 // ListImages returns the list of available images in the server.
 //
-// See http://goo.gl/VmcR6v for more details.
-func (c *Client) ListImages(all bool) ([]APIImages, error) {
-	path := "/images/json?all="
-	if all {
-		path += "1"
-	} else {
-		path += "0"
-	}
+// See http://goo.gl/2rOLFF for more details.
+func (c *Client) ListImages(opts ListImagesOptions) ([]APIImages, error) {
+	path := "/images/json?" + queryString(opts)
 	body, _, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
