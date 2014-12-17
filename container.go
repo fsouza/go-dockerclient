@@ -89,8 +89,10 @@ func (p Port) Proto() string {
 type State struct {
 	Running    bool      `json:"Running,omitempty" yaml:"Running,omitempty"`
 	Paused     bool      `json:"Paused,omitempty" yaml:"Paused,omitempty"`
+	OOMKilled  bool      `json:"OOMKilled,omitempty" yaml:"OOMKilled,omitempty"`
 	Pid        int       `json:"Pid,omitempty" yaml:"Pid,omitempty"`
 	ExitCode   int       `json:"ExitCode,omitempty" yaml:"ExitCode,omitempty"`
+	Error      string    `json:"Error,omitempty" yaml:"Error,omitempty"`
 	StartedAt  time.Time `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
 	FinishedAt time.Time `json:"FinishedAt,omitempty" yaml:"FinishedAt,omitempty"`
 }
