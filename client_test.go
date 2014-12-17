@@ -206,6 +206,7 @@ func TestQueryString(t *testing.T) {
 		{ListContainersOptions{All: true}, "all=1"},
 		{ListContainersOptions{Before: "something"}, "before=something"},
 		{ListContainersOptions{Before: "something", Since: "other"}, "before=something&since=other"},
+		{ListContainersOptions{Filters: map[string][]string{"status": {"paused", "running"}}}, "filters=%7B%22status%22%3A%5B%22paused%22%2C%22running%22%5D%7D"},
 		{dumb{X: 10, Y: 10.35000}, "x=10&y=10.35"},
 		{dumb{W: v, X: 10, Y: 10.35000}, f32QueryString},
 		{dumb{X: 10, Y: 10.35000, Z: 10}, "x=10&y=10.35&zee=10"},

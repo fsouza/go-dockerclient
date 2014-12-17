@@ -564,6 +564,12 @@ func queryString(opts interface{}) string {
 					items.Add(key, string(b))
 				}
 			}
+		case reflect.Map:
+			if len(v.MapKeys()) > 0 {
+				if b, err := json.Marshal(v.Interface()); err == nil {
+					items.Add(key, string(b))
+				}
+			}
 		}
 	}
 	return items.Encode()
