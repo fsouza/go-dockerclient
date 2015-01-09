@@ -460,7 +460,6 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 		protocol = "tcp"
 		address = c.endpointURL.Host
 	}
-
 	var dial net.Conn
 	if c.TLSConfig != nil && protocol != "unix" {
 		dial, err = tlsDial(protocol, address, c.TLSConfig)
@@ -473,23 +472,17 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 			return err
 		}
 	}
-
 	clientconn := httputil.NewClientConn(dial, nil)
 	defer clientconn.Close()
-
 	clientconn.Do(req)
 	if success != nil {
 		success <- struct{}{}
 		<-success
 	}
-
 	rwc, br := clientconn.Hijack()
 	defer rwc.Close()
-
 	errs := make(chan error, 2)
 	exit := make(chan bool)
-
-	// output
 	go func() {
 		defer close(exit)
 		var err error
@@ -501,8 +494,6 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 		}
 		errs <- err
 	}()
-
-	// input
 	go func() {
 		var err error
 		if in != nil {
@@ -513,7 +504,6 @@ func (c *Client) hijack(method, path string, success chan struct{}, setRawTermin
 		}).CloseWrite()
 		errs <- err
 	}()
-
 	<-exit
 	return <-errs
 }
