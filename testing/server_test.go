@@ -1162,6 +1162,9 @@ func TestInspectExecContainer(t *testing.T) {
 	}
 	got2.Container.State.StartedAt = expected.Container.State.StartedAt
 	got2.Container.State.FinishedAt = expected.Container.State.FinishedAt
+	got2.Container.Config = expected.Container.Config
+	got2.Container.Created = expected.Container.Created
+	got2.Container.NetworkSettings = expected.Container.NetworkSettings
 	if !reflect.DeepEqual(got2, expected) {
 		t.Errorf("InspectContainer: wrong value. Want:\n%#v\nGot:\n%#v\n", expected, got2)
 	}
