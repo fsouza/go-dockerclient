@@ -182,8 +182,8 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 				eventState.terminate()
 				return
 			}
+			eventState.updateLastSeen(ev)
 			go eventState.sendEvent(ev)
-			go eventState.updateLastSeen(ev)
 		case err = <-eventState.errC:
 			if err == ErrNoListeners {
 				eventState.terminate()
