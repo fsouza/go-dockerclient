@@ -600,6 +600,10 @@ func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) pushImage(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
+	tag := r.URL.Query().Get("tag")
+	if tag != "" {
+		name += ":" + tag
+	}
 	s.iMut.RLock()
 	if _, ok := s.imgIDs[name]; !ok {
 		s.iMut.RUnlock()

@@ -799,6 +799,17 @@ func TestPushImage(t *testing.T) {
 	}
 }
 
+func TestPushImageWithTag(t *testing.T) {
+	server := DockerServer{imgIDs: map[string]string{"tsuru/python:v1": "a123"}}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/images/tsuru/python/push?tag=v1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("PushImage: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}
+
 func TestPushImageNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
