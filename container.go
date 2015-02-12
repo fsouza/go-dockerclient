@@ -483,14 +483,14 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 }
 
 type NetworkStats struct {
-	rx_dropped int
-	rx_bytes   int
-	rx_errors  int
-	tx_packets int
-	tx_dropped int
-	rx_packets int
-	tx_errors  int
-	tx_bytes   int
+	RX_dropped int
+	RX_bytes   int
+	RX_errors  int
+	TX_packets int
+	TX_dropped int
+	RX_packets int
+	TX_errors  int
+	TX_bytes   int
 }
 
 type MemoryStats struct {
