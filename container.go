@@ -482,6 +482,52 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 	return result, nil
 }
 
+type NetworkStats struct {
+	rx_dropped int
+	rx_bytes   int
+	rx_errors  int
+	tx_packets int
+	tx_dropped int
+	rx_packets int
+	tx_errors  int
+	tx_bytes   int
+}
+
+type MemoryStats struct {
+}
+
+type DetailedMemoryStats struct {
+}
+
+type BlkioStats struct {
+}
+
+type CPUStats struct {
+}
+
+type ContainerStats struct {
+	read    string
+	network NetworkStats
+}
+
+func (c *Client) StatsContainer(id string) (ContainerStats, error) {
+	var result ContainerStats
+	path := fmt.Sprintf("/containers/%s/stats", id)
+	body, status, err := c.do("GET", path, nil)
+	if status == http.StatusNotFound {
+		return result, &NoSuchContainer{ID: id}
+	}
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+
+}
+
 // KillContainerOptions represents the set of options that can be used in a
 // call to KillContainer.
 //
