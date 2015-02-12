@@ -506,8 +506,8 @@ type CPUStats struct {
 }
 
 type ContainerStats struct {
-	read    string
-	network NetworkStats
+	Read    string
+	Network NetworkStats
 }
 
 func (c *Client) StatsContainer(id string) (ContainerStats, error) {
