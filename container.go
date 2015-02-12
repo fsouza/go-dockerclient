@@ -493,7 +493,7 @@ type NetworkStats struct {
 	TXBytes   uint64 `json:"tx_bytes"`
 }
 
-// MemoryStats describes the data related to the container's memory usage.
+// MemoryStats describes the data realted to the container's memory usage.
 type MemoryStats struct {
 	Stats    DetailedMemoryStats `json:"stats"`
 	MaxUsage uint64              `json:"max_usage"`
@@ -557,7 +557,7 @@ type ContainerStats struct {
 }
 
 // uses a different struct to unmarshal to when we're calling the stats endpoint
-func decodeStats(r io.Reader, stats chan<- ContainerStats) error {
+func decodeStats(r io.Reader, stats chan ContainerStats) error {
 	dec := json.NewDecoder(r)
 	for {
 		var m ContainerStats
