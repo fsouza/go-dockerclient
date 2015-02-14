@@ -737,7 +737,7 @@ type NoSuchContainer struct {
 	ID string
 }
 
-func (err *NoSuchContainer) Error() string {
+func (err NoSuchContainer) Error() string {
 	return "No such container: " + err.ID
 }
 
