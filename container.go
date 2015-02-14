@@ -239,6 +239,25 @@ type Container struct {
 	ExecIDs    []string          `json:"ExecIDs,omitempty" yaml:"ExecIDs,omitempty"`
 }
 
+// RenameContainerOptions specify parameters to the RenameContainer function.
+//
+// See http://goo.gl/L00hoj for more details.
+type RenameContainerOptions struct {
+	// ID of container to rename
+	ID string `qs:"-"`
+
+	// New name
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+// RenameContainer updates and existing containers name
+//
+// See http://goo.gl/L00hoj for more details.
+func (c *Client) RenameContainer(opts RenameContainerOptions) error {
+	_, _, err := c.do("POST", fmt.Sprintf("/containers/"+opts.ID+"/rename?%s", queryString(opts)), nil, false)
+	return err
+}
+
 // InspectContainer returns information about a container by its ID.
 //
 // See http://goo.gl/CxVuJ5 for more details.
