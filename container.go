@@ -360,6 +360,7 @@ type HostConfig struct {
 	VolumesFrom     []string               `json:"VolumesFrom,omitempty" yaml:"VolumesFrom,omitempty"`
 	NetworkMode     string                 `json:"NetworkMode,omitempty" yaml:"NetworkMode,omitempty"`
 	IpcMode         string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty"`
+	PidMode         string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
 	RestartPolicy   RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
 }
 
