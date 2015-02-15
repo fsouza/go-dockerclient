@@ -522,7 +522,7 @@ func (c *Client) StatsContainer(id string) (ContainerStats, error) {
 	}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return result, err
+		return result, err, body
 	}
 	return result, nil
 
