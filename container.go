@@ -510,7 +510,7 @@ type ContainerStats struct {
 	Network NetworkStats
 }
 
-func (c *Client) StatsContainer(id string) (ContainerStats, error) {
+func (c *Client) StatsContainer(id string) (ContainerStats, error, string) {
 	var result ContainerStats
 	path := fmt.Sprintf("/containers/%s/stats", id)
 	body, status, err := c.do("GET", path, nil)
