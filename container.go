@@ -510,21 +510,21 @@ type ContainerStats struct {
 	Network NetworkStats
 }
 
-func (c *Client) StatsContainer(id string) (ContainerStats, error, string) {
+func (c *Client) StatsContainer(id string) (ContainerStats, error, []byte) {
 	var result ContainerStats
 	path := fmt.Sprintf("/containers/%s/stats", id)
 	body, status, err := c.do("GET", path, nil)
 	if status == http.StatusNotFound {
-		return result, &NoSuchContainer{ID: id}
+		return result, &NoSuchContainer{ID: id}, body
 	}
 	if err != nil {
-		return result, err
+		return result, err, body
 	}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return result, err, body
 	}
-	return result, nil
+	return result, nil, body
 
 }
 
