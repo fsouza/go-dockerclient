@@ -354,6 +354,7 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 // http://goo.gl/tlPXPu.
 type BuildImageOptions struct {
 	Name                string             `qs:"t"`
+	Dockerfile          string             `qs:"dockerfile"`
 	NoCache             bool               `qs:"nocache"`
 	SuppressOutput      bool               `qs:"q"`
 	RmTmpContainer      bool               `qs:"rm"`
