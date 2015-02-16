@@ -174,9 +174,14 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	}, nil
 }
 
-// NewVersionnedTLSClient returns a Client instance ready for TLS communications with the givens
-// server endpoint, key and certificates, using a specific remote API version.
+// DEPRECATED: Please use NewVersionedTLSClient.
 func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
+	return NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString)
+}
+
+// NewVersionedTLSClient returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates, using a specific remote API version.
+func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
 	u, err := parseEndpoint(endpoint)
 	if err != nil {
 		return nil, err
