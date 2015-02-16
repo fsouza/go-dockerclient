@@ -208,6 +208,29 @@ func TestRemoveImageNotFound(t *testing.T) {
 	}
 }
 
+func TestRemoveImageExtended(t *testing.T) {
+	name := "test"
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	err := client.RemoveImageExtended(name, RemoveImageOptions{Force: true, NoPrune: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "DELETE"
+	if req.Method != expectedMethod {
+		t.Errorf("RemoveImage(%q): Wrong HTTP method. Want %s. Got %s.", name, expectedMethod, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/images/" + name))
+	if req.URL.Path != u.Path {
+		t.Errorf("RemoveImage(%q): Wrong request path. Want %q. Got %q.", name, u.Path, req.URL.Path)
+	}
+	expectedQuery := "force=1&noprune=1"
+	if query := req.URL.Query().Encode(); query != expectedQuery {
+		t.Errorf("PushImage: Wrong query string. Want %q. Got %q.", expectedQuery, query)
+	}
+}
+
 func TestInspectImage(t *testing.T) {
 	body := `{
      "id":"b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",

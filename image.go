@@ -141,6 +141,27 @@ func (c *Client) RemoveImage(name string) error {
 	return err
 }
 
+// RemoveImageOptions present the set of options available for removing an image
+// from a registry.
+//
+// See http://goo.gl/6V48bF for more details.
+type RemoveImageOptions struct {
+	Force         bool `qs:"force"`
+	NoPrune       bool `qs:"noprune"`
+}
+
+// RemoveImage removes an image by its name or ID.
+//
+// See http://goo.gl/znj0wM for more details.
+func (c *Client) RemoveImageExtended(name string, opts RemoveImageOptions) error {
+	uri := fmt.Sprintf("/images/%s?%s", name, queryString(&opts))
+	_, status, err := c.do("DELETE", uri, nil)
+	if status == http.StatusNotFound {
+		return ErrNoSuchImage
+	}
+	return err
+}
+
 // InspectImage returns an image by its name or ID.
 //
 // See http://goo.gl/Q112NY for more details.
