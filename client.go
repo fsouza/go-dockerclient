@@ -174,7 +174,7 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	}, nil
 }
 
-// DEPRECATED: Please use NewVersionedTLSClient.
+// NewVersionnedTLSClient has been DEPRECATED, please use NewVersionedTLSClient.
 func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
 	return NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString)
 }
