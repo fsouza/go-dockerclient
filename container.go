@@ -512,14 +512,20 @@ type ContainerStats struct {
 
 func (c *Client) StatsContainer(id string) (ContainerStats, error, []byte) {
 	var result ContainerStats
+	fmt.Printf("Inside StatsContainers")
+
 	path := fmt.Sprintf("/containers/%s/stats", id)
+	fmt.Printf("Successful GET request")
 	body, status, err := c.do("GET", path, nil)
+	fmt.Printf("Successful GET request")
+
 	if status == http.StatusNotFound {
 		return result, &NoSuchContainer{ID: id}, body
 	}
 	if err != nil {
 		return result, err, body
 	}
+	fmt.Printf(string(body))
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return result, err, body
