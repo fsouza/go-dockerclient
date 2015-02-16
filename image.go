@@ -130,11 +130,19 @@ func (c *Client) ImageHistory(name string) ([]ImageHistory, error) {
 	return history, nil
 }
 
+// RemoveImageOptions represents options to use in the RemoveImage method.
+//
+// See http://goo.gl/znj0wM for more details.
+type RemoveImageOptions struct {
+	Force   bool
+	NoPrune bool
+}
+
 // RemoveImage removes an image by its name or ID.
 //
 // See http://goo.gl/znj0wM for more details.
-func (c *Client) RemoveImage(name string) error {
-	_, status, err := c.do("DELETE", "/images/"+name, nil)
+func (c *Client) RemoveImage(name string, opts RemoveImageOptions) error {
+	_, status, err := c.do("DELETE", "/images/"+name+"?"+queryString(opts), nil)
 	if status == http.StatusNotFound {
 		return ErrNoSuchImage
 	}
