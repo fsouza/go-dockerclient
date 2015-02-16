@@ -512,22 +512,27 @@ type ContainerStats struct {
 
 func (c *Client) StatsContainer(id string) (ContainerStats, error, []byte) {
 	var result ContainerStats
-	fmt.Printf("Inside StatsContainers")
+	fmt.Println("Inside StatsContainers")
 
 	path := fmt.Sprintf("/containers/%s/stats", id)
-	fmt.Printf("Successful GET request")
 	body, status, err := c.do("GET", path, nil)
-	fmt.Printf("Successful GET request")
+	fmt.Println("[+] Go-Docker: Successful GET request")
 
 	if status == http.StatusNotFound {
+		fmt.Println("[+] Go-Docker: No container found")
+
 		return result, &NoSuchContainer{ID: id}, body
 	}
 	if err != nil {
+		fmt.Println("[+] Go-Docker: something went wrong")
+		fmt.Println("[+] Go-Docker: ", err)
 		return result, err, body
 	}
-	fmt.Printf(string(body))
+	fmt.Println("[+] Go-Docker: json", string(body))
 	err = json.Unmarshal(body, &result)
 	if err != nil {
+		fmt.Println("[+] Go-Docker: problem with unmarshalling", string(body))
+
 		return result, err, body
 	}
 	return result, nil, body
