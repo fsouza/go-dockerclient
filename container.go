@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -509,35 +510,43 @@ type ContainerStats struct {
 	Read    string
 	Network NetworkStats
 }
+type GetStatsOptions struct {
+	out io.Writer `qs:"-"`
+}
 
-func (c *Client) StatsContainer(id string) (ContainerStats, error, []byte) {
-	var result ContainerStats
+func (c *Client) StatsContainer(id string) error {
+	// var result ContainerStats
 	fmt.Println("Inside StatsContainers")
 
 	path := fmt.Sprintf("/containers/%s/stats", id)
 	fmt.Println("[+] Go-Docker: doing GET on: ", path)
-	body, status, err := c.do("GET", path, nil)
-	fmt.Println("[+] Go-Docker: Successful GET request")
-
-	if status == http.StatusNotFound {
-		fmt.Println("[+] Go-Docker: No container found")
-
-		return result, &NoSuchContainer{ID: id}, body
+	// body, status, err := c.do("GET", path, nil)
+	type opts GetStatsOptions
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, true, nil, nil, os.Stdout, nil); err != nil {
+		return err
 	}
-	if err != nil {
-		fmt.Println("[+] Go-Docker: something went wrong")
-		fmt.Println("[+] Go-Docker: ", err)
-		return result, err, body
-	}
-	fmt.Println("[+] Go-Docker: json", string(body))
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		fmt.Println("[+] Go-Docker: problem with unmarshalling", string(body))
 
-		return result, err, body
-	}
-	return result, nil, body
+	// fmt.Println("[+] Go-Docker: Successful GET request")
 
+	// if status == http.StatusNotFound {
+	// 	fmt.Println("[+] Go-Docker: No container found")
+
+	// 	return result, &NoSuchContainer{ID: id}, body
+	// }
+	// if err != nil {
+	// 	fmt.Println("[+] Go-Docker: something went wrong")
+	// 	fmt.Println("[+] Go-Docker: ", err)
+	// 	return result, err, body
+	// }
+	// fmt.Println("[+] Go-Docker: json", string(body))
+	// err = json.Unmarshal(body, &result)
+	// if err != nil {
+	// 	fmt.Println("[+] Go-Docker: problem with unmarshalling", string(body))
+
+	// 	return result, err, body
+	// }
+	// return result, nil, body
+	return nil
 }
 
 // KillContainerOptions represents the set of options that can be used in a
