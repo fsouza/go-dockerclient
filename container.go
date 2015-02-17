@@ -515,6 +515,7 @@ func (c *Client) StatsContainer(id string) (ContainerStats, error, []byte) {
 	fmt.Println("Inside StatsContainers")
 
 	path := fmt.Sprintf("/containers/%s/stats", id)
+	fmt.Println("[+] Go-Docker: doing GET on: ", path)
 	body, status, err := c.do("GET", path, nil)
 	fmt.Println("[+] Go-Docker: Successful GET request")
 
