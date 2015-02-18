@@ -515,7 +515,7 @@ type ContainerStats struct {
 func (c *Client) StatsContainer(id string, out *os.File) error {
 	// var result ContainerStats
 	w := bufio.NewWriter(out)
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, false, nil, nil, w, nil); err != nil {
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, true, nil, nil, w, nil); err != nil {
 		w.Flush()
 		return err
 	}
