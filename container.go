@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -510,21 +511,15 @@ type ContainerStats struct {
 	Read    string
 	Network NetworkStats
 }
-type GetStatsOptions struct {
-	out io.Writer `qs:"-"`
-}
 
-func (c *Client) StatsContainer(id string) error {
+func (c *Client) StatsContainer(id string, out *os.File) error {
 	// var result ContainerStats
-	fmt.Println("Inside StatsContainers")
-
-	path := fmt.Sprintf("/containers/%s/stats", id)
-	fmt.Println("[+] Go-Docker: doing GET on: ", path)
-	// body, status, err := c.do("GET", path, nil)
-	type opts GetStatsOptions
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, true, nil, nil, os.Stdout, nil); err != nil {
+	w := bufio.NewWriter(out)
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, false, nil, nil, w, nil); err != nil {
+		w.Flush()
 		return err
 	}
+	w.Flush()
 
 	// fmt.Println("[+] Go-Docker: Successful GET request")
 
