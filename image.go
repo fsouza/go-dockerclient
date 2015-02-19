@@ -150,7 +150,8 @@ type RemoveImageOptions struct {
 	NoPrune bool `qs:"noprune"`
 }
 
-// RemoveImage removes an image by its name or ID.
+// RemoveImageExtended removes an image by its name or ID.
+// Extra params can be passed, see RemoveImageOptions
 //
 // See http://goo.gl/znj0wM for more details.
 func (c *Client) RemoveImageExtended(name string, opts RemoveImageOptions) error {
