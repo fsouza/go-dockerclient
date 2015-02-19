@@ -413,6 +413,7 @@ func (c *Client) stream(method, path string, messages chan string, setRawTermina
 					fmt.Fprint(stdout, m.Stream)
 				} else {
 					//if we're calling the stats endpoint we can decode into structs instead of just printing to stdout
+					fmt.Fprint(stdout, m.Stream)
 					messages <- m.Stream
 				}
 			} else if m.Progress != "" {
