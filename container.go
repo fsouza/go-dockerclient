@@ -5,12 +5,14 @@
 package docker
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -483,6 +485,79 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 	return result, nil
 }
 
+type NetworkStats struct {
+	RX_dropped int
+	RX_bytes   int
+	RX_errors  int
+	TX_packets int
+	TX_dropped int
+	RX_packets int
+	TX_errors  int
+	TX_bytes   int
+}
+
+type MemoryStats struct {
+}
+
+type DetailedMemoryStats struct {
+}
+
+type BlkioStats struct {
+}
+
+type CPUStats struct {
+}
+
+type ContainerStats struct {
+	Read    string
+	Network NetworkStats
+}
+
+func (c *Client) StatsContainer(id string, out *os.File, stats chan<- string) error {
+	// var result ContainerStats
+	w := bufio.NewWriter(out)
+	//buffered channel which whil hold messages retrieved from the stream
+	messages := make(chan string, 2)
+	go func() {
+		for {
+			if message := <-messages; message != "" {
+				stats <- message
+			} else if message == "EOF" {
+				break
+			}
+		}
+	}()
+
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), messages, true, true, nil, nil, w, nil); err != nil {
+		w.Flush()
+		return err
+	}
+
+	w.Flush()
+
+	// fmt.Println("[+] Go-Docker: Successful GET request")
+
+	// if status == http.StatusNotFound {
+	// 	fmt.Println("[+] Go-Docker: No container found")
+
+	// 	return result, &NoSuchContainer{ID: id}, body
+	// }
+	// if err != nil {
+	// 	fmt.Println("[+] Go-Docker: something went wrong")
+	// 	fmt.Println("[+] Go-Docker: ", err)
+	// 	return result, err, body
+	// }
+	// fmt.Println("[+] Go-Docker: json", string(body))
+	// err = json.Unmarshal(body, &result)
+	// if err != nil {
+	// 	fmt.Println("[+] Go-Docker: problem with unmarshalling", string(body))
+
+	// 	return result, err, body
+	// }
+	// return result, nil, body
+	return nil
+}
+
 // KillContainerOptions represents the set of options that can be used in a
 // call to KillContainer.
 //
@@ -700,7 +775,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream("GET", path, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream)
+	return c.stream("GET", path, nil, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
@@ -730,7 +805,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, true, false, nil, nil, opts.OutputStream, nil)
+	return c.stream("GET", url, nil, true, false, nil, nil, opts.OutputStream, nil)
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.

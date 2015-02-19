@@ -339,7 +339,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
+func (c *Client) stream(method, path string, messages chan string, setRawTerminal, rawJSONStream bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
@@ -402,15 +402,24 @@ func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool,
 			return err
 		}
 		dec := json.NewDecoder(resp.Body)
+
 		for {
 			var m jsonMessage
 			if err := dec.Decode(&m); err == io.EOF {
+				if messages != nil {
+					messages <- "EOF"
+				}
 				break
 			} else if err != nil {
 				return err
 			}
 			if m.Stream != "" {
-				fmt.Fprint(stdout, m.Stream)
+				if messages == nil {
+					fmt.Fprint(stdout, m.Stream)
+				} else {
+					//if we're calling the stats endpoint we can decode into structs instead of just printing to stdout
+					messages <- m.Stream
+				}
 			} else if m.Progress != "" {
 				fmt.Fprintf(stdout, "%s %s\r", m.Status, m.Progress)
 			} else if m.Error != "" {

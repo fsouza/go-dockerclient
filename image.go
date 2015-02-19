@@ -230,7 +230,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
 	headers := headersWithAuth(auth)
-	return c.stream("POST", path, true, opts.RawJSONStream, headers, nil, opts.OutputStream, nil)
+	return c.stream("POST", path, nil, true, opts.RawJSONStream, headers, nil, opts.OutputStream, nil)
 }
 
 // PullImageOptions present the set of options available for pulling an image
@@ -259,7 +259,7 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 
 func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool) error {
 	path := "/images/create?" + qs
-	return c.stream("POST", path, true, rawJSONStream, headers, in, w, nil)
+	return c.stream("POST", path, nil, true, rawJSONStream, headers, in, w, nil)
 }
 
 // LoadImageOptions represents the options for LoadImage Docker API Call
@@ -273,7 +273,7 @@ type LoadImageOptions struct {
 //
 // See http://goo.gl/Y8NNCq for more details.
 func (c *Client) LoadImage(opts LoadImageOptions) error {
-	return c.stream("POST", "/images/load", true, false, nil, opts.InputStream, nil, nil)
+	return c.stream("POST", "/images/load", nil, true, false, nil, opts.InputStream, nil, nil)
 }
 
 // ExportImageOptions represent the options for ExportImage Docker API call
@@ -288,7 +288,7 @@ type ExportImageOptions struct {
 //
 // See http://goo.gl/mi6kvk for more details.
 func (c *Client) ExportImage(opts ExportImageOptions) error {
-	return c.stream("GET", fmt.Sprintf("/images/%s/get", opts.Name), true, false, nil, nil, opts.OutputStream, nil)
+	return c.stream("GET", fmt.Sprintf("/images/%s/get", opts.Name), nil, true, false, nil, nil, opts.OutputStream, nil)
 }
 
 // ImportImageOptions present the set of informations available for importing
@@ -376,7 +376,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	}
 
 	return c.stream("POST", fmt.Sprintf("/build?%s",
-		queryString(&opts)), true, opts.RawJSONStream, headers, opts.InputStream, opts.OutputStream, nil)
+		queryString(&opts)), nil, true, opts.RawJSONStream, headers, opts.InputStream, opts.OutputStream, nil)
 }
 
 // TagImageOptions present the set of options to tag an image.
