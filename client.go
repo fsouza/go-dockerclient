@@ -394,7 +394,8 @@ func (c *Client) stream(method, path string, messages chan string, setRawTermina
 		// without decoding it
 		if rawJSONStream {
 			_, err = io.Copy(stdout, resp.Body)
-			messages <- resp.Body
+			contents, err := ioutil.ReadAll(resp.Body)
+			messages <- string(contents)
 			return err
 		}
 		dec := json.NewDecoder(resp.Body)
