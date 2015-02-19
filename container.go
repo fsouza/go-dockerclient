@@ -512,13 +512,26 @@ type ContainerStats struct {
 	Network NetworkStats
 }
 
-func (c *Client) StatsContainer(id string, out *os.File) error {
+func (c *Client) StatsContainer(id string, out *os.File, stats chan<- string) error {
 	// var result ContainerStats
 	w := bufio.NewWriter(out)
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, true, nil, nil, w, nil); err != nil {
+	//buffered channel which whil hold messages retrieved from the stream
+	messages := make(chan string, 2)
+	go func() {
+		for {
+			if message := <-messages; message != "" {
+				stats <- message
+			} else if message == "EOF" {
+				break
+			}
+		}
+	}()
+
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), messages, true, true, nil, nil, w, nil); err != nil {
 		w.Flush()
 		return err
 	}
+
 	w.Flush()
 
 	// fmt.Println("[+] Go-Docker: Successful GET request")
@@ -761,7 +774,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream("GET", path, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream)
+	return c.stream("GET", path, nil, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
@@ -791,7 +804,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, true, false, nil, nil, opts.OutputStream, nil)
+	return c.stream("GET", url, nil, true, false, nil, nil, opts.OutputStream, nil)
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.
