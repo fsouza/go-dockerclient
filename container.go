@@ -527,7 +527,7 @@ func (c *Client) StatsContainer(id string, out *os.File, stats chan<- string) er
 		}
 	}()
 
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), messages, true, false, nil, nil, w, nil); err != nil {
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), messages, true, true, nil, nil, w, nil); err != nil {
 		w.Flush()
 		return err
 	}
