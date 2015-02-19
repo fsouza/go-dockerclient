@@ -512,7 +512,7 @@ type ContainerStats struct {
 	Network NetworkStats
 }
 
-func (c *Client) StatsContainer(id string, out *os.File, stats chan<- string) error {
+func (c *Client) StatsContainer(id string, out *os.File, stats chan string) error {
 	// var result ContainerStats
 	w := bufio.NewWriter(out)
 	//buffered channel which whil hold messages retrieved from the stream
@@ -520,6 +520,7 @@ func (c *Client) StatsContainer(id string, out *os.File, stats chan<- string) er
 	go func() {
 		for {
 			if message := <-messages; message != "" {
+				fmt.Println("Got message from stream: ", message)
 				stats <- message
 			} else if message == "EOF" {
 				break
@@ -531,29 +532,7 @@ func (c *Client) StatsContainer(id string, out *os.File, stats chan<- string) er
 		w.Flush()
 		return err
 	}
-
 	w.Flush()
-
-	// fmt.Println("[+] Go-Docker: Successful GET request")
-
-	// if status == http.StatusNotFound {
-	// 	fmt.Println("[+] Go-Docker: No container found")
-
-	// 	return result, &NoSuchContainer{ID: id}, body
-	// }
-	// if err != nil {
-	// 	fmt.Println("[+] Go-Docker: something went wrong")
-	// 	fmt.Println("[+] Go-Docker: ", err)
-	// 	return result, err, body
-	// }
-	// fmt.Println("[+] Go-Docker: json", string(body))
-	// err = json.Unmarshal(body, &result)
-	// if err != nil {
-	// 	fmt.Println("[+] Go-Docker: problem with unmarshalling", string(body))
-
-	// 	return result, err, body
-	// }
-	// return result, nil, body
 	return nil
 }
 
