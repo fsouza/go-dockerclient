@@ -146,8 +146,8 @@ func (c *Client) RemoveImage(name string) error {
 //
 // See http://goo.gl/6V48bF for more details.
 type RemoveImageOptions struct {
-	Force         bool `qs:"force"`
-	NoPrune       bool `qs:"noprune"`
+	Force   bool `qs:"force"`
+	NoPrune bool `qs:"noprune"`
 }
 
 // RemoveImage removes an image by its name or ID.
