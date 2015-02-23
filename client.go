@@ -334,7 +334,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, messages chan string, setRawTerminal, rawJSONStream bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
+func (c *Client) stream(method, path string, messages chan ContainerStats, setRawTerminal, rawJSONStream bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
@@ -403,7 +403,8 @@ func (c *Client) stream(method, path string, messages chan string, setRawTermina
 			var m ContainerStats
 			if err := dec.Decode(&m); err == io.EOF {
 				if messages != nil {
-					messages <- "EOF"
+					m.EOF = "EOF"
+					messages <- m
 				}
 				break
 			} else if err != nil {
@@ -412,17 +413,21 @@ func (c *Client) stream(method, path string, messages chan string, setRawTermina
 			if m.Read != "" {
 				if messages == nil {
 					// fmt.Fprint(stdout, m.Stream)
-					fmt.Fprint(stdout, m.Read)
-					fmt.Fprint(stdout, m.Network)
+					fmt.Fprintln(stdout, m.Read)
+					fmt.Fprintln(stdout, m.Network)
+					fmt.Fprintln(stdout, m.Memory)
+					fmt.Fprintln(stdout, m.CPU)
 				} else {
 					//if we're calling the stats endpoint we can decode into structs instead of just printing to stdout
 					// fmt.Fprint(stdout, m.Stream)
-					fmt.Fprint(stdout, m.Read)
-					fmt.Fprint(stdout, m.Network)
-					// messages <- m.Stream
+					fmt.Fprintln(stdout, m.Read)
+					fmt.Fprintln(stdout, m.Network)
+					fmt.Fprintln(stdout, m.Memory)
+					fmt.Fprintln(stdout, m.CPU)
+					messages <- m
 				}
 			} else {
-				fmt.Fprintf(stdout, "read was nil")
+				fmt.Fprint(stdout, "read was nil")
 			}
 			// } else if m.Progress != "" {
 			// 	// fmt.Fprintf(stdout, "%s %s\r", m.Status, m.Progress)

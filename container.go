@@ -485,44 +485,88 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 }
 
 type NetworkStats struct {
-	RX_dropped uint64
-	RX_bytes   uint64
-	RX_errors  uint64
-	TX_packets uint64
-	TX_dropped uint64
-	RX_packets uint64
-	TX_errors  uint64
-	TX_bytes   uint64
+	RX_dropped uint64 `json:"rx_dropped"`
+	RX_bytes   uint64 `json:"rx_bytes"`
+	RX_errors  uint64 `json:"rx_errors"`
+	TX_packets uint64 `json:"tx_packets"`
+	TX_dropped uint64 `json:"tx_dropped"`
+	RX_packets uint64 `json:"rx_packets"`
+	TX_errors  uint64 `json:"tx_errors"`
+	TX_bytes   uint64 `json:"tx_bytes"`
 }
 
 type MemoryStats struct {
+	Stats     DetailedMemoryStats `json:"stats"`
+	Max_usage uint64              `json:"max_usage"`
+	Usage     uint64              `json:"usage"`
+	Failcnt   uint64              `json:"failcnt"`
+	Limit     uint64              `json:"limit"`
 }
 
 type DetailedMemoryStats struct {
+	Total_pgmajfault          uint64 `json:"total_pgmajfault"`
+	Cache                     uint64 `json:"cache"`
+	Mapped_file               uint64 `json:"mapped_file"`
+	Total_inactive_file       uint64 `json:"total_inactive_file""`
+	Pgpgout                   uint64 `json:"pgpgout"`
+	Rss                       uint64 `json:"rss"`
+	Total_mapped_file         uint64 `json:"total_mapped_file"`
+	Writeback                 uint64 `json:"writeback"`
+	Unevictable               uint64 `json:"unevictable"`
+	Pgpgin                    uint64 `json:"pgpgin"`
+	Total_unevictable         uint64 `json:"total_unevictable"`
+	Pgmajfault                uint64 `json:"pgmajfault"`
+	Total_rss                 uint64 `json:"total_rss"`
+	Total_rss_huge            uint64 `json:"total_rss_huge"`
+	Total_writeback           uint64 `json:"total_writeback"`
+	Total_inactive_anon       uint64 `json:"total_inactive_anon"`
+	Rss_huge                  uint64 `json:"rss_huge"`
+	Hierarchical_memory_limit uint64 `json:"hierarchical_memory_limit"`
+	Total_pgfault             uint64 `json:"total_pgfault"`
+	Total_active_file         uint64 `json:"total_active_file"`
+	Total_pgpgout             uint64 `json:"total_pgpgout"`
+	Total_cache               uint64 `json:"total_cache"`
+	Inactive_anon             uint64 `json:"inactive_anon"`
+	Active_file               uint64 `json:"active_file"`
+	Pgfault                   uint64 `json:"pgfault"`
+	Inactive_file             uint64 `json:"inactive_file"`
+	Total_pgpgin              uint64 `json:"pgpgin"`
 }
 
 type BlkioStats struct {
 }
 
 type CPUStats struct {
+	Cpu_usage        CPUUsage `json:"cpu_usage"`
+	System_cpu_usage uint64   `json:"system_cpu_usage"`
+}
+
+type CPUUsage struct {
+	Percpu_usage        []uint64 `json:"percpu_usage"`
+	Usage_in_usermode   uint64   `json:"usage_in_usermode"`
+	Total_usage         uint64   `json:"total_usage"`
+	Usage_in_kernelmode uint64   `json:"usage_in_kernelmode"`
 }
 
 type ContainerStats struct {
 	Read    string       `json:"read"`
 	Network NetworkStats `json:"network"`
+	Memory  MemoryStats  `json:"memory_stats"`
+	CPU     CPUStats     `json:"cpu_stats"`
+	EOF     string
 }
 
-func (c *Client) StatsContainer(id string, out *os.File, stats chan string) error {
+func (c *Client) StatsContainer(id string, out *os.File, stats chan ContainerStats) error {
 	// var result ContainerStats
 	w := bufio.NewWriter(out)
 	//buffered channel which whil hold messages retrieved from the stream
-	messages := make(chan string, 2)
+	messages := make(chan ContainerStats, 2)
 	go func() {
 		for {
-			if message := <-messages; message != "" {
-				fmt.Println("Got message from stream: ", message)
+			if message := <-messages; message.EOF != "EOF" {
+				fmt.Println("Got message from stream: ", message.Read)
 				stats <- message
-			} else if message == "EOF" {
+			} else if message.EOF == "EOF" {
 				break
 			}
 		}
