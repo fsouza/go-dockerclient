@@ -394,14 +394,13 @@ func (c *Client) stream(method, path string, messages chan string, setRawTermina
 		// without decoding it
 		if rawJSONStream {
 			_, err = io.Copy(stdout, resp.Body)
-			contents, err := ioutil.ReadAll(resp.Body)
-			messages <- string(contents)
 			return err
 		}
 		dec := json.NewDecoder(resp.Body)
 
 		for {
-			var m jsonMessage
+			// var m jsonMessage
+			var m ContainerStats
 			if err := dec.Decode(&m); err == io.EOF {
 				if messages != nil {
 					messages <- "EOF"
@@ -410,22 +409,29 @@ func (c *Client) stream(method, path string, messages chan string, setRawTermina
 			} else if err != nil {
 				return err
 			}
-			if m.Stream != "" {
+			if m.Read != "" {
 				if messages == nil {
-					fmt.Fprint(stdout, m.Stream)
+					// fmt.Fprint(stdout, m.Stream)
+					fmt.Fprint(stdout, m.Read)
+					fmt.Fprint(stdout, m.Network)
 				} else {
 					//if we're calling the stats endpoint we can decode into structs instead of just printing to stdout
-					fmt.Fprint(stdout, m.Stream)
-					messages <- m.Stream
+					// fmt.Fprint(stdout, m.Stream)
+					fmt.Fprint(stdout, m.Read)
+					fmt.Fprint(stdout, m.Network)
+					// messages <- m.Stream
 				}
-			} else if m.Progress != "" {
-				fmt.Fprintf(stdout, "%s %s\r", m.Status, m.Progress)
-			} else if m.Error != "" {
-				return errors.New(m.Error)
+			} else {
+				fmt.Fprintf(stdout, "read was nil")
 			}
-			if m.Status != "" {
-				fmt.Fprintln(stdout, m.Status)
-			}
+			// } else if m.Progress != "" {
+			// 	// fmt.Fprintf(stdout, "%s %s\r", m.Status, m.Progress)
+			// } else if m.Error != "" {
+			// 	return errors.New(m.Error)
+			// }
+			// if m.Status != "" {
+			// 	fmt.Fprintln(stdout, m.Status)
+			// }
 		}
 	} else {
 		if setRawTerminal {

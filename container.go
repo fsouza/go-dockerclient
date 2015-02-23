@@ -485,14 +485,14 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 }
 
 type NetworkStats struct {
-	RX_dropped int
-	RX_bytes   int
-	RX_errors  int
-	TX_packets int
-	TX_dropped int
-	RX_packets int
-	TX_errors  int
-	TX_bytes   int
+	RX_dropped uint64
+	RX_bytes   uint64
+	RX_errors  uint64
+	TX_packets uint64
+	TX_dropped uint64
+	RX_packets uint64
+	TX_errors  uint64
+	TX_bytes   uint64
 }
 
 type MemoryStats struct {
@@ -508,8 +508,8 @@ type CPUStats struct {
 }
 
 type ContainerStats struct {
-	Read    string
-	Network NetworkStats
+	Read    string       `json:"read"`
+	Network NetworkStats `json:"network"`
 }
 
 func (c *Client) StatsContainer(id string, out *os.File, stats chan string) error {
