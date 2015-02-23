@@ -560,19 +560,19 @@ func (c *Client) StatsContainer(id string, out *os.File, stats chan ContainerSta
 	// var result ContainerStats
 	w := bufio.NewWriter(out)
 	//buffered channel which whil hold messages retrieved from the stream
-	messages := make(chan ContainerStats, 2)
-	go func() {
-		for {
-			if message := <-messages; message.EOF != "EOF" {
-				fmt.Println("Got message from stream: ", message.Read)
-				stats <- message
-			} else if message.EOF == "EOF" {
-				break
-			}
-		}
-	}()
+	// messages := make(chan ContainerStats, 2)
+	// go func() {
+	// 	for {
+	// 		if message := <-messages; message.EOF != "EOF" {
+	// 			fmt.Println("Got message from stream: ", message.Read)
+	// 			stats <- message
+	// 		} else if message.EOF == "EOF" {
+	// 			break
+	// 		}
+	// 	}
+	// }()
 
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), messages, true, false, nil, nil, w, nil); err != nil {
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), stats, true, false, nil, nil, w, nil); err != nil {
 		w.Flush()
 		return err
 	}
