@@ -570,11 +570,11 @@ func (c *Client) StatsContainer(id string, stats chan ContainerStats) error {
 	// 	}
 	// }()
 
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), stats, true, false, nil, nil, w, nil); err != nil {
-		w.Flush()
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), stats, true, false, nil, nil, nil, nil); err != nil {
+		// w.Flush()
 		return err
 	}
-	w.Flush()
+	// w.Flush()
 	return nil
 }
 
