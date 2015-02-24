@@ -5,14 +5,12 @@
 package docker
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -556,9 +554,9 @@ type ContainerStats struct {
 	EOF     string
 }
 
-func (c *Client) StatsContainer(id string, out *os.File, stats chan ContainerStats) error {
+func (c *Client) StatsContainer(id string, stats chan ContainerStats) error {
 	// var result ContainerStats
-	w := bufio.NewWriter(out)
+	// w := bufio.NewWriter(out)
 	//buffered channel which whil hold messages retrieved from the stream
 	// messages := make(chan ContainerStats, 2)
 	// go func() {
