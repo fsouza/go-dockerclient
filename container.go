@@ -483,52 +483,52 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 }
 
 type NetworkStats struct {
-	RX_dropped uint64 `json:"rx_dropped"`
-	RX_bytes   uint64 `json:"rx_bytes"`
-	RX_errors  uint64 `json:"rx_errors"`
-	TX_packets uint64 `json:"tx_packets"`
-	TX_dropped uint64 `json:"tx_dropped"`
-	RX_packets uint64 `json:"rx_packets"`
-	TX_errors  uint64 `json:"tx_errors"`
-	TX_bytes   uint64 `json:"tx_bytes"`
+	RX_dropped int64 `json:"rx_dropped"`
+	RX_bytes   int64 `json:"rx_bytes"`
+	RX_errors  int64 `json:"rx_errors"`
+	TX_packets int64 `json:"tx_packets"`
+	TX_dropped int64 `json:"tx_dropped"`
+	RX_packets int64 `json:"rx_packets"`
+	TX_errors  int64 `json:"tx_errors"`
+	TX_bytes   int64 `json:"tx_bytes"`
 }
 
 type MemoryStats struct {
 	Stats     DetailedMemoryStats `json:"stats"`
-	Max_usage uint64              `json:"max_usage"`
-	Usage     uint64              `json:"usage"`
-	Failcnt   uint64              `json:"failcnt"`
-	Limit     uint64              `json:"limit"`
+	Max_usage int64               `json:"max_usage"`
+	Usage     int64               `json:"usage"`
+	Failcnt   int64               `json:"failcnt"`
+	Limit     int64               `json:"limit"`
 }
 
 type DetailedMemoryStats struct {
-	Total_pgmajfault          uint64 `json:"total_pgmajfault"`
-	Cache                     uint64 `json:"cache"`
-	Mapped_file               uint64 `json:"mapped_file"`
-	Total_inactive_file       uint64 `json:"total_inactive_file""`
-	Pgpgout                   uint64 `json:"pgpgout"`
-	Rss                       uint64 `json:"rss"`
-	Total_mapped_file         uint64 `json:"total_mapped_file"`
-	Writeback                 uint64 `json:"writeback"`
-	Unevictable               uint64 `json:"unevictable"`
-	Pgpgin                    uint64 `json:"pgpgin"`
-	Total_unevictable         uint64 `json:"total_unevictable"`
-	Pgmajfault                uint64 `json:"pgmajfault"`
-	Total_rss                 uint64 `json:"total_rss"`
-	Total_rss_huge            uint64 `json:"total_rss_huge"`
-	Total_writeback           uint64 `json:"total_writeback"`
-	Total_inactive_anon       uint64 `json:"total_inactive_anon"`
-	Rss_huge                  uint64 `json:"rss_huge"`
-	Hierarchical_memory_limit uint64 `json:"hierarchical_memory_limit"`
-	Total_pgfault             uint64 `json:"total_pgfault"`
-	Total_active_file         uint64 `json:"total_active_file"`
-	Total_pgpgout             uint64 `json:"total_pgpgout"`
-	Total_cache               uint64 `json:"total_cache"`
-	Inactive_anon             uint64 `json:"inactive_anon"`
-	Active_file               uint64 `json:"active_file"`
-	Pgfault                   uint64 `json:"pgfault"`
-	Inactive_file             uint64 `json:"inactive_file"`
-	Total_pgpgin              uint64 `json:"pgpgin"`
+	Total_pgmajfault          int64 `json:"total_pgmajfault"`
+	Cache                     int64 `json:"cache"`
+	Mapped_file               int64 `json:"mapped_file"`
+	Total_inactive_file       int64 `json:"total_inactive_file""`
+	Pgpgout                   int64 `json:"pgpgout"`
+	Rss                       int64 `json:"rss"`
+	Total_mapped_file         int64 `json:"total_mapped_file"`
+	Writeback                 int64 `json:"writeback"`
+	Unevictable               int64 `json:"unevictable"`
+	Pgpgin                    int64 `json:"pgpgin"`
+	Total_unevictable         int64 `json:"total_unevictable"`
+	Pgmajfault                int64 `json:"pgmajfault"`
+	Total_rss                 int64 `json:"total_rss"`
+	Total_rss_huge            int64 `json:"total_rss_huge"`
+	Total_writeback           int64 `json:"total_writeback"`
+	Total_inactive_anon       int64 `json:"total_inactive_anon"`
+	Rss_huge                  int64 `json:"rss_huge"`
+	Hierarchical_memory_limit int64 `json:"hierarchical_memory_limit"`
+	Total_pgfault             int64 `json:"total_pgfault"`
+	Total_active_file         int64 `json:"total_active_file"`
+	Total_pgpgout             int64 `json:"total_pgpgout"`
+	Total_cache               int64 `json:"total_cache"`
+	Inactive_anon             int64 `json:"inactive_anon"`
+	Active_file               int64 `json:"active_file"`
+	Pgfault                   int64 `json:"pgfault"`
+	Inactive_file             int64 `json:"inactive_file"`
+	Total_pgpgin              int64 `json:"pgpgin"`
 }
 
 type BlkioStats struct {
@@ -536,14 +536,14 @@ type BlkioStats struct {
 
 type CPUStats struct {
 	Cpu_usage        CPUUsage `json:"cpu_usage"`
-	System_cpu_usage uint64   `json:"system_cpu_usage"`
+	System_cpu_usage int64    `json:"system_cpu_usage"`
 }
 
 type CPUUsage struct {
-	Percpu_usage        []uint64 `json:"percpu_usage"`
-	Usage_in_usermode   uint64   `json:"usage_in_usermode"`
-	Total_usage         uint64   `json:"total_usage"`
-	Usage_in_kernelmode uint64   `json:"usage_in_kernelmode"`
+	Percpu_usage        []int64 `json:"percpu_usage"`
+	Usage_in_usermode   int64   `json:"usage_in_usermode"`
+	Total_usage         int64   `json:"total_usage"`
+	Usage_in_kernelmode int64   `json:"usage_in_kernelmode"`
 }
 
 type ContainerStats struct {
