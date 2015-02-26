@@ -494,11 +494,12 @@ type NetworkStats struct {
 }
 
 type MemoryStats struct {
-	Stats     DetailedMemoryStats `json:"stats"`
-	Max_usage uint64              `json:"max_usage"`
-	Usage     uint64              `json:"usage"`
-	Failcnt   uint64              `json:"failcnt"`
-	Limit     uint64              `json:"limit"`
+	Stats           DetailedMemoryStats `json:"stats"`
+	Max_usage       uint64              `json:"max_usage"`
+	Usage           uint64              `json:"usage"`
+	Failcnt         uint64              `json:"failcnt"`
+	Limit           uint64              `json:"limit"`
+	PercentageInUse float64
 }
 
 type DetailedMemoryStats struct {
@@ -537,6 +538,7 @@ type BlkioStats struct {
 type CPUStats struct {
 	Cpu_usage        CPUUsage `json:"cpu_usage"`
 	System_cpu_usage uint64   `json:"system_cpu_usage"`
+	PercentageInUse  float64
 }
 
 type CPUUsage struct {

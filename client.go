@@ -420,10 +420,16 @@ func (c *Client) stream(method, path string, messages chan ContainerStats, setRa
 				} else {
 					//if we're calling the stats endpoint we can decode into structs instead of just printing to stdout
 					// fmt.Fprint(stdout, m.Stream)
-					fmt.Fprintln(stdout, m.Read)
-					fmt.Fprintln(stdout, m.Network)
-					fmt.Fprintln(stdout, m.Memory)
-					fmt.Fprintln(stdout, m.CPU)
+					percpu := float64(m.CPU.Cpu_usage.Percpu_usage[0])
+					syscpu := float64(m.CPU.System_cpu_usage)
+					cpuPercentage := 100 * (percpu / syscpu)
+					m.CPU.PercentageInUse = cpuPercentage
+
+					memusage := float64(m.Memory.Usage)
+					memlimit := float64(m.Memory.Limit)
+					memoryPercentage := 100 * (memusage / memlimit)
+					m.Memory.PercentageInUse = memoryPercentage
+
 					messages <- m
 				}
 			} else {
