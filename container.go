@@ -220,7 +220,7 @@ type Container struct {
 	Name           string `json:"Name,omitempty" yaml:"Name,omitempty"`
 	Driver         string `json:"Driver,omitempty" yaml:"Driver,omitempty"`
 
-	Volumes    map[string]string `json:"Volumes,omitempty" yaml:"Volumes,omitempty"`
+	Volumes    map[string]struct{} `json:"Volumes,omitempty" yaml:"Volumes,omitempty"`
 	VolumesRW  map[string]bool   `json:"VolumesRW,omitempty" yaml:"VolumesRW,omitempty"`
 	HostConfig *HostConfig       `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
 }
