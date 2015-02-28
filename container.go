@@ -172,7 +172,7 @@ type Config struct {
 	Hostname        string              `json:"Hostname,omitempty" yaml:"Hostname,omitempty"`
 	Domainname      string              `json:"Domainname,omitempty" yaml:"Domainname,omitempty"`
 	User            string              `json:"User,omitempty" yaml:"User,omitempty"`
-	Memory          int64               `json:"Memory,omitempty" yaml:"Memory,omitempty"`
+	Memory          float64               `json:"Memory,omitempty" yaml:"Memory,omitempty"`
 	MemorySwap      int64               `json:"MemorySwap,omitempty" yaml:"MemorySwap,omitempty"`
 	CPUShares       int64               `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
 	CPUSet          string              `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
