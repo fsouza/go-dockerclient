@@ -550,33 +550,20 @@ type CPUUsage struct {
 
 type ContainerStats struct {
 	Read    string       `json:"read"`
+	Stream  string       `json:"stream,omitempty"`
 	Network NetworkStats `json:"network"`
 	Memory  MemoryStats  `json:"memory_stats"`
 	CPU     CPUStats     `json:"cpu_stats"`
 	EOF     string
 }
 
-func (c *Client) StatsContainer(id string, stats chan ContainerStats) error {
-	// var result ContainerStats
-	// w := bufio.NewWriter(out)
-	//buffered channel which whil hold messages retrieved from the stream
-	// messages := make(chan ContainerStats, 2)
-	// go func() {
-	// 	for {
-	// 		if message := <-messages; message.EOF != "EOF" {
-	// 			fmt.Println("Got message from stream: ", message.Read)
-	// 			stats <- message
-	// 		} else if message.EOF == "EOF" {
-	// 			break
-	// 		}
-	// 	}
-	// }()
-
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), stats, true, false, nil, nil, nil, nil); err != nil {
-		// w.Flush()
+// StatsContainer gets container stats based on resource usage
+//
+// See http://goo.gl/eY5NRI for more details.
+func (c *Client) StatsContainer(id string, stats chan ContainerStats, stdout io.Writer) error {
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), stats, true, false, true, nil, nil, stdout, nil); err != nil {
 		return err
 	}
-	// w.Flush()
 	return nil
 }
 
@@ -797,7 +784,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream("GET", path, nil, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream)
+	return c.stream("GET", path, nil, opts.RawTerminal, false, false, nil, nil, opts.OutputStream, opts.ErrorStream)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
@@ -827,7 +814,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, nil, true, false, nil, nil, opts.OutputStream, nil)
+	return c.stream("GET", url, nil, true, false, false, nil, nil, opts.OutputStream, nil)
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.
