@@ -438,7 +438,7 @@ func decodeStats(dec *json.Decoder, messages chan ContainerStats, stdout io.Writ
 		return err
 	}
 	if m.Read != "" {
-		fmt.Fprint(stdout, m.Stream)
+		fmt.Fprint(stdout, m)
 
 		if messages != nil {
 			//set some extra useful stats that are not part of the docker API result
