@@ -438,10 +438,11 @@ func decodeStats(dec *json.Decoder, messages chan ContainerStats, stdout io.Writ
 		return err
 	}
 	if m.Read != "" {
-		fmt.Fprint(stdout, m)
+		jbody, _ := json.MarshalIndent(m, "", "  ")
+		fmt.Fprint(stdout, string(jbody))
 
 		if messages != nil {
-			//set some extra useful stats that are not part of the docker API result
+			//set some extra useful stats that are not included in the API result
 			percpu := float64(m.CPU.Cpu_usage.Percpu_usage[0])
 			syscpu := float64(m.CPU.System_cpu_usage)
 			cpuPercentage := 100 * (percpu / syscpu)
