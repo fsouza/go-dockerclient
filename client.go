@@ -34,7 +34,7 @@ var (
 	// ErrConnectionRefused is returned when the client cannot connect to the given endpoint.
 	ErrConnectionRefused = errors.New("cannot connect to Docker endpoint")
 
-	apiVersion1_12, _ = NewAPIVersion("1.12")
+	apiVersion112, _ = NewAPIVersion("1.12")
 )
 
 // APIVersion is an internal representation of a version of the Remote API.
