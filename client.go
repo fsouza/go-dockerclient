@@ -443,8 +443,8 @@ func decodeStats(dec *json.Decoder, messages chan ContainerStats, stdout io.Writ
 
 		if messages != nil {
 			//set some extra useful stats that are not included in the API result
-			percpu := float64(m.CPU.Cpu_usage.Percpu_usage[0])
-			syscpu := float64(m.CPU.System_cpu_usage)
+			percpu := float64(m.CPU.CpuUsage.PercpuUsage[0])
+			syscpu := float64(m.CPU.SystemCpuUsage)
 			cpuPercentage := 100 * (percpu / syscpu)
 			m.CPU.PercentageInUse = cpuPercentage
 

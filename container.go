@@ -483,14 +483,14 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 }
 
 type NetworkStats struct {
-	RX_dropped uint64 `json:"rx_dropped"`
-	RX_bytes   uint64 `json:"rx_bytes"`
-	RX_errors  uint64 `json:"rx_errors"`
-	TX_packets uint64 `json:"tx_packets"`
-	TX_dropped uint64 `json:"tx_dropped"`
-	RX_packets uint64 `json:"rx_packets"`
-	TX_errors  uint64 `json:"tx_errors"`
-	TX_bytes   uint64 `json:"tx_bytes"`
+	RXdropped uint64 `json:"rx_dropped"`
+	RXbytes   uint64 `json:"rx_bytes"`
+	RXerrors  uint64 `json:"rx_errors"`
+	TXpackets uint64 `json:"tx_packets"`
+	TXdropped uint64 `json:"tx_dropped"`
+	RXpackets uint64 `json:"rx_packets"`
+	TXerrors  uint64 `json:"tx_errors"`
+	TXbytes   uint64 `json:"tx_bytes"`
 }
 
 type MemoryStats struct {
@@ -569,16 +569,15 @@ func (c *Client) StatsContainer(id string, stats chan ContainerStats, stdout io.
 
 // GetCPUusage returns the percentage of CPU being used by the container
 func (c *ContainerStats) GetCPUusage() float64 {
-
-	percpu := float64(msg.CPU.Cpu_usage.Percpu_usage[0])
-	syscpu := float64(msg.CPU.System_cpu_usage)
+	percpu := float64(c.CPU.CpuUsage.PercpuUsage[0])
+	syscpu := float64(c.CPU.SystemCpuUsage)
 	return 100 * (percpu / syscpu)
 }
 
 // GetMemoryUsage returns the percentage of Memory being used by the container
 func (c *ContainerStats) GetMemoryUsage() float64 {
-	memusage := float64(msg.Memory.Usage)
-	memlimit := float64(msg.Memory.Limit)
+	memusage := float64(c.Memory.Usage)
+	memlimit := float64(c.Memory.Limit)
 	return 100 * (memusage / memlimit)
 }
 
