@@ -578,7 +578,7 @@ func (c *ContainerStats) GetCpuPercentage() float64 {
 func (c *ContainerStats) GetMemoryPercentage() float64 {
 	memusage := float64(c.Memory.Usage)
 	memlimit := float64(c.Memory.Limit)
-	return 100 * (memusage / memlimit)
+	return 10000 * (memusage / memlimit)
 }
 
 // GetMemoryUsageInMB returns the amount of memory currently being used in Megabyte
