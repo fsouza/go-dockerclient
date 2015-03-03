@@ -43,6 +43,7 @@ type DockerServer struct {
 	mux            *mux.Router
 	hook           func(*http.Request)
 	failures       map[string]string
+	execCallbacks  map[string]func()
 	customHandlers map[string]http.Handler
 	handlerMutex   sync.RWMutex
 	cChan          chan<- *docker.Container
@@ -69,6 +70,7 @@ func NewServer(bind string, containerChan chan<- *docker.Container, hook func(*h
 		imgIDs:         make(map[string]string),
 		hook:           hook,
 		failures:       make(map[string]string),
+		execCallbacks:  make(map[string]func()),
 		customHandlers: make(map[string]http.Handler),
 		cChan:          containerChan,
 	}
@@ -120,6 +122,30 @@ func (s *DockerServer) buildMuxer() {
 // The hook function is a function called on every request.
 func (s *DockerServer) SetHook(hook func(*http.Request)) {
 	s.hook = hook
+}
+
+// PrepareExec adds a callback to a container exec in the fake server.
+//
+// This function will be called whenever the given exec id is started, and the
+// given exec id will remain in the "Running" start while the function is
+// running, so it's useful for emulating an exec that runs for two seconds, for
+// example:
+//
+//    opts := docker.CreateExecOptions{
+//        AttachStdin:  true,
+//        AttachStdout: true,
+//        AttachStderr: true,
+//        Tty:          true,
+//        Cmd:          []string{"/bin/bash", "-l"},
+//    }
+//    // Client points to a fake server.
+//    exec, err := client.CreateExec(opts)
+//    // handle error
+//    server.PrepareExec(exec.ID, func() {time.Sleep(2 * time.Second)})
+//    err = client.StartExec(exec.ID, docker.StartExecOptions{Tty: true}) // will block for 2 seconds
+//    // handle error
+func (s *DockerServer) PrepareExec(id string, callback func()) {
+	s.execCallbacks[id] = callback
 }
 
 // PrepareFailure adds a new expected failure based on a URL regexp it receives
@@ -751,7 +777,7 @@ func (s *DockerServer) createExecContainer(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	exec := docker.ExecInspect{
-		ID:        "id-exec-created-by-test",
+		ID:        s.generateID(),
 		Container: *container,
 	}
 	var params docker.CreateExecOptions
@@ -776,6 +802,11 @@ func (s *DockerServer) startExecContainer(w http.ResponseWriter, r *http.Request
 	id := mux.Vars(r)["id"]
 	for _, exec := range s.execs {
 		if exec.ID == id {
+			exec.Running = true
+			if callback, ok := s.execCallbacks[id]; ok {
+				callback()
+			}
+			exec.Running = false
 			w.WriteHeader(http.StatusOK)
 			return
 		}
