@@ -1,4 +1,4 @@
-// Copyright 2014 go-dockerclient authors. All rights reserved.
+// Copyright 2015 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -252,7 +252,7 @@ func (c *Client) checkAPIVersion() error {
 // See http://goo.gl/stJENm for more details.
 func (c *Client) Ping() error {
 	path := "/_ping"
-	body, status, err := c.do("GET", path, nil)
+	body, status, err := c.do("GET", path, nil, false)
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (c *Client) Ping() error {
 }
 
 func (c *Client) getServerAPIVersionString() (version string, err error) {
-	body, status, err := c.do("GET", "/version", nil)
+	body, status, err := c.do("GET", "/version", nil, false)
 	if err != nil {
 		return "", err
 	}
@@ -279,9 +279,9 @@ func (c *Client) getServerAPIVersionString() (version string, err error) {
 	return version, nil
 }
 
-func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) {
+func (c *Client) do(method, path string, data interface{}, forceJSON bool) ([]byte, int, error) {
 	var params io.Reader
-	if data != nil {
+	if data != nil || forceJSON {
 		buf, err := json.Marshal(data)
 		if err != nil {
 			return nil, -1, err

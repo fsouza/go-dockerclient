@@ -1,4 +1,4 @@
-// Copyright 2014 go-dockerclient authors. All rights reserved.
+// Copyright 2015 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -99,7 +99,7 @@ var (
 // See http://goo.gl/2rOLFF for more details.
 func (c *Client) ListImages(opts ListImagesOptions) ([]APIImages, error) {
 	path := "/images/json?" + queryString(opts)
-	body, _, err := c.do("GET", path, nil)
+	body, _, err := c.do("GET", path, nil, false)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (c *Client) ListImages(opts ListImagesOptions) ([]APIImages, error) {
 //
 // See http://goo.gl/2oJmNs for more details.
 func (c *Client) ImageHistory(name string) ([]ImageHistory, error) {
-	body, status, err := c.do("GET", "/images/"+name+"/history", nil)
+	body, status, err := c.do("GET", "/images/"+name+"/history", nil, false)
 	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
 	}
@@ -134,7 +134,7 @@ func (c *Client) ImageHistory(name string) ([]ImageHistory, error) {
 //
 // See http://goo.gl/znj0wM for more details.
 func (c *Client) RemoveImage(name string) error {
-	_, status, err := c.do("DELETE", "/images/"+name, nil)
+	_, status, err := c.do("DELETE", "/images/"+name, nil, false)
 	if status == http.StatusNotFound {
 		return ErrNoSuchImage
 	}
@@ -156,7 +156,7 @@ type RemoveImageOptions struct {
 // See http://goo.gl/znj0wM for more details.
 func (c *Client) RemoveImageExtended(name string, opts RemoveImageOptions) error {
 	uri := fmt.Sprintf("/images/%s?%s", name, queryString(&opts))
-	_, status, err := c.do("DELETE", uri, nil)
+	_, status, err := c.do("DELETE", uri, nil, false)
 	if status == http.StatusNotFound {
 		return ErrNoSuchImage
 	}
@@ -167,7 +167,7 @@ func (c *Client) RemoveImageExtended(name string, opts RemoveImageOptions) error
 //
 // See http://goo.gl/Q112NY for more details.
 func (c *Client) InspectImage(name string) (*Image, error) {
-	body, status, err := c.do("GET", "/images/"+name+"/json", nil)
+	body, status, err := c.do("GET", "/images/"+name+"/json", nil, false)
 	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
 	}
@@ -418,7 +418,8 @@ func (c *Client) TagImage(name string, opts TagImageOptions) error {
 		return ErrNoSuchImage
 	}
 	_, status, err := c.do("POST", fmt.Sprintf("/images/"+name+"/tag?%s",
-		queryString(&opts)), nil)
+		queryString(&opts)), nil, false)
+
 	if status == http.StatusNotFound {
 		return ErrNoSuchImage
 	}
@@ -468,7 +469,7 @@ type APIImageSearch struct {
 //
 // See http://goo.gl/xI5lLZ for more details.
 func (c *Client) SearchImages(term string) ([]APIImageSearch, error) {
-	body, _, err := c.do("GET", "/images/search?term="+term, nil)
+	body, _, err := c.do("GET", "/images/search?term="+term, nil, false)
 	if err != nil {
 		return nil, err
 	}
