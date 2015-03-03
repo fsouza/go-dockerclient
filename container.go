@@ -568,17 +568,27 @@ func (c *Client) StatsContainer(id string, stats chan ContainerStats, stdout io.
 }
 
 // GetCPUusage returns the percentage of CPU being used by the container
-func (c *ContainerStats) GetCPUusage() float64 {
+func (c *ContainerStats) GetCpuPercentage() float64 {
 	percpu := float64(c.CPU.CpuUsage.PercpuUsage[0])
 	syscpu := float64(c.CPU.SystemCpuUsage)
 	return 100 * (percpu / syscpu)
 }
 
 // GetMemoryUsage returns the percentage of Memory being used by the container
-func (c *ContainerStats) GetMemoryUsage() float64 {
+func (c *ContainerStats) GetMemoryPercentage() float64 {
 	memusage := float64(c.Memory.Usage)
 	memlimit := float64(c.Memory.Limit)
 	return 100 * (memusage / memlimit)
+}
+
+// GetMemoryUsageInMB returns the amount of memory currently being used in Megabyte
+func (c *ContainerStats) GetMemoryUsageInMB() float64 {
+	return float64(c.Memory.Usage) / 1000000
+}
+
+// GetMemoryLimitInGB() returns the amount of memory available for this container in Gigabyte
+func (c *ContainerStats) GetMemoryLimitInGB() float64 {
+	return float64(c.Memory.Limit) / 1000000000
 }
 
 // KillContainerOptions represents the set of options that can be used in a
