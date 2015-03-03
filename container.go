@@ -1,4 +1,4 @@
-// Copyright 2014 go-dockerclient authors. All rights reserved.
+// Copyright 2015 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -368,11 +368,8 @@ type HostConfig struct {
 //
 // See http://goo.gl/iM5GYs for more details.
 func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
-	if hostConfig == nil {
-		hostConfig = &HostConfig{}
-	}
 	path := "/containers/" + id + "/start"
-	_, status, err := c.do("POST", path, hostConfig)
+	_, status, err := c.do("POST", path, nil)
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
 	}
