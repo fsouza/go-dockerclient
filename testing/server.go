@@ -1,4 +1,4 @@
-// Copyright 2014 go-dockerclient authors. All rights reserved.
+// Copyright 2015 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -113,6 +113,13 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/_ping").Methods("GET").HandlerFunc(s.handlerWrapper(s.pingDocker))
 	s.mux.Path("/images/load").Methods("POST").HandlerFunc(s.handlerWrapper(s.loadImage))
 	s.mux.Path("/images/{id:.*}/get").Methods("GET").HandlerFunc(s.handlerWrapper(s.getImage))
+}
+
+// SetHook changes the hook function used by the server.
+//
+// The hook function is a function called on every request.
+func (s *DockerServer) SetHook(hook func(*http.Request)) {
+	s.hook = hook
 }
 
 // PrepareFailure adds a new expected failure based on a URL regexp it receives

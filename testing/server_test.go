@@ -1,4 +1,4 @@
-// Copyright 2014 go-dockerclient authors. All rights reserved.
+// Copyright 2015 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -74,6 +74,19 @@ func TestHandleWithHook(t *testing.T) {
 	var called bool
 	server, _ := NewServer("127.0.0.1:0", nil, func(*http.Request) { called = true })
 	defer server.Stop()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if !called {
+		t.Error("ServeHTTP did not call the hook function.")
+	}
+}
+
+func TestSetHook(t *testing.T) {
+	var called bool
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
+	server.SetHook(func(*http.Request) { called = true })
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
 	server.ServeHTTP(recorder, request)
