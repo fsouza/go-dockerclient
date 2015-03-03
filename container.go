@@ -503,49 +503,49 @@ type MemoryStats struct {
 }
 
 type DetailedMemoryStats struct {
-	Total_pgmajfault          uint64 `json:"total_pgmajfault"`
-	Cache                     uint64 `json:"cache"`
-	Mapped_file               uint64 `json:"mapped_file"`
-	Total_inactive_file       uint64 `json:"total_inactive_file""`
-	Pgpgout                   uint64 `json:"pgpgout"`
-	Rss                       uint64 `json:"rss"`
-	Total_mapped_file         uint64 `json:"total_mapped_file"`
-	Writeback                 uint64 `json:"writeback"`
-	Unevictable               uint64 `json:"unevictable"`
-	Pgpgin                    uint64 `json:"pgpgin"`
-	Total_unevictable         uint64 `json:"total_unevictable"`
-	Pgmajfault                uint64 `json:"pgmajfault"`
-	Total_rss                 uint64 `json:"total_rss"`
-	Total_rss_huge            uint64 `json:"total_rss_huge"`
-	Total_writeback           uint64 `json:"total_writeback"`
-	Total_inactive_anon       uint64 `json:"total_inactive_anon"`
-	Rss_huge                  uint64 `json:"rss_huge"`
-	Hierarchical_memory_limit uint64 `json:"hierarchical_memory_limit"`
-	Total_pgfault             uint64 `json:"total_pgfault"`
-	Total_active_file         uint64 `json:"total_active_file"`
-	Total_pgpgout             uint64 `json:"total_pgpgout"`
-	Total_cache               uint64 `json:"total_cache"`
-	Inactive_anon             uint64 `json:"inactive_anon"`
-	Active_file               uint64 `json:"active_file"`
-	Pgfault                   uint64 `json:"pgfault"`
-	Inactive_file             uint64 `json:"inactive_file"`
-	Total_pgpgin              uint64 `json:"pgpgin"`
+	TotalPgmajfault         uint64 `json:"total_pgmajfault"`
+	Cache                   uint64 `json:"cache"`
+	MappedFile              uint64 `json:"mapped_file"`
+	TotalInactiveFile       uint64 `json:"total_inactive_file""`
+	Pgpgout                 uint64 `json:"pgpgout"`
+	Rss                     uint64 `json:"rss"`
+	TotalMappedFile         uint64 `json:"total_mapped_file"`
+	Writeback               uint64 `json:"writeback"`
+	Unevictable             uint64 `json:"unevictable"`
+	Pgpgin                  uint64 `json:"pgpgin"`
+	TotalUnevictable        uint64 `json:"total_unevictable"`
+	Pgmajfault              uint64 `json:"pgmajfault"`
+	TotalRss                uint64 `json:"total_rss"`
+	TotalRssHuge            uint64 `json:"total_rss_huge"`
+	TotalWriteback          uint64 `json:"total_writeback"`
+	TotalInactiveAnon       uint64 `json:"total_inactive_anon"`
+	RssHuge                 uint64 `json:"rss_huge"`
+	HierarchicalMemoryLimit uint64 `json:"hierarchical_memory_limit"`
+	TotalPgfault            uint64 `json:"total_pgfault"`
+	TotalActiveFile         uint64 `json:"total_active_file"`
+	TotalPgpgout            uint64 `json:"total_pgpgout"`
+	TotalCache              uint64 `json:"total_cache"`
+	InactiveAnon            uint64 `json:"inactive_anon"`
+	ActiveFile              uint64 `json:"active_file"`
+	Pgfault                 uint64 `json:"pgfault"`
+	InactiveFile            uint64 `json:"inactive_file"`
+	TotalPgpgin             uint64 `json:"pgpgin"`
 }
 
 type BlkioStats struct {
 }
 
 type CPUStats struct {
-	Cpu_usage        CPUUsage `json:"cpu_usage"`
-	System_cpu_usage uint64   `json:"system_cpu_usage"`
-	PercentageInUse  float64
+	CpuUsage        CPUUsage `json:"cpu_usage"`
+	SystemCpuUsage  uint64   `json:"system_cpu_usage"`
+	PercentageInUse float64
 }
 
 type CPUUsage struct {
-	Percpu_usage        []uint64 `json:"percpu_usage"`
-	Usage_in_usermode   uint64   `json:"usage_in_usermode"`
-	Total_usage         uint64   `json:"total_usage"`
-	Usage_in_kernelmode uint64   `json:"usage_in_kernelmode"`
+	PercpuUsage       []uint64 `json:"percpu_usage"`
+	UsageInUsermode   uint64   `json:"usage_in_usermode"`
+	TotalUsage        uint64   `json:"total_usage"`
+	UsageInKernelmode uint64   `json:"usage_in_kernelmode"`
 }
 
 type ContainerStats struct {
@@ -565,6 +565,21 @@ func (c *Client) StatsContainer(id string, stats chan ContainerStats, stdout io.
 		return err
 	}
 	return nil
+}
+
+// GetCPUusage returns the percentage of CPU being used by the container
+func (c *ContainerStats) GetCPUusage() float64 {
+
+	percpu := float64(msg.CPU.Cpu_usage.Percpu_usage[0])
+	syscpu := float64(msg.CPU.System_cpu_usage)
+	return 100 * (percpu / syscpu)
+}
+
+// GetMemoryUsage returns the percentage of Memory being used by the container
+func (c *ContainerStats) GetMemoryUsage() float64 {
+	memusage := float64(msg.Memory.Usage)
+	memlimit := float64(msg.Memory.Limit)
+	return 100 * (memusage / memlimit)
 }
 
 // KillContainerOptions represents the set of options that can be used in a
