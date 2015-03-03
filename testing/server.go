@@ -805,6 +805,10 @@ func (s *DockerServer) startExecContainer(w http.ResponseWriter, r *http.Request
 			exec.Running = true
 			if callback, ok := s.execCallbacks[id]; ok {
 				callback()
+				delete(s.execCallbacks, id)
+			} else if callback, ok := s.execCallbacks["*"]; ok {
+				callback()
+				delete(s.execCallbacks, "*")
 			}
 			exec.Running = false
 			w.WriteHeader(http.StatusOK)

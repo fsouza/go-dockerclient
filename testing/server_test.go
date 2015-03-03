@@ -1282,6 +1282,59 @@ func TestStartExecContainer(t *testing.T) {
 	}
 }
 
+func TestStartExecContainerWildcardCallback(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	addContainers(server, 1)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	body := `{"Cmd": ["bash", "-c", "ls"]}`
+	path := fmt.Sprintf("/containers/%s/exec", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, strings.NewReader(body))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("CreateExec: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	unleash := make(chan bool)
+	server.PrepareExec("*", func() {
+		<-unleash
+	})
+	var exec docker.Exec
+	err := json.NewDecoder(recorder.Body).Decode(&exec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes := make(chan int, 1)
+	sent := make(chan bool)
+	go func() {
+		recorder := httptest.NewRecorder()
+		path := fmt.Sprintf("/exec/%s/start", exec.ID)
+		body := `{"Tty":true}`
+		request, _ := http.NewRequest("POST", path, strings.NewReader(body))
+		close(sent)
+		server.ServeHTTP(recorder, request)
+		codes <- recorder.Code
+	}()
+	<-sent
+	execInfo, err := waitExec(server.URL(), exec.ID, true, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !execInfo.Running {
+		t.Error("StartExec: expected exec to be running, but it's not running")
+	}
+	close(unleash)
+	if code := <-codes; code != http.StatusOK {
+		t.Errorf("StartExec: wrong status. Want %d. Got %d.", http.StatusOK, code)
+	}
+	execInfo, err = waitExec(server.URL(), exec.ID, false, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if execInfo.Running {
+		t.Error("StartExec: expected exec to be not running after start returns, but it's running")
+	}
+}
+
 func TestStartExecContainerNotFound(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
 	addContainers(server, 1)
