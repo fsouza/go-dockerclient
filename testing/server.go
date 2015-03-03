@@ -734,7 +734,6 @@ func (s *DockerServer) loadImage(w http.ResponseWriter, r *http.Request) {
 func (s *DockerServer) getImage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/tar")
-
 }
 
 func (s *DockerServer) createExecContainer(w http.ResponseWriter, r *http.Request) {
@@ -764,7 +763,6 @@ func (s *DockerServer) createExecContainer(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"Id": exec.ID})
-
 }
 
 func (s *DockerServer) startExecContainer(w http.ResponseWriter, r *http.Request) {
