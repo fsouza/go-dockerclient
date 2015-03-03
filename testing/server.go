@@ -203,9 +203,11 @@ func (s *DockerServer) URL() string {
 func (s *DockerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.handlerMutex.RLock()
 	defer s.handlerMutex.RUnlock()
-	if handler, ok := s.customHandlers[r.URL.Path]; ok {
-		handler.ServeHTTP(w, r)
-		return
+	for re, handler := range s.customHandlers {
+		if m, _ := regexp.MatchString(re, r.URL.Path); m {
+			handler.ServeHTTP(w, r)
+			return
+		}
 	}
 	s.mux.ServeHTTP(w, r)
 	if s.hook != nil {

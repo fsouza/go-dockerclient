@@ -114,6 +114,25 @@ func TestCustomHandler(t *testing.T) {
 	}
 }
 
+func TestCustomHandlerRegexp(t *testing.T) {
+	var called bool
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	addContainers(server, 2)
+	server.CustomHandler("/containers/.*/json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		fmt.Fprint(w, "Hello world")
+	}))
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/containers/.*/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if !called {
+		t.Error("Did not call the custom handler")
+	}
+	if got := recorder.Body.String(); got != "Hello world" {
+		t.Errorf("Wrong output for custom handler: want %q. Got %q.", "Hello world", got)
+	}
+}
+
 func TestListContainers(t *testing.T) {
 	server := DockerServer{}
 	addContainers(&server, 2)
