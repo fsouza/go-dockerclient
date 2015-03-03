@@ -571,7 +571,7 @@ func (c *Client) StatsContainer(id string, stats chan ContainerStats, stdout io.
 func (c *ContainerStats) GetCpuPercentage() float64 {
 	percpu := float64(c.CPU.CpuUsage.PercpuUsage[0])
 	syscpu := float64(c.CPU.SystemCpuUsage)
-	return 10000 * (percpu / syscpu)
+	return 1000 * (percpu / syscpu)
 }
 
 // GetMemoryUsage returns the percentage of Memory being used by the container
