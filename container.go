@@ -569,7 +569,7 @@ func decodeStats(r io.Reader, stats chan ContainerStats) error {
 			// jbody, _ := json.MarshalIndent(m, "", "  ")
 			// fmt.Fprint(stdout, string(jbody))
 
-			if messages != nil {
+			if stats != nil {
 				//set some extra useful stats that are not included in the API result
 				percpu := float64(m.CPU.CpuUsage.PercpuUsage[0])
 				syscpu := float64(m.CPU.SystemCpuUsage)
@@ -594,7 +594,7 @@ func decodeStats(r io.Reader, stats chan ContainerStats) error {
 func (c *Client) StatsContainer(id string, stats chan ContainerStats) error {
 	reader, writer := io.Pipe()
 	go decodeStats(reader, stats)
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), stats, true, false, true, nil, nil, writer, nil); err != nil {
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, true, nil, nil, writer, nil); err != nil {
 		return err
 	}
 	return nil
@@ -841,7 +841,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream("GET", path, nil, opts.RawTerminal, false, false, nil, nil, opts.OutputStream, opts.ErrorStream)
+	return c.stream("GET", path, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream)
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
@@ -871,7 +871,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, nil, true, false, false, nil, nil, opts.OutputStream, nil)
+	return c.stream("GET", url, true, false, nil, nil, opts.OutputStream, nil)
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.
