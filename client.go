@@ -402,6 +402,7 @@ func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool,
 			return err
 		}
 		dec := json.NewDecoder(resp.Body)
+
 		for {
 			var m jsonMessage
 			if err := dec.Decode(&m); err == io.EOF {
