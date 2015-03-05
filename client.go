@@ -334,7 +334,7 @@ func (c *Client) do(method, path string, data interface{}) ([]byte, int, error) 
 	return body, resp.StatusCode, nil
 }
 
-func (c *Client) stream(method, path string, messages chan ContainerStats, setRawTerminal, rawJSONStream, statsBool bool, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
+func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream, headers map[string]string, in io.Reader, stdout, stderr io.Writer) error {
 	if (method == "POST" || method == "PUT") && in == nil {
 		in = bytes.NewReader(nil)
 	}
@@ -399,25 +399,21 @@ func (c *Client) stream(method, path string, messages chan ContainerStats, setRa
 		dec := json.NewDecoder(resp.Body)
 
 		for {
-			if statsBool {
-				decodeStats(dec, messages, stdout)
-			} else {
-				var m jsonMessage
-				if err := dec.Decode(&m); err == io.EOF {
-					break
-				} else if err != nil {
-					return err
-				}
-				if m.Stream != "" {
-					fmt.Fprint(stdout, m.Stream)
-				} else if m.Progress != "" {
-					fmt.Fprintf(stdout, "%s %s\r", m.Status, m.Progress)
-				} else if m.Error != "" {
-					return errors.New(m.Error)
-				}
-				if m.Status != "" {
-					fmt.Fprintln(stdout, m.Status)
-				}
+			var m jsonMessage
+			if err := dec.Decode(&m); err == io.EOF {
+				break
+			} else if err != nil {
+				return err
+			}
+			if m.Stream != "" {
+				fmt.Fprint(stdout, m.Stream)
+			} else if m.Progress != "" {
+				fmt.Fprintf(stdout, "%s %s\r", m.Status, m.Progress)
+			} else if m.Error != "" {
+				return errors.New(m.Error)
+			}
+			if m.Status != "" {
+				fmt.Fprintln(stdout, m.Status)
 			}
 		}
 	} else {
@@ -427,34 +423,6 @@ func (c *Client) stream(method, path string, messages chan ContainerStats, setRa
 			_, err = stdCopy(stdout, stderr, resp.Body)
 		}
 		return err
-	}
-	return nil
-}
-
-// uses a different struct to unmarshal to when we're calling the stats endpoint
-func decodeStats(dec *json.Decoder, messages chan ContainerStats, stdout io.Writer) error {
-	var m ContainerStats
-	if err := dec.Decode(&m); err != nil {
-		return err
-	}
-	if m.Read != "" {
-		jbody, _ := json.MarshalIndent(m, "", "  ")
-		fmt.Fprint(stdout, string(jbody))
-
-		if messages != nil {
-			//set some extra useful stats that are not included in the API result
-			percpu := float64(m.CPU.CpuUsage.PercpuUsage[0])
-			syscpu := float64(m.CPU.SystemCpuUsage)
-			cpuPercentage := 100 * (percpu / syscpu)
-			m.CPU.PercentageInUse = cpuPercentage
-
-			memusage := float64(m.Memory.Usage)
-			memlimit := float64(m.Memory.Limit)
-			memoryPercentage := 100 * (memusage / memlimit)
-			m.Memory.PercentageInUse = memoryPercentage
-
-			messages <- m
-		}
 	}
 	return nil
 }

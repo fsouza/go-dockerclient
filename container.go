@@ -557,11 +557,44 @@ type ContainerStats struct {
 	EOF     string
 }
 
+// uses a different struct to unmarshal to when we're calling the stats endpoint
+func decodeStats(r io.Reader, stats chan ContainerStats) error {
+	dec := json.NewDecoder(r)
+	for {
+		var m ContainerStats
+		if err := dec.Decode(&m); err != nil {
+			return err
+		}
+		if m.Read != "" {
+			// jbody, _ := json.MarshalIndent(m, "", "  ")
+			// fmt.Fprint(stdout, string(jbody))
+
+			if messages != nil {
+				//set some extra useful stats that are not included in the API result
+				percpu := float64(m.CPU.CpuUsage.PercpuUsage[0])
+				syscpu := float64(m.CPU.SystemCpuUsage)
+				cpuPercentage := 100 * (percpu / syscpu)
+				m.CPU.PercentageInUse = cpuPercentage
+
+				memusage := float64(m.Memory.Usage)
+				memlimit := float64(m.Memory.Limit)
+				memoryPercentage := 100 * (memusage / memlimit)
+				m.Memory.PercentageInUse = memoryPercentage
+
+				stats <- m
+			}
+		}
+	}
+	return nil
+}
+
 // StatsContainer gets container stats based on resource usage
 //
 // See http://goo.gl/eY5NRI for more details.
-func (c *Client) StatsContainer(id string, stats chan ContainerStats, stdout io.Writer) error {
-	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), stats, true, false, true, nil, nil, stdout, nil); err != nil {
+func (c *Client) StatsContainer(id string, stats chan ContainerStats) error {
+	reader, writer := io.Pipe()
+	go decodeStats(reader, stats)
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), stats, true, false, true, nil, nil, writer, nil); err != nil {
 		return err
 	}
 	return nil
