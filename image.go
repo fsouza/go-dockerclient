@@ -223,21 +223,6 @@ type PushImageOptions struct {
 	RawJSONStream bool      `qs:"-"`
 }
 
-// AuthConfiguration represents authentication options to use in the PushImage
-// method. It represents the authentication in the Docker index server.
-type AuthConfiguration struct {
-	Username      string `json:"username,omitempty"`
-	Password      string `json:"password,omitempty"`
-	Email         string `json:"email,omitempty"`
-	ServerAddress string `json:"serveraddress,omitempty"`
-}
-
-// AuthConfigurations represents authentication options to use for the
-// PushImage method accommodating the new X-Registry-Config header
-type AuthConfigurations struct {
-	Configs map[string]AuthConfiguration `json:"configs"`
-}
-
 // PushImage pushes an image to a remote registry, logging progress to w.
 //
 // An empty instance of AuthConfiguration may be used for unauthenticated
