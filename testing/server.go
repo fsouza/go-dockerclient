@@ -623,12 +623,16 @@ func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
 	fromImageName := r.URL.Query().Get("fromImage")
+	tag := r.URL.Query().Get("tag")
 	image := docker.Image{
 		ID: s.generateID(),
 	}
 	s.iMut.Lock()
 	s.images = append(s.images, image)
 	if fromImageName != "" {
+		if tag != "" {
+			fromImageName = fmt.Sprintf("%s:%s", fromImageName, tag)
+		}
 		s.imgIDs[fromImageName] = image.ID
 	}
 	s.iMut.Unlock()
