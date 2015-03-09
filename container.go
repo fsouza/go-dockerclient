@@ -573,8 +573,8 @@ func decodeStats(r io.Reader, stats chan<- ContainerStats) error {
 				stats <- m
 			}
 		}
-		return nil
 	}
+	return nil
 }
 
 // StatsContainer gets container stats based on resource usage
