@@ -142,6 +142,7 @@ func TestNewTLSClient2376(t *testing.T) {
 		expected string
 	}{
 		{"tcp://localhost:2376", "https"},
+		{"tcp://localhost:3376", "https"},
 		{"tcp://localhost:2375", "http"},
 		{"tcp://localhost:4000", "http"},
 	}
