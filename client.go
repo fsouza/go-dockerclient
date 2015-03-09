@@ -621,7 +621,7 @@ func parseEndpoint(endpoint string) (*url.URL, error) {
 		}
 
 		number, err := strconv.ParseInt(port, 10, 64)
-		if err == nil && number == 2376 {
+		if err == nil && (number == 2376 || number == 3376) {
 			u.Scheme = "https"
 		} else {
 			u.Scheme = "http"
