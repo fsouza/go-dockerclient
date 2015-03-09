@@ -322,13 +322,13 @@ func (c *Client) do(method, path string, data interface{}, forceJSON bool) ([]by
 	} else {
 		resp, err = c.HTTPClient.Do(req)
 	}
-	defer resp.Body.Close()
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return nil, -1, ErrConnectionRefused
 		}
 		return nil, -1, err
 	}
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, -1, err
@@ -380,13 +380,13 @@ func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool,
 	} else {
 		resp, err = c.HTTPClient.Do(req)
 	}
-	defer resp.Body.Close()
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return ErrConnectionRefused
 		}
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
