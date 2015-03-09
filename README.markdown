@@ -5,7 +5,8 @@
 
 [![GoDoc](http://godoc.org/github.com/fsouza/go-dockerclient?status.png)](http://godoc.org/github.com/fsouza/go-dockerclient)
 
-This package presents a client for the Docker remote API.
+This package presents a client for the Docker remote API. It also provides
+support for the extensions in the [Swarm API](https://docs.docker.com/swarm/API/).
 
 For more details, check the [remote API documentation](http://docs.docker.io/en/latest/reference/api/docker_remote_api/).
 
