@@ -483,82 +483,84 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 }
 
 type NetworkStats struct {
-	RXdropped uint64 `json:"rx_dropped"`
-	RXbytes   uint64 `json:"rx_bytes"`
-	RXerrors  uint64 `json:"rx_errors"`
-	TXpackets uint64 `json:"tx_packets"`
-	TXdropped uint64 `json:"tx_dropped"`
-	RXpackets uint64 `json:"rx_packets"`
-	TXerrors  uint64 `json:"tx_errors"`
-	TXbytes   uint64 `json:"tx_bytes"`
+	RXDropped uint64 `json:"rx_dropped"`
+	RXBytes   uint64 `json:"rx_bytes"`
+	RXErrors  uint64 `json:"rx_errors"`
+	TXPackets uint64 `json:"tx_packets"`
+	TXDropped uint64 `json:"tx_dropped"`
+	RXPackets uint64 `json:"rx_packets"`
+	TXErrors  uint64 `json:"tx_errors"`
+	TXBytes   uint64 `json:"tx_bytes"`
 }
 
+// MemoryStats describes the data realted to the container's memory usage.
 type MemoryStats struct {
-	Stats           DetailedMemoryStats `json:"stats"`
-	Max_usage       uint64              `json:"max_usage"`
-	Usage           uint64              `json:"usage"`
-	Failcnt         uint64              `json:"failcnt"`
-	Limit           uint64              `json:"limit"`
-	PercentageInUse float64
-}
-
-type DetailedMemoryStats struct {
-	TotalPgmajfault         uint64 `json:"total_pgmajfault"`
-	Cache                   uint64 `json:"cache"`
-	MappedFile              uint64 `json:"mapped_file"`
-	TotalInactiveFile       uint64 `json:"total_inactive_file""`
-	Pgpgout                 uint64 `json:"pgpgout"`
-	Rss                     uint64 `json:"rss"`
-	TotalMappedFile         uint64 `json:"total_mapped_file"`
-	Writeback               uint64 `json:"writeback"`
-	Unevictable             uint64 `json:"unevictable"`
-	Pgpgin                  uint64 `json:"pgpgin"`
-	TotalUnevictable        uint64 `json:"total_unevictable"`
-	Pgmajfault              uint64 `json:"pgmajfault"`
-	TotalRss                uint64 `json:"total_rss"`
-	TotalRssHuge            uint64 `json:"total_rss_huge"`
-	TotalWriteback          uint64 `json:"total_writeback"`
-	TotalInactiveAnon       uint64 `json:"total_inactive_anon"`
-	RssHuge                 uint64 `json:"rss_huge"`
-	HierarchicalMemoryLimit uint64 `json:"hierarchical_memory_limit"`
-	TotalPgfault            uint64 `json:"total_pgfault"`
-	TotalActiveFile         uint64 `json:"total_active_file"`
-	TotalPgpgout            uint64 `json:"total_pgpgout"`
-	TotalCache              uint64 `json:"total_cache"`
-	InactiveAnon            uint64 `json:"inactive_anon"`
-	ActiveFile              uint64 `json:"active_file"`
-	Pgfault                 uint64 `json:"pgfault"`
-	InactiveFile            uint64 `json:"inactive_file"`
-	TotalPgpgin             uint64 `json:"pgpgin"`
+	Stats    DetailedMemoryStats `json:"stats"`
+	MaxUsage uint64              `json:"max_usage"`
+	Usage    uint64              `json:"usage"`
+	Failcnt  uint64              `json:"failcnt"`
+	Limit    uint64              `json:"limit"`
 }
 
 type BlkioStats struct {
 }
 
+// DetailedMemoryStats describes detailed data related to the container's memory usage.
+type DetailedMemoryStats struct {
+	TotalPageMajorFaults    uint64 `json:"total_pgmajfault"`
+	Cache                   uint64 `json:"cache"`
+	MappedFile              uint64 `json:"mapped_file"`
+	TotalInactiveFile       uint64 `json:"total_inactive_file""`
+	PageOut                 uint64 `json:"pgpgout"`
+	RSS                     uint64 `json:"rss"`
+	TotalMappedFile         uint64 `json:"total_mapped_file"`
+	Writeback               uint64 `json:"writeback"`
+	Unevictable             uint64 `json:"unevictable"`
+	PageIn                  uint64 `json:"pgpgin"`
+	TotalUnevictable        uint64 `json:"total_unevictable"`
+	Pgmajfault              uint64 `json:"pgmajfault"`
+	TotalRSS                uint64 `json:"total_rss"`
+	TotalRSSHuge            uint64 `json:"total_rss_huge"`
+	TotalWriteback          uint64 `json:"total_writeback"`
+	TotalInactiveAnon       uint64 `json:"total_inactive_anon"`
+	RSSHuge                 uint64 `json:"rss_huge"`
+	HierarchicalMemoryLimit uint64 `json:"hierarchical_memory_limit"`
+	TotalPageFaults         uint64 `json:"total_pgfault"`
+	TotalActiveFile         uint64 `json:"total_active_file"`
+	TotalPagePut            uint64 `json:"total_pgpgout"`
+	TotalCache              uint64 `json:"total_cache"`
+	InactiveAnon            uint64 `json:"inactive_anon"`
+	ActiveFile              uint64 `json:"active_file"`
+	PageFault               uint64 `json:"pgfault"`
+	InactiveFile            uint64 `json:"inactive_file"`
+	TotalPageIn             uint64 `json:"pgpgin"`
+}
+
+// CPUStats describes the data related to the container's CPU usage.
 type CPUStats struct {
-	CpuUsage        CPUUsage `json:"cpu_usage"`
-	SystemCpuUsage  uint64   `json:"system_cpu_usage"`
-	PercentageInUse float64
+	CPUUsage       CPUUsage `json:"cpu_usage"`
+	SystemCPUUsage uint64   `json:"system_cpu_usage"`
 }
 
+// CPUUsage describes the data related to the container's CPU usage.
 type CPUUsage struct {
-	PercpuUsage       []uint64 `json:"percpu_usage"`
-	UsageInUsermode   uint64   `json:"usage_in_usermode"`
+	PerCPUUsage       []uint64 `json:"percpu_usage"`
+	UsageInUserMode   uint64   `json:"usage_in_usermode"`
 	TotalUsage        uint64   `json:"total_usage"`
-	UsageInKernelmode uint64   `json:"usage_in_kernelmode"`
+	UsageInKernelMode uint64   `json:"usage_in_kernelmode"`
 }
 
+// ContainerStats describes the data as it is retrieved from the /stats/ endpoint.
 type ContainerStats struct {
 	Read    string       `json:"read"`
 	Stream  string       `json:"stream,omitempty"`
 	Network NetworkStats `json:"network"`
 	Memory  MemoryStats  `json:"memory_stats"`
 	CPU     CPUStats     `json:"cpu_stats"`
-	EOF     string
 }
 
 // uses a different struct to unmarshal to when we're calling the stats endpoint
-func decodeStats(r io.Reader, stats chan ContainerStats) error {
+func decodeStats(r io.Reader, stats chan<- ContainerStats) error {
 	dec := json.NewDecoder(r)
 	for {
 		var m ContainerStats
@@ -566,26 +568,13 @@ func decodeStats(r io.Reader, stats chan ContainerStats) error {
 			return err
 		}
 		if m.Read != "" {
-			// jbody, _ := json.MarshalIndent(m, "", "  ")
-			// fmt.Fprint(stdout, string(jbody))
-
 			if stats != nil {
-				//set some extra useful stats that are not included in the API result
-				percpu := float64(m.CPU.CpuUsage.PercpuUsage[0])
-				syscpu := float64(m.CPU.SystemCpuUsage)
-				cpuPercentage := 100 * (percpu / syscpu)
-				m.CPU.PercentageInUse = cpuPercentage
-
-				memusage := float64(m.Memory.Usage)
-				memlimit := float64(m.Memory.Limit)
-				memoryPercentage := 100 * (memusage / memlimit)
-				m.Memory.PercentageInUse = memoryPercentage
 
 				stats <- m
 			}
 		}
+		return nil
 	}
-	return nil
 }
 
 // StatsContainer gets container stats based on resource usage
@@ -598,30 +587,6 @@ func (c *Client) StatsContainer(id string, stats chan ContainerStats) error {
 		return err
 	}
 	return nil
-}
-
-// GetCPUusage returns the percentage of CPU being used by the container
-func (c *ContainerStats) GetCpuPercentage() float64 {
-	percpu := float64(c.CPU.CpuUsage.PercpuUsage[0])
-	syscpu := float64(c.CPU.SystemCpuUsage)
-	return 1000 * (percpu / syscpu)
-}
-
-// GetMemoryUsage returns the percentage of Memory being used by the container
-func (c *ContainerStats) GetMemoryPercentage() float64 {
-	memusage := float64(c.Memory.Usage)
-	memlimit := float64(c.Memory.Limit)
-	return 100 * (memusage / memlimit)
-}
-
-// GetMemoryUsageInMB returns the amount of memory currently being used in Megabyte
-func (c *ContainerStats) GetMemoryUsageInMB() float64 {
-	return float64(c.Memory.Usage) / 1000000
-}
-
-// GetMemoryLimitInGB() returns the amount of memory available for this container in Gigabyte
-func (c *ContainerStats) GetMemoryLimitInGB() float64 {
-	return float64(c.Memory.Limit) / 1000000000
 }
 
 // KillContainerOptions represents the set of options that can be used in a
