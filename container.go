@@ -579,7 +579,7 @@ func decodeStats(r io.Reader, stats chan<- ContainerStats) error {
 // StatsContainer gets container stats based on resource usage
 //
 // See http://goo.gl/eY5NRI for more details.
-func (c *Client) StatsContainer(id string, stats chan ContainerStats) error {
+func (c *Client) StatsContainer(id string, stats chan<- ContainerStats) error {
 	reader, writer := io.Pipe()
 	go decodeStats(reader, stats)
 	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, true, nil, nil, writer, nil); err != nil {
