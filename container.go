@@ -481,6 +481,7 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 	return result, nil
 }
 
+// NetworkStats describes the data related to the container's network traffic.
 type NetworkStats struct {
 	RXDropped uint64 `json:"rx_dropped"`
 	RXBytes   uint64 `json:"rx_bytes"`
@@ -492,16 +493,13 @@ type NetworkStats struct {
 	TXBytes   uint64 `json:"tx_bytes"`
 }
 
-// MemoryStats describes the data realted to the container's memory usage.
+// MemoryStats describes the data related to the container's memory usage.
 type MemoryStats struct {
 	Stats    DetailedMemoryStats `json:"stats"`
 	MaxUsage uint64              `json:"max_usage"`
 	Usage    uint64              `json:"usage"`
 	Failcnt  uint64              `json:"failcnt"`
 	Limit    uint64              `json:"limit"`
-}
-
-type BlkioStats struct {
 }
 
 // DetailedMemoryStats describes detailed data related to the container's memory usage.
