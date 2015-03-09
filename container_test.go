@@ -184,6 +184,21 @@ func TestInspectContainer(t *testing.T) {
                      "StartedAt": "2013-05-07T14:51:42.087658+02:00",
                      "Ghost": false
              },
+             "Node": {
+                  "ID": "4I4E:QR4I:Z733:QEZK:5X44:Q4T7:W2DD:JRDY:KB2O:PODO:Z5SR:XRB6",
+                  "IP": "192.168.99.105",
+                  "Addra": "192.168.99.105:2376",
+                  "Name": "node-01",
+                  "Cpus": 4,
+                  "Memory": 1048436736,
+                  "Labels": {
+                      "executiondriver": "native-0.2",
+                      "kernelversion": "3.18.5-tinycore64",
+                      "operatingsystem": "Boot2Docker 1.5.0 (TCL 5.4); master : a66bce5 - Tue Feb 10 23:31:27 UTC 2015",
+                      "provider": "virtualbox",
+                      "storagedriver": "aufs"
+                  }
+              },
              "Image": "b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
              "NetworkSettings": {
                      "IpAddress": "",

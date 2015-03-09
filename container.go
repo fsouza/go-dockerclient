@@ -197,6 +197,17 @@ type Config struct {
 	OnBuild         []string            `json:"OnBuild,omitempty" yaml:"OnBuild,omitempty"`
 }
 
+// SwarmNode containers information about which Swarm node the container is on
+type SwarmNode struct {
+	ID     string            `json:"ID,omitempty" yaml:"ID,omitempty"`
+	IP     string            `json:"IP,omitempty" yaml:"IP,omitempty"`
+	Addr   string            `json:"Addr,omitempty" yaml:"Addr,omitempty"`
+	Name   string            `json:"Name,omitempty" yaml:"Name,omitempty"`
+	CPUs   int64             `json:"CPUs,omitempty" yaml:"CPUs,omitempty"`
+	Memory int64             `json:"Memory,omitempty" yaml:"Memory,omitempty"`
+	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+}
+
 // Container is the type encompasing everything about a container - its config,
 // hostconfig, etc.
 type Container struct {
@@ -210,6 +221,8 @@ type Container struct {
 	Config *Config `json:"Config,omitempty" yaml:"Config,omitempty"`
 	State  State   `json:"State,omitempty" yaml:"State,omitempty"`
 	Image  string  `json:"Image,omitempty" yaml:"Image,omitempty"`
+
+	Node *SwarmNode `json:"Node,omitempty" yaml:"Node,omitempty"`
 
 	NetworkSettings *NetworkSettings `json:"NetworkSettings,omitempty" yaml:"NetworkSettings,omitempty"`
 
