@@ -16,23 +16,23 @@ For more details, check the [remote API documentation](http://docs.docker.io/en/
 package main
 
 import (
-        "fmt"
+	"fmt"
 
-        "github.com/fsouza/go-dockerclient"
+	"github.com/fsouza/go-dockerclient"
 )
 
 func main() {
-        endpoint := "unix:///var/run/docker.sock"
-        client, _ := docker.NewClient(endpoint)
-        imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
-        for _, img := range imgs {
-                fmt.Println("ID: ", img.ID)
-                fmt.Println("RepoTags: ", img.RepoTags)
-                fmt.Println("Created: ", img.Created)
-                fmt.Println("Size: ", img.Size)
-                fmt.Println("VirtualSize: ", img.VirtualSize)
-                fmt.Println("ParentId: ", img.ParentID)
-        }
+	endpoint := "unix:///var/run/docker.sock"
+	client, _ := docker.NewClient(endpoint)
+	imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
+	for _, img := range imgs {
+		fmt.Println("ID: ", img.ID)
+		fmt.Println("RepoTags: ", img.RepoTags)
+		fmt.Println("Created: ", img.Created)
+		fmt.Println("Size: ", img.Size)
+		fmt.Println("VirtualSize: ", img.VirtualSize)
+		fmt.Println("ParentId: ", img.ParentID)
+	}
 }
 ```
 
@@ -46,18 +46,18 @@ For more details about TLS support in Boot2Docker, please refer to [TLS support]
 package main
 
 import (
-        "fmt"
+	"fmt"
 
-        "github.com/fsouza/go-dockerclient"
+	"github.com/fsouza/go-dockerclient"
 )
 
 func main() {
-        endpoint := "tcp://[ip]:[port]"
-        path := os.Getenv("DOCKER_CERT_PATH")
-        ca := fmt.Sprintf("%s/ca.pem", path)
-        cert := fmt.Sprintf("%s/cert.pem", path)
-        key := fmt.Sprintf("%s/key.pem", path)
-        client, _ := docker.NewTLSClient(endpoint, cert, key, ca)
+	endpoint := "tcp://[ip]:[port]"
+	path := os.Getenv("DOCKER_CERT_PATH")
+	ca := fmt.Sprintf("%s/ca.pem", path)
+	cert := fmt.Sprintf("%s/cert.pem", path)
+	key := fmt.Sprintf("%s/key.pem", path)
+	client, _ := docker.NewTLSClient(endpoint, cert, key, ca)
 	// use client
 }
 ```
