@@ -143,7 +143,7 @@ func NewClient(endpoint string) (*Client, error) {
 // server endpoint, key and certificates . It will use the latest remote API version
 // available in the server.
 func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
-	client, err := NewVersionnedTLSClient(endpoint, cert, key, ca, "")
+	client, err := NewVersionedTLSClient(endpoint, cert, key, ca, "")
 	if err != nil {
 		return nil, err
 	}
