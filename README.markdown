@@ -17,6 +17,7 @@ package main
 
 import (
         "fmt"
+
         "github.com/fsouza/go-dockerclient"
 )
 
@@ -46,6 +47,7 @@ package main
 
 import (
         "fmt"
+
         "github.com/fsouza/go-dockerclient"
 )
 
@@ -56,6 +58,7 @@ func main() {
         cert := fmt.Sprintf("%s/cert.pem", path)
         key := fmt.Sprintf("%s/key.pem", path)
         client, _ := docker.NewTLSClient(endpoint, cert, key, ca)
+	// use client
 }
 ```
 
