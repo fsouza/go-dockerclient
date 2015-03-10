@@ -1331,7 +1331,7 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	tempSocket := tempfile("export_socket")
 	defer os.Remove(tempSocket)
 	endpoint := "unix://" + tempSocket
-	u, _ := parseEndpoint(endpoint)
+	u, _ := parseEndpoint(endpoint, false)
 	client := Client{
 		HTTPClient:             http.DefaultClient,
 		endpoint:               endpoint,
