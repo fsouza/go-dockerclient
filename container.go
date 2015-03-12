@@ -386,7 +386,7 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 	path := "/containers/" + id + "/start"
 	_, status, err := c.do("POST", path, hostConfig, true)
 	if status == http.StatusNotFound {
-		return &NoSuchContainer{ID: id}
+		return &NoSuchContainer{ID: id, Err: err}
 	}
 	if status == http.StatusNotModified {
 		return &ContainerAlreadyRunning{ID: id}
@@ -747,11 +747,17 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 
 // NoSuchContainer is the error returned when a given container does not exist.
 type NoSuchContainer struct {
-	ID string
+	ID  string
+	Err error
 }
 
 func (err *NoSuchContainer) Error() string {
-	return "No such container: " + err.ID
+	switch err.Err.(type) {
+	case error:
+		return "No such container: " + err.ID + " - " + err.Err.Error()
+	default:
+		return "No such container: " + err.ID
+	}
 }
 
 // ContainerAlreadyRunning is the error returned when a given container is
