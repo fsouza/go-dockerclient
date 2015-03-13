@@ -1310,7 +1310,7 @@ func TestNoSuchContainerError(t *testing.T) {
 
 func TestNoSuchContainerErrorMessage(t *testing.T) {
 	var err = &NoSuchContainer{ID: "i345", Err: errors.New("some advanced error info")}
-	expected := "No such container: i345 - some advanced error info"
+	expected := "some advanced error info"
 	if got := err.Error(); got != expected {
 		t.Errorf("NoSuchContainer: wrong message. Want %q. Got %q.", expected, got)
 	}

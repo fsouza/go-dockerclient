@@ -752,12 +752,10 @@ type NoSuchContainer struct {
 }
 
 func (err *NoSuchContainer) Error() string {
-	switch err.Err.(type) {
-	case error:
-		return "No such container: " + err.ID + " - " + err.Err.Error()
-	default:
-		return "No such container: " + err.ID
+	if err.Err != nil {
+		return err.Err.Error()
 	}
+	return "No such container: " + err.ID
 }
 
 // ContainerAlreadyRunning is the error returned when a given container is
