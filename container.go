@@ -376,6 +376,14 @@ func NeverRestart() RestartPolicy {
 	return RestartPolicy{Name: "no"}
 }
 
+// Device represents a device mapping between the Docker host and the
+// container.
+type Device struct {
+	PathOnHost        string
+	PathInContainer   string
+	CgroupPermissions string
+}
+
 // HostConfig contains the container options related to starting a container on
 // a given host
 type HostConfig struct {
@@ -396,6 +404,7 @@ type HostConfig struct {
 	IpcMode         string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty"`
 	PidMode         string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
 	RestartPolicy   RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
+	Devices         []Device               `json:"Devices,omitempty" yaml:"Devices,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
