@@ -195,6 +195,7 @@ type Config struct {
 	NetworkDisabled bool                `json:"NetworkDisabled,omitempty" yaml:"NetworkDisabled,omitempty"`
 	SecurityOpts    []string            `json:"SecurityOpts,omitempty" yaml:"SecurityOpts,omitempty"`
 	OnBuild         []string            `json:"OnBuild,omitempty" yaml:"OnBuild,omitempty"`
+	Labels          map[string]string   `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 }
 
 // SwarmNode containers information about which Swarm node the container is on
