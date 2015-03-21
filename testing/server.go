@@ -157,8 +157,8 @@ func (s *DockerServer) PrepareFailure(id string, urlRegexp string) {
 	s.failures[id] = urlRegexp
 }
 
-// PrepareMultiFailure queue a new expected failure based on a URL regexp it receives
-// an id for the failure.
+// PrepareMultiFailures enqueues a new expected failure based on a URL regexp
+// it receives an id for the failure.
 func (s *DockerServer) PrepareMultiFailures(id string, urlRegexp string) {
 	s.multiFailures = append(s.multiFailures, map[string]string{"error": id, "url": urlRegexp})
 }
