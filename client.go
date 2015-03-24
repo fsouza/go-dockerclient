@@ -20,6 +20,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -125,6 +127,61 @@ type Client struct {
 	requestedAPIVersion APIVersion
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
+}
+
+// NewClientFromEnv Returns a Client instance configured using
+// environment variables according to the same logic as the
+// official Docker client. It will use the latest remote API version
+// available in the server.
+func NewClientFromEnv() (*Client, error) {
+	client, err := NewVersionedClientFromEnv("")
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
+}
+
+// NewVersionedClientFromEnv Returns a Client instance configured using
+// environment variables according to the same logic as the
+// official Docker client, using a specific remote API version.
+func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
+	dockerHost := os.Getenv("DOCKER_HOST")
+	if dockerHost == "" {
+		return nil, errors.New("DOCKER_HOST must be set")
+	}
+	if os.Getenv("DOCKER_TLS_VERIFY") == "" {
+		return NewVersionedClient(dockerHost, apiVersionString)
+	}
+	parts := strings.SplitN(dockerHost, "://", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("could not split %s into two parts by ://", dockerHost)
+	}
+	dockerHost = fmt.Sprintf("https://%s", parts[1])
+	dockerCertPath := os.Getenv("DOCKER_CERT_PATH")
+	if dockerCertPath == "" {
+		home := os.Getenv("HOME")
+		if home == "" {
+			return nil, errors.New("HOME must be set if DOCKER_TLS_VERIFY is set and DOCKER_CERT_PATH is not set")
+		}
+		dockerCertPath = filepath.Join(home, ".docker")
+	}
+	if err := checkFileExists(dockerCertPath); err != nil {
+		return nil, err
+	}
+	cert := filepath.Join(dockerCertPath, "cert.pem")
+	if err := checkFileExists(cert); err != nil {
+		return nil, err
+	}
+	key := filepath.Join(dockerCertPath, "key.pem")
+	if err := checkFileExists(key); err != nil {
+		return nil, err
+	}
+	ca := filepath.Join(dockerCertPath, "ca.pem")
+	if err := checkFileExists(ca); err != nil {
+		return nil, err
+	}
+	return NewVersionedTLSClient(dockerHost, cert, key, ca, apiVersionString)
 }
 
 // NewClient returns a Client instance ready for communication with the given
@@ -651,4 +708,26 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 		return u, nil // we don't need port when using a unix socket
 	}
 	return nil, ErrInvalidEndpoint
+}
+
+func checkFileExists(path string) error {
+	exists, err := isFileExists(path)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("file %s does not exist", path)
+	}
+	return nil
+}
+
+func isFileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
