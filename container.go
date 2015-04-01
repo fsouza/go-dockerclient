@@ -238,6 +238,8 @@ type Container struct {
 	VolumesRW  map[string]bool   `json:"VolumesRW,omitempty" yaml:"VolumesRW,omitempty"`
 	HostConfig *HostConfig       `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
 	ExecIDs    []string          `json:"ExecIDs,omitempty" yaml:"ExecIDs,omitempty"`
+
+	AppArmorProfile string `json:"AppArmorProfile,omitempty" yaml:"AppArmorProfile,omitempty"`
 }
 
 // RenameContainerOptions specify parameters to the RenameContainer function.
@@ -406,6 +408,7 @@ type HostConfig struct {
 	PidMode         string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
 	RestartPolicy   RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
 	Devices         []Device               `json:"Devices,omitempty" yaml:"Devices,omitempty"`
+	SecurityOpt     []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
