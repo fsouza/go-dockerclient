@@ -413,6 +413,7 @@ type HostConfig struct {
 	RestartPolicy   RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
 	Devices         []Device               `json:"Devices,omitempty" yaml:"Devices,omitempty"`
 	LogConfig       LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty"`
+	ReadonlyRootfs  bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
