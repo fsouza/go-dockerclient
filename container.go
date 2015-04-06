@@ -198,7 +198,7 @@ type Config struct {
 	Labels          map[string]string   `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 }
 
-// LogConfig log driver type and configuration
+// LogConfig defines the log driver type and the configuration for it.
 type LogConfig struct {
 	Type   string            `json:"Type,omitempty" yaml:"Type,omitempty"`
 	Config map[string]string `json:"Config,omitempty" yaml:"Config,omitempty"`
