@@ -166,7 +166,7 @@ func parsePort(rawPort string) (int, error) {
 }
 
 // Config is the list of configuration options used when creating a container.
-// Config does not the options that are specific to starting a container on a
+// Config does not contain the options that are specific to starting a container on a
 // given host.  Those are contained in HostConfig
 type Config struct {
 	Hostname        string              `json:"Hostname,omitempty" yaml:"Hostname,omitempty"`
