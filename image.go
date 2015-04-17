@@ -94,6 +94,10 @@ var (
 	// ErrMultipleContexts is the error returned when both a ContextDir and
 	// InputStream are provided in BuildImageOptions
 	ErrMultipleContexts = errors.New("image build may not be provided BOTH context dir and input stream")
+
+	// ErrMustSpecifyNames is the error rreturned when the Names field on
+	// ExportImagesOptions is nil or empty
+	ErrMustSpecifyNames = errors.New("must specify at least one name to export")
 )
 
 // ListImages returns the list of available images in the server.
@@ -299,6 +303,24 @@ type ExportImageOptions struct {
 // See http://goo.gl/mi6kvk for more details.
 func (c *Client) ExportImage(opts ExportImageOptions) error {
 	return c.stream("GET", fmt.Sprintf("/images/%s/get", opts.Name), true, false, nil, nil, opts.OutputStream, nil)
+}
+
+// ExportImagesOptions represent the options for ExportImages Docker API call
+//
+// See http://goo.gl/YeZzQK for more details.
+type ExportImagesOptions struct {
+	Names        []string
+	OutputStream io.Writer `qs:"-"`
+}
+
+// ExportImages exports one or more images (as a tar file) into the stream
+//
+// See http://goo.gl/YeZzQK for more details.
+func (c *Client) ExportImages(opts ExportImagesOptions) error {
+	if opts.Names == nil || len(opts.Names) == 0 {
+		return ErrMustSpecifyNames
+	}
+	return c.stream("GET", "/images/get?"+queryString(&opts), true, false, nil, nil, opts.OutputStream, nil)
 }
 
 // ImportImageOptions present the set of informations available for importing
