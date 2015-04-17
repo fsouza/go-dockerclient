@@ -26,6 +26,7 @@ type APIImages struct {
 	Size        int64    `json:"Size,omitempty" yaml:"Size,omitempty"`
 	VirtualSize int64    `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty"`
 	ParentID    string   `json:"ParentId,omitempty" yaml:"ParentId,omitempty"`
+	RepoDigests []string `json:"RepoDigests,omitempty" yaml:"RepoDigests,omitempty"`
 }
 
 // Image is the type representing a docker image and its various properties
@@ -71,10 +72,11 @@ type ImagePre012 struct {
 
 // ListImagesOptions specify parameters to the ListImages function.
 //
-// See http://goo.gl/2rOLFF for more details.
+// See http://goo.gl/HRVN1Z for more details.
 type ListImagesOptions struct {
 	All     bool
 	Filters map[string][]string
+	Digests bool
 }
 
 var (
@@ -96,8 +98,9 @@ var (
 
 // ListImages returns the list of available images in the server.
 //
-// See http://goo.gl/2rOLFF for more details.
+// See http://goo.gl/HRVN1Z for more details.
 func (c *Client) ListImages(opts ListImagesOptions) ([]APIImages, error) {
+	// TODO(pedge): what happens if we specify the digest parameter when using API Version <1.18?
 	path := "/images/json?" + queryString(opts)
 	body, _, err := c.do("GET", path, nil, false)
 	if err != nil {
