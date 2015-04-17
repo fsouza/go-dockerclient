@@ -308,6 +308,9 @@ type ExportImagesOptions struct {
 	OutputStream io.Writer `qs:"-"`
 }
 
+// ExportImages exports one or more images (as a tar file) into the stream
+//
+// See http://goo.gl/YeZzQK for more details.
 func (c *Client) ExportImages(opts ExportImagesOptions) error {
 	if opts.Names == nil || len(opts.Names) == 0 {
 		return ErrMustSpecifyNames
