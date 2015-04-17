@@ -93,6 +93,8 @@ var (
 	// InputStream are provided in BuildImageOptions
 	ErrMultipleContexts = errors.New("image build may not be provided BOTH context dir and input stream")
 
+	// ErrMustSpecifyNames is the error rreturned when the Names field on
+	// ExportImagesOptions is nil or empty
 	ErrMustSpecifyNames = errors.New("must specify at least one name to export")
 )
 
