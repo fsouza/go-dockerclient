@@ -542,6 +542,9 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 	return result, nil
 }
 
+// Stats represents container statistics, returned by /containers/<id>/stats.
+//
+// See http://goo.gl/DFMiYD for more details.
 type Stats struct {
 	Read    string `json:"read,omitempty" yaml:"read,omitempty"`
 	Network struct {
@@ -607,6 +610,12 @@ type Stats struct {
 	} `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
 }
 
+// Stats sends container statistics for the given container to the given channel.
+// This function is blocking, similar to a streaming call for logs, and should be run
+// on a separate goroutine from the caller. When finished, this function will close
+// the given channel.
+//
+// See http://goo.gl/DFMiYD for more details.
 func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
 	errC := make(chan error, 1)
 	readCloser, writeCloser := io.Pipe()
