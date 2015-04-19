@@ -34,6 +34,9 @@ var (
 	// ErrConnectionRefused is returned when the client cannot connect to the given endpoint.
 	ErrConnectionRefused = errors.New("cannot connect to Docker endpoint")
 
+	// ErrNoResponse is returned when there is no http response.
+	ErrNoResponse = errors.New("no http response")
+
 	apiVersion112, _ = NewAPIVersion("1.12")
 )
 
@@ -328,10 +331,20 @@ func (c *Client) do(method, path string, data interface{}, forceJSON bool) ([]by
 		}
 		return nil, -1, err
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, -1, err
+	if resp == nil {
+		return nil, -1, ErrNoResponse
+	}
+	defer func() {
+		if resp.Body != nil {
+			resp.Body.Close()
+		}
+	}()
+	var body []byte
+	if resp.Body != nil {
+		body, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, -1, err
+		}
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, resp.StatusCode, newError(resp.StatusCode, body)
@@ -386,13 +399,26 @@ func (c *Client) stream(method, path string, setRawTerminal, rawJSONStream bool,
 		}
 		return err
 	}
-	defer resp.Body.Close()
+	if resp == nil {
+		return ErrNoResponse
+	}
+	defer func() {
+		if resp.Body != nil {
+			resp.Body.Close()
+		}
+	}()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
+		var body []byte
+		if resp.Body != nil {
+			body, err = ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
 		}
 		return newError(resp.StatusCode, body)
+	}
+	if resp.Body == nil {
+		return nil
 	}
 	if resp.Header.Get("Content-Type") == "application/json" {
 		// if we want to get raw json stream, just copy it back to output
