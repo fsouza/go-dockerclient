@@ -536,6 +536,103 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 	return result, nil
 }
 
+type Stats struct {
+	Read    string `json:"read,omitempty" yaml:"read,omitempty"`
+	Network struct {
+		RxDropped int64 `json:"rx_dropped,omitempty" yaml:"rx_dropped,omitempty"`
+		RxBytes   int64 `json:"rx_bytes,omitempty" yaml:"rx_bytes,omitempty"`
+		RxErrors  int64 `json:"rx_errors,omitempty" yaml:"rx_errors,omitempty"`
+		TxPackets int64 `json:"tx_packets,omitempty" yaml:"tx_packets,omitempty"`
+		TxDropped int64 `json:"tx_dropped,omitempty" yaml:"tx_dropped,omitempty"`
+		RxPackets int64 `json:"rx_packets,omitempty" yaml:"rx_packets,omitempty"`
+		TxErrors  int64 `json:"tx_errors,omitempty" yaml:"tx_errors,omitempty"`
+		TxBytes   int64 `json:"tx_bytes,omitempty" yaml:"tx_bytes,omitempty"`
+	} `json:"network,omitempty" yaml:"network,omitempty"`
+	MemoryStats struct {
+		Stats struct {
+			TotalPgmafault    int64 `json"total_pgmafault,omitempty" yaml:"total_pgmafault,omitempty"`
+			Cache             int64 `json:"cache,omitempty" yaml:"cache,omitempty"`
+			MappedFile        int64 `json:"mapped_file,omitempty" yaml:"mapped_file,omitempty"`
+			TotalInactiveFile int64 `json:"total_inactive_file,omitempty" yaml:"total_inactive_file,omitempty"`
+			Pgpgout           int64 `json:"pgpgout,omitempty" yaml:"pgpgout,omitempty"`
+			Rss               int64 `json:"rss,omitempty" yaml:"rss,omitempty"`
+			TotalMappedFile   int64 `json:"total_mapped_file,omitempty" yaml:"total_mapped_file,omitempty"`
+			Writeback         int64 `json:"writeback,omitempty" yaml:"writeback,omitempty"`
+			Unevictable       int64 `json:"unevictable,omitempty" yaml:"unevictable,omitempty"`
+			Pgpgin            int64 `json:"pgpgin,omitempty" yaml:"pgpgin,omitempty"`
+			TotalUnevictable  int64 `json:"total_unevictable,omitempty" yaml:"total_unevictable,omitempty"`
+			Pgmajfault        int64 `json:"pgmajfault,omitempty" yaml:"pgmajfault,omitempty"`
+			TotalRss          int64 `json:"total_rss,omitempty" yaml:"total_rss,omitempty"`
+			TotalRssHuge      int64 `json:"total_rss_huge,omitempty" yaml:"total_rss_huge,omitempty"`
+			TotalWriteback    int64 `json:"total_writeback,omitempty" yaml:"total_writeback,omitempty"`
+			TotalInactiveAnon int64 `json:"total_inactive_anon,omitempty" yaml:"total_inactive_anon,omitempty"`
+			RssHuge           int64 `json:"rss_huge,omitempty" yaml:"rss_huge,omitempty"`
+			//HierarchicalMemoryLimit int64 `json:"hierarchical_memory_limit,omitempty" yaml:"hierarchical_memory_limit,omitempty"`
+			TotalPgfault    int64 `json:"total_pgfault,omitempty" yaml:"total_pgfault,omitempty"`
+			TotalActivefile int64 `json:"total_active_file,omitempty" yaml:"total_active_file,omitempty"`
+			ActiveAnon      int64 `json:"active_anon,omitempty" yaml:"active_anon,omitempty"`
+			TotalActiveAnon int64 `json:"total_active_anon,omitempty" yaml:"total_active_anon,omitempty"`
+			TotalPgpgout    int64 `json:"total_pgpgout,omitempty" yaml:"total_pgpgout,omitempty"`
+			TotalCache      int64 `json:"total_cache,omitempty" yaml:"total_cache,omitempty"`
+			InactiveAnon    int64 `json:"inactive_anon,omitempty" yaml:"inactive_anon,omitempty"`
+			Activefile      int64 `json:"active_file,omitempty" yaml:"active_file,omitempty"`
+			Pgfault         int64 `json:"pgfault,omitempty" yaml:"pgfault,omitempty"`
+			InactiveFile    int64 `json:"inactive_file,omitempty" yaml:"inactive_file,omitempty"`
+			TotalPgpgin     int64 `json:"total_pgpgin,omitempty" yaml:"total_pgpgin,omitempty"`
+		} `json:"stats,omitempty" yaml:"stats,omitempty"`
+		MaxUsage int64 `json:"max_usage,omitempty" yaml:"max_usage,omitempty"`
+		Usage    int64 `json:"usage,omitempty" yaml:"usage,omitempty"`
+		Failcnt  int64 `json:"failcnt,omitempty" yaml:"failcnt,omitempty"`
+		Limit    int64 `json:"limit,omitempty" yaml:"limit,omitempty"`
+	} `json:"memory_stats,omitempty" yaml:"memory_stats,omitempty"`
+	//BlkioStats string `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty"`
+	CpuStats struct {
+		CpuUsage struct {
+			PercpuUsage       []int64 `json:"percpu_usage,omitempty" yaml:"percpu_usage,omitempty"`
+			UsageInUsermode   int64   `json:"usage_in_usermode,omitempty" yaml:"usage_in_usermode,omitempty"`
+			TotalUsage        int64   `json:"total_usage,omitempty" yaml:"total_usage,omitempty"`
+			UsageInKernelmode int64   `json:"usage_in_kernelmode,omitempty" yaml:"usage_in_kernelmode,omitempty"`
+		} `json:"cpu_usage,omitempty" yaml:"cpu_usage,omitempty"`
+		SystemCpuUsage int64 `json:"system_cpu_usage,omitempty" yaml:"system_cpu_usage,omitempty"`
+		//ThrottlingData string `json:"throttling_data,omitempty" yaml:"throttling_data,omitempty"`
+	} `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
+}
+
+func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
+	errC := make(chan error, 1)
+	readCloser, writeCloser := io.Pipe()
+
+	defer func() {
+		close(statsC)
+		if err := <-errC; err != nil && retErr == nil {
+			retErr = err
+		}
+		if err := readCloser.Close(); err != nil && retErr == nil {
+			retErr = err
+		}
+	}()
+
+	go func() {
+		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), false, true, nil, nil, writeCloser, nil)
+		if closeErr := writeCloser.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+		errC <- err
+		close(errC)
+	}()
+
+	decoder := json.NewDecoder(readCloser)
+	stats := new(Stats)
+	for err := decoder.Decode(&stats); err != io.EOF; err = decoder.Decode(stats) {
+		if err != nil {
+			return err
+		}
+		statsC <- stats
+		stats = new(Stats)
+	}
+	return nil
+}
+
 // KillContainerOptions represents the set of options that can be used in a
 // call to KillContainer.
 //
