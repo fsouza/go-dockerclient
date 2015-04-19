@@ -1712,7 +1712,7 @@ func TestStats(t *testing.T) {
 		errC <- client.Stats(id, statsC)
 		close(errC)
 	}()
-	resultStats := make([]*Stats, 0)
+	var resultStats []*Stats
 	for {
 		stats, ok := <-statsC
 		if !ok {

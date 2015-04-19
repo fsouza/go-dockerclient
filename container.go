@@ -597,14 +597,14 @@ type Stats struct {
 	} `json:"memory_stats,omitempty" yaml:"memory_stats,omitempty"`
 	// TODO(pedge): this is in the docker docs, but no data
 	//BlkioStats string `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty"`
-	CpuStats struct {
-		CpuUsage struct {
+	CPUStats struct {
+		CPUUsage struct {
 			PercpuUsage       []int64 `json:"percpu_usage,omitempty" yaml:"percpu_usage,omitempty"`
 			UsageInUsermode   int64   `json:"usage_in_usermode,omitempty" yaml:"usage_in_usermode,omitempty"`
 			TotalUsage        int64   `json:"total_usage,omitempty" yaml:"total_usage,omitempty"`
 			UsageInKernelmode int64   `json:"usage_in_kernelmode,omitempty" yaml:"usage_in_kernelmode,omitempty"`
 		} `json:"cpu_usage,omitempty" yaml:"cpu_usage,omitempty"`
-		SystemCpuUsage int64 `json:"system_cpu_usage,omitempty" yaml:"system_cpu_usage,omitempty"`
+		SystemCPUUsage int64 `json:"system_cpu_usage,omitempty" yaml:"system_cpu_usage,omitempty"`
 		// TODO(pedge): this is in the docker docs, but no data
 		//ThrottlingData string `json:"throttling_data,omitempty" yaml:"throttling_data,omitempty"`
 	} `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
