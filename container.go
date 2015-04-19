@@ -623,6 +623,14 @@ func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
 
 	go func() {
 		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), false, true, nil, nil, writeCloser, nil)
+		if err != nil {
+			dockerError, ok := err.(*Error)
+			if ok {
+				if dockerError.Status == http.StatusNotFound {
+					err = &NoSuchContainer{ID: id}
+				}
+			}
+		}
 		if closeErr := writeCloser.Close(); closeErr != nil && err == nil {
 			err = closeErr
 		}
