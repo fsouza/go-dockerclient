@@ -24,6 +24,7 @@ updatetestdeps: updatedeps
 
 cov: testdeps
 	go get -v github.com/axw/gocov/gocov
+	go get golang.org/x/tools/cmd/cover
 	gocov test | gocov report
 
 test: testdeps
