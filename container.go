@@ -540,7 +540,7 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 //
 // See http://goo.gl/DFMiYD for more details.
 type Stats struct {
-	Read    string `json:"read,omitempty" yaml:"read,omitempty"`
+	Read    time.Time `json:"read,omitempty" yaml:"read,omitempty"`
 	Network struct {
 		RxDropped int64 `json:"rx_dropped,omitempty" yaml:"rx_dropped,omitempty"`
 		RxBytes   int64 `json:"rx_bytes,omitempty" yaml:"rx_bytes,omitempty"`
