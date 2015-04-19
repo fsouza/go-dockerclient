@@ -16,10 +16,10 @@ deps:
 updatedeps:
 	go get -d -v -u -f ./...
 
-testdeps: deps
+testdeps:
 	go get -d -v -t ./...
 
-updatetestdeps: updatedeps
+updatetestdeps:
 	go get -d -v -t -u -f ./...
 
 cov: testdeps
