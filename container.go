@@ -573,6 +573,7 @@ type Stats struct {
 			TotalWriteback    int64 `json:"total_writeback,omitempty" yaml:"total_writeback,omitempty"`
 			TotalInactiveAnon int64 `json:"total_inactive_anon,omitempty" yaml:"total_inactive_anon,omitempty"`
 			RssHuge           int64 `json:"rss_huge,omitempty" yaml:"rss_huge,omitempty"`
+			// TODO(pedge): this kills the whole thing, why? commenting out for now
 			//HierarchicalMemoryLimit int64 `json:"hierarchical_memory_limit,omitempty" yaml:"hierarchical_memory_limit,omitempty"`
 			TotalPgfault    int64 `json:"total_pgfault,omitempty" yaml:"total_pgfault,omitempty"`
 			TotalActivefile int64 `json:"total_active_file,omitempty" yaml:"total_active_file,omitempty"`
@@ -591,6 +592,7 @@ type Stats struct {
 		Failcnt  int64 `json:"failcnt,omitempty" yaml:"failcnt,omitempty"`
 		Limit    int64 `json:"limit,omitempty" yaml:"limit,omitempty"`
 	} `json:"memory_stats,omitempty" yaml:"memory_stats,omitempty"`
+	// TODO(pedge): this is in the docker docs, but no data
 	//BlkioStats string `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty"`
 	CpuStats struct {
 		CpuUsage struct {
@@ -600,6 +602,7 @@ type Stats struct {
 			UsageInKernelmode int64   `json:"usage_in_kernelmode,omitempty" yaml:"usage_in_kernelmode,omitempty"`
 		} `json:"cpu_usage,omitempty" yaml:"cpu_usage,omitempty"`
 		SystemCpuUsage int64 `json:"system_cpu_usage,omitempty" yaml:"system_cpu_usage,omitempty"`
+		// TODO(pedge): this is in the docker docs, but no data
 		//ThrottlingData string `json:"throttling_data,omitempty" yaml:"throttling_data,omitempty"`
 	} `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
 }
