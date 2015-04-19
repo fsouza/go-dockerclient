@@ -1742,6 +1742,16 @@ func TestStats(t *testing.T) {
 	}
 }
 
+func TestStatsContainerNotFound(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	statsC := make(chan *Stats)
+	err := client.Stats("abef348", statsC)
+	expected := &NoSuchContainer{ID: "abef348"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("Stats: Wrong error returned. Want %#v. Got %#v.", expected, err)
+	}
+}
+
 func TestRenameContainer(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
