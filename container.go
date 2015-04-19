@@ -611,9 +611,11 @@ type Stats struct {
 }
 
 // Stats sends container statistics for the given container to the given channel.
+//
 // This function is blocking, similar to a streaming call for logs, and should be run
-// on a separate goroutine from the caller. When finished, this function will close
-// the given channel.
+// on a separate goroutine from the caller. Note that this function will block until
+// the given container is removed, not just exited. When finished, this function
+// will close the given channel.
 //
 // See http://goo.gl/DFMiYD for more details.
 func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
