@@ -633,7 +633,11 @@ func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
 	}()
 
 	go func() {
-		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), false, true, nil, nil, writeCloser, nil)
+		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), streamOptions{
+			setRawTerminal: false,
+			rawJSONStream:  true,
+			stdout:         writeCloser,
+		})
 		if err != nil {
 			dockerError, ok := err.(*Error)
 			if ok {
