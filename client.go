@@ -523,14 +523,13 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 		errs <- err
 	}()
 	go func() {
-		var err error
 		if hijackOptions.in != nil {
-			_, err = io.Copy(rwc, hijackOptions.in)
+			_, err := io.Copy(rwc, hijackOptions.in)
+			errs <- err
 		}
 		rwc.(interface {
 			CloseWrite() error
 		}).CloseWrite()
-		errs <- err
 	}()
 	<-exit
 	return <-errs
