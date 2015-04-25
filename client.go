@@ -416,6 +416,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 			return err
 		}
 		dec := json.NewDecoder(resp.Body)
+
 		for {
 			var m jsonMessage
 			if err := dec.Decode(&m); err == io.EOF {

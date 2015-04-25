@@ -543,6 +543,111 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 	return result, nil
 }
 
+// NetworkStats describes the data related to the container's network traffic.
+type NetworkStats struct {
+	RXDropped uint64 `json:"rx_dropped"`
+	RXBytes   uint64 `json:"rx_bytes"`
+	RXErrors  uint64 `json:"rx_errors"`
+	TXPackets uint64 `json:"tx_packets"`
+	TXDropped uint64 `json:"tx_dropped"`
+	RXPackets uint64 `json:"rx_packets"`
+	TXErrors  uint64 `json:"tx_errors"`
+	TXBytes   uint64 `json:"tx_bytes"`
+}
+
+// MemoryStats describes the data realted to the container's memory usage.
+type MemoryStats struct {
+	Stats    DetailedMemoryStats `json:"stats"`
+	MaxUsage uint64              `json:"max_usage"`
+	Usage    uint64              `json:"usage"`
+	Failcnt  uint64              `json:"failcnt"`
+	Limit    uint64              `json:"limit"`
+}
+
+// DetailedMemoryStats describes detailed data related to the container's memory usage.
+type DetailedMemoryStats struct {
+	TotalPageMajorFaults    uint64 `json:"total_pgmajfault"`
+	Cache                   uint64 `json:"cache"`
+	MappedFile              uint64 `json:"mapped_file"`
+	TotalInactiveFile       uint64 `json:"total_inactive_file""`
+	PageOut                 uint64 `json:"pgpgout"`
+	RSS                     uint64 `json:"rss"`
+	TotalMappedFile         uint64 `json:"total_mapped_file"`
+	Writeback               uint64 `json:"writeback"`
+	Unevictable             uint64 `json:"unevictable"`
+	PageIn                  uint64 `json:"pgpgin"`
+	TotalUnevictable        uint64 `json:"total_unevictable"`
+	Pgmajfault              uint64 `json:"pgmajfault"`
+	TotalRSS                uint64 `json:"total_rss"`
+	TotalRSSHuge            uint64 `json:"total_rss_huge"`
+	TotalWriteback          uint64 `json:"total_writeback"`
+	TotalInactiveAnon       uint64 `json:"total_inactive_anon"`
+	RSSHuge                 uint64 `json:"rss_huge"`
+	HierarchicalMemoryLimit uint64 `json:"hierarchical_memory_limit"`
+	TotalPageFaults         uint64 `json:"total_pgfault"`
+	TotalActiveFile         uint64 `json:"total_active_file"`
+	TotalPagePut            uint64 `json:"total_pgpgout"`
+	TotalCache              uint64 `json:"total_cache"`
+	InactiveAnon            uint64 `json:"inactive_anon"`
+	ActiveFile              uint64 `json:"active_file"`
+	PageFault               uint64 `json:"pgfault"`
+	InactiveFile            uint64 `json:"inactive_file"`
+	TotalPageIn             uint64 `json:"pgpgin"`
+}
+
+// CPUStats describes the data related to the container's CPU usage.
+type CPUStats struct {
+	CPUUsage       CPUUsage `json:"cpu_usage"`
+	SystemCPUUsage uint64   `json:"system_cpu_usage"`
+}
+
+// CPUUsage describes the data related to the container's CPU usage.
+type CPUUsage struct {
+	PerCPUUsage       []uint64 `json:"percpu_usage"`
+	UsageInUserMode   uint64   `json:"usage_in_usermode"`
+	TotalUsage        uint64   `json:"total_usage"`
+	UsageInKernelMode uint64   `json:"usage_in_kernelmode"`
+}
+
+// ContainerStats describes the data as it is retrieved from the /stats/ endpoint.
+type ContainerStats struct {
+	Read    string       `json:"read"`
+	Stream  string       `json:"stream,omitempty"`
+	Network NetworkStats `json:"network"`
+	Memory  MemoryStats  `json:"memory_stats"`
+	CPU     CPUStats     `json:"cpu_stats"`
+}
+
+// uses a different struct to unmarshal to when we're calling the stats endpoint
+func decodeStats(r io.Reader, stats chan ContainerStats) error {
+	dec := json.NewDecoder(r)
+	for {
+		var m ContainerStats
+		if err := dec.Decode(&m); err != nil {
+			return err
+		}
+		if m.Read != "" {
+			if stats != nil {
+
+				stats <- m
+			}
+		}
+	}
+	return nil
+}
+
+// StatsContainer gets container stats based on resource usage
+//
+// See http://goo.gl/eY5NRI for more details.
+func (c *Client) StatsContainer(id string, stats chan<- ContainerStats) error {
+	reader, writer := io.Pipe()
+	go decodeStats(reader, stats)
+	if err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), true, true, nil, nil, writer, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
 // KillContainerOptions represents the set of options that can be used in a
 // call to KillContainer.
 //
