@@ -610,6 +610,14 @@ type Stats struct {
 	} `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
 }
 
+// StatsOptions specify parameters to the Stats function.
+//
+// See http://goo.gl/DFMiYD for more details.
+type StatsOptions struct {
+	ID    string
+	Stats chan<- *Stats
+}
+
 // Stats sends container statistics for the given container to the given channel.
 //
 // This function is blocking, similar to a streaming call for logs, and should be run
@@ -618,12 +626,12 @@ type Stats struct {
 // will close the given channel.
 //
 // See http://goo.gl/DFMiYD for more details.
-func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
+func (c *Client) Stats(opts StatsOptions) (retErr error) {
 	errC := make(chan error, 1)
 	readCloser, writeCloser := io.Pipe()
 
 	defer func() {
-		close(statsC)
+		close(opts.Stats)
 		if err := <-errC; err != nil && retErr == nil {
 			retErr = err
 		}
@@ -633,7 +641,7 @@ func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
 	}()
 
 	go func() {
-		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", id), streamOptions{
+		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", opts.ID), streamOptions{
 			rawJSONStream: true,
 			stdout:        writeCloser,
 		})
@@ -641,7 +649,7 @@ func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
 			dockerError, ok := err.(*Error)
 			if ok {
 				if dockerError.Status == http.StatusNotFound {
-					err = &NoSuchContainer{ID: id}
+					err = &NoSuchContainer{ID: opts.ID}
 				}
 			}
 		}
@@ -658,7 +666,7 @@ func (c *Client) Stats(id string, statsC chan<- *Stats) (retErr error) {
 		if err != nil {
 			return err
 		}
-		statsC <- stats
+		opts.Stats <- stats
 		stats = new(Stats)
 	}
 	return nil
