@@ -1557,6 +1557,202 @@ func TestTopContainerWithPsArgs(t *testing.T) {
 	}
 }
 
+func TestStats(t *testing.T) {
+	jsonStats1 := `{
+       "read" : "2015-01-08T22:57:31.547920715Z",
+       "network" : {
+          "rx_dropped" : 0,
+          "rx_bytes" : 648,
+          "rx_errors" : 0,
+          "tx_packets" : 8,
+          "tx_dropped" : 0,
+          "rx_packets" : 8,
+          "tx_errors" : 0,
+          "tx_bytes" : 648
+       },
+       "memory_stats" : {
+          "stats" : {
+             "total_pgmajfault" : 0,
+             "cache" : 0,
+             "mapped_file" : 0,
+             "total_inactive_file" : 0,
+             "pgpgout" : 414,
+             "rss" : 6537216,
+             "total_mapped_file" : 0,
+             "writeback" : 0,
+             "unevictable" : 0,
+             "pgpgin" : 477,
+             "total_unevictable" : 0,
+             "pgmajfault" : 0,
+             "total_rss" : 6537216,
+             "total_rss_huge" : 6291456,
+             "total_writeback" : 0,
+             "total_inactive_anon" : 0,
+             "rss_huge" : 6291456,
+             "total_pgfault" : 964,
+             "total_active_file" : 0,
+             "active_anon" : 6537216,
+             "total_active_anon" : 6537216,
+             "total_pgpgout" : 414,
+             "total_cache" : 0,
+             "inactive_anon" : 0,
+             "active_file" : 0,
+             "pgfault" : 964,
+             "inactive_file" : 0,
+             "total_pgpgin" : 477
+          },
+          "max_usage" : 6651904,
+          "usage" : 6537216,
+          "failcnt" : 0,
+          "limit" : 67108864
+       },
+       "cpu_stats" : {
+          "cpu_usage" : {
+             "percpu_usage" : [
+                16970827,
+                1839451,
+                7107380,
+                10571290
+             ],
+             "usage_in_usermode" : 10000000,
+             "total_usage" : 36488948,
+             "usage_in_kernelmode" : 20000000
+          },
+          "system_cpu_usage" : 20091722000000000
+       }
+    }`
+	// 1 second later, cache is 100
+	jsonStats2 := `{
+       "read" : "2015-01-08T22:57:32.547920715Z",
+       "network" : {
+          "rx_dropped" : 0,
+          "rx_bytes" : 648,
+          "rx_errors" : 0,
+          "tx_packets" : 8,
+          "tx_dropped" : 0,
+          "rx_packets" : 8,
+          "tx_errors" : 0,
+          "tx_bytes" : 648
+       },
+       "memory_stats" : {
+          "stats" : {
+             "total_pgmajfault" : 0,
+             "cache" : 100,
+             "mapped_file" : 0,
+             "total_inactive_file" : 0,
+             "pgpgout" : 414,
+             "rss" : 6537216,
+             "total_mapped_file" : 0,
+             "writeback" : 0,
+             "unevictable" : 0,
+             "pgpgin" : 477,
+             "total_unevictable" : 0,
+             "pgmajfault" : 0,
+             "total_rss" : 6537216,
+             "total_rss_huge" : 6291456,
+             "total_writeback" : 0,
+             "total_inactive_anon" : 0,
+             "rss_huge" : 6291456,
+             "total_pgfault" : 964,
+             "total_active_file" : 0,
+             "active_anon" : 6537216,
+             "total_active_anon" : 6537216,
+             "total_pgpgout" : 414,
+             "total_cache" : 0,
+             "inactive_anon" : 0,
+             "active_file" : 0,
+             "pgfault" : 964,
+             "inactive_file" : 0,
+             "total_pgpgin" : 477
+          },
+          "max_usage" : 6651904,
+          "usage" : 6537216,
+          "failcnt" : 0,
+          "limit" : 67108864
+       },
+       "cpu_stats" : {
+          "cpu_usage" : {
+             "percpu_usage" : [
+                16970827,
+                1839451,
+                7107380,
+                10571290
+             ],
+             "usage_in_usermode" : 10000000,
+             "total_usage" : 36488948,
+             "usage_in_kernelmode" : 20000000
+          },
+          "system_cpu_usage" : 20091722000000000
+       }
+    }`
+	var expected1 Stats
+	var expected2 Stats
+	err := json.Unmarshal([]byte(jsonStats1), &expected1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = json.Unmarshal([]byte(jsonStats2), &expected2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := "4fa6e0f0"
+
+	var req http.Request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(jsonStats1))
+		w.Write([]byte(jsonStats2))
+		req = *r
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
+	errC := make(chan error, 1)
+	statsC := make(chan *Stats)
+	go func() {
+		errC <- client.Stats(StatsOptions{id, statsC})
+		close(errC)
+	}()
+	var resultStats []*Stats
+	for {
+		stats, ok := <-statsC
+		if !ok {
+			break
+		}
+		resultStats = append(resultStats, stats)
+	}
+	err = <-errC
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resultStats) != 2 {
+		t.Fatalf("Stats: Expected 2 results. Got %d.", len(resultStats))
+	}
+	if !reflect.DeepEqual(resultStats[0], &expected1) {
+		t.Errorf("Stats: Expected:\n%+v\nGot:\n%+v", expected1, resultStats[0])
+	}
+	if !reflect.DeepEqual(resultStats[1], &expected2) {
+		t.Errorf("Stats: Expected:\n%+v\nGot:\n%+v", expected2, resultStats[1])
+	}
+	if req.Method != "GET" {
+		t.Errorf("Stats: wrong HTTP method. Want GET. Got %s.", req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/containers/" + id + "/stats"))
+	if req.URL.Path != u.Path {
+		t.Errorf("Stats: wrong HTTP path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+}
+
+func TestStatsContainerNotFound(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
+	statsC := make(chan *Stats)
+	err := client.Stats(StatsOptions{"abef348", statsC})
+	expected := &NoSuchContainer{ID: "abef348"}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("Stats: Wrong error returned. Want %#v. Got %#v.", expected, err)
+	}
+}
+
 func TestRenameContainer(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
