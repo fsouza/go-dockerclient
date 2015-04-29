@@ -579,13 +579,13 @@ type Stats struct {
 			// TODO(pedge): this kills the whole thing, why? commenting out for now
 			//HierarchicalMemoryLimit int64 `json:"hierarchical_memory_limit,omitempty" yaml:"hierarchical_memory_limit,omitempty"`
 			TotalPgfault    int64 `json:"total_pgfault,omitempty" yaml:"total_pgfault,omitempty"`
-			TotalActivefile int64 `json:"total_active_file,omitempty" yaml:"total_active_file,omitempty"`
+			TotalActiveFile int64 `json:"total_active_file,omitempty" yaml:"total_active_file,omitempty"`
 			ActiveAnon      int64 `json:"active_anon,omitempty" yaml:"active_anon,omitempty"`
 			TotalActiveAnon int64 `json:"total_active_anon,omitempty" yaml:"total_active_anon,omitempty"`
 			TotalPgpgout    int64 `json:"total_pgpgout,omitempty" yaml:"total_pgpgout,omitempty"`
 			TotalCache      int64 `json:"total_cache,omitempty" yaml:"total_cache,omitempty"`
 			InactiveAnon    int64 `json:"inactive_anon,omitempty" yaml:"inactive_anon,omitempty"`
-			Activefile      int64 `json:"active_file,omitempty" yaml:"active_file,omitempty"`
+			ActiveFile      int64 `json:"active_file,omitempty" yaml:"active_file,omitempty"`
 			Pgfault         int64 `json:"pgfault,omitempty" yaml:"pgfault,omitempty"`
 			InactiveFile    int64 `json:"inactive_file,omitempty" yaml:"inactive_file,omitempty"`
 			TotalPgpgin     int64 `json:"total_pgpgin,omitempty" yaml:"total_pgpgin,omitempty"`
