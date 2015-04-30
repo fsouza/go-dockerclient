@@ -387,8 +387,13 @@ type BuildImageOptions struct {
 	Dockerfile          string             `qs:"dockerfile"`
 	NoCache             bool               `qs:"nocache"`
 	SuppressOutput      bool               `qs:"q"`
+	Pull                bool               `qs:"pull"`
 	RmTmpContainer      bool               `qs:"rm"`
 	ForceRmTmpContainer bool               `qs:"forcerm"`
+	Memory              int64              `qs:"memory"`
+	Memswap             int64              `qs:"memswap"`
+	CPUShares           int64              `qs:"cpushares"`
+	CPUSetCPUs          string             `qs:"cpusetcpus"`
 	InputStream         io.Reader          `qs:"-"`
 	OutputStream        io.Writer          `qs:"-"`
 	RawJSONStream       bool               `qs:"-"`
