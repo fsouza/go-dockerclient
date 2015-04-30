@@ -655,8 +655,13 @@ func TestBuildImageParameters(t *testing.T) {
 		Name:                "testImage",
 		NoCache:             true,
 		SuppressOutput:      true,
+		Pull:                true,
 		RmTmpContainer:      true,
 		ForceRmTmpContainer: true,
+		Memory:              1024,
+		Memswap:             2048,
+		CPUShares:           10,
+		CPUSetCPUs:          "0-3",
 		InputStream:         &buf,
 		OutputStream:        &buf,
 	}
@@ -665,7 +670,18 @@ func TestBuildImageParameters(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"t": {opts.Name}, "nocache": {"1"}, "q": {"1"}, "rm": {"1"}, "forcerm": {"1"}}
+	expected := map[string][]string{
+		"t":          {opts.Name},
+		"nocache":    {"1"},
+		"q":          {"1"},
+		"pull":       {"1"},
+		"rm":         {"1"},
+		"forcerm":    {"1"},
+		"memory":     {"1024"},
+		"memswap":    {"2048"},
+		"cpushares":  {"10"},
+		"cpusetcpus": {"0-3"},
+	}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
