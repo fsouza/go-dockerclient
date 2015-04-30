@@ -406,7 +406,7 @@ type BuildImageOptions struct {
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
 // stream.
 //
-// See http://goo.gl/wRsW76 for more details.
+// See http://goo.gl/7nuGXa for more details.
 func (c *Client) BuildImage(opts BuildImageOptions) error {
 	if opts.OutputStream == nil {
 		return ErrMissingOutputStream
