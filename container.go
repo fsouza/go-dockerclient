@@ -495,7 +495,7 @@ func (c *Client) PauseContainer(id string) error {
 	return nil
 }
 
-// UnpauseContainer pauses the given container.
+// UnpauseContainer unpauses the given container.
 //
 // See http://goo.gl/eBrNSL for more details.
 func (c *Client) UnpauseContainer(id string) error {
