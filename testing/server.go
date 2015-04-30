@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+	"github.com/tcurdt/go-dockerclient"
 	"github.com/gorilla/mux"
 )
 
@@ -354,7 +354,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 	ports := map[docker.Port][]docker.PortBinding{}
 	for port := range config.ExposedPorts {
 		ports[port] = []docker.PortBinding{{
-			HostIP:   "0.0.0.0",
+			HostIp:   "0.0.0.0",
 			HostPort: strconv.Itoa(mathrand.Int() % 65536),
 		}}
 	}

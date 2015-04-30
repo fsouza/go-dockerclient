@@ -113,7 +113,7 @@ func (s *State) String() string {
 // PortBinding represents the host/container port mapping as returned in the
 // `docker inspect` json
 type PortBinding struct {
-	HostIP   string `json:"HostIP,omitempty" yaml:"HostIP,omitempty"`
+	HostIp   string `json:"HostIp,omitempty" yaml:"HostIp,omitempty"`
 	HostPort string `json:"HostPort,omitempty" yaml:"HostPort,omitempty"`
 }
 
@@ -151,7 +151,7 @@ func (settings *NetworkSettings) PortMappingAPI() []APIPort {
 				PrivatePort: int64(p),
 				PublicPort:  int64(h),
 				Type:        port.Proto(),
-				IP:          binding.HostIP,
+				IP:          binding.HostIp,
 			})
 		}
 	}
