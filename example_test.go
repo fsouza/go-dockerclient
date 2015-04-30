@@ -12,7 +12,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/tcurdt/go-dockerclient"
+	"github.com/fsouza/go-dockerclient"
 )
 
 func ExampleClient_AttachToContainer() {

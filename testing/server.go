@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tcurdt/go-dockerclient"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
 )
 
