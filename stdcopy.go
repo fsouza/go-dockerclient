@@ -18,7 +18,7 @@ const (
 
 var errInvalidStdHeader = errors.New("Unrecognized input header")
 
-func stdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error) {
+func StdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error) {
 	var (
 		buf       = make([]byte, 32*1024+stdWriterPrefixLen+1)
 		bufLen    = len(buf)

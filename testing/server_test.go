@@ -5,6 +5,7 @@
 package testing
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -493,6 +494,26 @@ func TestTopContainerStopped(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusInternalServerError {
 		t.Errorf("TopContainer: wrong status. Want %d. Got %d.", http.StatusInternalServerError, recorder.Code)
+	}
+}
+
+func TestLogsContainer(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.containers[0].State.Running = true
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/logs", server.containers[0].ID)
+	request, _ := http.NewRequest("GET", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("LogsContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+
+	var stdout, stderr bytes.Buffer
+	docker.StdCopy(&stdout, &stderr, recorder.Body)
+	if stdout.String() != "log output\nmore log output\n" {
+		t.Fatalf("LogsContainer: Unexpected log output, got: %#v", stdout.String())
 	}
 }
 

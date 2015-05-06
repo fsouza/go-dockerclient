@@ -438,7 +438,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		if streamOptions.setRawTerminal {
 			_, err = io.Copy(streamOptions.stdout, resp.Body)
 		} else {
-			_, err = stdCopy(streamOptions.stdout, streamOptions.stderr, resp.Body)
+			_, err = StdCopy(streamOptions.stdout, streamOptions.stderr, resp.Body)
 		}
 		return err
 	}
@@ -518,7 +518,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 			// When TTY is ON, use regular copy
 			_, err = io.Copy(hijackOptions.stdout, br)
 		} else {
-			_, err = stdCopy(hijackOptions.stdout, hijackOptions.stderr, br)
+			_, err = StdCopy(hijackOptions.stdout, hijackOptions.stderr, br)
 		}
 		errs <- err
 	}()
