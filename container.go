@@ -596,8 +596,16 @@ type Stats struct {
 		Failcnt  int64 `json:"failcnt,omitempty" yaml:"failcnt,omitempty"`
 		Limit    int64 `json:"limit,omitempty" yaml:"limit,omitempty"`
 	} `json:"memory_stats,omitempty" yaml:"memory_stats,omitempty"`
-	// TODO(pedge): this is in the docker docs, but no data
-	//BlkioStats string `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty"`
+	BlkioStats struct {
+		IOServiceBytesRecursive []BlkioStatsEntry `json:"io_service_bytes_recursive,omitempty" yaml:"io_service_bytes_recursive,omitempty"`
+		IOServicedRecursive     []BlkioStatsEntry `json:"io_serviced_recursive,omitempty" yaml:"io_serviced_recursive,omitempty"`
+		IOQueueRecursive        []BlkioStatsEntry `json:"io_queue_recursive,omitempty" yaml:"io_queue_recursive,omitempty"`
+		IOServiceTimeRecursive  []BlkioStatsEntry `json:"io_service_time_recursive,omitempty" yaml:"io_service_time_recursive,omitempty"`
+		IOWaitTimeRecursive     []BlkioStatsEntry `json:"io_wait_time_recursive,omitempty" yaml:"io_wait_time_recursive,omitempty"`
+		IOMergedRecursive       []BlkioStatsEntry `json:"io_merged_recursive,omitempty" yaml:"io_merged_recursive,omitempty"`
+		IOTimeRecursive         []BlkioStatsEntry `json:"io_time_recursive,omitempty" yaml:"io_time_recursive,omitempty"`
+		SectorsRecursive        []BlkioStatsEntry `json:"sectors_recursive,omitempty" yaml:"sectors_recursive,omitempty"`
+	} `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty"`
 	CPUStats struct {
 		CPUUsage struct {
 			PercpuUsage       []int64 `json:"percpu_usage,omitempty" yaml:"percpu_usage,omitempty"`
@@ -609,6 +617,14 @@ type Stats struct {
 		// TODO(pedge): this is in the docker docs, but no data
 		//ThrottlingData string `json:"throttling_data,omitempty" yaml:"throttling_data,omitempty"`
 	} `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
+}
+
+// BlkioStatsEntry is a stats entry for blkio_stats
+type BlkioStatsEntry struct {
+	Major int    `json:"major,omitempty" yaml:"major,omitempty"`
+	Minor int    `json:"major,omitempty" yaml:"major,omitempty"`
+	Op    string `json:"op,omitempty" yaml:"op,omitempty"`
+	Value int64  `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 // StatsOptions specify parameters to the Stats function.
