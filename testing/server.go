@@ -25,6 +25,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var nameRegexp = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
+
 // DockerServer represents a programmable, concurrent (not much), HTTP server
 // implementing a fake version of the Docker remote API.
 //
@@ -44,6 +46,7 @@ type DockerServer struct {
 	mux            *mux.Router
 	hook           func(*http.Request)
 	failures       map[string]string
+	multiFailures  []map[string]string
 	execCallbacks  map[string]func()
 	customHandlers map[string]http.Handler
 	handlerMutex   sync.RWMutex
@@ -92,6 +95,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/containers/json").Methods("GET").HandlerFunc(s.handlerWrapper(s.listContainers))
 	s.mux.Path("/containers/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.createContainer))
 	s.mux.Path("/containers/{id:.*}/json").Methods("GET").HandlerFunc(s.handlerWrapper(s.inspectContainer))
+	s.mux.Path("/containers/{id:.*}/rename").Methods("POST").HandlerFunc(s.handlerWrapper(s.renameContainer))
 	s.mux.Path("/containers/{id:.*}/top").Methods("GET").HandlerFunc(s.handlerWrapper(s.topContainer))
 	s.mux.Path("/containers/{id:.*}/start").Methods("POST").HandlerFunc(s.handlerWrapper(s.startContainer))
 	s.mux.Path("/containers/{id:.*}/kill").Methods("POST").HandlerFunc(s.handlerWrapper(s.stopContainer))
@@ -155,9 +159,20 @@ func (s *DockerServer) PrepareFailure(id string, urlRegexp string) {
 	s.failures[id] = urlRegexp
 }
 
+// PrepareMultiFailures enqueues a new expected failure based on a URL regexp
+// it receives an id for the failure.
+func (s *DockerServer) PrepareMultiFailures(id string, urlRegexp string) {
+	s.multiFailures = append(s.multiFailures, map[string]string{"error": id, "url": urlRegexp})
+}
+
 // ResetFailure removes an expected failure identified by the given id.
 func (s *DockerServer) ResetFailure(id string) {
 	delete(s.failures, id)
+}
+
+// ResetMultiFailures removes all enqueued failures.
+func (s *DockerServer) ResetMultiFailures() {
+	s.multiFailures = []map[string]string{}
 }
 
 // CustomHandler registers a custom handler for a specific path.
@@ -234,6 +249,19 @@ func (s *DockerServer) handlerWrapper(f func(http.ResponseWriter, *http.Request)
 				continue
 			}
 			http.Error(w, errorID, http.StatusBadRequest)
+			return
+		}
+		for i, failure := range s.multiFailures {
+			matched, err := regexp.MatchString(failure["url"], r.URL.Path)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if !matched {
+				continue
+			}
+			http.Error(w, failure["error"], http.StatusBadRequest)
+			s.multiFailures = append(s.multiFailures[:i], s.multiFailures[i+1:]...)
 			return
 		}
 		f(w, r)
@@ -313,6 +341,11 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	name := r.URL.Query().Get("name")
+	if name != "" && !nameRegexp.MatchString(name) {
+		http.Error(w, "Invalid container name", http.StatusInternalServerError)
+		return
+	}
 	if _, err := s.findImage(config.Image); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -337,7 +370,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	container := docker.Container{
-		Name:    r.URL.Query().Get("name"),
+		Name:    name,
 		ID:      s.generateID(),
 		Created: time.Now(),
 		Path:    path,
@@ -370,6 +403,23 @@ func (s *DockerServer) generateID() string {
 	var buf [16]byte
 	rand.Read(buf[:])
 	return fmt.Sprintf("%x", buf)
+}
+
+func (s *DockerServer) renameContainer(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	container, index, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	copy := *container
+	copy.Name = r.URL.Query().Get("name")
+	s.cMut.Lock()
+	defer s.cMut.Unlock()
+	if s.containers[index].ID == copy.ID {
+		s.containers[index] = &copy
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) {
@@ -516,12 +566,13 @@ func (s *DockerServer) waitContainer(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) removeContainer(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
+	force := r.URL.Query().Get("force")
 	_, index, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	if s.containers[index].State.Running {
+	if s.containers[index].State.Running && force != "1" {
 		msg := "Error: API error (406): Impossible to remove a running container, please stop it first"
 		http.Error(w, msg, http.StatusInternalServerError)
 		return

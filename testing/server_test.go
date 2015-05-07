@@ -241,6 +241,24 @@ func TestCreateContainerInvalidBody(t *testing.T) {
 	}
 }
 
+func TestCreateContainerInvalidName(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	body := `{"Hostname":"", "User":"", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
+"PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"],
+"Image":"base", "Volumes":{}, "VolumesFrom":""}`
+	request, _ := http.NewRequest("POST", "/containers/create?name=myapp/container1", strings.NewReader(body))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusInternalServerError {
+		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusInternalServerError, recorder.Code)
+	}
+	expectedBody := "Invalid container name\n"
+	if got := recorder.Body.String(); got != expectedBody {
+		t.Errorf("CreateContainer: wrong body. Want %q. Got %q.", expectedBody, got)
+	}
+}
+
 func TestCreateContainerImageNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
@@ -252,6 +270,35 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
+func TestRenameContainer(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 2)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	newName := server.containers[0].Name + "abc"
+	path := fmt.Sprintf("/containers/%s/rename?name=%s", server.containers[0].ID, newName)
+	request, _ := http.NewRequest("POST", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("RenameContainer: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	container := server.containers[0]
+	if container.Name != newName {
+		t.Errorf("RenameContainer: did not rename the container. Want %q. Got %q.", newName, container.Name)
+	}
+}
+
+func TestRenameContainerNotFound(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/containers/blabla/rename?name=something", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("RenameContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
 	}
 }
 
@@ -803,6 +850,23 @@ func TestRemoveContainerRunning(t *testing.T) {
 	}
 }
 
+func TestRemoveContainerRunningForce(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.containers[0].State.Running = true
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s?%s", server.containers[0].ID, "force=1")
+	request, _ := http.NewRequest("DELETE", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("RemoveContainer: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	if len(server.containers) > 0 {
+		t.Error("RemoveContainer: did not remove the container.")
+	}
+}
+
 func TestPullImage(t *testing.T) {
 	server := DockerServer{imgIDs: make(map[string]string)}
 	server.buildMuxer()
@@ -1081,6 +1145,41 @@ func TestPrepareFailure(t *testing.T) {
 	}
 }
 
+func TestPrepareMultiFailures(t *testing.T) {
+	server := DockerServer{multiFailures: []map[string]string{}}
+	server.buildMuxer()
+	errorID := "multi error"
+	server.PrepareMultiFailures(errorID, "containers/json")
+	server.PrepareMultiFailures(errorID, "containers/json")
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("PrepareFailure: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
+	}
+	if recorder.Body.String() != errorID+"\n" {
+		t.Errorf("PrepareFailure: wrong message. Want %s. Got %s.", errorID, recorder.Body.String())
+	}
+	recorder = httptest.NewRecorder()
+	request, _ = http.NewRequest("GET", "/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("PrepareFailure: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
+	}
+	if recorder.Body.String() != errorID+"\n" {
+		t.Errorf("PrepareFailure: wrong message. Want %s. Got %s.", errorID, recorder.Body.String())
+	}
+	recorder = httptest.NewRecorder()
+	request, _ = http.NewRequest("GET", "/containers/json?all=1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("PrepareFailure: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if recorder.Body.String() == errorID+"\n" {
+		t.Errorf("PrepareFailure: wrong message. Want %s. Got %s.", errorID, recorder.Body.String())
+	}
+}
+
 func TestRemoveFailure(t *testing.T) {
 	server := DockerServer{failures: make(map[string]string)}
 	server.buildMuxer()
@@ -1098,6 +1197,21 @@ func TestRemoveFailure(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("RemoveFailure: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}
+
+func TestResetMultiFailures(t *testing.T) {
+	server := DockerServer{multiFailures: []map[string]string{}}
+	server.buildMuxer()
+	errorID := "multi error"
+	server.PrepareMultiFailures(errorID, "containers/json")
+	server.PrepareMultiFailures(errorID, "containers/json")
+	if len(server.multiFailures) != 2 {
+		t.Errorf("PrepareMultiFailures: error adding multi failures.")
+	}
+	server.ResetMultiFailures()
+	if len(server.multiFailures) != 0 {
+		t.Errorf("ResetMultiFailures: error reseting multi failures.")
 	}
 }
 

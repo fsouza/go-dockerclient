@@ -56,7 +56,7 @@ type APIContainers struct {
 // See http://goo.gl/6Y4Gz7 for more details.
 func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, error) {
 	path := "/containers/json?" + queryString(opts)
-	body, _, err := c.do("GET", path, nil, false)
+	body, _, err := c.do("GET", path, doOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +90,7 @@ func (p Port) Proto() string {
 type State struct {
 	Running    bool      `json:"Running,omitempty" yaml:"Running,omitempty"`
 	Paused     bool      `json:"Paused,omitempty" yaml:"Paused,omitempty"`
+	Restarting bool      `json:"Restarting,omitempty" yaml:"Restarting,omitempty"`
 	OOMKilled  bool      `json:"OOMKilled,omitempty" yaml:"OOMKilled,omitempty"`
 	Pid        int       `json:"Pid,omitempty" yaml:"Pid,omitempty"`
 	ExitCode   int       `json:"ExitCode,omitempty" yaml:"ExitCode,omitempty"`
@@ -166,7 +167,7 @@ func parsePort(rawPort string) (int, error) {
 }
 
 // Config is the list of configuration options used when creating a container.
-// Config does not the options that are specific to starting a container on a
+// Config does not contain the options that are specific to starting a container on a
 // given host.  Those are contained in HostConfig
 type Config struct {
 	Hostname        string              `json:"Hostname,omitempty" yaml:"Hostname,omitempty"`
@@ -195,6 +196,13 @@ type Config struct {
 	NetworkDisabled bool                `json:"NetworkDisabled,omitempty" yaml:"NetworkDisabled,omitempty"`
 	SecurityOpts    []string            `json:"SecurityOpts,omitempty" yaml:"SecurityOpts,omitempty"`
 	OnBuild         []string            `json:"OnBuild,omitempty" yaml:"OnBuild,omitempty"`
+	Labels          map[string]string   `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+}
+
+// LogConfig defines the log driver type and the configuration for it.
+type LogConfig struct {
+	Type   string            `json:"Type,omitempty" yaml:"Type,omitempty"`
+	Config map[string]string `json:"Config,omitempty" yaml:"Config,omitempty"`
 }
 
 // SwarmNode containers information about which Swarm node the container is on
@@ -237,6 +245,27 @@ type Container struct {
 	VolumesRW  map[string]bool   `json:"VolumesRW,omitempty" yaml:"VolumesRW,omitempty"`
 	HostConfig *HostConfig       `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
 	ExecIDs    []string          `json:"ExecIDs,omitempty" yaml:"ExecIDs,omitempty"`
+
+	AppArmorProfile string `json:"AppArmorProfile,omitempty" yaml:"AppArmorProfile,omitempty"`
+}
+
+// RenameContainerOptions specify parameters to the RenameContainer function.
+//
+// See http://goo.gl/L00hoj for more details.
+type RenameContainerOptions struct {
+	// ID of container to rename
+	ID string `qs:"-"`
+
+	// New name
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
+// RenameContainer updates and existing containers name
+//
+// See http://goo.gl/L00hoj for more details.
+func (c *Client) RenameContainer(opts RenameContainerOptions) error {
+	_, _, err := c.do("POST", fmt.Sprintf("/containers/"+opts.ID+"/rename?%s", queryString(opts)), doOptions{})
+	return err
 }
 
 // InspectContainer returns information about a container by its ID.
@@ -244,7 +273,7 @@ type Container struct {
 // See http://goo.gl/CxVuJ5 for more details.
 func (c *Client) InspectContainer(id string) (*Container, error) {
 	path := "/containers/" + id + "/json"
-	body, status, err := c.do("GET", path, nil, false)
+	body, status, err := c.do("GET", path, doOptions{})
 	if status == http.StatusNotFound {
 		return nil, &NoSuchContainer{ID: id}
 	}
@@ -264,7 +293,7 @@ func (c *Client) InspectContainer(id string) (*Container, error) {
 // See http://goo.gl/QkW9sH for more details.
 func (c *Client) ContainerChanges(id string) ([]Change, error) {
 	path := "/containers/" + id + "/changes"
-	body, status, err := c.do("GET", path, nil, false)
+	body, status, err := c.do("GET", path, doOptions{})
 	if status == http.StatusNotFound {
 		return nil, &NoSuchContainer{ID: id}
 	}
@@ -294,13 +323,19 @@ type CreateContainerOptions struct {
 // See http://goo.gl/mErxNp for more details.
 func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error) {
 	path := "/containers/create?" + queryString(opts)
-	body, status, err := c.do("POST", path, struct {
-		*Config
-		HostConfig *HostConfig `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
-	}{
-		opts.Config,
-		opts.HostConfig,
-	}, false)
+	body, status, err := c.do(
+		"POST",
+		path,
+		doOptions{
+			data: struct {
+				*Config
+				HostConfig *HostConfig `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
+			}{
+				opts.Config,
+				opts.HostConfig,
+			},
+		},
+	)
 
 	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
@@ -357,6 +392,14 @@ func NeverRestart() RestartPolicy {
 	return RestartPolicy{Name: "no"}
 }
 
+// Device represents a device mapping between the Docker host and the
+// container.
+type Device struct {
+	PathOnHost        string `json:"PathOnHost,omitempty" yaml:"PathOnHost,omitempty"`
+	PathInContainer   string `json:"PathInContainer,omitempty" yaml:"PathInContainer,omitempty"`
+	CgroupPermissions string `json:"CgroupPermissions,omitempty" yaml:"CgroupPermissions,omitempty"`
+}
+
 // HostConfig contains the container options related to starting a container on
 // a given host
 type HostConfig struct {
@@ -377,6 +420,11 @@ type HostConfig struct {
 	IpcMode         string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty"`
 	PidMode         string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
 	RestartPolicy   RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
+	Devices         []Device               `json:"Devices,omitempty" yaml:"Devices,omitempty"`
+	LogConfig       LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty"`
+	ReadonlyRootfs  bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
+	SecurityOpt     []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty"`
+	CgroupParent    string                 `json:"CgroupParent,omitempty" yaml:"CgroupParent,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
@@ -384,7 +432,7 @@ type HostConfig struct {
 // See http://goo.gl/iM5GYs for more details.
 func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 	path := "/containers/" + id + "/start"
-	_, status, err := c.do("POST", path, hostConfig, true)
+	_, status, err := c.do("POST", path, doOptions{data: hostConfig, forceJSON: true})
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id, Err: err}
 	}
@@ -403,7 +451,7 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 // See http://goo.gl/EbcpXt for more details.
 func (c *Client) StopContainer(id string, timeout uint) error {
 	path := fmt.Sprintf("/containers/%s/stop?t=%d", id, timeout)
-	_, status, err := c.do("POST", path, nil, false)
+	_, status, err := c.do("POST", path, doOptions{})
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
 	}
@@ -422,7 +470,7 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 // See http://goo.gl/VOzR2n for more details.
 func (c *Client) RestartContainer(id string, timeout uint) error {
 	path := fmt.Sprintf("/containers/%s/restart?t=%d", id, timeout)
-	_, status, err := c.do("POST", path, nil, false)
+	_, status, err := c.do("POST", path, doOptions{})
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
 	}
@@ -437,7 +485,7 @@ func (c *Client) RestartContainer(id string, timeout uint) error {
 // See http://goo.gl/AM5t42 for more details.
 func (c *Client) PauseContainer(id string) error {
 	path := fmt.Sprintf("/containers/%s/pause", id)
-	_, status, err := c.do("POST", path, nil, false)
+	_, status, err := c.do("POST", path, doOptions{})
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
 	}
@@ -447,12 +495,12 @@ func (c *Client) PauseContainer(id string) error {
 	return nil
 }
 
-// UnpauseContainer pauses the given container.
+// UnpauseContainer unpauses the given container.
 //
 // See http://goo.gl/eBrNSL for more details.
 func (c *Client) UnpauseContainer(id string) error {
 	path := fmt.Sprintf("/containers/%s/unpause", id)
-	_, status, err := c.do("POST", path, nil, false)
+	_, status, err := c.do("POST", path, doOptions{})
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: id}
 	}
@@ -481,7 +529,7 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 		args = fmt.Sprintf("?ps_args=%s", psArgs)
 	}
 	path := fmt.Sprintf("/containers/%s/top%s", id, args)
-	body, status, err := c.do("GET", path, nil, false)
+	body, status, err := c.do("GET", path, doOptions{})
 	if status == http.StatusNotFound {
 		return result, &NoSuchContainer{ID: id}
 	}
@@ -493,6 +541,136 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 		return result, err
 	}
 	return result, nil
+}
+
+// Stats represents container statistics, returned by /containers/<id>/stats.
+//
+// See http://goo.gl/DFMiYD for more details.
+type Stats struct {
+	Read    time.Time `json:"read,omitempty" yaml:"read,omitempty"`
+	Network struct {
+		RxDropped int64 `json:"rx_dropped,omitempty" yaml:"rx_dropped,omitempty"`
+		RxBytes   int64 `json:"rx_bytes,omitempty" yaml:"rx_bytes,omitempty"`
+		RxErrors  int64 `json:"rx_errors,omitempty" yaml:"rx_errors,omitempty"`
+		TxPackets int64 `json:"tx_packets,omitempty" yaml:"tx_packets,omitempty"`
+		TxDropped int64 `json:"tx_dropped,omitempty" yaml:"tx_dropped,omitempty"`
+		RxPackets int64 `json:"rx_packets,omitempty" yaml:"rx_packets,omitempty"`
+		TxErrors  int64 `json:"tx_errors,omitempty" yaml:"tx_errors,omitempty"`
+		TxBytes   int64 `json:"tx_bytes,omitempty" yaml:"tx_bytes,omitempty"`
+	} `json:"network,omitempty" yaml:"network,omitempty"`
+	MemoryStats struct {
+		Stats struct {
+			TotalPgmafault    int64 `json"total_pgmafault,omitempty" yaml:"total_pgmafault,omitempty"`
+			Cache             int64 `json:"cache,omitempty" yaml:"cache,omitempty"`
+			MappedFile        int64 `json:"mapped_file,omitempty" yaml:"mapped_file,omitempty"`
+			TotalInactiveFile int64 `json:"total_inactive_file,omitempty" yaml:"total_inactive_file,omitempty"`
+			Pgpgout           int64 `json:"pgpgout,omitempty" yaml:"pgpgout,omitempty"`
+			Rss               int64 `json:"rss,omitempty" yaml:"rss,omitempty"`
+			TotalMappedFile   int64 `json:"total_mapped_file,omitempty" yaml:"total_mapped_file,omitempty"`
+			Writeback         int64 `json:"writeback,omitempty" yaml:"writeback,omitempty"`
+			Unevictable       int64 `json:"unevictable,omitempty" yaml:"unevictable,omitempty"`
+			Pgpgin            int64 `json:"pgpgin,omitempty" yaml:"pgpgin,omitempty"`
+			TotalUnevictable  int64 `json:"total_unevictable,omitempty" yaml:"total_unevictable,omitempty"`
+			Pgmajfault        int64 `json:"pgmajfault,omitempty" yaml:"pgmajfault,omitempty"`
+			TotalRss          int64 `json:"total_rss,omitempty" yaml:"total_rss,omitempty"`
+			TotalRssHuge      int64 `json:"total_rss_huge,omitempty" yaml:"total_rss_huge,omitempty"`
+			TotalWriteback    int64 `json:"total_writeback,omitempty" yaml:"total_writeback,omitempty"`
+			TotalInactiveAnon int64 `json:"total_inactive_anon,omitempty" yaml:"total_inactive_anon,omitempty"`
+			RssHuge           int64 `json:"rss_huge,omitempty" yaml:"rss_huge,omitempty"`
+			// TODO(pedge): this kills the whole thing, why? commenting out for now
+			//HierarchicalMemoryLimit int64 `json:"hierarchical_memory_limit,omitempty" yaml:"hierarchical_memory_limit,omitempty"`
+			TotalPgfault    int64 `json:"total_pgfault,omitempty" yaml:"total_pgfault,omitempty"`
+			TotalActiveFile int64 `json:"total_active_file,omitempty" yaml:"total_active_file,omitempty"`
+			ActiveAnon      int64 `json:"active_anon,omitempty" yaml:"active_anon,omitempty"`
+			TotalActiveAnon int64 `json:"total_active_anon,omitempty" yaml:"total_active_anon,omitempty"`
+			TotalPgpgout    int64 `json:"total_pgpgout,omitempty" yaml:"total_pgpgout,omitempty"`
+			TotalCache      int64 `json:"total_cache,omitempty" yaml:"total_cache,omitempty"`
+			InactiveAnon    int64 `json:"inactive_anon,omitempty" yaml:"inactive_anon,omitempty"`
+			ActiveFile      int64 `json:"active_file,omitempty" yaml:"active_file,omitempty"`
+			Pgfault         int64 `json:"pgfault,omitempty" yaml:"pgfault,omitempty"`
+			InactiveFile    int64 `json:"inactive_file,omitempty" yaml:"inactive_file,omitempty"`
+			TotalPgpgin     int64 `json:"total_pgpgin,omitempty" yaml:"total_pgpgin,omitempty"`
+		} `json:"stats,omitempty" yaml:"stats,omitempty"`
+		MaxUsage int64 `json:"max_usage,omitempty" yaml:"max_usage,omitempty"`
+		Usage    int64 `json:"usage,omitempty" yaml:"usage,omitempty"`
+		Failcnt  int64 `json:"failcnt,omitempty" yaml:"failcnt,omitempty"`
+		Limit    int64 `json:"limit,omitempty" yaml:"limit,omitempty"`
+	} `json:"memory_stats,omitempty" yaml:"memory_stats,omitempty"`
+	// TODO(pedge): this is in the docker docs, but no data
+	//BlkioStats string `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty"`
+	CPUStats struct {
+		CPUUsage struct {
+			PercpuUsage       []int64 `json:"percpu_usage,omitempty" yaml:"percpu_usage,omitempty"`
+			UsageInUsermode   int64   `json:"usage_in_usermode,omitempty" yaml:"usage_in_usermode,omitempty"`
+			TotalUsage        int64   `json:"total_usage,omitempty" yaml:"total_usage,omitempty"`
+			UsageInKernelmode int64   `json:"usage_in_kernelmode,omitempty" yaml:"usage_in_kernelmode,omitempty"`
+		} `json:"cpu_usage,omitempty" yaml:"cpu_usage,omitempty"`
+		SystemCPUUsage int64 `json:"system_cpu_usage,omitempty" yaml:"system_cpu_usage,omitempty"`
+		// TODO(pedge): this is in the docker docs, but no data
+		//ThrottlingData string `json:"throttling_data,omitempty" yaml:"throttling_data,omitempty"`
+	} `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
+}
+
+// StatsOptions specify parameters to the Stats function.
+//
+// See http://goo.gl/DFMiYD for more details.
+type StatsOptions struct {
+	ID    string
+	Stats chan<- *Stats
+}
+
+// Stats sends container statistics for the given container to the given channel.
+//
+// This function is blocking, similar to a streaming call for logs, and should be run
+// on a separate goroutine from the caller. Note that this function will block until
+// the given container is removed, not just exited. When finished, this function
+// will close the given channel.
+//
+// See http://goo.gl/DFMiYD for more details.
+func (c *Client) Stats(opts StatsOptions) (retErr error) {
+	errC := make(chan error, 1)
+	readCloser, writeCloser := io.Pipe()
+
+	defer func() {
+		close(opts.Stats)
+		if err := <-errC; err != nil && retErr == nil {
+			retErr = err
+		}
+		if err := readCloser.Close(); err != nil && retErr == nil {
+			retErr = err
+		}
+	}()
+
+	go func() {
+		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", opts.ID), streamOptions{
+			rawJSONStream: true,
+			stdout:        writeCloser,
+		})
+		if err != nil {
+			dockerError, ok := err.(*Error)
+			if ok {
+				if dockerError.Status == http.StatusNotFound {
+					err = &NoSuchContainer{ID: opts.ID}
+				}
+			}
+		}
+		if closeErr := writeCloser.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+		errC <- err
+		close(errC)
+	}()
+
+	decoder := json.NewDecoder(readCloser)
+	stats := new(Stats)
+	for err := decoder.Decode(&stats); err != io.EOF; err = decoder.Decode(stats) {
+		if err != nil {
+			return err
+		}
+		opts.Stats <- stats
+		stats = new(Stats)
+	}
+	return nil
 }
 
 // KillContainerOptions represents the set of options that can be used in a
@@ -513,7 +691,7 @@ type KillContainerOptions struct {
 // See http://goo.gl/TFkECx for more details.
 func (c *Client) KillContainer(opts KillContainerOptions) error {
 	path := "/containers/" + opts.ID + "/kill" + "?" + queryString(opts)
-	_, status, err := c.do("POST", path, nil, false)
+	_, status, err := c.do("POST", path, doOptions{})
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: opts.ID}
 	}
@@ -544,7 +722,7 @@ type RemoveContainerOptions struct {
 // See http://goo.gl/ZB83ji for more details.
 func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 	path := "/containers/" + opts.ID + "?" + queryString(opts)
-	_, status, err := c.do("DELETE", path, nil, false)
+	_, status, err := c.do("DELETE", path, doOptions{})
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: opts.ID}
 	}
@@ -573,7 +751,7 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 		return &NoSuchContainer{ID: opts.Container}
 	}
 	url := fmt.Sprintf("/containers/%s/copy", opts.Container)
-	body, status, err := c.do("POST", url, opts, false)
+	body, status, err := c.do("POST", url, doOptions{data: opts})
 	if status == http.StatusNotFound {
 		return &NoSuchContainer{ID: opts.Container}
 	}
@@ -589,7 +767,7 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 //
 // See http://goo.gl/J88DHU for more details.
 func (c *Client) WaitContainer(id string) (int, error) {
-	body, status, err := c.do("POST", "/containers/"+id+"/wait", nil, false)
+	body, status, err := c.do("POST", "/containers/"+id+"/wait", doOptions{})
 	if status == http.StatusNotFound {
 		return 0, &NoSuchContainer{ID: id}
 	}
@@ -621,7 +799,7 @@ type CommitContainerOptions struct {
 // See http://goo.gl/Jn8pe8 for more details.
 func (c *Client) CommitContainer(opts CommitContainerOptions) (*Image, error) {
 	path := "/commit?" + queryString(opts)
-	body, status, err := c.do("POST", path, opts.Run, false)
+	body, status, err := c.do("POST", path, doOptions{data: opts.Run})
 	if status == http.StatusNotFound {
 		return nil, &NoSuchContainer{ID: opts.Container}
 	}
@@ -680,7 +858,13 @@ func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
 		return &NoSuchContainer{ID: opts.Container}
 	}
 	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
-	return c.hijack("POST", path, opts.Success, opts.RawTerminal, opts.InputStream, opts.ErrorStream, opts.OutputStream, nil)
+	return c.hijack("POST", path, hijackOptions{
+		success:        opts.Success,
+		setRawTerminal: opts.RawTerminal,
+		in:             opts.InputStream,
+		stdout:         opts.OutputStream,
+		stderr:         opts.ErrorStream,
+	})
 }
 
 // LogsOptions represents the set of options used when getting logs from a
@@ -712,7 +896,11 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream("GET", path, opts.RawTerminal, false, nil, nil, opts.OutputStream, opts.ErrorStream)
+	return c.stream("GET", path, streamOptions{
+		setRawTerminal: opts.RawTerminal,
+		stdout:         opts.OutputStream,
+		stderr:         opts.ErrorStream,
+	})
 }
 
 // ResizeContainerTTY resizes the terminal to the given height and width.
@@ -720,7 +908,7 @@ func (c *Client) ResizeContainerTTY(id string, height, width int) error {
 	params := make(url.Values)
 	params.Set("h", strconv.Itoa(height))
 	params.Set("w", strconv.Itoa(width))
-	_, _, err := c.do("POST", "/containers/"+id+"/resize?"+params.Encode(), nil, false)
+	_, _, err := c.do("POST", "/containers/"+id+"/resize?"+params.Encode(), doOptions{})
 	return err
 }
 
@@ -742,7 +930,10 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, true, false, nil, nil, opts.OutputStream, nil)
+	return c.stream("GET", url, streamOptions{
+		setRawTerminal: true,
+		stdout:         opts.OutputStream,
+	})
 }
 
 // NoSuchContainer is the error returned when a given container does not exist.
