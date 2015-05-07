@@ -517,6 +517,17 @@ func TestLogsContainer(t *testing.T) {
 	}
 }
 
+func TestLogsContainerNotFound(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/containers/xyz/logs", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("LogsContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
 func TestStartContainer(t *testing.T) {
 	server := DockerServer{}
 	addContainers(&server, 1)
