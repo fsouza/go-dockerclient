@@ -9,7 +9,6 @@ all: test
 
 vendor:
 	go get -v github.com/kardianos/vendor
-	vendor init
 	vendor add -status external
 	vendor update -status external
 
