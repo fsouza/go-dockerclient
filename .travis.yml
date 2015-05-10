@@ -9,4 +9,4 @@ env:
 install:
   - make testdeps
 script:
-  - make test
+  - make test cov
