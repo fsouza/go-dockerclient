@@ -6,7 +6,6 @@
 	updatetestdeps \
 	lint \
 	vet \
-	errcheck \
 	fmtcheck \
 	pretest \
 	test \
@@ -35,10 +34,6 @@ vet: testdeps
 	go get -v golang.org/x/tools/cmd/vet
 	go vet ./...
 
-errcheck: testdeps
-	go get -v github.com/kisielk/errcheck
-	errcheck ./...
-
 fmtcheck:
 	for file in $(shell git ls-files '*.go'); do \
 		gofmt $$file | diff -u $$file -; \
@@ -47,8 +42,6 @@ fmtcheck:
 		fi; \
 	done
 
-# TODO(pedge): temporarily remove errcheck from requirements until all errors fixed
-#pretest: lint vet errcheck fmtcheck
 pretest: lint vet fmtcheck
 
 test: testdeps pretest
