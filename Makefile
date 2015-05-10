@@ -14,11 +14,11 @@ all: test
 
 vendor:
 	go get -v github.com/mjibson/party
-	party -c -u
+	party -d vendor -c -u
 
 lint:
 	go get -v github.com/golang/lint/golint
-	for file in $(shell git ls-files '*.go' | grep -v '^_third_party/'); do \
+	for file in $(shell git ls-files '*.go' | grep -v '^vendor/'); do \
 		golint $$file; \
 	done
 
@@ -27,10 +27,10 @@ vet:
 	go vet ./...
 
 fmt:
-	gofmt -w $(shell git ls-files '*.go' | grep -v '^_third_party/')
+	gofmt -w $(shell git ls-files '*.go' | grep -v '^vendor/')
 
 fmtcheck:
-	for file in $(shell git ls-files '*.go' | grep -v '^_third_party/'); do \
+	for file in $(shell git ls-files '*.go' | grep -v '^vendor/'); do \
 		gofmt $$file | diff -u $$file -; \
 		if [ -n "$$(gofmt $$file | diff -u $$file -)" ]; then\
 			exit 1; \
@@ -40,7 +40,8 @@ fmtcheck:
 pretest: lint vet fmtcheck
 
 test: pretest
-	go test ./...
+	go test ./.
+	go test ./testing
 
 cov:
 	go get -v github.com/axw/gocov/gocov

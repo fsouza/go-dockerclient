@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/stretchr/testify/assert"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/stretchr/testify/assert"
 )
 
 func TestEntryPanicln(t *testing.T) {

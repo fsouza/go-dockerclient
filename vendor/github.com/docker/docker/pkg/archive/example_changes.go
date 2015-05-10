@@ -13,8 +13,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/Sirupsen/logrus"
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/docker/docker/pkg/archive"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/Sirupsen/logrus"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/archive"
 )
 
 var (

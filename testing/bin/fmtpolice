@@ -36,7 +36,7 @@ _install_linter() {
 }
 
 _list_go_files() {
-  git ls-files '*.go' | grep -v '^_third_party/'
+  git ls-files '*.go' | grep -v '^vendor/'
 }
 
 main "$@"

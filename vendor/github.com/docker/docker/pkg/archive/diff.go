@@ -10,8 +10,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/docker/docker/pkg/pools"
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/docker/docker/pkg/system"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/pools"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/system"
 )
 
 func UnpackLayer(dest string, layer ArchiveReader) (size int64, err error) {

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/Sirupsen/logrus"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/Sirupsen/logrus"
 )
 
 func Exclusion(pattern string) bool {
