@@ -4,8 +4,12 @@
 	updatedeps \
 	testdeps \
 	updatetestdeps \
-	cov \
+	lint \
+	vet \
+	fmtcheck \
+	pretest \
 	test \
+	cov \
 	clean
 
 all: test
@@ -22,14 +26,31 @@ testdeps:
 updatetestdeps:
 	go get -d -v -t -u -f ./...
 
+lint: testdeps
+	go get -v github.com/golang/lint/golint
+	golint ./...
+
+vet: testdeps
+	go get -v golang.org/x/tools/cmd/vet
+	go vet ./...
+
+fmtcheck:
+	for file in $(shell git ls-files '*.go'); do \
+		gofmt $$file | diff -u $$file -; \
+		if [ -n "$$(gofmt $$file | diff -u $$file -)" ]; then\
+			exit 1; \
+		fi; \
+	done
+
+pretest: lint vet fmtcheck
+
+test: testdeps pretest
+	go test ./...
+
 cov: testdeps
 	go get -v github.com/axw/gocov/gocov
 	go get golang.org/x/tools/cmd/cover
 	gocov test | gocov report
-
-test: testdeps
-	go test ./...
-	./testing/bin/fmtpolice
 
 clean:
 	go clean ./...
