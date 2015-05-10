@@ -43,9 +43,7 @@ func stdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error)
 			nr += nr2
 		}
 		switch buf[stdWriterFdIndex] {
-		case 0:
-			fallthrough
-		case 1:
+		case 0, 1:
 			out = dstout
 		case 2:
 			out = dsterr
