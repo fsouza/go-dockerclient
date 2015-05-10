@@ -535,7 +535,7 @@ func TestStartContainerNilHostConfig(t *testing.T) {
 	var buf [4]byte
 	req.Body.Read(buf[:])
 	if string(buf[:]) != "null" {
-		t.Errorf("Startcontainer(%q): Wrong body. Want null. Got %s", buf[:])
+		t.Errorf("Startcontainer(%q): Wrong body. Want null. Got %s", id, buf[:])
 	}
 }
 
@@ -983,11 +983,9 @@ func TestAttachToContainer(t *testing.T) {
 
 func TestAttachToContainerSentinel(t *testing.T) {
 	var reader = strings.NewReader("send value")
-	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
-		req = *r
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
@@ -1012,11 +1010,9 @@ func TestAttachToContainerSentinel(t *testing.T) {
 
 func TestAttachToContainerNilStdout(t *testing.T) {
 	var reader = strings.NewReader("send value")
-	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
-		req = *r
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
@@ -1041,11 +1037,9 @@ func TestAttachToContainerNilStdout(t *testing.T) {
 
 func TestAttachToContainerNilStderr(t *testing.T) {
 	var reader = strings.NewReader("send value")
-	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
-		req = *r
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
@@ -1170,12 +1164,10 @@ func TestLogs(t *testing.T) {
 }
 
 func TestLogsNilStdoutDoesntFail(t *testing.T) {
-	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		prefix := []byte{1, 0, 0, 0, 0, 0, 0, 19}
 		w.Write(prefix)
 		w.Write([]byte("something happened!"))
-		req = *r
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
@@ -1194,12 +1186,10 @@ func TestLogsNilStdoutDoesntFail(t *testing.T) {
 }
 
 func TestLogsNilStderrDoesntFail(t *testing.T) {
-	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		prefix := []byte{2, 0, 0, 0, 0, 0, 0, 19}
 		w.Write(prefix)
 		w.Write([]byte("something happened!"))
-		req = *r
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
@@ -1267,10 +1257,8 @@ func TestLogsSpecifyingTail(t *testing.T) {
 }
 
 func TestLogsRawTerminal(t *testing.T) {
-	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("something happened!"))
-		req = *r
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
@@ -1530,7 +1518,7 @@ func TestTopContainer(t *testing.T) {
 	}
 	if len(processes.Processes) != 2 || len(processes.Processes[0]) != 8 ||
 		processes.Processes[0][7] != "cmd1" {
-		t.Errorf("TopContainer: Process list to include cmd1. Got %#v.", expected, processes)
+		t.Errorf("TopContainer: Process list to include cmd1. Got %#v.", processes)
 	}
 	expectedURI := "/containers/" + id + "/top"
 	if !strings.HasSuffix(fakeRT.requests[0].URL.String(), expectedURI) {
