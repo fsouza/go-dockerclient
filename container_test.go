@@ -1589,6 +1589,7 @@ func TestStats(t *testing.T) {
              "total_writeback" : 0,
              "total_inactive_anon" : 0,
              "rss_huge" : 6291456,
+	     "hierarchical_memory_limit": 189204833,
              "total_pgfault" : 964,
              "total_active_file" : 0,
              "active_anon" : 6537216,
