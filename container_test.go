@@ -1606,6 +1606,42 @@ func TestStats(t *testing.T) {
           "failcnt" : 0,
           "limit" : 67108864
        },
+       "blkio_stats": {
+          "io_service_bytes_recursive": [
+             {
+                "major": 8,
+                "minor": 0,
+                "op": "Read",
+                "value": 428795731968
+             },
+             {
+                "major": 8,
+                "minor": 0,
+                "op": "Write",
+                "value": 388177920
+             }
+          ],
+          "io_serviced_recursive": [
+             {
+                "major": 8,
+                "minor": 0,
+                "op": "Read",
+                "value": 25994442
+             },
+             {
+                "major": 8,
+                "minor": 0,
+                "op": "Write",
+                "value": 1734
+             }
+          ],
+          "io_queue_recursive": [],
+          "io_service_time_recursive": [],
+          "io_wait_time_recursive": [],
+          "io_merged_recursive": [],
+          "io_time_recursive": [],
+          "sectors_recursive": []
+       },
        "cpu_stats" : {
           "cpu_usage" : {
              "percpu_usage" : [
@@ -1669,6 +1705,42 @@ func TestStats(t *testing.T) {
           "usage" : 6537216,
           "failcnt" : 0,
           "limit" : 67108864
+       },
+       "blkio_stats": {
+          "io_service_bytes_recursive": [
+             {
+                "major": 8,
+                "minor": 0,
+                "op": "Read",
+                "value": 428795731968
+             },
+             {
+                "major": 8,
+                "minor": 0,
+                "op": "Write",
+                "value": 388177920
+             }
+          ],
+          "io_serviced_recursive": [
+             {
+                "major": 8,
+                "minor": 0,
+                "op": "Read",
+                "value": 25994442
+             },
+             {
+                "major": 8,
+                "minor": 0,
+                "op": "Write",
+                "value": 1734
+             }
+          ],
+          "io_queue_recursive": [],
+          "io_service_time_recursive": [],
+          "io_wait_time_recursive": [],
+          "io_merged_recursive": [],
+          "io_time_recursive": [],
+          "sectors_recursive": []
        },
        "cpu_stats" : {
           "cpu_usage" : {
