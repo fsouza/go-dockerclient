@@ -34,11 +34,19 @@ func createTarStream(srcPath, dockerfilePath string) (io.ReadCloser, error) {
 	//
 	// https://github.com/docker/docker/issues/8330
 	//
-	if keepThem, _ := fileutils.Matches(".dockerignore", excludes); keepThem {
-		includes = append(includes, ".dockerignore")
-	}
-	if keepThem, _ := fileutils.Matches(dockerfilePath, excludes); keepThem && dockerfilePath != "" {
-		includes = append(includes, dockerfilePath)
+	forceIncludeFiles := []string{".dockerignore", dockerfilePath}
+
+	for _, includeFile := range forceIncludeFiles {
+		if includeFile == "" {
+			continue
+		}
+		keepThem, err := fileutils.Matches(includeFile, excludes)
+		if err != nil {
+			return nil, fmt.Errorf("cannot match .dockerfile: '%s', error: %s", includeFile, err)
+		}
+		if keepThem {
+			includes = append(includes, includeFile)
+		}
 	}
 
 	if err := validateContextDirectory(srcPath, excludes); err != nil {
