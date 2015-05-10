@@ -17,7 +17,7 @@ import (
 	"github.com/docker/docker/pkg/fileutils"
 )
 
-func createTarStream(srcPath, dockerfileName string) (io.ReadCloser, error) {
+func createTarStream(srcPath, dockerfilePath string) (io.ReadCloser, error) {
 	excludes, err := parseDockerignore(srcPath)
 	if err != nil {
 		return nil, err
@@ -37,8 +37,8 @@ func createTarStream(srcPath, dockerfileName string) (io.ReadCloser, error) {
 	if keepThem, _ := fileutils.Matches(".dockerignore", excludes); keepThem {
 		includes = append(includes, ".dockerignore")
 	}
-	if keepThem, _ := fileutils.Matches(dockerfileName, excludes); keepThem && dockerfileName != "" {
-		includes = append(includes, dockerfileName)
+	if keepThem, _ := fileutils.Matches(dockerfilePath, excludes); keepThem && dockerfilePath != "" {
+		includes = append(includes, dockerfilePath)
 	}
 
 	if err := validateContextDirectory(srcPath, excludes); err != nil {
