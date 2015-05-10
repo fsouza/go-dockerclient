@@ -18,7 +18,17 @@ const (
 
 var errInvalidStdHeader = errors.New("Unrecognized input header")
 
-func stdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error) {
+// StdCopy is a modified version of io.Copy.
+//
+// StdCopy will demultiplex `src`, assuming that it contains two streams,
+// previously multiplexed together using a StdWriter instance.
+// As it reads from `src`, StdCopy will write to `dstout` and `dsterr`.
+//
+// StdCopy will read until it hits EOF on `src`. It will then return a nil error.
+// In other words: if `err` is non nil, it indicates a real underlying error.
+//
+// `written` will hold the total number of bytes written to `dstout` and `dsterr`.
+func StdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error) {
 	var (
 		buf       = make([]byte, 32*1024+stdWriterPrefixLen+1)
 		bufLen    = len(buf)

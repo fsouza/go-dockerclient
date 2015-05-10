@@ -29,7 +29,7 @@ func TestStdCopy(t *testing.T) {
 	input.Write([]byte("just kidding"))
 	input.Write([]byte{0, 0, 0, 0, 0, 0, 0, 6})
 	input.Write([]byte("\nyeah!"))
-	n, err := stdCopy(&stdout, &stderr, &input)
+	n, err := StdCopy(&stdout, &stderr, &input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,10 +37,10 @@ func TestStdCopy(t *testing.T) {
 		t.Errorf("Wrong number of bytes. Want %d. Got %d.", expected, n)
 	}
 	if got := stderr.String(); got != "something happened!" {
-		t.Errorf("stdCopy: wrong stderr. Want %q. Got %q.", "something happened!", got)
+		t.Errorf("StdCopy: wrong stderr. Want %q. Got %q.", "something happened!", got)
 	}
 	if got := stdout.String(); got != "just kidding\nyeah!" {
-		t.Errorf("stdCopy: wrong stdout. Want %q. Got %q.", "just kidding\nyeah!", got)
+		t.Errorf("StdCopy: wrong stdout. Want %q. Got %q.", "just kidding\nyeah!", got)
 	}
 }
 
@@ -49,7 +49,7 @@ func TestStdCopyStress(t *testing.T) {
 	value := strings.Repeat("something ", 4096)
 	writer := newStdWriter(&input, Stdout)
 	writer.Write([]byte(value))
-	n, err := stdCopy(&stdout, &stderr, &input)
+	n, err := StdCopy(&stdout, &stderr, &input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,22 +57,22 @@ func TestStdCopyStress(t *testing.T) {
 		t.Errorf("Wrong number of bytes. Want 40960. Got %d.", n)
 	}
 	if got := stderr.String(); got != "" {
-		t.Errorf("stdCopy: wrong stderr. Want empty string. Got %q", got)
+		t.Errorf("StdCopy: wrong stderr. Want empty string. Got %q", got)
 	}
 	if got := stdout.String(); got != value {
-		t.Errorf("stdCopy: wrong stdout. Want %q. Got %q", value, got)
+		t.Errorf("StdCopy: wrong stdout. Want %q. Got %q", value, got)
 	}
 }
 
 func TestStdCopyInvalidStdHeader(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
 	input.Write([]byte{3, 0, 0, 0, 0, 0, 0, 19})
-	n, err := stdCopy(&stdout, &stderr, &input)
+	n, err := StdCopy(&stdout, &stderr, &input)
 	if n != 0 {
-		t.Errorf("stdCopy: wrong number of bytes. Want 0. Got %d", n)
+		t.Errorf("StdCopy: wrong number of bytes. Want 0. Got %d", n)
 	}
 	if err != errInvalidStdHeader {
-		t.Errorf("stdCopy: wrong error. Want ErrInvalidStdHeader. Got %#v", err)
+		t.Errorf("StdCopy: wrong error. Want ErrInvalidStdHeader. Got %#v", err)
 	}
 }
 
@@ -80,7 +80,7 @@ func TestStdCopyBigFrame(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
 	input.Write([]byte{2, 0, 0, 0, 0, 0, 0, 18})
 	input.Write([]byte("something happened!"))
-	n, err := stdCopy(&stdout, &stderr, &input)
+	n, err := StdCopy(&stdout, &stderr, &input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,10 +88,10 @@ func TestStdCopyBigFrame(t *testing.T) {
 		t.Errorf("Wrong number of bytes. Want %d. Got %d.", expected, n)
 	}
 	if got := stderr.String(); got != "something happened" {
-		t.Errorf("stdCopy: wrong stderr. Want %q. Got %q.", "something happened", got)
+		t.Errorf("StdCopy: wrong stderr. Want %q. Got %q.", "something happened", got)
 	}
 	if got := stdout.String(); got != "" {
-		t.Errorf("stdCopy: wrong stdout. Want %q. Got %q.", "", got)
+		t.Errorf("StdCopy: wrong stdout. Want %q. Got %q.", "", got)
 	}
 }
 
@@ -99,41 +99,41 @@ func TestStdCopySmallFrame(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
 	input.Write([]byte{2, 0, 0, 0, 0, 0, 0, 20})
 	input.Write([]byte("something happened!"))
-	n, err := stdCopy(&stdout, &stderr, &input)
+	n, err := StdCopy(&stdout, &stderr, &input)
 	if err != io.ErrShortWrite {
-		t.Errorf("stdCopy: wrong error. Want ShortWrite. Got %#v", err)
+		t.Errorf("StdCopy: wrong error. Want ShortWrite. Got %#v", err)
 	}
 	if expected := int64(19); n != expected {
 		t.Errorf("Wrong number of bytes. Want %d. Got %d.", expected, n)
 	}
 	if got := stderr.String(); got != "something happened!" {
-		t.Errorf("stdCopy: wrong stderr. Want %q. Got %q.", "something happened", got)
+		t.Errorf("StdCopy: wrong stderr. Want %q. Got %q.", "something happened", got)
 	}
 	if got := stdout.String(); got != "" {
-		t.Errorf("stdCopy: wrong stdout. Want %q. Got %q.", "", got)
+		t.Errorf("StdCopy: wrong stdout. Want %q. Got %q.", "", got)
 	}
 }
 
 func TestStdCopyEmpty(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
-	n, err := stdCopy(&stdout, &stderr, &input)
+	n, err := StdCopy(&stdout, &stderr, &input)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if n != 0 {
-		t.Errorf("stdCopy: wrong number of bytes. Want 0. Got %d.", n)
+		t.Errorf("StdCopy: wrong number of bytes. Want 0. Got %d.", n)
 	}
 }
 
 func TestStdCopyCorruptedHeader(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
 	input.Write([]byte{2, 0, 0, 0, 0})
-	n, err := stdCopy(&stdout, &stderr, &input)
+	n, err := StdCopy(&stdout, &stderr, &input)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if n != 0 {
-		t.Errorf("stdCopy: wrong number of bytes. Want 0. Got %d.", n)
+		t.Errorf("StdCopy: wrong number of bytes. Want 0. Got %d.", n)
 	}
 }
 
@@ -141,7 +141,7 @@ func TestStdCopyTruncateWriter(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
 	input.Write([]byte{2, 0, 0, 0, 0, 0, 0, 19})
 	input.Write([]byte("something happened!"))
-	n, err := stdCopy(&stdout, iotest.TruncateWriter(&stderr, 7), &input)
+	n, err := StdCopy(&stdout, iotest.TruncateWriter(&stderr, 7), &input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,28 +149,28 @@ func TestStdCopyTruncateWriter(t *testing.T) {
 		t.Errorf("Wrong number of bytes. Want %d. Got %d.", expected, n)
 	}
 	if got := stderr.String(); got != "somethi" {
-		t.Errorf("stdCopy: wrong stderr. Want %q. Got %q.", "somethi", got)
+		t.Errorf("StdCopy: wrong stderr. Want %q. Got %q.", "somethi", got)
 	}
 	if got := stdout.String(); got != "" {
-		t.Errorf("stdCopy: wrong stdout. Want %q. Got %q.", "", got)
+		t.Errorf("StdCopy: wrong stdout. Want %q. Got %q.", "", got)
 	}
 }
 
 func TestStdCopyHeaderOnly(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
 	input.Write([]byte{2, 0, 0, 0, 0, 0, 0, 19})
-	n, err := stdCopy(&stdout, iotest.TruncateWriter(&stderr, 7), &input)
+	n, err := StdCopy(&stdout, iotest.TruncateWriter(&stderr, 7), &input)
 	if err != io.ErrShortWrite {
-		t.Errorf("stdCopy: wrong error. Want ShortWrite. Got %#v", err)
+		t.Errorf("StdCopy: wrong error. Want ShortWrite. Got %#v", err)
 	}
 	if n != 0 {
 		t.Errorf("Wrong number of bytes. Want 0. Got %d.", n)
 	}
 	if got := stderr.String(); got != "" {
-		t.Errorf("stdCopy: wrong stderr. Want %q. Got %q.", "", got)
+		t.Errorf("StdCopy: wrong stderr. Want %q. Got %q.", "", got)
 	}
 	if got := stdout.String(); got != "" {
-		t.Errorf("stdCopy: wrong stdout. Want %q. Got %q.", "", got)
+		t.Errorf("StdCopy: wrong stdout. Want %q. Got %q.", "", got)
 	}
 }
 
@@ -178,7 +178,7 @@ func TestStdCopyDataErrReader(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
 	input.Write([]byte{2, 0, 0, 0, 0, 0, 0, 19})
 	input.Write([]byte("something happened!"))
-	n, err := stdCopy(&stdout, &stderr, iotest.DataErrReader(&input))
+	n, err := StdCopy(&stdout, &stderr, iotest.DataErrReader(&input))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,10 +186,10 @@ func TestStdCopyDataErrReader(t *testing.T) {
 		t.Errorf("Wrong number of bytes. Want %d. Got %d.", expected, n)
 	}
 	if got := stderr.String(); got != "something happened!" {
-		t.Errorf("stdCopy: wrong stderr. Want %q. Got %q.", "something happened!", got)
+		t.Errorf("StdCopy: wrong stderr. Want %q. Got %q.", "something happened!", got)
 	}
 	if got := stdout.String(); got != "" {
-		t.Errorf("stdCopy: wrong stdout. Want %q. Got %q.", "", got)
+		t.Errorf("StdCopy: wrong stdout. Want %q. Got %q.", "", got)
 	}
 }
 
@@ -197,9 +197,9 @@ func TestStdCopyTimeoutReader(t *testing.T) {
 	var input, stdout, stderr bytes.Buffer
 	input.Write([]byte{2, 0, 0, 0, 0, 0, 0, 19})
 	input.Write([]byte("something happened!"))
-	_, err := stdCopy(&stdout, &stderr, iotest.TimeoutReader(&input))
+	_, err := StdCopy(&stdout, &stderr, iotest.TimeoutReader(&input))
 	if err != iotest.ErrTimeout {
-		t.Errorf("stdCopy: wrong error. Want ErrTimeout. Got %#v.", err)
+		t.Errorf("StdCopy: wrong error. Want ErrTimeout. Got %#v.", err)
 	}
 }
 
@@ -208,12 +208,12 @@ func TestStdCopyWriteError(t *testing.T) {
 	input.Write([]byte{2, 0, 0, 0, 0, 0, 0, 19})
 	input.Write([]byte("something happened!"))
 	var stdout, stderr errorWriter
-	n, err := stdCopy(stdout, stderr, &input)
+	n, err := StdCopy(stdout, stderr, &input)
 	if err.Error() != "something went wrong" {
-		t.Errorf("stdCopy: wrong error. Want %q. Got %q", "something went wrong", err)
+		t.Errorf("StdCopy: wrong error. Want %q. Got %q", "something went wrong", err)
 	}
 	if n != 0 {
-		t.Errorf("stdCopy: wrong number of bytes. Want 0. Got %d.", n)
+		t.Errorf("StdCopy: wrong number of bytes. Want 0. Got %d.", n)
 	}
 }
 
