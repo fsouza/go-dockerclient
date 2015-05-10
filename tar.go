@@ -103,16 +103,7 @@ func parseDockerignore(root string) ([]string, error) {
 	if err != nil && !os.IsNotExist(err) {
 		return excludes, fmt.Errorf("error reading .dockerignore: '%s'", err)
 	}
-	for _, pattern := range strings.Split(string(ignore), "\n") {
-		matches, err := filepath.Match(pattern, "Dockerfile")
-		if err != nil {
-			return excludes, fmt.Errorf("bad .dockerignore pattern: '%s', error: %s", pattern, err)
-		}
-		if matches {
-			return excludes, fmt.Errorf("dockerfile was excluded by .dockerignore pattern '%s'", pattern)
-		}
-		excludes = append(excludes, pattern)
-	}
+	excludes = strings.Split(string(ignore), "\n")
 
 	return excludes, nil
 }
