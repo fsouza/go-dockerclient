@@ -40,7 +40,7 @@ fmtcheck:
 pretest: lint vet fmtcheck
 
 test: pretest
-	go test ./.
+	go test
 	go test ./testing
 
 cov:
