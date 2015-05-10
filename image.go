@@ -426,7 +426,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 			return ErrMultipleContexts
 		}
 		var err error
-		if opts.InputStream, err = createTarStream(opts.ContextDir); err != nil {
+		if opts.InputStream, err = createTarStream(opts.ContextDir, opts.Dockerfile); err != nil {
 			return err
 		}
 	}
