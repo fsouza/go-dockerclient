@@ -1,0 +1,71 @@
+{
+	"Tool": "github.com/kardianos/vendor",
+	"Package": [
+		{
+			"Vendor": "github.com/Sirupsen/logrus",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/Sirupsen/logrus",
+			"Revision": "aaf92c95712104318fc35409745f1533aa5ff327",
+			"RevisionTime": "2015-04-30T08:58:29+02:00"
+		},
+		{
+			"Vendor": "github.com/docker/docker/pkg/archive",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/docker/docker/pkg/archive",
+			"Revision": "af9dac9627e7b04a803df152cc24f0db073ea17a",
+			"RevisionTime": "2015-05-07T22:07:41-04:00"
+		},
+		{
+			"Vendor": "github.com/docker/docker/pkg/fileutils",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/docker/docker/pkg/fileutils",
+			"Revision": "af9dac9627e7b04a803df152cc24f0db073ea17a",
+			"RevisionTime": "2015-05-07T22:07:41-04:00"
+		},
+		{
+			"Vendor": "github.com/docker/docker/pkg/ioutils",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/docker/docker/pkg/ioutils",
+			"Revision": "af9dac9627e7b04a803df152cc24f0db073ea17a",
+			"RevisionTime": "2015-05-07T22:07:41-04:00"
+		},
+		{
+			"Vendor": "github.com/docker/docker/pkg/pools",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/docker/docker/pkg/pools",
+			"Revision": "af9dac9627e7b04a803df152cc24f0db073ea17a",
+			"RevisionTime": "2015-05-07T22:07:41-04:00"
+		},
+		{
+			"Vendor": "github.com/docker/docker/pkg/promise",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/docker/docker/pkg/promise",
+			"Revision": "af9dac9627e7b04a803df152cc24f0db073ea17a",
+			"RevisionTime": "2015-05-07T22:07:41-04:00"
+		},
+		{
+			"Vendor": "github.com/docker/docker/pkg/system",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/docker/docker/pkg/system",
+			"Revision": "af9dac9627e7b04a803df152cc24f0db073ea17a",
+			"RevisionTime": "2015-05-07T22:07:41-04:00"
+		},
+		{
+			"Vendor": "github.com/docker/docker/pkg/units",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/docker/docker/pkg/units",
+			"Revision": "af9dac9627e7b04a803df152cc24f0db073ea17a",
+			"RevisionTime": "2015-05-07T22:07:41-04:00"
+		},
+		{
+			"Vendor": "github.com/gorilla/context",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/gorilla/context",
+			"Revision": "215affda49addc4c8ef7e2534915df2c8c35c6cd",
+			"RevisionTime": "2014-12-17T08:02:51-08:00"
+		},
+		{
+			"Vendor": "github.com/gorilla/mux",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/gorilla/mux",
+			"Revision": "94903de8c98a68d8b4483c529b26a5d146e386a2",
+			"RevisionTime": "2015-05-05T10:01:36-07:00"
+		},
+		{
+			"Vendor": "github.com/stretchr/testify/assert",
+			"Local": "github.com/fsouza/go-dockerclient/internal/github.com/stretchr/testify/assert",
+			"Revision": "5ab65693f48b284b3f7a83114dd7b166b45f0193",
+			"RevisionTime": "2015-05-07T13:08:08+01:00"
+		}
+	]
+}
