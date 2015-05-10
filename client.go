@@ -503,8 +503,6 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 	clientconn := httputil.NewClientConn(dial, nil)
 	defer clientconn.Close()
 	if _, err := clientconn.Do(req); err != nil {
-		// this should not affect functionality by returning on error,
-		// however should be noted that this is new error checking
 		return err
 	}
 	if hijackOptions.success != nil {
