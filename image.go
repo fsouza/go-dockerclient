@@ -104,7 +104,6 @@ var (
 //
 // See http://goo.gl/HRVN1Z for more details.
 func (c *Client) ListImages(opts ListImagesOptions) ([]APIImages, error) {
-	// TODO(pedge): what happens if we specify the digest parameter when using API Version <1.18?
 	path := "/images/json?" + queryString(opts)
 	body, _, err := c.do("GET", path, doOptions{})
 	if err != nil {
