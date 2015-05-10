@@ -12,12 +12,12 @@ vendor:
 	vendor add -status external
 	vendor update -status external
 
-cov: testdeps
+cov:
 	go get -v github.com/axw/gocov/gocov
 	go get golang.org/x/tools/cmd/cover
 	gocov test | gocov report
 
-test: testdeps
+test:
 	go test ./...
 	./testing/bin/fmtpolice
 
