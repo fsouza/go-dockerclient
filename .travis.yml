@@ -7,4 +7,4 @@ env:
   - GOARCH=amd64
   - GOARCH=386
 script:
-  - make test
+  - make test cov

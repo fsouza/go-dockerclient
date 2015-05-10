@@ -560,7 +560,7 @@ type Stats struct {
 	} `json:"network,omitempty" yaml:"network,omitempty"`
 	MemoryStats struct {
 		Stats struct {
-			TotalPgmafault          uint64 `json"total_pgmafault,omitempty" yaml:"total_pgmafault,omitempty"`
+			TotalPgmafault          uint64 `json:"total_pgmafault,omitempty" yaml:"total_pgmafault,omitempty"`
 			Cache                   uint64 `json:"cache,omitempty" yaml:"cache,omitempty"`
 			MappedFile              uint64 `json:"mapped_file,omitempty" yaml:"mapped_file,omitempty"`
 			TotalInactiveFile       uint64 `json:"total_inactive_file,omitempty" yaml:"total_inactive_file,omitempty"`
