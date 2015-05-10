@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/docker/docker/pkg/archive"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/archive"
 )
 
 func TestBuildImageMultipleContextsError(t *testing.T) {

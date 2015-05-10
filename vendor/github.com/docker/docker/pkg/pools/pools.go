@@ -14,7 +14,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/docker/docker/pkg/ioutils"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/ioutils"
 )
 
 var (

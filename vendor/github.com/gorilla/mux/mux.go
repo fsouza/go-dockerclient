@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/gorilla/context"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/gorilla/context"
 )
 
 // NewRouter returns a new router instance.

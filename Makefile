@@ -9,7 +9,7 @@ all: test
 
 vendor:
 	go get -v github.com/mjibson/party
-	party -c -u
+	party -d vendor -c -u
 
 cov:
 	go get -v github.com/axw/gocov/gocov
@@ -17,7 +17,8 @@ cov:
 	gocov test | gocov report
 
 test:
-	go test ./...
+	go test ./.
+	go test ./testing
 	./testing/bin/fmtpolice
 
 clean:

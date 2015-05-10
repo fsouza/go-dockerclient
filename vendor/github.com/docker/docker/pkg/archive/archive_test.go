@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fsouza/go-dockerclient/_third_party/github.com/docker/docker/pkg/system"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/system"
 )
 
 func TestIsArchiveNilHeader(t *testing.T) {
