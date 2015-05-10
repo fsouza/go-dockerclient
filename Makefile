@@ -53,7 +53,6 @@ pretest: lint vet fmtcheck
 
 test: testdeps pretest
 	go test ./...
-	./testing/bin/fmtpolice
 
 cov: testdeps
 	go get -v github.com/axw/gocov/gocov
