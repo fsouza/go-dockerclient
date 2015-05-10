@@ -1,26 +1,16 @@
 .PHONY: \
 	all \
-	deps \
-	updatedeps \
-	testdeps \
-	updatetestdeps \
+	vendor \
 	cov \
 	test \
 	clean
 
 all: test
 
-deps:
-	go get -d -v ./...
-
-updatedeps:
-	go get -d -v -u -f ./...
-
-testdeps:
-	go get -d -v -t ./...
-
-updatetestdeps:
-	go get -d -v -t -u -f ./...
+vendor:
+	go get -v github.com/kardianos/vendor
+	vendor add -status external
+	vendor update -status external
 
 cov: testdeps
 	go get -v github.com/axw/gocov/gocov
