@@ -1073,10 +1073,21 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 	input := strings.NewReader("send value")
 	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		prefix := []byte{1, 0, 0, 0, 0, 0, 0, 5}
-		w.Write(prefix)
-		w.Write([]byte("hello"))
 		req = *r
+		w.WriteHeader(http.StatusOK)
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			t.Fatal("cannot hijack server connection")
+		}
+		conn, _, err := hj.Hijack()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer conn.Close()
+		conn.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
+		conn.Write([]byte("hello"))
+		conn.Write([]byte{2, 0, 0, 0, 0, 0, 0, 6})
+		conn.Write([]byte("hello!"))
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
@@ -1093,7 +1104,10 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		Stream:       true,
 		RawTerminal:  false,
 	}
-	client.AttachToContainer(opts)
+	err := client.AttachToContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
 	expected := map[string][]string{
 		"stdin":  {"1"},
 		"stdout": {"1"},
@@ -1104,10 +1118,11 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
-	t.Log(stderr.String())
-	t.Log(stdout.String())
 	if stdout.String() != "hello" {
-		t.Errorf("AttachToContainer: wrong content written to stdout. Want %q. Got %q.", "hello", stderr.String())
+		t.Errorf("AttachToContainer: wrong content written to stdout. Want %q. Got %q.", "hello", stdout.String())
+	}
+	if stderr.String() != "hello!" {
+		t.Errorf("AttachToContainer: wrong content written to stderr. Want %q. Got %q.", "hello!", stderr.String())
 	}
 }
 
