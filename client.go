@@ -23,6 +23,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/stdcopy"
 )
 
 const userAgent = "go-dockerclient"
@@ -438,7 +440,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		if streamOptions.setRawTerminal {
 			_, err = io.Copy(streamOptions.stdout, resp.Body)
 		} else {
-			_, err = stdCopy(streamOptions.stdout, streamOptions.stderr, resp.Body)
+			_, err = stdcopy.StdCopy(streamOptions.stdout, streamOptions.stderr, resp.Body)
 		}
 		return err
 	}
@@ -520,7 +522,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 			// When TTY is ON, use regular copy
 			_, err = io.Copy(hijackOptions.stdout, br)
 		} else {
-			_, err = stdCopy(hijackOptions.stdout, hijackOptions.stderr, br)
+			_, err = stdcopy.StdCopy(hijackOptions.stdout, hijackOptions.stderr, br)
 		}
 		errChan <- err
 	}()
