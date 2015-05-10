@@ -74,7 +74,12 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 	client.SkipServerVersionCheck = true
 
 	listener := make(chan *APIEvents, 10)
-	defer func() { time.Sleep(10 * time.Millisecond); client.RemoveEventListener(listener) }()
+	defer func() {
+		time.Sleep(10 * time.Millisecond)
+		if err := client.RemoveEventListener(listener); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	err = client.AddEventListener(listener)
 	if err != nil {

@@ -3,6 +3,7 @@
 	vendor \
 	lint \
 	vet \
+	fmt \
 	fmtcheck \
 	pretest \
 	test \
@@ -24,6 +25,9 @@ lint:
 vet:
 	go get -v golang.org/x/tools/cmd/vet
 	go vet ./...
+
+fmt:
+	gofmt -w $(shell git ls-files '*.go' | grep -v '^_third_party/')
 
 fmtcheck:
 	for file in $(shell git ls-files '*.go' | grep -v '^_third_party/'); do \

@@ -239,13 +239,17 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	if opts.Name == "" {
 		return ErrNoSuchImage
 	}
+	headers, err := headersWithAuth(auth)
+	if err != nil {
+		return err
+	}
 	name := opts.Name
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
 	return c.stream("POST", path, streamOptions{
 		setRawTerminal: true,
 		rawJSONStream:  opts.RawJSONStream,
-		headers:        headersWithAuth(auth),
+		headers:        headers,
 		stdout:         opts.OutputStream,
 	})
 }
@@ -270,7 +274,10 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 		return ErrNoSuchImage
 	}
 
-	headers := headersWithAuth(auth)
+	headers, err := headersWithAuth(auth)
+	if err != nil {
+		return err
+	}
 	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
 }
 
@@ -410,7 +417,10 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	if opts.OutputStream == nil {
 		return ErrMissingOutputStream
 	}
-	var headers = headersWithAuth(opts.Auth, opts.AuthConfigs)
+	headers, err := headersWithAuth(opts.Auth, opts.AuthConfigs)
+	if err != nil {
+		return err
+	}
 
 	if opts.Remote != "" && opts.Name == "" {
 		opts.Name = opts.Remote
@@ -473,23 +483,27 @@ func isURL(u string) bool {
 	return p.Scheme == "http" || p.Scheme == "https"
 }
 
-func headersWithAuth(auths ...interface{}) map[string]string {
+func headersWithAuth(auths ...interface{}) (map[string]string, error) {
 	var headers = make(map[string]string)
 
 	for _, auth := range auths {
 		switch auth.(type) {
 		case AuthConfiguration:
 			var buf bytes.Buffer
-			json.NewEncoder(&buf).Encode(auth)
+			if err := json.NewEncoder(&buf).Encode(auth); err != nil {
+				return nil, err
+			}
 			headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 		case AuthConfigurations:
 			var buf bytes.Buffer
-			json.NewEncoder(&buf).Encode(auth)
+			if err := json.NewEncoder(&buf).Encode(auth); err != nil {
+				return nil, err
+			}
 			headers["X-Registry-Config"] = base64.URLEncoding.EncodeToString(buf.Bytes())
 		}
 	}
 
-	return headers
+	return headers, nil
 }
 
 // APIImageSearch reflect the result of a search on the dockerHub

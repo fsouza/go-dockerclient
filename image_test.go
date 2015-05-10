@@ -240,7 +240,9 @@ func TestInspectImage(t *testing.T) {
      "container_config":{"Memory":0}
 }`
 	var expected Image
-	json.Unmarshal([]byte(body), &expected)
+	if err := json.Unmarshal([]byte(body), &expected); err != nil {
+		t.Fatal(err)
+	}
 	fakeRT := &FakeRoundTripper{message: body, status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	image, err := client.InspectImage(expected.ID)

@@ -776,8 +776,8 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 	if err != nil {
 		return err
 	}
-	io.Copy(opts.OutputStream, bytes.NewBuffer(body))
-	return nil
+	_, err = io.Copy(opts.OutputStream, bytes.NewBuffer(body))
+	return err
 }
 
 // WaitContainer blocks until the given container stops, return the exit code

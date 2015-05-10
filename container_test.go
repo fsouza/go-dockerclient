@@ -116,7 +116,9 @@ func TestListContainersParams(t *testing.T) {
 	client := newTestClient(fakeRT)
 	u, _ := url.Parse(client.getURL("/containers/json"))
 	for _, tt := range tests {
-		client.ListContainers(tt.input)
+		if _, err := client.ListContainers(tt.input); err != nil {
+			t.Error(err)
+		}
 		got := map[string][]string(fakeRT.requests[0].URL.Query())
 		if !reflect.DeepEqual(got, tt.params) {
 			t.Errorf("Expected %#v, got %#v.", tt.params, got)
@@ -853,11 +855,13 @@ func TestCommitContainerParams(t *testing.T) {
 			json,
 		},
 	}
-	fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
+	fakeRT := &FakeRoundTripper{message: "{}", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	u, _ := url.Parse(client.getURL("/commit"))
 	for _, tt := range tests {
-		client.CommitContainer(tt.input)
+		if _, err := client.CommitContainer(tt.input); err != nil {
+			t.Error(err)
+		}
 		got := map[string][]string(fakeRT.requests[0].URL.Query())
 		if !reflect.DeepEqual(got, tt.params) {
 			t.Errorf("Expected %#v, got %#v.", tt.params, got)
@@ -1004,7 +1008,11 @@ func TestAttachToContainerSentinel(t *testing.T) {
 		RawTerminal:  true,
 		Success:      success,
 	}
-	go client.AttachToContainer(opts)
+	go func() {
+		if err := client.AttachToContainer(opts); err != nil {
+			t.Error(err)
+		}
+	}()
 	success <- <-success
 }
 
@@ -1538,7 +1546,10 @@ func TestTopContainerNotFound(t *testing.T) {
 func TestTopContainerWithPsArgs(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "no such container", status: http.StatusNotFound}
 	client := newTestClient(fakeRT)
-	client.TopContainer("abef348", "aux")
+	expectedErr := &NoSuchContainer{ID: "abef348"}
+	if _, err := client.TopContainer("abef348", "aux"); !reflect.DeepEqual(expectedErr, err) {
+		t.Errorf("TopContainer: Expected %v. Got %v.", expectedErr, err)
+	}
 	expectedURI := "/containers/abef348/top?ps_args=aux"
 	if !strings.HasSuffix(fakeRT.requests[0].URL.String(), expectedURI) {
 		t.Errorf("TopContainer: Expected URI to have %q. Got %q.", expectedURI, fakeRT.requests[0].URL.String())

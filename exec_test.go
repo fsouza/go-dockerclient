@@ -104,7 +104,11 @@ func TestExecStartAndAttach(t *testing.T) {
 		RawTerminal:  true,
 		Success:      success,
 	}
-	go client.StartExec(execID, opts)
+	go func() {
+		if err := client.StartExec(execID, opts); err != nil {
+			t.Error(err)
+		}
+	}()
 	<-success
 }
 
