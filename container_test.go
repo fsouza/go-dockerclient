@@ -1083,14 +1083,11 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer func() {
-			time.Sleep(200e6)
-			conn.Close()
-		}()
 		conn.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		conn.Write([]byte("hello"))
 		conn.Write([]byte{2, 0, 0, 0, 0, 0, 0, 6})
 		conn.Write([]byte("hello!"))
+		conn.Close()
 	}))
 	defer server.Close()
 	client, _ := NewClient(server.URL)
