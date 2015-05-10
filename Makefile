@@ -9,7 +9,7 @@ all: test
 
 vendor:
 	go get -v github.com/mjibson/party
-	party -u
+	party -c -u
 
 cov:
 	go get -v github.com/axw/gocov/gocov
