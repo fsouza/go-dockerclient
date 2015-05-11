@@ -504,19 +504,19 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 	}
 	clientconn := httputil.NewClientConn(dial, nil)
 	defer clientconn.Close()
-	if _, err := clientconn.Do(req); err != nil {
-		return err
-	}
+	clientconn.Do(req)
 	if hijackOptions.success != nil {
 		hijackOptions.success <- struct{}{}
 		<-hijackOptions.success
 	}
 	rwc, br := clientconn.Hijack()
 	defer rwc.Close()
-	errChan := make(chan error, 2)
+	errChanOut := make(chan error, 1)
+	errChanIn := make(chan error, 1)
 	exit := make(chan bool)
 	go func() {
 		defer close(exit)
+		defer close(errChanOut)
 		var err error
 		if hijackOptions.setRawTerminal {
 			// When TTY is ON, use regular copy
@@ -524,29 +524,26 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 		} else {
 			_, err = stdcopy.StdCopy(hijackOptions.stdout, hijackOptions.stderr, br)
 		}
-		errChan <- err
+		errChanOut <- err
 	}()
 	go func() {
+		defer close(errChanIn)
 		var err error
 		if hijackOptions.in != nil {
 			_, err = io.Copy(rwc, hijackOptions.in)
 		}
-		errChan <- err
 		rwc.(interface {
 			CloseWrite() error
 		}).CloseWrite()
+		errChanIn <- err
 	}()
 	<-exit
-	var errs []error
-	for i := 0; i < 2; i++ {
-		if err := <-errChan; err != nil {
-			errs = append(errs, err)
-		}
+	select {
+	case err = <-errChanIn:
+		return err
+	case err = <-errChanOut:
+		return err
 	}
-	if len(errs) > 0 {
-		return fmt.Errorf("%v", errs)
-	}
-	return nil
 }
 
 func (c *Client) getURL(path string) string {
