@@ -527,15 +527,13 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 		errChanOut <- err
 	}()
 	go func() {
-		defer close(errChanIn)
-		var err error
 		if hijackOptions.in != nil {
-			_, err = io.Copy(rwc, hijackOptions.in)
+			_, err := io.Copy(rwc, hijackOptions.in)
+			errChanIn <- err
 		}
 		rwc.(interface {
 			CloseWrite() error
 		}).CloseWrite()
-		errChanIn <- err
 	}()
 	<-exit
 	select {
