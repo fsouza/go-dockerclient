@@ -232,7 +232,9 @@ func TestInspectContainer(t *testing.T) {
                },
                "Links": null,
                "PublishAllPorts": false,
-               "CgroupParent": "/mesos"
+               "CgroupParent": "/mesos",
+               "Memory": 17179869184,
+               "MemorySwap": 34359738368
              }
 }`
 	var expected Container

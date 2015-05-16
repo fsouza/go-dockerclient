@@ -426,6 +426,10 @@ type HostConfig struct {
 	ReadonlyRootfs  bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
 	SecurityOpt     []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty"`
 	CgroupParent    string                 `json:"CgroupParent,omitempty" yaml:"CgroupParent,omitempty"`
+	Memory          int64                  `json:"Memory,omitempty" yaml:"Memory,omitempty"`
+	MemorySwap      int64                  `json:"MemorySwap,omitempty" yaml:"MemorySwap,omitempty"`
+	CPUShares       int64                  `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
+	CPUSet          string                 `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
