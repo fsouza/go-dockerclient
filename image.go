@@ -42,6 +42,7 @@ type Image struct {
 	Config          *Config   `json:"Config,omitempty" yaml:"Config,omitempty"`
 	Architecture    string    `json:"Architecture,omitempty" yaml:"Architecture,omitempty"`
 	Size            int64     `json:"Size,omitempty" yaml:"Size,omitempty"`
+	VirtualSize     int64     `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty"`
 }
 
 // ImageHistory represent a layer in an image's history returned by the
