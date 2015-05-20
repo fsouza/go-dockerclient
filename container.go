@@ -629,7 +629,7 @@ type Stats struct {
 // BlkioStatsEntry is a stats entry for blkio_stats
 type BlkioStatsEntry struct {
 	Major uint64 `json:"major,omitempty" yaml:"major,omitempty"`
-	Minor uint64 `json:"major,omitempty" yaml:"major,omitempty"`
+	Minor uint64 `json:"minor,omitempty" yaml:"minor,omitempty"`
 	Op    string `json:"op,omitempty" yaml:"op,omitempty"`
 	Value uint64 `json:"value,omitempty" yaml:"value,omitempty"`
 }
