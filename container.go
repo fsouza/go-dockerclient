@@ -430,6 +430,8 @@ type HostConfig struct {
 	MemorySwap      int64                  `json:"MemorySwap,omitempty" yaml:"MemorySwap,omitempty"`
 	CPUShares       int64                  `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
 	CPUSet          string                 `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
+	CPUQuota        int64                  `json:"CpuQuota,omitempty" yaml:"CpuQuota,omitempty"`
+	CPUPeriod       int64                  `json:"CpuPeriod,omitempty" yaml:"CpuPeriod,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
