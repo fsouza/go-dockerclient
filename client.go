@@ -153,11 +153,11 @@ func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
 	return client, nil
 }
 
-// NewTLSClientInline returns a Client instance ready for TLS communications with the givens
+// NewTLSClientFromBytes returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file). It will use the latest remote API version available in the server.
-func NewTLSClientInline(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte) (*Client, error) {
-	client, err := NewVersionedTLSClientInline(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "")
+func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte) (*Client, error) {
+	client, err := NewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "")
 	if err != nil {
 		return nil, err
 	}
@@ -208,13 +208,13 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 	if err != nil {
 		return nil, err
 	}
-	return NewVersionedTLSClientInline(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString)
+	return NewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString)
 }
 
-// NewVersionedTLSClientInline returns a Client instance ready for TLS communications with the givens
+// NewVersionedTLSClientFromBytes returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file), using a specific remote API version.
-func NewVersionedTLSClientInline(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string) (*Client, error) {
+func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string) (*Client, error) {
 	u, err := parseEndpoint(endpoint, true)
 	if err != nil {
 		return nil, err
