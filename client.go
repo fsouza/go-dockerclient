@@ -299,13 +299,15 @@ func (c *Client) getServerAPIVersionString() (version string, err error) {
 	if status != http.StatusOK {
 		return "", fmt.Errorf("Received unexpected status %d while trying to retrieve the server version", status)
 	}
-	var versionResponse map[string]string
+	var versionResponse map[string]interface{}
 	err = json.Unmarshal(body, &versionResponse)
 	if err != nil {
 		return "", err
 	}
-	version = versionResponse["ApiVersion"]
-	return version, nil
+	if version, ok := (versionResponse["ApiVersion"]).(string); ok {
+		return version, nil
+	}
+	return "", nil
 }
 
 type doOptions struct {
