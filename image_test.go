@@ -23,6 +23,7 @@ func newTestClient(rt *FakeRoundTripper) Client {
 	u, _ := parseEndpoint("http://localhost:4243", false)
 	client := Client{
 		HTTPClient:             &http.Client{Transport: rt},
+		transport:              &http.Transport{},
 		endpoint:               endpoint,
 		endpointURL:            u,
 		SkipServerVersionCheck: true,

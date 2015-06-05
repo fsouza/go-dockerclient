@@ -119,6 +119,7 @@ func (version APIVersion) compare(other APIVersion) int {
 type Client struct {
 	SkipServerVersionCheck bool
 	HTTPClient             *http.Client
+	transport              *http.Transport
 	TLSConfig              *tls.Config
 
 	endpoint            string
@@ -179,8 +180,11 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 			return nil, err
 		}
 	}
+
+	tr := &http.Transport{}
 	return &Client{
 		HTTPClient:          http.DefaultClient,
+		transport:           tr,
 		endpoint:            endpoint,
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
@@ -251,6 +255,7 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 	}
 	return &Client{
 		HTTPClient:          &http.Client{Transport: tr},
+		transport:           tr,
 		TLSConfig:           tlsConfig,
 		endpoint:            endpoint,
 		endpointURL:         u,
@@ -421,9 +426,12 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		}
 		clientconn := httputil.NewClientConn(dial, nil)
 		resp, err = clientconn.Do(req)
+		defer resp.Body.Close()
 		defer clientconn.Close()
 	} else {
 		resp, err = c.HTTPClient.Do(req)
+		defer resp.Body.Close()
+		defer c.transport.CancelRequest(req)
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
@@ -431,7 +439,6 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		}
 		return err
 	}
-	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
