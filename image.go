@@ -358,8 +358,9 @@ type ImportImageOptions struct {
 	Source     string `qs:"fromSrc"`
 	Tag        string `qs:"tag"`
 
-	InputStream  io.Reader `qs:"-"`
-	OutputStream io.Writer `qs:"-"`
+	InputStream   io.Reader `qs:"-"`
+	OutputStream  io.Writer `qs:"-"`
+	RawJSONStream bool      `qs:"-"`
 }
 
 // ImportImage imports an image from a url, a file or stdin
@@ -381,7 +382,7 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 		opts.InputStream = bytes.NewBuffer(b)
 		opts.Source = "-"
 	}
-	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream, false)
+	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream, opts.RawJSONStream)
 }
 
 // BuildImageOptions present the set of informations available for building an
