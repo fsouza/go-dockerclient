@@ -334,7 +334,10 @@ func (s *DockerServer) findImageByID(id string) (string, int, error) {
 }
 
 func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
-	var config docker.Config
+	var config struct {
+		*docker.Config
+		HostConfig *docker.HostConfig
+	}
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&config)
 	if err != nil {
@@ -370,12 +373,13 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	container := docker.Container{
-		Name:    name,
-		ID:      s.generateID(),
-		Created: time.Now(),
-		Path:    path,
-		Args:    args,
-		Config:  &config,
+		Name:       name,
+		ID:         s.generateID(),
+		Created:    time.Now(),
+		Path:       path,
+		Args:       args,
+		Config:     config.Config,
+		HostConfig: config.HostConfig,
 		State: docker.State{
 			Running:   false,
 			Pid:       mathrand.Int() % 50000,
