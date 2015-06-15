@@ -680,7 +680,6 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 	if tls {
 		u.Scheme = "https"
 	}
-
 	switch u.Scheme {
 	case "unix":
 		return u, nil
@@ -694,7 +693,6 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 			}
 			return nil, ErrInvalidEndpoint
 		}
-
 		number, err := strconv.ParseInt(port, 10, 64)
 		if err == nil && number > 0 && number < 65536 {
 			if u.Scheme == "tcp" {
@@ -709,7 +707,5 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 		return nil, ErrInvalidEndpoint
 	default:
 		return nil, ErrInvalidEndpoint
-
 	}
-
 }
