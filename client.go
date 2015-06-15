@@ -682,28 +682,10 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 	if tls {
 		u.Scheme = "https"
 	}
-	if u.Scheme == "tcp" {
-		_, port, err := net.SplitHostPort(u.Host)
-		if err != nil {
-			if e, ok := err.(*net.AddrError); ok {
-				if e.Err == "missing port in address" {
-					return u, nil
-				}
-			}
-			return nil, ErrInvalidEndpoint
-		}
-
-		number, err := strconv.ParseInt(port, 10, 64)
-		if err == nil && number == 2376 {
-			u.Scheme = "https"
-		} else {
-			u.Scheme = "http"
-		}
-	}
-	if u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "unix" {
-		return nil, ErrInvalidEndpoint
-	}
-	if u.Scheme != "unix" {
+	switch u.Scheme {
+	case "unix":
+		return u, nil
+	case "http", "https", "tcp":
 		_, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
 			if e, ok := err.(*net.AddrError); ok {
@@ -715,10 +697,17 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 		}
 		number, err := strconv.ParseInt(port, 10, 64)
 		if err == nil && number > 0 && number < 65536 {
+			if u.Scheme == "tcp" {
+				if number == 2376 {
+					u.Scheme = "https"
+				} else {
+					u.Scheme = "http"
+				}
+			}
 			return u, nil
 		}
-	} else {
-		return u, nil // we don't need port when using a unix socket
+		return nil, ErrInvalidEndpoint
+	default:
+		return nil, ErrInvalidEndpoint
 	}
-	return nil, ErrInvalidEndpoint
 }
