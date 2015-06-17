@@ -265,6 +265,41 @@ func TestCreateContainerDuplicateName(t *testing.T) {
 	}
 }
 
+func TestCreateMultipleContainersEmptyName(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	server.imgIDs = map[string]string{"base": "a1234"}
+	addContainers(&server, 1)
+	server.containers[0].Name = ""
+	recorder := httptest.NewRecorder()
+	body := `{"Hostname":"", "User":"ubuntu", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
+"PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"], "Image":"base", "Volumes":{}, "VolumesFrom":"","HostConfig":{"Binds":["/var/run/docker.sock:/var/run/docker.sock:rw"]}}`
+	request, _ := http.NewRequest("POST", "/containers/create", strings.NewReader(body))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusCreated {
+		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusCreated, recorder.Code)
+	}
+	var returned docker.Container
+	err := json.NewDecoder(recorder.Body).Decode(&returned)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored := server.containers[1]
+	if returned.ID != stored.ID {
+		t.Errorf("CreateContainer: ID mismatch. Stored: %q. Returned: %q.", stored.ID, returned.ID)
+	}
+	if stored.State.Running {
+		t.Errorf("CreateContainer should not set container to running state.")
+	}
+	if stored.Config.User != "ubuntu" {
+		t.Errorf("CreateContainer: wrong config. Expected: %q. Returned: %q.", "ubuntu", stored.Config.User)
+	}
+	expectedBind := []string{"/var/run/docker.sock:/var/run/docker.sock:rw"}
+	if !reflect.DeepEqual(stored.HostConfig.Binds, expectedBind) {
+		t.Errorf("CreateContainer: wrong host config. Expected: %v. Returned %v.", expectedBind, stored.HostConfig.Binds)
+	}
+}
+
 func TestCreateContainerInvalidName(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
