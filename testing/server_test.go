@@ -889,6 +889,22 @@ func TestRemoveContainer(t *testing.T) {
 	}
 }
 
+func TestRemoveContainerByName(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s", server.containers[0].Name)
+	request, _ := http.NewRequest("DELETE", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("RemoveContainer: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	if len(server.containers) > 0 {
+		t.Error("RemoveContainer: did not remove the container.")
+	}
+}
+
 func TestRemoveContainerNotFound(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()

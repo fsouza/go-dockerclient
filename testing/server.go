@@ -658,11 +658,11 @@ func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"ID":%q}`, image.ID)
 }
 
-func (s *DockerServer) findContainer(id string) (*docker.Container, int, error) {
+func (s *DockerServer) findContainer(idOrName string) (*docker.Container, int, error) {
 	s.cMut.RLock()
 	defer s.cMut.RUnlock()
 	for i, container := range s.containers {
-		if container.ID == id {
+		if container.ID == idOrName || container.Name == idOrName {
 			return container, i, nil
 		}
 	}
