@@ -354,7 +354,6 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
 	ports := map[docker.Port][]docker.PortBinding{}
 	for port := range config.ExposedPorts {
 		ports[port] = []docker.PortBinding{{
@@ -397,8 +396,16 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	s.cMut.Lock()
+	for _, c := range s.containers {
+		if c.Name == container.Name {
+			defer s.cMut.Unlock()
+			http.Error(w, "there's already a container with this name", http.StatusConflict)
+			return
+		}
+	}
 	s.containers = append(s.containers, &container)
 	s.cMut.Unlock()
+	w.WriteHeader(http.StatusCreated)
 	s.notify(&container)
 	var c = struct{ ID string }{ID: container.ID}
 	json.NewEncoder(w).Encode(c)

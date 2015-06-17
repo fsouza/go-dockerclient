@@ -249,6 +249,22 @@ func TestCreateContainerInvalidBody(t *testing.T) {
 	}
 }
 
+func TestCreateContainerDuplicateName(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	server.imgIDs = map[string]string{"base": "a1234"}
+	addContainers(&server, 1)
+	server.containers[0].Name = "mycontainer"
+	recorder := httptest.NewRecorder()
+	body := `{"Hostname":"", "User":"ubuntu", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
+"PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"], "Image":"base", "Volumes":{}, "VolumesFrom":"","HostConfig":{"Binds":["/var/run/docker.sock:/var/run/docker.sock:rw"]}}`
+	request, _ := http.NewRequest("POST", "/containers/create?name=mycontainer", strings.NewReader(body))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusConflict {
+		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusConflict, recorder.Code)
+	}
+}
+
 func TestCreateContainerInvalidName(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
