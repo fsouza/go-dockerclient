@@ -5,6 +5,7 @@
 package testing
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -507,15 +508,24 @@ func TestStartContainer(t *testing.T) {
 	server := DockerServer{}
 	addContainers(&server, 1)
 	server.buildMuxer()
+	memory := int64(536870912)
+	hostConfig := docker.HostConfig{Memory: memory}
+	configBytes, err := json.Marshal(hostConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
 	recorder := httptest.NewRecorder()
 	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
-	request, _ := http.NewRequest("POST", path, nil)
+	request, _ := http.NewRequest("POST", path, bytes.NewBuffer(configBytes))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 	if !server.containers[0].State.Running {
 		t.Error("StartContainer: did not set the container to running state")
+	}
+	if gotMemory := server.containers[0].HostConfig.Memory; gotMemory != memory {
+		t.Errorf("StartContainer: wrong HostConfig. Wants %d of memory. Got %s", memory, gotMemory)
 	}
 }
 
@@ -528,7 +538,7 @@ func TestStartContainerWithNotifyChannel(t *testing.T) {
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := fmt.Sprintf("/containers/%s/start", server.containers[1].ID)
-	request, _ := http.NewRequest("POST", path, nil)
+	request, _ := http.NewRequest("POST", path, bytes.NewBuffer([]byte("{}")))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
@@ -543,7 +553,7 @@ func TestStartContainerNotFound(t *testing.T) {
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := "/containers/abc123/start"
-	request, _ := http.NewRequest("POST", path, nil)
+	request, _ := http.NewRequest("POST", path, bytes.NewBuffer([]byte("null")))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
@@ -557,7 +567,7 @@ func TestStartContainerAlreadyRunning(t *testing.T) {
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
-	request, _ := http.NewRequest("POST", path, nil)
+	request, _ := http.NewRequest("POST", path, bytes.NewBuffer([]byte("null")))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
 		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)

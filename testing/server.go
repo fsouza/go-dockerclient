@@ -471,6 +471,14 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 	}
 	s.cMut.Lock()
 	defer s.cMut.Unlock()
+	defer r.Body.Close()
+	var hostConfig docker.HostConfig
+	err = json.NewDecoder(r.Body).Decode(&hostConfig)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	container.HostConfig = &hostConfig
 	if container.State.Running {
 		http.Error(w, "Container already running", http.StatusBadRequest)
 		return
