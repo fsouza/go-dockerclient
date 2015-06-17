@@ -212,6 +212,9 @@ func init() {
 | [Journalhook](https://github.com/wercker/journalhook) | Hook for logging to `systemd-journald` |
 | [Graylog](https://github.com/gemnasium/logrus-hooks/tree/master/graylog) | Hook for logging to [Graylog](http://graylog2.org/) |
 | [Raygun](https://github.com/squirkle/logrus-raygun-hook) | Hook for logging to [Raygun.io](http://raygun.io/) |
+| [LFShook](https://github.com/rifflock/lfshook) | Hook for logging to the local filesystem |
+| [Honeybadger](https://github.com/agonzalezro/logrus_honeybadger) | Hook for sending exceptions to Honeybadger |
+| [Mail](https://github.com/zbindenren/logrus_mail) | Hook for sending exceptions via mail |
 
 #### Level logging
 
@@ -267,7 +270,7 @@ init() {
   // do something here to set environment depending on an environment variable
   // or command-line flag
   if Environment == "production" {
-    log.SetFormatter(logrus.JSONFormatter)
+    log.SetFormatter(&logrus.JSONFormatter{})
   } else {
     // The TextFormatter is default, you don't actually have to do this.
     log.SetFormatter(&log.TextFormatter{})
