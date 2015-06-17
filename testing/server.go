@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/stdcopy"
 	"github.com/fsouza/go-dockerclient/vendor/github.com/gorilla/mux"
 )
 
@@ -549,7 +550,7 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	outStream := newStdWriter(conn, stdout)
+	outStream := stdcopy.NewStdWriter(conn, stdcopy.Stdout)
 	if container.State.Running {
 		fmt.Fprintf(outStream, "Container %q is running\n", container.ID)
 	} else {
