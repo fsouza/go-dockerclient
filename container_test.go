@@ -473,6 +473,18 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 	}
 }
 
+func TestCreateContainerDuplicateName(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "No such image", status: http.StatusConflict})
+	config := Config{AttachStdout: true, AttachStdin: true}
+	container, err := client.CreateContainer(CreateContainerOptions{Config: &config})
+	if container != nil {
+		t.Errorf("CreateContainer: expected <nil> container, got %#v.", container)
+	}
+	if err != ErrContainerAlreadyExists {
+		t.Errorf("CreateContainer: Wrong error type. Want %#v. Got %#v.", ErrContainerAlreadyExists, err)
+	}
+}
+
 func TestCreateContainerWithHostConfig(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "{}", status: http.StatusOK}
 	client := newTestClient(fakeRT)

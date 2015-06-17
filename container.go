@@ -7,6 +7,7 @@ package docker
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,10 @@ import (
 	"strings"
 	"time"
 )
+
+// ErrContainerAlreadyExists is the error returned by CreateContainer when the
+// container already exists.
+var ErrContainerAlreadyExists = errors.New("container already exists")
 
 // ListContainersOptions specify parameters to the ListContainers function.
 //
@@ -340,6 +345,9 @@ func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error
 
 	if status == http.StatusNotFound {
 		return nil, ErrNoSuchImage
+	}
+	if status == http.StatusConflict {
+		return nil, ErrContainerAlreadyExists
 	}
 	if err != nil {
 		return nil, err
