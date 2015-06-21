@@ -166,7 +166,7 @@ func parsePort(rawPort string) (int, error) {
 }
 
 // Config is the list of configuration options used when creating a container.
-// Config does not the options that are specific to starting a container on a
+// Config does not contain the options that are specific to starting a container on a
 // given host.  Those are contained in HostConfig
 type Config struct {
 	Hostname        string              `json:"Hostname,omitempty" yaml:"Hostname,omitempty"`
@@ -202,6 +202,14 @@ type Config struct {
 type LogConfig struct {
 	Type   string            `json:"Type,omitempty" yaml:"Type,omitempty"`
 	Config map[string]string `json:"Config,omitempty" yaml:"Config,omitempty"`
+}
+
+// ULimit defines system-wide resource limitations
+// This can help a lot in system administration, e.g. when a user starts too many processes and therefore makes the system unresponsive for other users.
+type ULimit struct {
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Soft int64  `json:"Soft,omitempty" yaml:"Soft,omitempty"`
+	Hard int64  `json:"Hard,omitempty" yaml:"Hard,omitempty"`
 }
 
 // SwarmNode containers information about which Swarm node the container is on
@@ -417,6 +425,7 @@ type HostConfig struct {
 	LogConfig       LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty"`
 	ReadonlyRootfs  bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
 	SecurityOpt     []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty"`
+	Ulimits         []ULimit               `json:"Ulimits,omitempty" yaml:"Ulimits,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.

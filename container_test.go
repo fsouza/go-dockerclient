@@ -180,6 +180,9 @@ func TestInspectContainer(t *testing.T) {
                      "VolumesFrom": "",
                      "SecurityOpt": [
                          "label:user:USER"
+                      ],
+                      "Ulimits": [
+                          { "Name": "nofile", "Soft": 1024, "Hard": 2048 }
                       ]
              },
              "State": {
