@@ -211,6 +211,14 @@ type LogConfig struct {
 	Config map[string]string `json:"Config,omitempty" yaml:"Config,omitempty"`
 }
 
+// ULimit defines system-wide resource limitations
+// This can help a lot in system administration, e.g. when a user starts too many processes and therefore makes the system unresponsive for other users.
+type ULimit struct {
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Soft int64  `json:"Soft,omitempty" yaml:"Soft,omitempty"`
+	Hard int64  `json:"Hard,omitempty" yaml:"Hard,omitempty"`
+}
+
 // SwarmNode containers information about which Swarm node the container is on
 type SwarmNode struct {
 	ID     string            `json:"ID,omitempty" yaml:"ID,omitempty"`
@@ -440,6 +448,7 @@ type HostConfig struct {
 	CPUSet          string                 `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
 	CPUQuota        int64                  `json:"CpuQuota,omitempty" yaml:"CpuQuota,omitempty"`
 	CPUPeriod       int64                  `json:"CpuPeriod,omitempty" yaml:"CpuPeriod,omitempty"`
+	Ulimits         []ULimit               `json:"Ulimits,omitempty" yaml:"Ulimits,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
