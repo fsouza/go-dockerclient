@@ -657,8 +657,9 @@ type BlkioStatsEntry struct {
 //
 // See http://goo.gl/DFMiYD for more details.
 type StatsOptions struct {
-	ID    string
-	Stats chan<- *Stats
+	ID     string
+	Stats  chan<- *Stats
+	Stream bool
 }
 
 // Stats sends container statistics for the given container to the given channel.
@@ -684,9 +685,10 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 	}()
 
 	go func() {
-		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats", opts.ID), streamOptions{
-			rawJSONStream: true,
-			stdout:        writeCloser,
+		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats?stream=%v", opts.ID, opts.Stream), streamOptions{
+			rawJSONStream:  true,
+			useJSONDecoder: true,
+			stdout:         writeCloser,
 		})
 		if err != nil {
 			dockerError, ok := err.(*Error)

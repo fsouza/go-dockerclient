@@ -383,6 +383,7 @@ func (c *Client) do(method, path string, doOptions doOptions) ([]byte, int, erro
 type streamOptions struct {
 	setRawTerminal bool
 	rawJSONStream  bool
+	useJSONDecoder bool
 	headers        map[string]string
 	in             io.Reader
 	stdout         io.Writer
@@ -446,7 +447,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		}
 		return newError(resp.StatusCode, body)
 	}
-	if resp.Header.Get("Content-Type") == "application/json" {
+	if streamOptions.useJSONDecoder || resp.Header.Get("Content-Type") == "application/json" {
 		// if we want to get raw json stream, just copy it back to output
 		// without decoding it
 		if streamOptions.rawJSONStream {
