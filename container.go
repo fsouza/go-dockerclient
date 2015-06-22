@@ -260,6 +260,8 @@ type Container struct {
 	HostConfig *HostConfig       `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
 	ExecIDs    []string          `json:"ExecIDs,omitempty" yaml:"ExecIDs,omitempty"`
 
+	RestartCount int `json:"RestartCount,omitempty" yaml:"RestartCount,omitempty"`
+
 	AppArmorProfile string `json:"AppArmorProfile,omitempty" yaml:"AppArmorProfile,omitempty"`
 }
 
