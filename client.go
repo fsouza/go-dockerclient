@@ -426,19 +426,23 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 			return err
 		}
 		clientconn := httputil.NewClientConn(dial, nil)
-		resp, err = clientconn.Do(req)
+		if resp, err = clientconn.Do(req); err != nil {
+			if strings.Contains(err.Error(), "connection refused") {
+				return ErrConnectionRefused
+			}
+			return err
+		}
 		defer resp.Body.Close()
 		defer clientconn.Close()
 	} else {
-		resp, err = c.HTTPClient.Do(req)
+		if resp, err = c.HTTPClient.Do(req); err != nil {
+			if strings.Contains(err.Error(), "connection refused") {
+				return ErrConnectionRefused
+			}
+			return err
+		}
 		defer resp.Body.Close()
 		defer c.transport.CancelRequest(req)
-	}
-	if err != nil {
-		if strings.Contains(err.Error(), "connection refused") {
-			return ErrConnectionRefused
-		}
-		return err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		body, err := ioutil.ReadAll(resp.Body)
