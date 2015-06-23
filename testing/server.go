@@ -793,10 +793,9 @@ func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) inspectImage(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
+	s.iMut.RLock()
+	defer s.iMut.RUnlock()
 	if id, ok := s.imgIDs[name]; ok {
-		s.iMut.Lock()
-		defer s.iMut.Unlock()
-
 		for _, img := range s.images {
 			if img.ID == id {
 				w.Header().Set("Content-Type", "application/json")
