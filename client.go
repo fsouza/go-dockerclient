@@ -427,11 +427,9 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		}
 		clientconn := httputil.NewClientConn(dial, nil)
 		resp, err = clientconn.Do(req)
-		defer resp.Body.Close()
 		defer clientconn.Close()
 	} else {
 		resp, err = c.HTTPClient.Do(req)
-		defer resp.Body.Close()
 		defer c.transport.CancelRequest(req)
 	}
 	if err != nil {
@@ -440,6 +438,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		}
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
