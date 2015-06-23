@@ -8,6 +8,7 @@
 package docker
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
@@ -354,12 +355,12 @@ func (c *Client) do(method, path string, doOptions doOptions) ([]byte, int, erro
 			return nil, -1, err
 		}
 		defer dial.Close()
-		clientconn := httputil.NewClientConn(dial, nil)
-		resp, err = clientconn.Do(req)
+		breader := bufio.NewReader(dial)
+		err = req.Write(dial)
 		if err != nil {
 			return nil, -1, err
 		}
-		defer clientconn.Close()
+		resp, err = http.ReadResponse(breader, req)
 	} else {
 		resp, err = c.HTTPClient.Do(req)
 	}
@@ -425,15 +426,19 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		if err != nil {
 			return err
 		}
-		clientconn := httputil.NewClientConn(dial, nil)
-		if resp, err = clientconn.Do(req); err != nil {
+		defer dial.Close()
+		breader := bufio.NewReader(dial)
+		err = req.Write(dial)
+		if err != nil {
+			return err
+		}
+		if resp, err = http.ReadResponse(breader, req); err != nil {
 			if strings.Contains(err.Error(), "connection refused") {
 				return ErrConnectionRefused
 			}
 			return err
 		}
 		defer resp.Body.Close()
-		defer clientconn.Close()
 	} else {
 		if resp, err = c.HTTPClient.Do(req); err != nil {
 			if strings.Contains(err.Error(), "connection refused") {
