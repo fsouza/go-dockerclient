@@ -1810,8 +1810,9 @@ func TestStats(t *testing.T) {
 	client.SkipServerVersionCheck = true
 	errC := make(chan error, 1)
 	statsC := make(chan *Stats)
+	done := make(chan bool)
 	go func() {
-		errC <- client.Stats(StatsOptions{id, statsC, true})
+		errC <- client.Stats(StatsOptions{id, statsC, true, done})
 		close(errC)
 	}()
 	var resultStats []*Stats
@@ -1847,7 +1848,8 @@ func TestStats(t *testing.T) {
 func TestStatsContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	statsC := make(chan *Stats)
-	err := client.Stats(StatsOptions{"abef348", statsC, true})
+	done := make(chan bool)
+	err := client.Stats(StatsOptions{"abef348", statsC, true, done})
 	expected := &NoSuchContainer{ID: "abef348"}
 	if !reflect.DeepEqual(err, expected) {
 		t.Errorf("Stats: Wrong error returned. Want %#v. Got %#v.", expected, err)

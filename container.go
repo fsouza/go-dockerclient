@@ -662,6 +662,8 @@ type StatsOptions struct {
 	ID     string
 	Stats  chan<- *Stats
 	Stream bool
+	// A flag that enables stopping the stats operation
+	Done <-chan bool
 }
 
 // Stats sends container statistics for the given container to the given channel.
@@ -669,7 +671,7 @@ type StatsOptions struct {
 // This function is blocking, similar to a streaming call for logs, and should be run
 // on a separate goroutine from the caller. Note that this function will block until
 // the given container is removed, not just exited. When finished, this function
-// will close the given channel.
+// will close the given channel. Alternatively, function can be stopped by signaling on the Done channel
 //
 // See http://goo.gl/DFMiYD for more details.
 func (c *Client) Stats(opts StatsOptions) (retErr error) {
@@ -678,9 +680,16 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 
 	defer func() {
 		close(opts.Stats)
-		if err := <-errC; err != nil && retErr == nil {
-			retErr = err
+
+		select {
+		case err := <-errC:
+			if err != nil && retErr == nil {
+				retErr = err
+			}
+		default:
+			// No errors
 		}
+
 		if err := readCloser.Close(); err != nil && retErr == nil {
 			retErr = err
 		}
@@ -715,6 +724,12 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 		}
 		opts.Stats <- stats
 		stats = new(Stats)
+		select {
+		case <-opts.Done:
+			readCloser.Close()
+		default:
+			// Continue
+		}
 	}
 	return nil
 }
