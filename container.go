@@ -438,6 +438,7 @@ type HostConfig struct {
 	NetworkMode     string                 `json:"NetworkMode,omitempty" yaml:"NetworkMode,omitempty"`
 	IpcMode         string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty"`
 	PidMode         string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
+	UTSMode         string                 `json:"UTSMode,omitempty" yaml:"UTSMode,omitempty"`
 	RestartPolicy   RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
 	Devices         []Device               `json:"Devices,omitempty" yaml:"Devices,omitempty"`
 	LogConfig       LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty"`
