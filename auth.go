@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -39,10 +40,16 @@ type dockerConfig struct {
 // NewAuthConfigurationsFromDockerCfg returns AuthConfigurations from the
 // ~/.dockercfg file.
 func NewAuthConfigurationsFromDockerCfg() (*AuthConfigurations, error) {
-	p := path.Join(os.Getenv("HOME"), ".dockercfg")
-	r, err := os.Open(p)
+	var r io.Reader
+	var err error
+	p := path.Join(os.Getenv("HOME"), ".docker", "config.json")
+	r, err = os.Open(p)
 	if err != nil {
-		return nil, err
+		p := path.Join(os.Getenv("HOME"), ".dockercfg")
+		r, err = os.Open(p)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return NewAuthConfigurations(r)
 }
@@ -51,15 +58,34 @@ func NewAuthConfigurationsFromDockerCfg() (*AuthConfigurations, error) {
 // same format as the .dockercfg file.
 func NewAuthConfigurations(r io.Reader) (*AuthConfigurations, error) {
 	var auth *AuthConfigurations
-	var confs map[string]dockerConfig
-	if err := json.NewDecoder(r).Decode(&confs); err != nil {
+	confs, err := parseDockerConfig(r)
+	if err != nil {
 		return nil, err
 	}
-	auth, err := authConfigs(confs)
+	auth, err = authConfigs(confs)
 	if err != nil {
 		return nil, err
 	}
 	return auth, nil
+}
+
+func parseDockerConfig(r io.Reader) (map[string]dockerConfig, error) {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
+	byteData := buf.Bytes()
+
+	var confsWrapper map[string]map[string]dockerConfig
+	if err := json.Unmarshal(byteData, &confsWrapper); err == nil {
+		if confs, ok := confsWrapper["auths"]; ok {
+			return confs, nil
+		}
+	}
+
+	var confs map[string]dockerConfig
+	if err := json.Unmarshal(byteData, &confs); err != nil {
+		return nil, err
+	}
+	return confs, nil
 }
 
 // authConfigs converts a dockerConfigs map to a AuthConfigurations object.
