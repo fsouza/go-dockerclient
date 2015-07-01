@@ -576,7 +576,7 @@ func TestStartContainer(t *testing.T) {
 		t.Error("StartContainer: did not set the container to running state")
 	}
 	if gotMemory := server.containers[0].HostConfig.Memory; gotMemory != memory {
-		t.Errorf("StartContainer: wrong HostConfig. Wants %d of memory. Got %s", memory, gotMemory)
+		t.Errorf("StartContainer: wrong HostConfig. Wants %d of memory. Got %d", memory, gotMemory)
 	}
 }
 
