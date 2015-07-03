@@ -191,14 +191,14 @@ type Config struct {
 	OpenStdin       bool                `json:"OpenStdin,omitempty" yaml:"OpenStdin,omitempty"`
 	StdinOnce       bool                `json:"StdinOnce,omitempty" yaml:"StdinOnce,omitempty"`
 	Env             []string            `json:"Env,omitempty" yaml:"Env,omitempty"`
-	Cmd             []string            `json:"Cmd,omitempty" yaml:"Cmd,omitempty"`
+	Cmd             []string            `json:"Cmd" yaml:"Cmd"`
 	DNS             []string            `json:"Dns,omitempty" yaml:"Dns,omitempty"` // For Docker API v1.9 and below only
 	Image           string              `json:"Image,omitempty" yaml:"Image,omitempty"`
 	Volumes         map[string]struct{} `json:"Volumes,omitempty" yaml:"Volumes,omitempty"`
 	VolumesFrom     string              `json:"VolumesFrom,omitempty" yaml:"VolumesFrom,omitempty"`
 	WorkingDir      string              `json:"WorkingDir,omitempty" yaml:"WorkingDir,omitempty"`
 	MacAddress      string              `json:"MacAddress,omitempty" yaml:"MacAddress,omitempty"`
-	Entrypoint      []string            `json:"Entrypoint,omitempty" yaml:"Entrypoint,omitempty"`
+	Entrypoint      []string            `json:"Entrypoint" yaml:"Entrypoint"`
 	NetworkDisabled bool                `json:"NetworkDisabled,omitempty" yaml:"NetworkDisabled,omitempty"`
 	SecurityOpts    []string            `json:"SecurityOpts,omitempty" yaml:"SecurityOpts,omitempty"`
 	OnBuild         []string            `json:"OnBuild,omitempty" yaml:"OnBuild,omitempty"`
