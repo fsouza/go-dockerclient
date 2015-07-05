@@ -313,7 +313,6 @@ func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) findImage(id string) (string, error) {
-	id = strings.SplitN(id, "@", 2)[0]
 	s.iMut.RLock()
 	defer s.iMut.RUnlock()
 	image, ok := s.imgIDs[id]
