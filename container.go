@@ -636,6 +636,7 @@ type Stats struct {
 	PreCPUStats CPUStats `json:"precpu_stats,omitempty"`
 }
 
+// CPUStats is a stats entry for cpu stats 
 type CPUStats struct {
 	CPUUsage struct {
 		PercpuUsage       []uint64 `json:"percpu_usage,omitempty" yaml:"percpu_usage,omitempty"`
