@@ -1684,6 +1684,20 @@ func TestStats(t *testing.T) {
              "usage_in_kernelmode" : 20000000
           },
           "system_cpu_usage" : 20091722000000000
+       },
+       "precpu_stats" : {
+          "cpu_usage" : {
+             "percpu_usage" : [
+                16970827,
+                1839451,
+                7107380,
+                10571290
+             ],
+             "usage_in_usermode" : 10000000,
+             "total_usage" : 36488948,
+             "usage_in_kernelmode" : 20000000
+          },
+          "system_cpu_usage" : 20091722000000000
        }
     }`
 	// 1 second later, cache is 100
@@ -1772,6 +1786,20 @@ func TestStats(t *testing.T) {
           "sectors_recursive": []
        },
        "cpu_stats" : {
+          "cpu_usage" : {
+             "percpu_usage" : [
+                16970827,
+                1839451,
+                7107380,
+                10571290
+             ],
+             "usage_in_usermode" : 10000000,
+             "total_usage" : 36488948,
+             "usage_in_kernelmode" : 20000000
+          },
+          "system_cpu_usage" : 20091722000000000
+       },
+       "precpu_stats" : {
           "cpu_usage" : {
              "percpu_usage" : [
                 16970827,

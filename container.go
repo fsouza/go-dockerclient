@@ -632,20 +632,23 @@ type Stats struct {
 		IOTimeRecursive         []BlkioStatsEntry `json:"io_time_recursive,omitempty" yaml:"io_time_recursive,omitempty"`
 		SectorsRecursive        []BlkioStatsEntry `json:"sectors_recursive,omitempty" yaml:"sectors_recursive,omitempty"`
 	} `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty"`
-	CPUStats struct {
-		CPUUsage struct {
-			PercpuUsage       []uint64 `json:"percpu_usage,omitempty" yaml:"percpu_usage,omitempty"`
-			UsageInUsermode   uint64   `json:"usage_in_usermode,omitempty" yaml:"usage_in_usermode,omitempty"`
-			TotalUsage        uint64   `json:"total_usage,omitempty" yaml:"total_usage,omitempty"`
-			UsageInKernelmode uint64   `json:"usage_in_kernelmode,omitempty" yaml:"usage_in_kernelmode,omitempty"`
-		} `json:"cpu_usage,omitempty" yaml:"cpu_usage,omitempty"`
-		SystemCPUUsage uint64 `json:"system_cpu_usage,omitempty" yaml:"system_cpu_usage,omitempty"`
-		ThrottlingData struct {
-			Periods          uint64 `json:"periods,omitempty"`
-			ThrottledPeriods uint64 `json:"throttled_periods,omitempty"`
-			ThrottledTime    uint64 `json:"throttled_time,omitempty"`
-		} `json:"throttling_data,omitempty" yaml:"throttling_data,omitempty"`
-	} `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
+	CPUStats    CPUStats `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty"`
+	PreCPUStats CPUStats `json:"precpu_stats,omitempty"`
+}
+
+type CPUStats struct {
+	CPUUsage struct {
+		PercpuUsage       []uint64 `json:"percpu_usage,omitempty" yaml:"percpu_usage,omitempty"`
+		UsageInUsermode   uint64   `json:"usage_in_usermode,omitempty" yaml:"usage_in_usermode,omitempty"`
+		TotalUsage        uint64   `json:"total_usage,omitempty" yaml:"total_usage,omitempty"`
+		UsageInKernelmode uint64   `json:"usage_in_kernelmode,omitempty" yaml:"usage_in_kernelmode,omitempty"`
+	} `json:"cpu_usage,omitempty" yaml:"cpu_usage,omitempty"`
+	SystemCPUUsage uint64 `json:"system_cpu_usage,omitempty" yaml:"system_cpu_usage,omitempty"`
+	ThrottlingData struct {
+		Periods          uint64 `json:"periods,omitempty"`
+		ThrottledPeriods uint64 `json:"throttled_periods,omitempty"`
+		ThrottledTime    uint64 `json:"throttled_time,omitempty"`
+	} `json:"throttling_data,omitempty" yaml:"throttling_data,omitempty"`
 }
 
 // BlkioStatsEntry is a stats entry for blkio_stats
