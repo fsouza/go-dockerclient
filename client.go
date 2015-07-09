@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/stdcopy"
+	"time"
 )
 
 const userAgent = "go-dockerclient"
@@ -384,6 +385,8 @@ type streamOptions struct {
 	in             io.Reader
 	stdout         io.Writer
 	stderr         io.Writer
+	// timeout is the inital connection timeout
+	timeout time.Duration
 }
 
 func (c *Client) stream(method, path string, streamOptions streamOptions) error {
@@ -427,7 +430,17 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		if err != nil {
 			return err
 		}
+
+		// ReadResponse may hang if server does not replay
+		if streamOptions.timeout > 0 {
+			dial.SetDeadline(time.Now().Add(streamOptions.timeout))
+		}
+
 		if resp, err = http.ReadResponse(breader, req); err != nil {
+			// Cancel timeout for future I/O operations
+			if streamOptions.timeout > 0 {
+				dial.SetDeadline(time.Time{})
+			}
 			if strings.Contains(err.Error(), "connection refused") {
 				return ErrConnectionRefused
 			}
