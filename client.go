@@ -28,7 +28,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/docker/opts"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/opts"
+	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/homedir"
 	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/stdcopy"
 )
 
@@ -786,7 +787,7 @@ func getDockerEnv() (*dockerEnv, error) {
 	if dockerTLSVerify {
 		dockerCertPath = os.Getenv("DOCKER_CERT_PATH")
 		if dockerCertPath == "" {
-			home := os.Getenv("HOME")
+			home := homedir.Get()
 			if home == "" {
 				return nil, errors.New("environment variable HOME must be set if DOCKER_CERT_PATH is not set")
 			}
