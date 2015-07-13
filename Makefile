@@ -11,6 +11,7 @@
 	clean
 
 SRCS = $(shell git ls-files '*.go' | grep -v '^vendor/')
+PKGS = ./. ./testing
 
 all: test
 
@@ -20,31 +21,22 @@ vendor:
 
 lint:
 	@ go get -v github.com/golang/lint/golint
-	for file in $(SRCS); do \
-		golint $$file; \
-	done
+	$(foreach file,$(SRCS),golint $(file) || exit;)
 
 vet:
 	@ go get -v golang.org/x/tools/cmd/vet
-	go vet
-	go vet ./testing
+	$(foreach pkg,$(PKGS),go vet $(pkg);)
 
 fmt:
 	gofmt -w $(SRCS)
 
 fmtcheck:
-	for file in $(SRCS); do \
-		gofmt $$file | diff -u $$file -; \
-		if [ -n "$$(gofmt $$file | diff -u $$file -)" ]; then\
-			exit 1; \
-		fi; \
-	done
+	$(foreach file,$(SRCS),gofmt $(file) | diff -u $(file) - || exit;)
 
 pretest: lint vet fmtcheck
 
 test: pretest
-	go test
-	go test ./testing
+	$(foreach pkg,$(PKGS),go test $(pkg) || exit;)
 
 cov:
 	@ go get -v github.com/axw/gocov/gocov
@@ -52,5 +44,4 @@ cov:
 	gocov test | gocov report
 
 clean:
-	go clean
-	go clean ./testing
+	$(foreach pkg,$(PKGS),go clean $(pkg) || exit;)
