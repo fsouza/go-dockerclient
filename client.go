@@ -246,6 +246,7 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 	}
 	tr := &http.Transport{
 		TLSClientConfig: tlsConfig,
+		DisableKeepAlives: true,
 	}
 	if err != nil {
 		return nil, err
