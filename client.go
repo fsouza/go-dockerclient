@@ -21,10 +21,14 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 
+	"github.com/docker/docker/opts"
 	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/stdcopy"
 )
 
@@ -210,6 +214,46 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 		return nil, err
 	}
 	return NewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString)
+}
+
+// NewClientFromEnv returns a Client instance ready for communication created from
+// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH.
+//
+// See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
+// See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
+func NewClientFromEnv() (*Client, error) {
+	client, err := NewVersionedClientFromEnv("")
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
+}
+
+// NewVersionedClientFromEnv returns a Client instance ready for TLS communications created from
+// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH,
+// and using a specific remote API version.
+//
+// See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
+// See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
+func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
+	dockerEnv, err := getDockerEnv()
+	if err != nil {
+		return nil, err
+	}
+	dockerHost := dockerEnv.dockerHost
+	if dockerEnv.dockerTLSVerify {
+		parts := strings.SplitN(dockerHost, "://", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("could not split %s into two parts by ://", dockerHost)
+		}
+		dockerHost = fmt.Sprintf("https://%s", parts[1])
+		cert := filepath.Join(dockerEnv.dockerCertPath, "cert.pem")
+		key := filepath.Join(dockerEnv.dockerCertPath, "key.pem")
+		ca := filepath.Join(dockerEnv.dockerCertPath, "ca.pem")
+		return NewVersionedTLSClient(dockerHost, cert, key, ca, apiVersionString)
+	}
+	return NewVersionedClient(dockerHost, apiVersionString)
 }
 
 // NewVersionedTLSClientFromBytes returns a Client instance ready for TLS communications with the givens
@@ -720,4 +764,54 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 	default:
 		return nil, ErrInvalidEndpoint
 	}
+}
+
+type dockerEnv struct {
+	dockerHost      string
+	dockerTLSVerify bool
+	dockerCertPath  string
+}
+
+func getDockerEnv() (*dockerEnv, error) {
+	dockerHost := os.Getenv("DOCKER_HOST")
+	var err error
+	if dockerHost == "" {
+		dockerHost, err = getDefaultDockerHost()
+		if err != nil {
+			return nil, err
+		}
+	}
+	dockerTLSVerify := os.Getenv("DOCKER_TLS_VERIFY") != ""
+	var dockerCertPath string
+	if dockerTLSVerify {
+		dockerCertPath = os.Getenv("DOCKER_CERT_PATH")
+		if dockerCertPath == "" {
+			home := os.Getenv("HOME")
+			if home == "" {
+				return nil, errors.New("environment variable HOME must be set if DOCKER_CERT_PATH is not set")
+			}
+			dockerCertPath = filepath.Join(home, ".docker")
+			dockerCertPath, err = filepath.Abs(dockerCertPath)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return &dockerEnv{
+		dockerHost:      dockerHost,
+		dockerTLSVerify: dockerTLSVerify,
+		dockerCertPath:  dockerCertPath,
+	}, nil
+}
+
+func getDefaultDockerHost() (string, error) {
+	var defaultHost string
+	if runtime.GOOS != "windows" {
+		// If we do not have a host, default to unix socket
+		defaultHost = fmt.Sprintf("unix://%s", opts.DefaultUnixSocket)
+	} else {
+		// If we do not have a host, default to TCP socket on Windows
+		defaultHost = fmt.Sprintf("tcp://%s:%d", opts.DefaultHTTPHost, opts.DefaultHTTPPort)
+	}
+	return opts.ValidateHost(defaultHost)
 }
