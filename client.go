@@ -345,7 +345,8 @@ func (c *Client) do(method, path string, doOptions doOptions) ([]byte, int, erro
 	protocol := c.endpointURL.Scheme
 	address := c.endpointURL.Path
 	if protocol == "unix" {
-		dial, err := net.Dial(protocol, address)
+		var dial net.Conn
+		dial, err = net.Dial(protocol, address)
 		if err != nil {
 			return nil, -1, err
 		}
