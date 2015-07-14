@@ -329,8 +329,8 @@ func (c *Client) ContainerChanges(id string) ([]Change, error) {
 // See http://goo.gl/2xxQQK for more details.
 type CreateContainerOptions struct {
 	Name       string
-	Config     *Config `qs:"-"`
-	HostConfig *HostConfig
+	Config     *Config     `qs:"-"`
+	HostConfig *HostConfig `qs:"-"`
 }
 
 // CreateContainer creates a new container, returning the container instance,
