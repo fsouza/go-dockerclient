@@ -168,6 +168,7 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	if err = eventState.connectWithRetry(c); err != nil {
+		eventState.closeListeners()
 		eventState.terminate()
 	}
 	for eventState.isEnabled() {
