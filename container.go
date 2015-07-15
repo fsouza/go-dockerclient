@@ -669,6 +669,8 @@ type StatsOptions struct {
 	Stream bool
 	// A flag that enables stopping the stats operation
 	Done <-chan bool
+	// Initial connection timeout
+	Timeout time.Duration
 }
 
 // Stats sends container statistics for the given container to the given channel.
@@ -705,6 +707,7 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 			rawJSONStream:  true,
 			useJSONDecoder: true,
 			stdout:         writeCloser,
+			timeout:        opts.Timeout,
 		})
 		if err != nil {
 			dockerError, ok := err.(*Error)
