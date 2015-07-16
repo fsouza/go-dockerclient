@@ -82,10 +82,7 @@ func (c *Client) RemoveEventListener(listener chan *APIEvents) error {
 		return err
 	}
 	if len(c.eventMonitor.listeners) == 0 {
-		err = c.eventMonitor.disableEventMonitoring()
-		if err != nil {
-			return err
-		}
+		c.eventMonitor.disableEventMonitoring()
 	}
 	return nil
 }
@@ -118,8 +115,6 @@ func (eventState *eventMonitoringState) removeListener(listener chan<- *APIEvent
 }
 
 func (eventState *eventMonitoringState) closeListeners() {
-	eventState.Lock()
-	defer eventState.Unlock()
 	for _, l := range eventState.listeners {
 		close(l)
 		eventState.Add(-1)
@@ -151,9 +146,13 @@ func (eventState *eventMonitoringState) enableEventMonitoring(c *Client) error {
 }
 
 func (eventState *eventMonitoringState) disableEventMonitoring() error {
-	eventState.Wait()
 	eventState.Lock()
 	defer eventState.Unlock()
+
+	eventState.closeListeners()
+
+	eventState.Wait()
+
 	if eventState.enabled {
 		eventState.enabled = false
 		close(eventState.C)
@@ -168,8 +167,9 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	if err = eventState.connectWithRetry(c); err != nil {
-		eventState.closeListeners()
-		eventState.terminate()
+		// terminate if connect failed
+		eventState.disableEventMonitoring()
+		return
 	}
 	for eventState.isEnabled() {
 		timeout := time.After(100 * time.Millisecond)
@@ -179,15 +179,14 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 				return
 			}
 			if ev == EOFEvent {
-				eventState.closeListeners()
-				eventState.terminate()
+				eventState.disableEventMonitoring()
 				return
 			}
 			eventState.updateLastSeen(ev)
 			go eventState.sendEvent(ev)
 		case err = <-eventState.errC:
 			if err == ErrNoListeners {
-				eventState.terminate()
+				eventState.disableEventMonitoring()
 				return
 			} else if err != nil {
 				defer func() { go eventState.monitorEvents(c) }()
@@ -245,10 +244,6 @@ func (eventState *eventMonitoringState) updateLastSeen(e *APIEvents) {
 	if atomic.LoadInt64(eventState.lastSeen) < e.Time {
 		atomic.StoreInt64(eventState.lastSeen, e.Time)
 	}
-}
-
-func (eventState *eventMonitoringState) terminate() {
-	eventState.disableEventMonitoring()
 }
 
 func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan chan error) error {
