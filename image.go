@@ -20,13 +20,14 @@ import (
 
 // APIImages represent an image returned in the ListImages call.
 type APIImages struct {
-	ID          string   `json:"Id" yaml:"Id"`
-	RepoTags    []string `json:"RepoTags,omitempty" yaml:"RepoTags,omitempty"`
-	Created     int64    `json:"Created,omitempty" yaml:"Created,omitempty"`
-	Size        int64    `json:"Size,omitempty" yaml:"Size,omitempty"`
-	VirtualSize int64    `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty"`
-	ParentID    string   `json:"ParentId,omitempty" yaml:"ParentId,omitempty"`
-	RepoDigests []string `json:"RepoDigests,omitempty" yaml:"RepoDigests,omitempty"`
+	ID          string            `json:"Id" yaml:"Id"`
+	RepoTags    []string          `json:"RepoTags,omitempty" yaml:"RepoTags,omitempty"`
+	Created     int64             `json:"Created,omitempty" yaml:"Created,omitempty"`
+	Size        int64             `json:"Size,omitempty" yaml:"Size,omitempty"`
+	VirtualSize int64             `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty"`
+	ParentID    string            `json:"ParentId,omitempty" yaml:"ParentId,omitempty"`
+	RepoDigests []string          `json:"RepoDigests,omitempty" yaml:"RepoDigests,omitempty"`
+	Labels      map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 }
 
 // Image is the type representing a docker image and its various properties
