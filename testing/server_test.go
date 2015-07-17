@@ -15,6 +15,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1590,4 +1591,88 @@ func waitExec(url, execID string, running bool, maxTry int) (*docker.ExecInspect
 		exec, err = client.InspectExec(exec.ID)
 	}
 	return exec, err
+}
+
+func TestStatsContainer(t *testing.T) {
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Stop()
+	addContainers(server, 2)
+	server.buildMuxer()
+	expected := docker.Stats{}
+	expected.CPUStats.CPUUsage.TotalUsage = 20
+	server.PrepareStats(server.containers[0].ID, func(id string) docker.Stats {
+		return expected
+	})
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/stats?stream=false", server.containers[0].ID)
+	request, _ := http.NewRequest("GET", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("StatsContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	body := recorder.Body.Bytes()
+	var got docker.Stats
+	err = json.Unmarshal(body, &got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got.Read = time.Time{}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("StatsContainer: wrong value. Want %#v. Got %#v.", expected, got)
+	}
+}
+
+type safeWriter struct {
+	sync.Mutex
+	*httptest.ResponseRecorder
+}
+
+func (w *safeWriter) Write(buf []byte) (int, error) {
+	w.Lock()
+	defer w.Unlock()
+	return w.ResponseRecorder.Write(buf)
+}
+
+func TestStatsContainerStream(t *testing.T) {
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Stop()
+	addContainers(server, 2)
+	server.buildMuxer()
+	expected := docker.Stats{}
+	expected.CPUStats.CPUUsage.TotalUsage = 20
+	server.PrepareStats(server.containers[0].ID, func(id string) docker.Stats {
+		time.Sleep(50 * time.Millisecond)
+		return expected
+	})
+	recorder := &safeWriter{
+		ResponseRecorder: httptest.NewRecorder(),
+	}
+	path := fmt.Sprintf("/containers/%s/stats?stream=true", server.containers[0].ID)
+	request, _ := http.NewRequest("GET", path, nil)
+	go func() {
+		server.ServeHTTP(recorder, request)
+	}()
+	time.Sleep(200 * time.Millisecond)
+	recorder.Lock()
+	defer recorder.Unlock()
+	body := recorder.Body.Bytes()
+	parts := bytes.Split(body, []byte("\n"))
+	if len(parts) < 2 {
+		t.Errorf("StatsContainer: wrong number of parts. Want at least 2. Got %#v.", len(parts))
+	}
+	var got docker.Stats
+	err = json.Unmarshal(parts[0], &got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got.Read = time.Time{}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("StatsContainer: wrong value. Want %#v. Got %#v.", expected, got)
+	}
 }

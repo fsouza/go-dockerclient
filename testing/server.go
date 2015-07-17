@@ -49,6 +49,7 @@ type DockerServer struct {
 	failures       map[string]string
 	multiFailures  []map[string]string
 	execCallbacks  map[string]func()
+	statsCallbacks map[string]func(string) docker.Stats
 	customHandlers map[string]http.Handler
 	handlerMutex   sync.RWMutex
 	cChan          chan<- *docker.Container
@@ -76,6 +77,7 @@ func NewServer(bind string, containerChan chan<- *docker.Container, hook func(*h
 		hook:           hook,
 		failures:       make(map[string]string),
 		execCallbacks:  make(map[string]func()),
+		statsCallbacks: make(map[string]func(string) docker.Stats),
 		customHandlers: make(map[string]http.Handler),
 		cChan:          containerChan,
 	}
@@ -107,6 +109,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/containers/{id:.*}/attach").Methods("POST").HandlerFunc(s.handlerWrapper(s.attachContainer))
 	s.mux.Path("/containers/{id:.*}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.removeContainer))
 	s.mux.Path("/containers/{id:.*}/exec").Methods("POST").HandlerFunc(s.handlerWrapper(s.createExecContainer))
+	s.mux.Path("/containers/{id:.*}/stats").Methods("GET").HandlerFunc(s.handlerWrapper(s.statsContainer))
 	s.mux.Path("/exec/{id:.*}/resize").Methods("POST").HandlerFunc(s.handlerWrapper(s.resizeExecContainer))
 	s.mux.Path("/exec/{id:.*}/start").Methods("POST").HandlerFunc(s.handlerWrapper(s.startExecContainer))
 	s.mux.Path("/exec/{id:.*}/json").Methods("GET").HandlerFunc(s.handlerWrapper(s.inspectExecContainer))
@@ -152,6 +155,15 @@ func (s *DockerServer) SetHook(hook func(*http.Request)) {
 //    // handle error
 func (s *DockerServer) PrepareExec(id string, callback func()) {
 	s.execCallbacks[id] = callback
+}
+
+// PrepareStats adds a callback that will be called for each container stats
+// call.
+//
+// This callback function will be called multiple times if stream is set to
+// true when stats is called.
+func (s *DockerServer) PrepareStats(id string, callback func(string) docker.Stats) {
+	s.statsCallbacks[id] = callback
 }
 
 // PrepareFailure adds a new expected failure based on a URL regexp it receives
@@ -446,6 +458,30 @@ func (s *DockerServer) inspectContainer(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(container)
+}
+
+func (s *DockerServer) statsContainer(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	_, _, err := s.findContainer(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	stream, _ := strconv.ParseBool(r.URL.Query().Get("stream"))
+	callback := s.statsCallbacks[id]
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	encoder := json.NewEncoder(w)
+	for {
+		var stats docker.Stats
+		if callback != nil {
+			stats = callback(id)
+		}
+		encoder.Encode(stats)
+		if !stream {
+			break
+		}
+	}
 }
 
 func (s *DockerServer) topContainer(w http.ResponseWriter, r *http.Request) {
