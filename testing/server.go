@@ -384,9 +384,11 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		args = config.Cmd[1:]
 	}
 
+	generatedID := s.generateID()
+	config.Config.Hostname = generatedID[:12]
 	container := docker.Container{
 		Name:       name,
-		ID:         s.generateID(),
+		ID:         generatedID,
 		Created:    time.Now(),
 		Path:       path,
 		Args:       args,

@@ -214,6 +214,9 @@ func TestCreateContainer(t *testing.T) {
 	if stored.Config.User != "ubuntu" {
 		t.Errorf("CreateContainer: wrong config. Expected: %q. Returned: %q.", "ubuntu", stored.Config.User)
 	}
+	if stored.Config.Hostname != returned.ID[:12] {
+		t.Errorf("CreateContainer: wrong hostname. Expected: %q. Returned: %q.", returned.ID[:12], stored.Config.Hostname)
+	}
 	expectedBind := []string{"/var/run/docker.sock:/var/run/docker.sock:rw"}
 	if !reflect.DeepEqual(stored.HostConfig.Binds, expectedBind) {
 		t.Errorf("CreateContainer: wrong host config. Expected: %v. Returned %v.", expectedBind, stored.HostConfig.Binds)
