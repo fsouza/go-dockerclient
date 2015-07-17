@@ -181,7 +181,7 @@ func TestListRunningContainers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) == 0 {
+	if len(got) != 0 {
 		t.Errorf("ListRunningContainers: Want 0. Got %d.", len(got))
 	}
 }

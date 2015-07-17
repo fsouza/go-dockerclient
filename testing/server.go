@@ -272,10 +272,10 @@ func (s *DockerServer) handlerWrapper(f func(http.ResponseWriter, *http.Request)
 func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 	all := r.URL.Query().Get("all")
 	s.cMut.RLock()
-	result := make([]docker.APIContainers, len(s.containers))
-	for i, container := range s.containers {
+	result := make([]docker.APIContainers, 0, len(s.containers))
+	for _, container := range s.containers {
 		if all == "1" || container.State.Running {
-			result[i] = docker.APIContainers{
+			result = append(result, docker.APIContainers{
 				ID:      container.ID,
 				Image:   container.Image,
 				Command: fmt.Sprintf("%s %s", container.Path, strings.Join(container.Args, " ")),
@@ -283,7 +283,7 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 				Status:  container.State.String(),
 				Ports:   container.NetworkSettings.PortMappingAPI(),
 				Names:   []string{fmt.Sprintf("/%s", container.Name)},
-			}
+			})
 		}
 	}
 	s.cMut.RUnlock()
