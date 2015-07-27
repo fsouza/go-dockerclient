@@ -130,6 +130,7 @@ type PortMapping map[string]string
 type NetworkSettings struct {
 	IPAddress   string                 `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
 	IPPrefixLen int                    `json:"IPPrefixLen,omitempty" yaml:"IPPrefixLen,omitempty"`
+	MacAddress  string                 `json:"MacAddress,omitempty" yaml:"MacAddress,omitempty"`
 	Gateway     string                 `json:"Gateway,omitempty" yaml:"Gateway,omitempty"`
 	Bridge      string                 `json:"Bridge,omitempty" yaml:"Bridge,omitempty"`
 	PortMapping map[string]PortMapping `json:"PortMapping,omitempty" yaml:"PortMapping,omitempty"`
