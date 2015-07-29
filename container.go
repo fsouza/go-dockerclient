@@ -949,6 +949,7 @@ type LogsOptions struct {
 	Follow       bool
 	Stdout       bool
 	Stderr       bool
+	Since        int64
 	Timestamps   bool
 	Tail         string
 
