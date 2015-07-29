@@ -253,6 +253,7 @@ type Container struct {
 	ResolvConfPath string `json:"ResolvConfPath,omitempty" yaml:"ResolvConfPath,omitempty"`
 	HostnamePath   string `json:"HostnamePath,omitempty" yaml:"HostnamePath,omitempty"`
 	HostsPath      string `json:"HostsPath,omitempty" yaml:"HostsPath,omitempty"`
+	LogPath        string `json:"LogPath,omitempty" yaml:"LogPath,omitempty"`
 	Name           string `json:"Name,omitempty" yaml:"Name,omitempty"`
 	Driver         string `json:"Driver,omitempty" yaml:"Driver,omitempty"`
 
