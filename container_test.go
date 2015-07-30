@@ -180,7 +180,7 @@ func TestInspectContainer(t *testing.T) {
                      ],
                      "Image": "base",
                      "Volumes": {},
-                     "VolumesFrom": "",
+                     "VolumesFrom": [],
                      "SecurityOpt": [
                          "label:user:USER"
                       ],
@@ -286,7 +286,7 @@ func TestInspectContainerNegativeSwap(t *testing.T) {
                      ],
                      "Image": "base",
                      "Volumes": {},
-                     "VolumesFrom": ""
+                     "VolumesFrom": []
              },
              "State": {
                      "Running": false,
