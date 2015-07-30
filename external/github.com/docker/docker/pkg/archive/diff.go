@@ -93,7 +93,7 @@ func UnpackLayer(dest string, layer ArchiveReader) (size int64, err error) {
 					}
 					defer os.RemoveAll(aufsTempdir)
 				}
-				if err := createTarFile(filepath.Join(aufsTempdir, basename), dest, hdr, tr, true); err != nil {
+				if err := createTarFile(filepath.Join(aufsTempdir, basename), dest, hdr, tr, true, nil); err != nil {
 					return 0, err
 				}
 			}
@@ -150,7 +150,7 @@ func UnpackLayer(dest string, layer ArchiveReader) (size int64, err error) {
 				srcData = tmpFile
 			}
 
-			if err := createTarFile(path, dest, srcHdr, srcData, true); err != nil {
+			if err := createTarFile(path, dest, srcHdr, srcData, true, nil); err != nil {
 				return 0, err
 			}
 
@@ -173,10 +173,24 @@ func UnpackLayer(dest string, layer ArchiveReader) (size int64, err error) {
 	return size, nil
 }
 
-// ApplyLayer parses a diff in the standard layer format from `layer`, and
-// applies it to the directory `dest`. Returns the size in bytes of the
-// contents of the layer.
+// ApplyLayer parses a diff in the standard layer format from `layer`,
+// and applies it to the directory `dest`. The stream `layer` can be
+// compressed or uncompressed.
+// Returns the size in bytes of the contents of the layer.
 func ApplyLayer(dest string, layer ArchiveReader) (int64, error) {
+	return applyLayerHandler(dest, layer, true)
+}
+
+// ApplyUncompressedLayer parses a diff in the standard layer format from
+// `layer`, and applies it to the directory `dest`. The stream `layer`
+// can only be uncompressed.
+// Returns the size in bytes of the contents of the layer.
+func ApplyUncompressedLayer(dest string, layer ArchiveReader) (int64, error) {
+	return applyLayerHandler(dest, layer, false)
+}
+
+// do the bulk load of ApplyLayer, but allow for not calling DecompressStream
+func applyLayerHandler(dest string, layer ArchiveReader, decompress bool) (int64, error) {
 	dest = filepath.Clean(dest)
 
 	// We need to be able to set any perms
@@ -186,9 +200,11 @@ func ApplyLayer(dest string, layer ArchiveReader) (int64, error) {
 	}
 	defer system.Umask(oldmask) // ignore err, ErrNotSupportedPlatform
 
-	layer, err = DecompressStream(layer)
-	if err != nil {
-		return 0, err
+	if decompress {
+		layer, err = DecompressStream(layer)
+		if err != nil {
+			return 0, err
+		}
 	}
 	return UnpackLayer(dest, layer)
 }

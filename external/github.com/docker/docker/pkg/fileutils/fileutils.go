@@ -12,11 +12,13 @@ import (
 	"github.com/fsouza/go-dockerclient/external/github.com/Sirupsen/logrus"
 )
 
-func Exclusion(pattern string) bool {
+// exclusion return true if the specified pattern is an exclusion
+func exclusion(pattern string) bool {
 	return pattern[0] == '!'
 }
 
-func Empty(pattern string) bool {
+// empty return true if the specified pattern is empty
+func empty(pattern string) bool {
 	return pattern == ""
 }
 
@@ -35,10 +37,10 @@ func CleanPatterns(patterns []string) ([]string, [][]string, bool, error) {
 	for _, pattern := range patterns {
 		// Eliminate leading and trailing whitespace.
 		pattern = strings.TrimSpace(pattern)
-		if Empty(pattern) {
+		if empty(pattern) {
 			continue
 		}
-		if Exclusion(pattern) {
+		if exclusion(pattern) {
 			if len(pattern) == 1 {
 				return nil, nil, false, errors.New("Illegal exclusion pattern: !")
 			}
@@ -46,7 +48,7 @@ func CleanPatterns(patterns []string) ([]string, [][]string, bool, error) {
 		}
 		pattern = filepath.Clean(pattern)
 		cleanedPatterns = append(cleanedPatterns, pattern)
-		if Exclusion(pattern) {
+		if exclusion(pattern) {
 			pattern = pattern[1:]
 		}
 		patternDirs = append(patternDirs, strings.Split(pattern, "/"))
@@ -86,7 +88,7 @@ func OptimizedMatches(file string, patterns []string, patDirs [][]string) (bool,
 	for i, pattern := range patterns {
 		negative := false
 
-		if Exclusion(pattern) {
+		if exclusion(pattern) {
 			negative = true
 			pattern = pattern[1:]
 		}
@@ -116,6 +118,9 @@ func OptimizedMatches(file string, patterns []string, patDirs [][]string) (bool,
 	return matched, nil
 }
 
+// CopyFile copies from src to dst until either EOF is reached
+// on src or an error occurs. It verifies src exists and remove
+// the dst if it exists.
 func CopyFile(src, dst string) (int64, error) {
 	cleanSrc := filepath.Clean(src)
 	cleanDst := filepath.Clean(dst)
@@ -138,6 +143,8 @@ func CopyFile(src, dst string) (int64, error) {
 	return io.Copy(df, sf)
 }
 
+// GetTotalUsedFds Returns the number of used File Descriptors by
+// reading it via /proc filesystem.
 func GetTotalUsedFds() int {
 	if fds, err := ioutil.ReadDir(fmt.Sprintf("/proc/%d/fd", os.Getpid())); err != nil {
 		logrus.Errorf("Error opening /proc/%d/fd: %s", os.Getpid(), err)
@@ -166,4 +173,24 @@ func ReadSymlinkedDirectory(path string) (string, error) {
 		return "", fmt.Errorf("canonical path points to a file '%s'", realPath)
 	}
 	return realPath, nil
+}
+
+// CreateIfNotExists creates a file or a directory only if it does not already exist.
+func CreateIfNotExists(path string, isDir bool) error {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			if isDir {
+				return os.MkdirAll(path, 0755)
+			}
+			if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+				return err
+			}
+			f, err := os.OpenFile(path, os.O_CREATE, 0755)
+			if err != nil {
+				return err
+			}
+			f.Close()
+		}
+	}
+	return nil
 }

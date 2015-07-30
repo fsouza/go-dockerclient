@@ -34,7 +34,7 @@ func newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash 
 	// Now let's parse it.
 	defaultPattern := "[^/]+"
 	if matchQuery {
-		defaultPattern = "[^?&]+"
+		defaultPattern = "[^?&]*"
 	} else if matchHost {
 		defaultPattern = "[^.]+"
 		matchPrefix = false
@@ -88,6 +88,12 @@ func newRouteRegexp(tpl string, matchHost, matchPrefix, matchQuery, strictSlash 
 	pattern.WriteString(regexp.QuoteMeta(raw))
 	if strictSlash {
 		pattern.WriteString("[/]?")
+	}
+	if matchQuery {
+		// Add the default pattern if the query value is empty
+		if queryVal := strings.SplitN(template, "=", 2)[1]; queryVal == "" {
+			pattern.WriteString(defaultPattern)
+		}
 	}
 	if !matchPrefix {
 		pattern.WriteByte('$')
@@ -180,9 +186,13 @@ func (r *routeRegexp) getUrlQuery(req *http.Request) string {
 	if !r.matchQuery {
 		return ""
 	}
-	key := strings.Split(r.template, "=")[0]
-	val := req.URL.Query().Get(key)
-	return key + "=" + val
+	templateKey := strings.SplitN(r.template, "=", 2)[0]
+	for key, vals := range req.URL.Query() {
+		if key == templateKey && len(vals) > 0 {
+			return key + "=" + vals[0]
+		}
+	}
+	return ""
 }
 
 func (r *routeRegexp) matchQueryString(req *http.Request) bool {
