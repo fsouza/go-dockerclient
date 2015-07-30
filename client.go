@@ -28,9 +28,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/opts"
-	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/homedir"
-	"github.com/fsouza/go-dockerclient/vendor/github.com/docker/docker/pkg/stdcopy"
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/opts"
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/homedir"
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/stdcopy"
 	"time"
 )
 
