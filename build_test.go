@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/docker/docker/pkg/archive"
+	"github.com/fsouza/go-dockerclient/Godeps/_workspace/src/github.com/docker/docker/pkg/archive"
 )
 
 func TestBuildImageMultipleContextsError(t *testing.T) {
