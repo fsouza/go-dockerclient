@@ -15,6 +15,8 @@ import (
 	"strings"
 )
 
+var AuthParseError error = errors.New("Failed to read authentication from dockercfg")
+
 // AuthConfiguration represents authentication options to use in the PushImage
 // method. It represents the authentication in the Docker index server.
 type AuthConfiguration struct {
@@ -99,6 +101,9 @@ func authConfigs(confs map[string]dockerConfig) (*AuthConfigurations, error) {
 			return nil, err
 		}
 		userpass := strings.Split(string(data), ":")
+		if len(userpass) != 2 {
+			return nil, AuthParseError
+		}
 		c.Configs[reg] = AuthConfiguration{
 			Email:         conf.Email,
 			Username:      userpass[0],
