@@ -726,6 +726,14 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 		close(errC)
 	}()
 
+	go func() {
+		// block here waiting for the signal to stop function
+		select {
+		case <-opts.Done:
+			readCloser.Close()
+		}
+	}()
+
 	decoder := json.NewDecoder(readCloser)
 	stats := new(Stats)
 	for err := decoder.Decode(&stats); err != io.EOF; err = decoder.Decode(stats) {
@@ -734,12 +742,6 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 		}
 		opts.Stats <- stats
 		stats = new(Stats)
-		select {
-		case <-opts.Done:
-			readCloser.Close()
-		default:
-			// Continue
-		}
 	}
 	return nil
 }
