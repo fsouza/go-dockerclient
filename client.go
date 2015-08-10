@@ -536,11 +536,25 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 			}
 		}
 	} else {
+		keepAlive := make(chan bool, 1)
+		go func() {
+			if streamOptions.timeout > 0 {
+				select {
+				case <-time.After(streamOptions.timeout):
+					resp.Body.Close()
+				case <-keepAlive:
+				}
+			}
+		}()
 		if streamOptions.setRawTerminal {
 			_, err = io.Copy(streamOptions.stdout, resp.Body)
 		} else {
 			_, err = stdcopy.StdCopy(streamOptions.stdout, streamOptions.stderr, resp.Body)
 		}
+		go func() {
+			keepAlive <- true
+			close(keepAlive)
+		}()
 		return err
 	}
 	return nil
