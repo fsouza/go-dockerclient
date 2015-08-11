@@ -726,11 +726,15 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 		close(errC)
 	}()
 
+	quit := make(chan struct{})
+	defer close(quit)
 	go func() {
 		// block here waiting for the signal to stop function
 		select {
 		case <-opts.Done:
 			readCloser.Close()
+		case <-quit:
+			return
 		}
 	}()
 
