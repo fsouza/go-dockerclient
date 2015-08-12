@@ -462,9 +462,13 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 	address := c.endpointURL.Path
 	if streamOptions.stdout == nil {
 		streamOptions.stdout = ioutil.Discard
+	} else if t, ok := streamOptions.stdout.(io.Closer); ok {
+		defer t.Close()
 	}
 	if streamOptions.stderr == nil {
 		streamOptions.stderr = ioutil.Discard
+	} else if t, ok := streamOptions.stderr.(io.Closer); ok {
+		defer t.Close()
 	}
 	if protocol == "unix" {
 		dial, err := net.Dial(protocol, address)
