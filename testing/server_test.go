@@ -1690,7 +1690,7 @@ func addNetworks(server *DockerServer, n int) {
 			ID:   fmt.Sprintf("%x", rand.Int()%10000),
 			Type: "bridge",
 			Endpoints: []*docker.Endpoint{
-				&docker.Endpoint{
+				{
 					Name:    "blah",
 					ID:      fmt.Sprintf("%x", rand.Int()%10000),
 					Network: netid,

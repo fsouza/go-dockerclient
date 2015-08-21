@@ -222,10 +222,10 @@ type Config struct {
 // It has been added in the version 1.20 of the Docker API, available since
 // Docker 1.8.
 type Mount struct {
-	Source string
+	Source      string
 	Destination string
-	Mode string
-	RW bool
+	Mode        string
+	RW          bool
 }
 
 // LogConfig defines the log driver type and the configuration for it.
