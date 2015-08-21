@@ -213,7 +213,19 @@ type Config struct {
 	NetworkDisabled bool                `json:"NetworkDisabled,omitempty" yaml:"NetworkDisabled,omitempty"`
 	SecurityOpts    []string            `json:"SecurityOpts,omitempty" yaml:"SecurityOpts,omitempty"`
 	OnBuild         []string            `json:"OnBuild,omitempty" yaml:"OnBuild,omitempty"`
+	Mounts          []Mount             `json:"Mounts,omitempty" yaml:"Mounts,omitempty"`
 	Labels          map[string]string   `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+}
+
+// Mount represents a mount point in the container.
+//
+// It has been added in the version 1.20 of the Docker API, available since
+// Docker 1.8.
+type Mount struct {
+	Source string
+	Destination string
+	Mode string
+	RW bool
 }
 
 // LogConfig defines the log driver type and the configuration for it.
