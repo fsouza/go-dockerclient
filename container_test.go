@@ -513,6 +513,9 @@ func TestCreateContainerWithHostConfig(t *testing.T) {
 func TestStartContainer(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
+	if err := client.StartContainer("", &HostConfig{}); err == nil {
+		t.Fatal("expected error on start container with empty id")
+	}
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.StartContainer(id, &HostConfig{})
 	if err != nil {

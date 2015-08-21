@@ -482,6 +482,9 @@ type HostConfig struct {
 //
 // See http://goo.gl/iM5GYs for more details.
 func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
+	if id == "" {
+		return &NoSuchContainer{ID: id, Err: fmt.Errorf("empty container id")}
+	}
 	path := "/containers/" + id + "/start"
 	_, status, err := c.do("POST", path, doOptions{data: hostConfig, forceJSON: true})
 	if status == http.StatusNotFound {
