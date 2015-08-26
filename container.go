@@ -446,36 +446,41 @@ type Device struct {
 // HostConfig contains the container options related to starting a container on
 // a given host
 type HostConfig struct {
-	Binds           []string               `json:"Binds,omitempty" yaml:"Binds,omitempty"`
-	CapAdd          []string               `json:"CapAdd,omitempty" yaml:"CapAdd,omitempty"`
-	CapDrop         []string               `json:"CapDrop,omitempty" yaml:"CapDrop,omitempty"`
-	ContainerIDFile string                 `json:"ContainerIDFile,omitempty" yaml:"ContainerIDFile,omitempty"`
-	LxcConf         []KeyValuePair         `json:"LxcConf,omitempty" yaml:"LxcConf,omitempty"`
-	Privileged      bool                   `json:"Privileged,omitempty" yaml:"Privileged,omitempty"`
-	PortBindings    map[Port][]PortBinding `json:"PortBindings,omitempty" yaml:"PortBindings,omitempty"`
-	Links           []string               `json:"Links,omitempty" yaml:"Links,omitempty"`
-	PublishAllPorts bool                   `json:"PublishAllPorts,omitempty" yaml:"PublishAllPorts,omitempty"`
-	DNS             []string               `json:"Dns,omitempty" yaml:"Dns,omitempty"` // For Docker API v1.10 and above only
-	DNSSearch       []string               `json:"DnsSearch,omitempty" yaml:"DnsSearch,omitempty"`
-	ExtraHosts      []string               `json:"ExtraHosts,omitempty" yaml:"ExtraHosts,omitempty"`
-	VolumesFrom     []string               `json:"VolumesFrom,omitempty" yaml:"VolumesFrom,omitempty"`
-	NetworkMode     string                 `json:"NetworkMode,omitempty" yaml:"NetworkMode,omitempty"`
-	IpcMode         string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty"`
-	PidMode         string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
-	UTSMode         string                 `json:"UTSMode,omitempty" yaml:"UTSMode,omitempty"`
-	RestartPolicy   RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
-	Devices         []Device               `json:"Devices,omitempty" yaml:"Devices,omitempty"`
-	LogConfig       LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty"`
-	ReadonlyRootfs  bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
-	SecurityOpt     []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty"`
-	CgroupParent    string                 `json:"CgroupParent,omitempty" yaml:"CgroupParent,omitempty"`
-	Memory          int64                  `json:"Memory,omitempty" yaml:"Memory,omitempty"`
-	MemorySwap      int64                  `json:"MemorySwap,omitempty" yaml:"MemorySwap,omitempty"`
-	CPUShares       int64                  `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
-	CPUSet          string                 `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
-	CPUQuota        int64                  `json:"CpuQuota,omitempty" yaml:"CpuQuota,omitempty"`
-	CPUPeriod       int64                  `json:"CpuPeriod,omitempty" yaml:"CpuPeriod,omitempty"`
-	Ulimits         []ULimit               `json:"Ulimits,omitempty" yaml:"Ulimits,omitempty"`
+	Binds            []string               `json:"Binds,omitempty" yaml:"Binds,omitempty"`
+	CapAdd           []string               `json:"CapAdd,omitempty" yaml:"CapAdd,omitempty"`
+	CapDrop          []string               `json:"CapDrop,omitempty" yaml:"CapDrop,omitempty"`
+	ContainerIDFile  string                 `json:"ContainerIDFile,omitempty" yaml:"ContainerIDFile,omitempty"`
+	LxcConf          []KeyValuePair         `json:"LxcConf,omitempty" yaml:"LxcConf,omitempty"`
+	Privileged       bool                   `json:"Privileged,omitempty" yaml:"Privileged,omitempty"`
+	PortBindings     map[Port][]PortBinding `json:"PortBindings,omitempty" yaml:"PortBindings,omitempty"`
+	Links            []string               `json:"Links,omitempty" yaml:"Links,omitempty"`
+	PublishAllPorts  bool                   `json:"PublishAllPorts,omitempty" yaml:"PublishAllPorts,omitempty"`
+	DNS              []string               `json:"Dns,omitempty" yaml:"Dns,omitempty"` // For Docker API v1.10 and above only
+	DNSSearch        []string               `json:"DnsSearch,omitempty" yaml:"DnsSearch,omitempty"`
+	ExtraHosts       []string               `json:"ExtraHosts,omitempty" yaml:"ExtraHosts,omitempty"`
+	VolumesFrom      []string               `json:"VolumesFrom,omitempty" yaml:"VolumesFrom,omitempty"`
+	NetworkMode      string                 `json:"NetworkMode,omitempty" yaml:"NetworkMode,omitempty"`
+	IpcMode          string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty"`
+	PidMode          string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
+	UTSMode          string                 `json:"UTSMode,omitempty" yaml:"UTSMode,omitempty"`
+	RestartPolicy    RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
+	Devices          []Device               `json:"Devices,omitempty" yaml:"Devices,omitempty"`
+	LogConfig        LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty"`
+	ReadonlyRootfs   bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
+	SecurityOpt      []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty"`
+	CgroupParent     string                 `json:"CgroupParent,omitempty" yaml:"CgroupParent,omitempty"`
+	Memory           int64                  `json:"Memory,omitempty" yaml:"Memory,omitempty"`
+	MemorySwap       int64                  `json:"MemorySwap,omitempty" yaml:"MemorySwap,omitempty"`
+	MemorySwappiness int64                  `json:"MemorySwappiness,omitempty" yaml:"MemorySwappiness,omitempty"`
+	OOMKillDisable   bool                   `json:"OomKillDisable,omitempty" yaml:"OomKillDisable"`
+	CPUShares        int64                  `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
+	CPUSet           string                 `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
+	CPUSetCPUs       string                 `json:"CpusetCpus,omitempty" yaml:"CpusetCpus,omitempty"`
+	CPUSetMEMs       string                 `json:"CpusetMems,omitempty" yaml:"CpusetMems,omitempty"`
+	CPUQuota         int64                  `json:"CpuQuota,omitempty" yaml:"CpuQuota,omitempty"`
+	CPUPeriod        int64                  `json:"CpuPeriod,omitempty" yaml:"CpuPeriod,omitempty"`
+	BlkioWeight      int64                  `json:"BlkioWeight,omitempty" yaml:"BlkioWeight"`
+	Ulimits          []ULimit               `json:"Ulimits,omitempty" yaml:"Ulimits,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
