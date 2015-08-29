@@ -99,5 +99,5 @@ func (c *Client) RemoveVolume(name string) error {
 	if status == http.StatusConflict {
 		return ErrVolumeInUse
 	}
-	retur err
+	return err
 }
