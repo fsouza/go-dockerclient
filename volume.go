@@ -11,8 +11,11 @@ import (
 )
 
 var (
+	// ErrNoSuchVolume is the error returned when the volume does not exist.
 	ErrNoSuchVolume = errors.New("no such volume")
-	ErrVolumeInUse  = errors.New("volume in use and cannot be removed")
+
+	// ErrVolumeInUse is the error returned when the volume requested to be removed is still in use.
+	ErrVolumeInUse = errors.New("volume in use and cannot be removed")
 )
 
 // Volume represents a volume.
@@ -58,12 +61,18 @@ func (c *Client) ListVolumes(opts ListVolumesOptions) ([]Volume, error) {
 	return volumes, nil
 }
 
+// CreateVolumeOptions specify parameters to the CreateVolume function.
+//
+// See https://goo.gl/pBUbZ9 for more details.
 type CreateVolumeOptions struct {
 	Name       string
 	Driver     string
 	DriverOpts map[string]string
 }
 
+// CreateVolume creates a volume on the server.
+//
+// See https://goo.gl/pBUbZ9 for more details.
 func (c *Client) CreateVolume(opts CreateVolumeOptions) (*Volume, error) {
 	body, _, err := c.do("POST", "/volumes", doOptions{data: opts})
 	if err != nil {
@@ -76,6 +85,9 @@ func (c *Client) CreateVolume(opts CreateVolumeOptions) (*Volume, error) {
 	return &volume, nil
 }
 
+// InspectVolume returns a volume by its name.
+//
+// See https://goo.gl/0g9A6i for more details.
 func (c *Client) InspectVolume(name string) (*Volume, error) {
 	body, status, err := c.do("GET", "/volumes/"+name, doOptions{})
 	if status == http.StatusNotFound {
@@ -91,6 +103,9 @@ func (c *Client) InspectVolume(name string) (*Volume, error) {
 	return &volume, nil
 }
 
+// RemoveVolume removes a volume by its name.
+//
+// See https://goo.gl/79GNQz for more details.
 func (c *Client) RemoveVolume(name string) error {
 	_, status, err := c.do("DELETE", "/volumes/"+name, doOptions{})
 	if status == http.StatusNotFound {
