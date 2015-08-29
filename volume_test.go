@@ -25,7 +25,7 @@ func TestListVolumes(t *testing.T) {
 	}
 ]`
 	body := `{ "Volumes": ` + volumesData + ` }`
-	var expected []APIVolumes
+	var expected []Volume
 	err := json.Unmarshal([]byte(volumesData), &expected)
 	if err != nil {
 		t.Fatal(err)
