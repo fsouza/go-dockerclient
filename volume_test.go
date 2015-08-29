@@ -24,7 +24,7 @@ func TestListVolumes(t *testing.T) {
 		"Mountpoint": "/var/lib/docker/volumes/bar"
 	}
 ]`
-	body := `{ "Volumes":` + volumesData + ` }`
+	body := `{ "Volumes": ` + volumesData + ` }`
 	var expected []APIVolumes
 	err := json.Unmarshal([]byte(volumesData), &expected)
 	if err != nil {

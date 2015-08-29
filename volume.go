@@ -22,6 +22,9 @@ type ListVolumesOptions struct {
 	Filters map[string][]string
 }
 
+// ListVolumes returns a list of available volumes in the server.
+//
+// See https://goo.gl/FZA4BK for more details.
 func (c *Client) ListVolumes(opts ListVolumesOptions) ([]APIVolumes, error) {
 	body, _, err := c.do("GET", "/volumes?"+queryString(opts), doOptions{})
 	if err != nil {
