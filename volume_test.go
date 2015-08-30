@@ -27,17 +27,54 @@ func TestListVolumes(t *testing.T) {
 ]`
 	body := `{ "Volumes": ` + volumesData + ` }`
 	var expected []Volume
-	err := json.Unmarshal([]byte(volumesData), &expected)
-	if err != nil {
+	if err := json.Unmarshal([]byte(volumesData), &expected); err != nil {
 		t.Fatal(err)
 	}
 	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
-	images, err := client.ListVolumes(ListVolumesOptions{})
+	volumes, err := client.ListVolumes(ListVolumesOptions{})
 	if err != nil {
 		t.Error(err)
 	}
-	if !reflect.DeepEqual(images, expected) {
-		t.Errorf("ListVolumes: Wrong return value. Want %#v. Got %#v.", expected, images)
+	if !reflect.DeepEqual(volumes, expected) {
+		t.Errorf("ListVolumes: Wrong return value. Want %#v. Got %#v.", expected, volumes)
+	}
+}
+
+func TestCreateVolume(t *testing.T) {
+	body := `{
+		"Name": "tardis",
+		"Driver": "local",
+		"Mountpoint": "/var/lib/docker/volumes/tardis"
+	}`
+	var expected Volume
+	if err := json.Unmarshal([]byte(body), &expected); err != nil {
+		t.Fatal(err)
+	}
+	fakeRT := &FakeRoundTripper{message: body, status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	volume, err := client.CreateVolume(
+		CreateVolumeOptions{
+			Name:   "tardis",
+			Driver: "local",
+			DriverOpts: map[string]string{
+				"foo": "bar",
+			},
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(volume, &expected) {
+		t.Errorf("CreateVolume: Wrong return value. Want %#v. Got %#v.", expected, volume)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "POST"
+	if req.Method != expectedMethod {
+		t.Errorf("CreateVolume(): Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/volumes"))
+	if req.URL.Path != u.Path {
+		t.Errorf("CreateVolume(): Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
 	}
 }
 
