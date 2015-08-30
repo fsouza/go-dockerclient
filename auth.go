@@ -16,7 +16,8 @@ import (
 	"strings"
 )
 
-var AuthParseError error = errors.New("Failed to read authentication from dockercfg")
+// ErrCannotParseDockercfg is the error returned by NewAuthConfigurations when the dockercfg cannot be parsed.
+var ErrCannotParseDockercfg = errors.New("Failed to read authentication from dockercfg")
 
 // AuthConfiguration represents authentication options to use in the PushImage
 // method. It represents the authentication in the Docker index server.
@@ -103,7 +104,7 @@ func authConfigs(confs map[string]dockerConfig) (*AuthConfigurations, error) {
 		}
 		userpass := strings.Split(string(data), ":")
 		if len(userpass) != 2 {
-			return nil, AuthParseError
+			return nil, ErrCannotParseDockercfg
 		}
 		c.Configs[reg] = AuthConfiguration{
 			Email:         conf.Email,
