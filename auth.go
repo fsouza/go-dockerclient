@@ -118,7 +118,7 @@ func authConfigs(confs map[string]dockerConfig) (*AuthConfigurations, error) {
 
 // AuthCheck validates the given credentials. It returns nil if successful.
 //
-// See https://goo.gl/vPoEfJ for more details.
+// See https://goo.gl/m2SleN for more details.
 func (c *Client) AuthCheck(conf *AuthConfiguration) error {
 	if conf == nil {
 		return fmt.Errorf("conf is nil")

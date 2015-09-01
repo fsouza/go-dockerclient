@@ -4,7 +4,7 @@
 
 // Package docker provides a client for the Docker remote API.
 //
-// See http://goo.gl/G3plxW for more details on the remote API.
+// See https://goo.gl/G3plxW for more details on the remote API.
 package docker
 
 import (
@@ -326,7 +326,7 @@ func (c *Client) checkAPIVersion() error {
 
 // Ping pings the docker server
 //
-// See http://goo.gl/stJENm for more details.
+// See https://goo.gl/kQCfJj for more details.
 func (c *Client) Ping() error {
 	path := "/_ping"
 	body, status, err := c.do("GET", path, doOptions{})
