@@ -419,7 +419,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	if opts.OutputStream == nil {
 		return ErrMissingOutputStream
 	}
-	headers, err := headersWithAuth(opts.Auth, opts.AuthConfigs)
+	headers, err := headersWithAuth(opts.Auth, c.versionedAuthConfigs(opts.AuthConfigs))
 	if err != nil {
 		return err
 	}
@@ -449,6 +449,16 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		in:             opts.InputStream,
 		stdout:         opts.OutputStream,
 	})
+}
+
+func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) interface{} {
+	if c.serverAPIVersion == nil {
+		c.checkAPIVersion()
+	}
+	if c.serverAPIVersion != nil && c.serverAPIVersion.GreaterThanOrEqualTo(apiVersion119) {
+		return AuthConfigurations119(authConfigs.Configs)
+	}
+	return authConfigs
 }
 
 // TagImageOptions present the set of options to tag an image.
@@ -496,7 +506,7 @@ func headersWithAuth(auths ...interface{}) (map[string]string, error) {
 				return nil, err
 			}
 			headers["X-Registry-Auth"] = base64.URLEncoding.EncodeToString(buf.Bytes())
-		case AuthConfigurations:
+		case AuthConfigurations, AuthConfigurations119:
 			var buf bytes.Buffer
 			if err := json.NewEncoder(&buf).Encode(auth); err != nil {
 				return nil, err
