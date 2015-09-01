@@ -1426,6 +1426,30 @@ func TestExportContainerNoId(t *testing.T) {
 	}
 }
 
+func TestPutContainerArchive(t *testing.T) {
+	content := "File content"
+	in := stdinMock{bytes.NewBufferString(content)}
+	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	opts := PutContainerArchiveOptions{
+		Container:   "a123456",
+		Path:        "abc",
+		InputStream: in,
+	}
+	err := client.PutContainerArchive(opts)
+	if err != nil {
+		t.Errorf("PutContainerArchive: caugh error %#v while copying from container, expected nil", err.Error())
+	}
+}
+
+func TestPutContainerArchiveEmptyContainer(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	err := client.PutContainerArchive(PutContainerArchiveOptions{})
+	_, ok := err.(*NoSuchContainer)
+	if !ok {
+		t.Errorf("PutContainerArchive: invalid error returned. Want NoSuchContainer, got %#v.", err)
+	}
+}
+
 func TestCopyFromContainer(t *testing.T) {
 	content := "File content"
 	out := stdoutMock{bytes.NewBufferString(content)}

@@ -838,11 +838,11 @@ func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 	return nil
 }
 
-// PutContainerArchiveOpts is the set of options that can be used when
-// putting archive into a container.
+// PutContainerArchiveOptions is the set of options that can be used when
+// uploading an archive into a container.
 //
 // See https://goo.gl/Ss97HW for more details.
-type PutContainerArchiveOpts struct {
+type PutContainerArchiveOptions struct {
 	InputStream          io.Reader `json:"-" qs:"-"`
 	Container            string    `json:"-" qs:"-"`
 	Path                 string    `qs:"path"`
@@ -852,7 +852,7 @@ type PutContainerArchiveOpts struct {
 // PutContainerArchive uploads a tar archive to be extracted to a path in the
 // filesystem of the container.
 //
-func (c *Client) PutContainerArchive(opts PutContainerArchiveOpts) error {
+func (c *Client) PutContainerArchive(opts PutContainerArchiveOptions) error {
 	if opts.Container == "" {
 		return &NoSuchContainer{ID: opts.Container}
 	}
