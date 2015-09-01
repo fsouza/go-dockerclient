@@ -844,7 +844,6 @@ func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 // See https://goo.gl/Ss97HW for more details.
 type PutContainerArchiveOptions struct {
 	InputStream          io.Reader `json:"-" qs:"-"`
-	Container            string    `json:"-" qs:"-"`
 	Path                 string    `qs:"path"`
 	NoOverwriteDirNonDir bool      `qs:"noOverwriteDirNonDir"`
 }
@@ -852,12 +851,8 @@ type PutContainerArchiveOptions struct {
 // PutContainerArchive uploads a tar archive to be extracted to a path in the
 // filesystem of the container.
 //
-func (c *Client) PutContainerArchive(opts PutContainerArchiveOptions) error {
-	if opts.Container == "" {
-		return &NoSuchContainer{ID: opts.Container}
-	}
-	url := fmt.Sprintf("/containers/%s/archive", opts.Container)
-	url = url + "?" + queryString(opts)
+func (c *Client) PutContainerArchive(id string, opts PutContainerArchiveOptions) error {
+	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
 
 	return c.stream("PUT", url, streamOptions{
 		in: opts.InputStream,
