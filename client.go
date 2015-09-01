@@ -292,7 +292,8 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 		tlsConfig.RootCAs = caPool
 	}
 	tr := &http.Transport{
-		TLSClientConfig: tlsConfig,
+		TLSClientConfig:   tlsConfig,
+		DisableKeepAlives: true,
 	}
 	if err != nil {
 		return nil, err
