@@ -838,6 +838,32 @@ func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 	return nil
 }
 
+// PutContainerArchiveOpts is the set of options that can be used when
+// putting archive into a container.
+//
+// See https://goo.gl/Ss97HW for more details.
+type PutContainerArchiveOpts struct {
+	InputStream          io.Reader `json:"-" qs:"-"`
+	Container            string    `json:"-" qs:"-"`
+	Path                 string    `qs:"path"`
+	NoOverwriteDirNonDir bool      `qs:"noOverwriteDirNonDir"`
+}
+
+// PutContainerArchive uploads a tar archive to be extracted to a path in the
+// filesystem of the container.
+//
+func (c *Client) PutContainerArchive(opts PutContainerArchiveOpts) error {
+	if opts.Container == "" {
+		return &NoSuchContainer{ID: opts.Container}
+	}
+	url := fmt.Sprintf("/containers/%s/archive", opts.Container)
+	url = url + "?" + queryString(opts)
+
+	return c.stream("PUT", url, streamOptions{
+		in: opts.InputStream,
+	})
+}
+
 // CopyFromContainerOptions is the set of options that can be used when copying
 // files or folders from a container.
 //
