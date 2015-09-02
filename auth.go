@@ -34,6 +34,10 @@ type AuthConfigurations struct {
 	Configs map[string]AuthConfiguration `json:"configs"`
 }
 
+// AuthConfigurations119 is used to serialize a set of AuthConfigurations
+// for Docker API >= 1.19.
+type AuthConfigurations119 map[string]AuthConfiguration
+
 // dockerConfig represents a registry authentation configuration from the
 // .dockercfg file.
 type dockerConfig struct {
