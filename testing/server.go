@@ -615,7 +615,7 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("stdin") == "1" {
 		wg.Add(1)
 		go func() {
-			ioutil.ReadAll(r.Body)
+			ioutil.ReadAll(conn)
 			wg.Done()
 		}()
 	}
