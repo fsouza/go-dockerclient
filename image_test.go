@@ -20,9 +20,14 @@ import (
 
 func newTestClient(rt *FakeRoundTripper) Client {
 	endpoint := "http://localhost:4243"
-	client, _ := NewClient(endpoint)
-	client.HTTPClient = &http.Client{Transport: rt}
-	return *client
+	u, _ := parseEndpoint("http://localhost:4243", false)
+	client := Client{
+		HTTPClient:             &http.Client{Transport: rt},
+		endpoint:               endpoint,
+		endpointURL:            u,
+		SkipServerVersionCheck: true,
+	}
+	return client
 }
 
 type stdoutMock struct {
