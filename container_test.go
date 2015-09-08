@@ -1439,7 +1439,7 @@ func TestPutContainerArchive(t *testing.T) {
 	err := client.PutContainerArchive("a123456", opts)
 
 	if err != nil {
-		t.Errorf("PutContainerArchive: caugh error %#v while copying from container, expected nil", err.Error())
+		t.Errorf("PutContainerArchive: caugh error %#v while copying to container, expected nil", err)
 	}
 
 	req := fakeRT.requests[0]
