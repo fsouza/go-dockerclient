@@ -272,13 +272,14 @@ type Container struct {
 
 	NetworkSettings *NetworkSettings `json:"NetworkSettings,omitempty" yaml:"NetworkSettings,omitempty"`
 
-	SysInitPath    string `json:"SysInitPath,omitempty" yaml:"SysInitPath,omitempty"`
-	ResolvConfPath string `json:"ResolvConfPath,omitempty" yaml:"ResolvConfPath,omitempty"`
-	HostnamePath   string `json:"HostnamePath,omitempty" yaml:"HostnamePath,omitempty"`
-	HostsPath      string `json:"HostsPath,omitempty" yaml:"HostsPath,omitempty"`
-	LogPath        string `json:"LogPath,omitempty" yaml:"LogPath,omitempty"`
-	Name           string `json:"Name,omitempty" yaml:"Name,omitempty"`
-	Driver         string `json:"Driver,omitempty" yaml:"Driver,omitempty"`
+	SysInitPath    string  `json:"SysInitPath,omitempty" yaml:"SysInitPath,omitempty"`
+	ResolvConfPath string  `json:"ResolvConfPath,omitempty" yaml:"ResolvConfPath,omitempty"`
+	HostnamePath   string  `json:"HostnamePath,omitempty" yaml:"HostnamePath,omitempty"`
+	HostsPath      string  `json:"HostsPath,omitempty" yaml:"HostsPath,omitempty"`
+	LogPath        string  `json:"LogPath,omitempty" yaml:"LogPath,omitempty"`
+	Name           string  `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Driver         string  `json:"Driver,omitempty" yaml:"Driver,omitempty"`
+	Mounts         []Mount `json:"Mounts,omitempty" yaml:"Mounts,omitempty"`
 
 	Volumes    map[string]string `json:"Volumes,omitempty" yaml:"Volumes,omitempty"`
 	VolumesRW  map[string]bool   `json:"VolumesRW,omitempty" yaml:"VolumesRW,omitempty"`
