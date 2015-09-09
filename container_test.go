@@ -1612,7 +1612,6 @@ func TestTopContainerWithPsArgs(t *testing.T) {
 }
 
 func TestStatsTimeout(t *testing.T) {
-
 	l, err := net.Listen("unix", "/tmp/docker_test.sock")
 	if err != nil {
 		t.Fatal(err)
@@ -1622,7 +1621,7 @@ func TestStatsTimeout(t *testing.T) {
 	go func() {
 		l.Accept()
 		received = true
-		time.Sleep(time.Millisecond * 250)
+		time.Sleep(time.Second)
 	}()
 	client, _ := NewClient("unix:///tmp/docker_test.sock")
 	client.SkipServerVersionCheck = true
