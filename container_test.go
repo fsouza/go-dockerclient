@@ -1437,9 +1437,8 @@ func TestPutContainerArchive(t *testing.T) {
 		InputStream: in,
 	}
 	err := client.PutContainerArchive("a123456", opts)
-
 	if err != nil {
-		t.Errorf("PutContainerArchive: caugh error %#v while copying to container, expected nil", err)
+		t.Errorf("PutContainerArchive: caught error %#v while uploading archive to container, expected nil", err)
 	}
 
 	req := fakeRT.requests[0]
@@ -1455,19 +1454,20 @@ func TestPutContainerArchive(t *testing.T) {
 }
 
 func TestCopyFromContainer(t *testing.T) {
-	content := "File content"
-	out := stdoutMock{bytes.NewBufferString(content)}
-	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	filecontent := "File content"
+	client := newTestClient(&FakeRoundTripper{message: filecontent, status: http.StatusOK})
+
+	var out bytes.Buffer
 	opts := CopyFromContainerOptions{
 		Container:    "a123456",
-		OutputStream: out,
+		OutputStream: &out,
 	}
 	err := client.CopyFromContainer(opts)
 	if err != nil {
-		t.Errorf("CopyFromContainer: caugh error %#v while copying from container, expected nil", err.Error())
+		t.Errorf("CopyFromContainer: caught error %#v while copying from container, expected nil", err.Error())
 	}
-	if out.String() != content {
-		t.Errorf("CopyFromContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
+	if out.String() != filecontent {
+		t.Errorf("CopyFromContainer: wrong stdout. Want %#v. Got %#v.", filecontent, out.String())
 	}
 }
 
