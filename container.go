@@ -874,20 +874,39 @@ func (c *Client) PutContainerArchive(id string, opts PutContainerArchiveOptions)
 	})
 }
 
-// CopyFromContainerOptions is the set of options that can be used when copying
-// files or folders from a container.
+// DownloadFromContainerOptions is the set of options that can be used when
+// downloading resources from a container.
 //
-// See https://goo.gl/4L7b07 for more details.
+// See https://goo.gl/KnZJDX for more details.
+type DownloadFromContainerOptions struct {
+	OutputStream io.Writer `json:"-" qs:"-"`
+	Path         string    `qs:"path"`
+}
+
+// DownloadFromContainer downloads a tar archive of files or folders in a container.
+//
+// See https://goo.gl/KnZJDX for more details.
+func (c *Client) DownloadFromContainer(id string, opts DownloadFromContainerOptions) error {
+	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
+
+	return c.stream("GET", url, streamOptions{
+		setRawTerminal: true,
+		stdout:         opts.OutputStream,
+	})
+}
+
+// CopyFromContainerOptions has been DEPRECATED, please use DownloadFromContainerOptions along with DownloadFromContainer.
+//
+// See https://goo.gl/R2jevW for more details.
 type CopyFromContainerOptions struct {
 	OutputStream io.Writer `json:"-"`
 	Container    string    `json:"-"`
 	Resource     string
 }
 
-// CopyFromContainer copy files or folders from a container, using a given
-// resource.
+// CopyFromContainer has been DEPRECATED, please use DownloadFromContainerOptions along with DownloadFromContainer.
 //
-// See https://goo.gl/4L7b07 for more details.
+// See https://goo.gl/R2jevW for more details.
 func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 	if opts.Container == "" {
 		return &NoSuchContainer{ID: opts.Container}

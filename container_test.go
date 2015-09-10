@@ -1453,11 +1453,27 @@ func TestPutContainerArchive(t *testing.T) {
 
 }
 
-func TestCopyFromContainer(t *testing.T) {
+func TestDownloadFromContainer(t *testing.T) {
 	filecontent := "File content"
 	client := newTestClient(&FakeRoundTripper{message: filecontent, status: http.StatusOK})
 
 	var out bytes.Buffer
+	opts := DownloadFromContainerOptions{
+		OutputStream: &out,
+	}
+	err := client.DownloadFromContainer("a123456", opts)
+	if err != nil {
+		t.Errorf("DownloadFromContainer: caught error %#v while downloading from container, expected nil", err.Error())
+	}
+	if out.String() != filecontent {
+		t.Errorf("DownloadFromContainer: wrong stdout. Want %#v. Got %#v.", filecontent, out.String())
+	}
+}
+
+func TestCopyFromContainer(t *testing.T) {
+	content := "File content"
+	out := stdoutMock{bytes.NewBufferString(content)}
+	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
 	opts := CopyFromContainerOptions{
 		Container:    "a123456",
 		OutputStream: &out,
@@ -1466,8 +1482,8 @@ func TestCopyFromContainer(t *testing.T) {
 	if err != nil {
 		t.Errorf("CopyFromContainer: caught error %#v while copying from container, expected nil", err.Error())
 	}
-	if out.String() != filecontent {
-		t.Errorf("CopyFromContainer: wrong stdout. Want %#v. Got %#v.", filecontent, out.String())
+	if out.String() != content {
+		t.Errorf("CopyFromContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
 	}
 }
 
