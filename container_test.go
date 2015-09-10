@@ -1427,24 +1427,24 @@ func TestExportContainerNoId(t *testing.T) {
 	}
 }
 
-func TestPutContainerArchive(t *testing.T) {
+func TestUploadToContainer(t *testing.T) {
 	content := "File content"
 	in := stdinMock{bytes.NewBufferString(content)}
 	fakeRT := &FakeRoundTripper{status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	opts := PutContainerArchiveOptions{
+	opts := UploadToContainerOptions{
 		Path:        "abc",
 		InputStream: in,
 	}
-	err := client.PutContainerArchive("a123456", opts)
+	err := client.UploadToContainer("a123456", opts)
 	if err != nil {
-		t.Errorf("PutContainerArchive: caught error %#v while uploading archive to container, expected nil", err)
+		t.Errorf("UploadToContainer: caught error %#v while uploading archive to container, expected nil", err)
 	}
 
 	req := fakeRT.requests[0]
 
 	if req.Method != "PUT" {
-		t.Errorf("PutContainerArchive{Path:abc}: Wrong HTTP method.  Want PUT. Got %s", req.Method)
+		t.Errorf("UploadToContainer{Path:abc}: Wrong HTTP method.  Want PUT. Got %s", req.Method)
 	}
 
 	if pathParam := req.URL.Query().Get("path"); pathParam != "abc" {

@@ -853,20 +853,21 @@ func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 	return nil
 }
 
-// PutContainerArchiveOptions is the set of options that can be used when
+// UploadToContainerOptions is the set of options that can be used when
 // uploading an archive into a container.
 //
 // See https://goo.gl/Ss97HW for more details.
-type PutContainerArchiveOptions struct {
+type UploadToContainerOptions struct {
 	InputStream          io.Reader `json:"-" qs:"-"`
 	Path                 string    `qs:"path"`
 	NoOverwriteDirNonDir bool      `qs:"noOverwriteDirNonDir"`
 }
 
-// PutContainerArchive uploads a tar archive to be extracted to a path in the
+// UploadToContainer uploads a tar archive to be extracted to a path in the
 // filesystem of the container.
 //
-func (c *Client) PutContainerArchive(id string, opts PutContainerArchiveOptions) error {
+// See https://goo.gl/Ss97HW for more details.
+func (c *Client) UploadToContainer(id string, opts UploadToContainerOptions) error {
 	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
 
 	return c.stream("PUT", url, streamOptions{
