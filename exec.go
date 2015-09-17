@@ -124,9 +124,9 @@ func (c *Client) ResizeExecTTY(id string, height, width int) error {
 	path := fmt.Sprintf("/exec/%s/resize?%s", id, params.Encode())
 	resp, err := c.do("POST", path, doOptions{})
 	if err != nil {
-		resp.Body.Close()
 		return err
 	}
+	resp.Body.Close()
 	return nil
 }
 

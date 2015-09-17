@@ -186,6 +186,27 @@ func TestGetURL(t *testing.T) {
 	}
 }
 
+func TestGetFakeUnixURL(t *testing.T) {
+	var tests = []struct {
+		endpoint string
+		path     string
+		expected string
+	}{
+		{"unix://var/run/docker.sock", "/", "http://unix.sock/"},
+		{"unix://var/run/docker.socket", "/", "http://unix.sock/"},
+		{"unix://var/run/docker.sock", "/containers/ps", "http://unix.sock/containers/ps"},
+	}
+	for _, tt := range tests {
+		client, _ := NewClient(tt.endpoint)
+		client.endpoint = tt.endpoint
+		client.SkipServerVersionCheck = true
+		got := client.getFakeUnixURL(tt.path)
+		if got != tt.expected {
+			t.Errorf("getURL(%q): Got %s. Want %s.", tt.path, got, tt.expected)
+		}
+	}
+}
+
 func TestError(t *testing.T) {
 	fakeBody := ioutil.NopCloser(bytes.NewBufferString("bad parameter"))
 	resp := &http.Response{
@@ -340,7 +361,7 @@ func TestPingErrorWithUnixSocket(t *testing.T) {
 		}
 		defer li.Close()
 		if err != nil {
-			t.Fatalf("Expected to get listner, but failed: %#v", err)
+			t.Fatalf("Expected to get listener, but failed: %#v", err)
 		}
 
 		fd, err := li.Accept()
@@ -351,7 +372,7 @@ func TestPingErrorWithUnixSocket(t *testing.T) {
 		buf := make([]byte, 512)
 		nr, err := fd.Read(buf)
 
-		// Create invalid response message to occur error
+		// Create invalid response message to trigger error.
 		data := buf[0:nr]
 		for i := 0; i < 10; i++ {
 			data[i] = 63

@@ -138,6 +138,7 @@ type Client struct {
 	requestedAPIVersion APIVersion
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
+	unixHTTPClient      *http.Client
 }
 
 // NewClient returns a Client instance ready for communication with the given
@@ -341,6 +342,7 @@ func (c *Client) Ping() error {
 	if resp.StatusCode != http.StatusOK {
 		return newError(resp)
 	}
+	resp.Body.Close()
 	return nil
 }
 
@@ -383,7 +385,18 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 			return nil, err
 		}
 	}
-	req, err := http.NewRequest(method, c.getURL(path), params)
+
+	httpClient := c.HTTPClient
+	protocol := c.endpointURL.Scheme
+	var u string
+	if protocol == "unix" {
+		httpClient = c.unixClient()
+		u = c.getFakeUnixURL(path)
+	} else {
+		u = c.getURL(path)
+	}
+
+	req, err := http.NewRequest(method, u, params)
 	if err != nil {
 		return nil, err
 	}
@@ -393,25 +406,8 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 	} else if method == "POST" {
 		req.Header.Set("Content-Type", "plain/text")
 	}
-	var resp *http.Response
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
-	if protocol == "unix" {
-		var dial net.Conn
-		dial, err = c.Dialer.Dial(protocol, address)
-		if err != nil {
-			return nil, err
-		}
-		defer dial.Close()
-		breader := bufio.NewReader(dial)
-		err = req.Write(dial)
-		if err != nil {
-			return nil, err
-		}
-		resp, err = http.ReadResponse(breader, req)
-	} else {
-		resp, err = c.HTTPClient.Do(req)
-	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return nil, ErrConnectionRefused
@@ -659,6 +655,41 @@ func (c *Client) getURL(path string) string {
 		return fmt.Sprintf("%s/v%s%s", urlStr, c.requestedAPIVersion, path)
 	}
 	return fmt.Sprintf("%s%s", urlStr, path)
+}
+
+// getFakeUnixURL returns the URL needed to make an HTTP request over a UNIX
+// domain socket to the given path.
+func (c *Client) getFakeUnixURL(path string) string {
+	u := *c.endpointURL // Copy.
+
+	// Override URL so that net/http will not complain.
+	u.Scheme = "http"
+	u.Host = "unix.sock" // Doesn't matter what this is - it's not used.
+	u.Path = ""
+
+	urlStr := strings.TrimRight(u.String(), "/")
+
+	if c.requestedAPIVersion != nil {
+		return fmt.Sprintf("%s/v%s%s", urlStr, c.requestedAPIVersion, path)
+	}
+	return fmt.Sprintf("%s%s", urlStr, path)
+}
+
+func (c *Client) unixClient() *http.Client {
+	if c.unixHTTPClient != nil {
+		return c.unixHTTPClient
+	}
+
+	socketPath := c.endpointURL.Path
+	c.unixHTTPClient = &http.Client{
+		Transport: &http.Transport{
+			Dial: func(network, addr string) (net.Conn, error) {
+				return c.Dialer.Dial("unix", socketPath)
+			},
+		},
+	}
+
+	return c.unixHTTPClient
 }
 
 type jsonMessage struct {
