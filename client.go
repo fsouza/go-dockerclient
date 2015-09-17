@@ -330,6 +330,13 @@ func (c *Client) checkAPIVersion() error {
 	return nil
 }
 
+// Endpoint returns the current endpoint. It's useful for getting the endpoint
+// when using functions that get this data from the environment (like
+// NewClientFromEnv.
+func (c *Client) Endpoint() string {
+	return c.endpoint
+}
+
 // Ping pings the docker server
 //
 // See https://goo.gl/kQCfJj for more details.

@@ -162,6 +162,16 @@ func TestNewTLSClient(t *testing.T) {
 	}
 }
 
+func TestEndpoint(t *testing.T) {
+	client, err := NewVersionedClient("http://localhost:4243", "1.12")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if endpoint := client.Endpoint(); endpoint != client.endpoint {
+		t.Errorf("Client.Endpoint(): want %q. Got %q", client.endpoint, endpoint)
+	}
+}
+
 func TestGetURL(t *testing.T) {
 	var tests = []struct {
 		endpoint string
