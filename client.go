@@ -375,6 +375,7 @@ func (c *Client) getServerAPIVersionString() (version string, err error) {
 type doOptions struct {
 	data      interface{}
 	forceJSON bool
+	headers   map[string]string
 }
 
 func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, error) {
@@ -412,6 +413,10 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 		req.Header.Set("Content-Type", "application/json")
 	} else if method == "POST" {
 		req.Header.Set("Content-Type", "plain/text")
+	}
+
+	for k, v := range doOptions.headers {
+		req.Header.Set(k, v)
 	}
 
 	resp, err := httpClient.Do(req)
