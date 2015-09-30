@@ -416,6 +416,7 @@ type BuildImageOptions struct {
 	Auth                AuthConfiguration  `qs:"-"` // for older docker X-Registry-Auth header
 	AuthConfigs         AuthConfigurations `qs:"-"` // for newer docker X-Registry-Config header
 	ContextDir          string             `qs:"-"`
+	Ulimits             []ULimit           `qs:"-"`
 }
 
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
@@ -449,7 +450,16 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		}
 	}
 
-	return c.stream("POST", fmt.Sprintf("/build?%s", queryString(&opts)), streamOptions{
+	qs := queryString(&opts)
+	if len(opts.Ulimits) > 0 {
+		if b, err := json.Marshal(opts.Ulimits); err == nil {
+			item := url.Values(map[string][]string{})
+			item.Add("ulimits", string(b))
+			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+		}
+	}
+
+	return c.stream("POST", fmt.Sprintf("/build?%s", qs), streamOptions{
 		setRawTerminal: true,
 		rawJSONStream:  opts.RawJSONStream,
 		headers:        headers,
