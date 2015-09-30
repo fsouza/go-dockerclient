@@ -682,6 +682,7 @@ func TestBuildImageParameters(t *testing.T) {
 		Memswap:             2048,
 		CPUShares:           10,
 		CPUSetCPUs:          "0-3",
+		Ulimits:             []ULimit{ULimit{Name: "nofile", Soft: 100, Hard: 200}},
 		InputStream:         &buf,
 		OutputStream:        &buf,
 	}
@@ -701,6 +702,7 @@ func TestBuildImageParameters(t *testing.T) {
 		"memswap":    {"2048"},
 		"cpushares":  {"10"},
 		"cpusetcpus": {"0-3"},
+		"ulimits":    {"[{\"Name\":\"nofile\",\"Soft\":100,\"Hard\":200}]"},
 	}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
