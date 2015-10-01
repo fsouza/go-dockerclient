@@ -540,8 +540,14 @@ type APIImageSearch struct {
 // SearchImages search the docker hub with a specific given term.
 //
 // See https://goo.gl/AYjyrF for more details.
-func (c *Client) SearchImages(term string) ([]APIImageSearch, error) {
-	resp, err := c.do("GET", "/images/search?term="+term, doOptions{})
+func (c *Client) SearchImages(term string, auth AuthConfiguration) ([]APIImageSearch, error) {
+	headers, err := headersWithAuth(auth)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.do("GET", "/images/search?term="+term, doOptions{
+		headers: headers,
+	})
 	defer resp.Body.Close()
 	if err != nil {
 		return nil, err

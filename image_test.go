@@ -961,7 +961,7 @@ func TestSearchImages(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
-	result, err := client.SearchImages("cassandra")
+	result, err := client.SearchImages("cassandra", AuthConfiguration{})
 	if err != nil {
 		t.Error(err)
 	}
