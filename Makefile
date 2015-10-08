@@ -7,6 +7,7 @@
 	fmtcheck \
 	pretest \
 	test \
+	integration \
 	cov \
 	clean
 
