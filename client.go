@@ -867,12 +867,12 @@ func getDockerEnv() (*dockerEnv, error) {
 
 func getDefaultDockerHost() (string, error) {
 	var defaultHost string
-	if runtime.GOOS != "windows" {
-		// If we do not have a host, default to unix socket
-		defaultHost = fmt.Sprintf("unix://%s", opts.DefaultUnixSocket)
-	} else {
+	if runtime.GOOS == "windows" {
 		// If we do not have a host, default to TCP socket on Windows
 		defaultHost = fmt.Sprintf("tcp://%s:%d", opts.DefaultHTTPHost, opts.DefaultHTTPPort)
+	} else {
+		// If we do not have a host, default to unix socket
+		defaultHost = fmt.Sprintf("unix://%s", opts.DefaultUnixSocket)
 	}
 	return opts.ValidateHost(defaultHost)
 }
