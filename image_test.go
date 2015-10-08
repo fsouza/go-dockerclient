@@ -682,7 +682,7 @@ func TestBuildImageParameters(t *testing.T) {
 		Memswap:             2048,
 		CPUShares:           10,
 		CPUSetCPUs:          "0-3",
-		Ulimits:             []ULimit{ULimit{Name: "nofile", Soft: 100, Hard: 200}},
+		Ulimits:             []ULimit{{Name: "nofile", Soft: 100, Hard: 200}},
 		InputStream:         &buf,
 		OutputStream:        &buf,
 	}
