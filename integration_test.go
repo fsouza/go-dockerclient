@@ -81,8 +81,8 @@ func pullImage(t *testing.T) string {
 	}
 	client := getClient()
 	err := client.PullImage(pullOpts, AuthConfiguration{})
-	t.Logf("Pull output: %s", buf.String())
 	if err != nil {
+		t.Logf("Pull output: %s", buf.String())
 		t.Fatal(err)
 	}
 	return imageName
