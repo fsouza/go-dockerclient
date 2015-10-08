@@ -837,7 +837,7 @@ func getDockerEnv() (*dockerEnv, error) {
 	dockerHost := os.Getenv("DOCKER_HOST")
 	var err error
 	if dockerHost == "" {
-		dockerHost, err = getDefaultDockerHost()
+		dockerHost, err = GetDefaultDockerHost()
 		if err != nil {
 			return nil, err
 		}
@@ -865,7 +865,7 @@ func getDockerEnv() (*dockerEnv, error) {
 	}, nil
 }
 
-func getDefaultDockerHost() (string, error) {
+func GetDefaultDockerHost() (string, error) {
 	var defaultHost string
 	if runtime.GOOS == "windows" {
 		// If we do not have a host, default to TCP socket on Windows
