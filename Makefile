@@ -38,6 +38,10 @@ pretest: lint vet fmtcheck
 test: pretest
 	$(foreach pkg,$(PKGS),go test $(pkg) || exit;)
 
+integration:
+	go test -c -tags 'docker_integration' -o docker.test
+	./docker.test -test.run "TestIntegration" -test.v
+
 cov:
 	@ go get -v github.com/axw/gocov/gocov
 	@ go get golang.org/x/tools/cmd/cover
