@@ -39,8 +39,7 @@ test: pretest
 	$(foreach pkg,$(PKGS),go test $(pkg) || exit;)
 
 integration:
-	go test -c -tags 'docker_integration' -o docker.test
-	./docker.test -test.run "TestIntegration" -test.v
+	go test -tags docker_integration -run TestIntegration -v
 
 cov:
 	@ go get -v github.com/axw/gocov/gocov
