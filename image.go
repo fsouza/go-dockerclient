@@ -486,6 +486,11 @@ func (c *Client) TagImage(name string, opts TagImageOptions) error {
 	}
 	resp, err := c.do("POST", fmt.Sprintf("/images/"+name+"/tag?%s",
 		queryString(&opts)), doOptions{})
+
+	if err != nil {
+		return err
+	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
