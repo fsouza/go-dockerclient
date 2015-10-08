@@ -865,6 +865,7 @@ func getDockerEnv() (*dockerEnv, error) {
 	}, nil
 }
 
+// GetDefaultDockerHost returns the default docker socket for the current OS
 func GetDefaultDockerHost() (string, error) {
 	var defaultHost string
 	if runtime.GOOS == "windows" {
