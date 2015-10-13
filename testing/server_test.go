@@ -1467,6 +1467,7 @@ func TestCreateExecContainer(t *testing.T) {
 	if got.ID != serverExec.ID {
 		t.Errorf("CreateExec: wrong value. Want %#v. Got %#v.", serverExec.ID, got.ID)
 	}
+
 	expected := docker.ExecInspect{
 		ID: got.ID,
 		ProcessConfig: docker.ExecProcessConfig{
@@ -1475,6 +1476,7 @@ func TestCreateExecContainer(t *testing.T) {
 		},
 		Container: *server.containers[0],
 	}
+
 	if !reflect.DeepEqual(*serverExec, expected) {
 		t.Errorf("InspectContainer: wrong value. Want:\n%#v\nGot:\n%#v\n", expected, *serverExec)
 	}
@@ -1521,6 +1523,8 @@ func TestInspectExecContainer(t *testing.T) {
 	got2.Container.Config = expected.Container.Config
 	got2.Container.Created = expected.Container.Created
 	got2.Container.NetworkSettings = expected.Container.NetworkSettings
+	got2.Container.ExecIDs = expected.Container.ExecIDs
+
 	if !reflect.DeepEqual(got2, expected) {
 		t.Errorf("InspectContainer: wrong value. Want:\n%#v\nGot:\n%#v\n", expected, got2)
 	}
