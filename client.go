@@ -622,6 +622,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 		defer func() {
 			if hijackOptions.in != nil {
 				if closer, ok := hijackOptions.in.(io.Closer); ok {
+					errChanIn <- nil
 					closer.Close()
 				}
 			}
