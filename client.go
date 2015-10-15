@@ -27,7 +27,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-
 	"time"
 
 	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/opts"
