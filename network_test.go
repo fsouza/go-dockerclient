@@ -94,3 +94,22 @@ func TestNetworkCreate(t *testing.T) {
 		t.Errorf("CreateNetwork: Expected %#v. Got %#v.", expected, network)
 	}
 }
+
+func TestNetworkRemove(t *testing.T) {
+        id := "8dfafdbc3a40"
+        fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+        client := newTestClient(fakeRT)
+        err := client.RemoveNetwork(id)
+        if err != nil {
+                t.Fatal(err)
+        }
+        req := fakeRT.requests[0]
+        expectedMethod := "DELETE"
+        if req.Method != expectedMethod {
+                t.Errorf("RemoveNetwork(%q): Wrong HTTP method. Want %s. Got %s.", id, expectedMethod, req.Method)
+        }
+        u, _ := url.Parse(client.getURL("/networks/" + id))
+        if req.URL.Path != u.Path {
+                t.Errorf("RemoveNetwork(%q): Wrong request path. Want %q. Got %q.", id, u.Path, req.URL.Path)
+        }
+}
