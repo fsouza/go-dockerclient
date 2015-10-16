@@ -83,7 +83,7 @@ type CreateNetworkOptions struct {
 // CreateNetwork creates a new network, returning the network instance,
 // or an error in case of failure.
 //
-// See http://goo.gl/mErxNp for more details.
+// See https://goo.gl/FDkCdQ for more details.
 func (c *Client) CreateNetwork(opts CreateNetworkOptions) (*Network, error) {
 	resp, err := c.do(
 		"POST",
