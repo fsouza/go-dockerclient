@@ -122,15 +122,15 @@ func (c *Client) CreateNetwork(opts CreateNetworkOptions) (*Network, error) {
 //
 // See https://goo.gl/FDkCdQ for more details.
 func (c *Client) RemoveNetwork(id string) error {
-        resp, err := c.do("DELETE", "/networks/"+id, doOptions{})
-        if err != nil {
-                if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
-                        return &NoSuchNetwork{ID: id}
-                }
-                return err
-        }
-        resp.Body.Close()
-        return nil
+	resp, err := c.do("DELETE", "/networks/"+id, doOptions{})
+	if err != nil {
+		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+			return &NoSuchNetwork{ID: id}
+		}
+		return err
+	}
+	resp.Body.Close()
+	return nil
 }
 
 // NoSuchNetwork is the error returned when a given network does not exist.
