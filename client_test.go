@@ -90,15 +90,12 @@ func TestNewVersionedClient(t *testing.T) {
 func TestNewVersionedClientFromEnv(t *testing.T) {
 	endpoint := "tcp://localhost:2376"
 	endpointURL := "http://localhost:2376"
-
 	os.Setenv("DOCKER_HOST", endpoint)
 	os.Setenv("DOCKER_TLS_VERIFY", "")
-
 	client, err := NewVersionedClientFromEnv("1.12")
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
@@ -116,17 +113,14 @@ func TestNewVersionedClientFromEnv(t *testing.T) {
 func TestNewVersionedClientFromEnvTLS(t *testing.T) {
 	endpoint := "tcp://localhost:2376"
 	endpointURL := "https://localhost:2376"
-
 	base, _ := os.Getwd()
 	os.Setenv("DOCKER_CERT_PATH", filepath.Join(base, "/testing/data/"))
 	os.Setenv("DOCKER_HOST", endpoint)
 	os.Setenv("DOCKER_TLS_VERIFY", "1")
-
 	client, err := NewVersionedClientFromEnv("1.12")
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
@@ -199,7 +193,6 @@ func TestNewTLSClient(t *testing.T) {
 		{"tcp://localhost:4000", "https"},
 		{"http://localhost:4000", "https"},
 	}
-
 	for _, tt := range tests {
 		client, err := newTLSClient(tt.endpoint)
 		if err != nil {
