@@ -250,17 +250,17 @@ func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
 	}
 	dockerHost := dockerEnv.dockerHost
 	if dockerEnv.dockerTLSVerify {
-		parts := strings.SplitN(dockerHost, "://", 2)
+		parts := strings.SplitN(dockerEnv.dockerHost, "://", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("could not split %s into two parts by ://", dockerHost)
 		}
-		dockerHost = fmt.Sprintf("https://%s", parts[1])
+
 		cert := filepath.Join(dockerEnv.dockerCertPath, "cert.pem")
 		key := filepath.Join(dockerEnv.dockerCertPath, "key.pem")
 		ca := filepath.Join(dockerEnv.dockerCertPath, "ca.pem")
-		return NewVersionedTLSClient(dockerHost, cert, key, ca, apiVersionString)
+		return NewVersionedTLSClient(dockerEnv.dockerHost, cert, key, ca, apiVersionString)
 	}
-	return NewVersionedClient(dockerHost, apiVersionString)
+	return NewVersionedClient(dockerEnv.dockerHost, apiVersionString)
 }
 
 // NewVersionedTLSClientFromBytes returns a Client instance ready for TLS communications with the givens
@@ -818,7 +818,7 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 		number, err := strconv.ParseInt(port, 10, 64)
 		if err == nil && number > 0 && number < 65536 {
 			if u.Scheme == "tcp" {
-				if number == 2376 {
+				if tls {
 					u.Scheme = "https"
 				} else {
 					u.Scheme = "http"
