@@ -191,7 +191,7 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 		}
 	}
 	return &Client{
-		HTTPClient:          http.DefaultClient,
+		HTTPClient:          &http.Client{},
 		Dialer:              &net.Dialer{},
 		endpoint:            endpoint,
 		endpointURL:         u,

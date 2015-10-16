@@ -27,9 +27,6 @@ func TestNewAPIClient(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
-	if client.HTTPClient != http.DefaultClient {
-		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.HTTPClient)
-	}
 	// test unix socket endpoints
 	endpoint = "unix:///var/run/docker.sock"
 	client, err = NewClient(endpoint)
@@ -79,9 +76,6 @@ func TestNewVersionedClient(t *testing.T) {
 	}
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
-	}
-	if client.HTTPClient != http.DefaultClient {
-		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.HTTPClient)
 	}
 	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.12" {
 		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.12", reqVersion)
@@ -402,7 +396,7 @@ func TestPingErrorWithUnixSocket(t *testing.T) {
 	endpoint := "unix:///tmp/echo.sock"
 	u, _ := parseEndpoint(endpoint, false)
 	client := Client{
-		HTTPClient:             http.DefaultClient,
+		HTTPClient:             &http.Client{},
 		Dialer:                 &net.Dialer{},
 		endpoint:               endpoint,
 		endpointURL:            u,
