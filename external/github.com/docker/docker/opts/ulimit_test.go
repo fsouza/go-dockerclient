@@ -3,7 +3,7 @@ package opts
 import (
 	"testing"
 
-	"github.com/docker/docker/pkg/ulimit"
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/ulimit"
 )
 
 func TestUlimitOpt(t *testing.T) {

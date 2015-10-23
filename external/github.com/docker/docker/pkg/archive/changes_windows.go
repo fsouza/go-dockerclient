@@ -3,7 +3,7 @@ package archive
 import (
 	"os"
 
-	"github.com/docker/docker/pkg/system"
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/system"
 )
 
 func statDifferent(oldStat *system.StatT, newStat *system.StatT) bool {

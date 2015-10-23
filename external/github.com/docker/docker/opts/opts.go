@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/docker/docker/pkg/parsers"
-	"github.com/docker/docker/volume"
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/parsers"
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/volume"
 )
 
 var (
