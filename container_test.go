@@ -22,6 +22,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/go-cleanhttp"
 )
 
 func TestStateString(t *testing.T) {
@@ -1371,7 +1373,7 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	endpoint := "unix://" + tempSocket
 	u, _ := parseEndpoint(endpoint, false)
 	client := Client{
-		HTTPClient:             &http.Client{},
+		HTTPClient:             cleanhttp.DefaultClient(),
 		Dialer:                 &net.Dialer{},
 		endpoint:               endpoint,
 		endpointURL:            u,

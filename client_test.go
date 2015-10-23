@@ -18,6 +18,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/go-cleanhttp"
 )
 
 func TestNewAPIClient(t *testing.T) {
@@ -445,7 +447,7 @@ func TestPingErrorWithUnixSocket(t *testing.T) {
 	endpoint := "unix:///tmp/echo.sock"
 	u, _ := parseEndpoint(endpoint, false)
 	client := Client{
-		HTTPClient:             &http.Client{},
+		HTTPClient:             cleanhttp.DefaultClient(),
 		Dialer:                 &net.Dialer{},
 		endpoint:               endpoint,
 		endpointURL:            u,
