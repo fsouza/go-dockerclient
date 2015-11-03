@@ -1090,6 +1090,52 @@ func TestAttachToContainerNilStderr(t *testing.T) {
 	}
 }
 
+func TestAttachToContainerStdinOnly(t *testing.T) {
+	var reader = strings.NewReader("send value")
+	serverFinished := make(chan struct{})
+	clientFinished := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			t.Fatal("cannot hijack server connection")
+		}
+		conn, _, err := hj.Hijack()
+		if err != nil {
+			t.Fatal(err)
+		}
+		// wait for client to indicate it's finished
+		<-clientFinished
+		// inform test that the server has finished
+		close(serverFinished)
+		conn.Close()
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL)
+	client.SkipServerVersionCheck = true
+	success := make(chan struct{})
+	opts := AttachToContainerOptions{
+		Container:   "a123456",
+		InputStream: reader,
+		Stdin:       true,
+		Stdout:      false,
+		Stderr:      false,
+		Stream:      true,
+		RawTerminal: false,
+		Success:     success,
+	}
+	go func() {
+		if err := client.AttachToContainer(opts); err != nil {
+			t.Error(err)
+		}
+		// client's attach session is over
+		close(clientFinished)
+	}()
+	success <- <-success
+	// wait for server to finish handling attach
+	<-serverFinished
+}
+
 func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 	input := strings.NewReader("send value")
 	var req http.Request
