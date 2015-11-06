@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"os"
 	"time"
-	"github.com/docker/docker/pkg/parsers/filters"
 )
 
 // APIImages represent an image returned in the ListImages call.
