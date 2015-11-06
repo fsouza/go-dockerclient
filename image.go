@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"time"
+	"github.com/docker/docker/pkg/parsers/filters"
 )
 
 // APIImages represent an image returned in the ListImages call.
@@ -89,6 +90,7 @@ type ListImagesOptions struct {
 	All     bool
 	Filters map[string][]string
 	Digests bool
+	Filter  string
 }
 
 // ListImages returns the list of available images in the server.
