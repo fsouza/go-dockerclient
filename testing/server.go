@@ -1085,7 +1085,7 @@ func (s *DockerServer) createNetwork(w http.ResponseWriter, r *http.Request) {
 	network := docker.Network{
 		Name: config.Name,
 		ID:   generatedID,
-		Type: config.NetworkType,
+		Type: config.Driver,
 	}
 	s.netMut.Lock()
 	s.networks = append(s.networks, &network)
