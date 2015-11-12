@@ -154,8 +154,8 @@ func (settings *NetworkSettings) PortMappingAPI() []APIPort {
 		p, _ := parsePort(port.Port())
 		if len(bindings) == 0 {
 			mapping = append(mapping, APIPort{
-				PublicPort: int64(p),
-				Type:       port.Proto(),
+				PrivatePort: int64(p),
+				Type:        port.Proto(),
 			})
 			continue
 		}
