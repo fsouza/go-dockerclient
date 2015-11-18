@@ -125,25 +125,38 @@ type PortBinding struct {
 // and its value as found in NetworkSettings should always be nil
 type PortMapping map[string]string
 
+// ContainerNetwork represents the networking settings of a container per network.
+type ContainerNetwork struct {
+	MacAddress          string `json:"MacAddress,omitempty" yaml:"MacAddress,omitempty"`
+	GlobalIPv6PrefixLen int    `json:"GlobalIPv6PrefixLen,omitempty" yaml:"GlobalIPv6PrefixLen,omitempty"`
+	GlobalIPv6Address   string `json:"GlobalIPv6Address,omitempty" yaml:"GlobalIPv6Address,omitempty"`
+	IPv6Gateway         string `json:"IPv6Gateway,omitempty" yaml:"IPv6Gateway,omitempty"`
+	IPPrefixLen         int    `json:"IPPrefixLen,omitempty" yaml:"IPPrefixLen,omitempty"`
+	IPAddress           string `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
+	Gateway             string `json:"Gateway,omitempty" yaml:"Gateway,omitempty"`
+	EndpointID          string `json:"EndpointID,omitempty" yaml:"EndpointID,omitempty"`
+}
+
 // NetworkSettings contains network-related information about a container
 type NetworkSettings struct {
-	IPAddress              string                 `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
-	IPPrefixLen            int                    `json:"IPPrefixLen,omitempty" yaml:"IPPrefixLen,omitempty"`
-	MacAddress             string                 `json:"MacAddress,omitempty" yaml:"MacAddress,omitempty"`
-	Gateway                string                 `json:"Gateway,omitempty" yaml:"Gateway,omitempty"`
-	Bridge                 string                 `json:"Bridge,omitempty" yaml:"Bridge,omitempty"`
-	PortMapping            map[string]PortMapping `json:"PortMapping,omitempty" yaml:"PortMapping,omitempty"`
-	Ports                  map[Port][]PortBinding `json:"Ports,omitempty" yaml:"Ports,omitempty"`
-	NetworkID              string                 `json:"NetworkID,omitempty" yaml:"NetworkID,omitempty"`
-	EndpointID             string                 `json:"EndpointID,omitempty" yaml:"EndpointID,omitempty"`
-	SandboxKey             string                 `json:"SandboxKey,omitempty" yaml:"SandboxKey,omitempty"`
-	GlobalIPv6Address      string                 `json:"GlobalIPv6Address,omitempty" yaml:"GlobalIPv6Address,omitempty"`
-	GlobalIPv6PrefixLen    int                    `json:"GlobalIPv6PrefixLen,omitempty" yaml:"GlobalIPv6PrefixLen,omitempty"`
-	IPv6Gateway            string                 `json:"IPv6Gateway,omitempty" yaml:"IPv6Gateway,omitempty"`
-	LinkLocalIPv6Address   string                 `json:"LinkLocalIPv6Address,omitempty" yaml:"LinkLocalIPv6Address,omitempty"`
-	LinkLocalIPv6PrefixLen int                    `json:"LinkLocalIPv6PrefixLen,omitempty" yaml:"LinkLocalIPv6PrefixLen,omitempty"`
-	SecondaryIPAddresses   []string               `json:"SecondaryIPAddresses,omitempty" yaml:"SecondaryIPAddresses,omitempty"`
-	SecondaryIPv6Addresses []string               `json:"SecondaryIPv6Addresses,omitempty" yaml:"SecondaryIPv6Addresses,omitempty"`
+	Networks               map[string]ContainerNetwork `json:"Networks,omitempty" yaml:"Networks,omitempty"`
+	IPAddress              string                      `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
+	IPPrefixLen            int                         `json:"IPPrefixLen,omitempty" yaml:"IPPrefixLen,omitempty"`
+	MacAddress             string                      `json:"MacAddress,omitempty" yaml:"MacAddress,omitempty"`
+	Gateway                string                      `json:"Gateway,omitempty" yaml:"Gateway,omitempty"`
+	Bridge                 string                      `json:"Bridge,omitempty" yaml:"Bridge,omitempty"`
+	PortMapping            map[string]PortMapping      `json:"PortMapping,omitempty" yaml:"PortMapping,omitempty"`
+	Ports                  map[Port][]PortBinding      `json:"Ports,omitempty" yaml:"Ports,omitempty"`
+	NetworkID              string                      `json:"NetworkID,omitempty" yaml:"NetworkID,omitempty"`
+	EndpointID             string                      `json:"EndpointID,omitempty" yaml:"EndpointID,omitempty"`
+	SandboxKey             string                      `json:"SandboxKey,omitempty" yaml:"SandboxKey,omitempty"`
+	GlobalIPv6Address      string                      `json:"GlobalIPv6Address,omitempty" yaml:"GlobalIPv6Address,omitempty"`
+	GlobalIPv6PrefixLen    int                         `json:"GlobalIPv6PrefixLen,omitempty" yaml:"GlobalIPv6PrefixLen,omitempty"`
+	IPv6Gateway            string                      `json:"IPv6Gateway,omitempty" yaml:"IPv6Gateway,omitempty"`
+	LinkLocalIPv6Address   string                      `json:"LinkLocalIPv6Address,omitempty" yaml:"LinkLocalIPv6Address,omitempty"`
+	LinkLocalIPv6PrefixLen int                         `json:"LinkLocalIPv6PrefixLen,omitempty" yaml:"LinkLocalIPv6PrefixLen,omitempty"`
+	SecondaryIPAddresses   []string                    `json:"SecondaryIPAddresses,omitempty" yaml:"SecondaryIPAddresses,omitempty"`
+	SecondaryIPv6Addresses []string                    `json:"SecondaryIPv6Addresses,omitempty" yaml:"SecondaryIPv6Addresses,omitempty"`
 }
 
 // PortMappingAPI translates the port mappings as contained in NetworkSettings
