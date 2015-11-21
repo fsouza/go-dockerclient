@@ -180,7 +180,7 @@ func TestNewClientInvalidEndpoint(t *testing.T) {
 			t.Errorf("Want <nil> client for invalid endpoint, got %#v.", client)
 		}
 		if !reflect.DeepEqual(err, ErrInvalidEndpoint) {
-			t.Errorf("NewClient(%q): Got invalid error for invalid endpoint %q. Want %#v. Got %#v.", c, ErrInvalidEndpoint, err)
+			t.Errorf("NewClient(%q): Got invalid error for invalid endpoint. Want %#v. Got %#v.", c, ErrInvalidEndpoint, err)
 		}
 	}
 }
