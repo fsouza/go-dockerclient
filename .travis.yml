@@ -8,6 +8,11 @@ go:
 env:
   - GOARCH=amd64
   - GOARCH=386
+  - DOCKER_VERSION=1.7.1
+  - DOCKER_VERSION=1.8.3
+  - DOCKER_VERSION=1.9.1
+install:
+  - make prepare_docker
 script:
   - make test
   - DOCKER_HOST=tcp://127.0.0.1:2375 make integration
