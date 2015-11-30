@@ -42,7 +42,6 @@ prepare_docker:
 	echo "deb https://apt.dockerproject.org/repo ubuntu-trusty main" | sudo tee /etc/apt/sources.list.d/docker.list
 	sudo apt-get update
 	sudo apt-get install docker-engine=$(DOCKER_VERSION)-0~$(shell lsb_release -cs) -y --force-yes
-	sudo start docker
 
 pretest: lint vet fmtcheck
 
