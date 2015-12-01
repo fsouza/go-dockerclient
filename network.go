@@ -40,7 +40,7 @@ type Endpoint struct {
 
 // ListNetworks returns all networks.
 //
-// See https://goo.gl/4hCNtZ for more details.
+// See https://goo.gl/1kmPKZ for more details.
 func (c *Client) ListNetworks() ([]Network, error) {
 	resp, err := c.do("GET", "/networks", doOptions{})
 	if err != nil {
@@ -56,7 +56,7 @@ func (c *Client) ListNetworks() ([]Network, error) {
 
 // NetworkInfo returns information about a network by its ID.
 //
-// See https://goo.gl/4hCNtZ for more details.
+// See https://goo.gl/1kmPKZ for more details.
 func (c *Client) NetworkInfo(id string) (*Network, error) {
 	path := "/networks/" + id
 	resp, err := c.do("GET", path, doOptions{})
@@ -87,7 +87,7 @@ type CreateNetworkOptions struct {
 // CreateNetwork creates a new network, returning the network instance,
 // or an error in case of failure.
 //
-// See https://goo.gl/FDkCdQ for more details.
+// See https://goo.gl/1kmPKZ for more details.
 func (c *Client) CreateNetwork(opts CreateNetworkOptions) (*Network, error) {
 	resp, err := c.do(
 		"POST",
@@ -124,7 +124,7 @@ func (c *Client) CreateNetwork(opts CreateNetworkOptions) (*Network, error) {
 
 // RemoveNetwork removes a network or an error in case of failure.
 //
-// See https://goo.gl/FDkCdQ for more details.
+// See https://goo.gl/1kmPKZ for more details.
 func (c *Client) RemoveNetwork(id string) error {
 	resp, err := c.do("DELETE", "/networks/"+id, doOptions{})
 	if err != nil {
