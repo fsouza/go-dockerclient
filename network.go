@@ -73,11 +73,31 @@ func (c *Client) NetworkInfo(id string) (*Network, error) {
 // CreateNetworkOptions specify parameters to the CreateNetwork function and
 // (for now) is the expected body of the "create network" http request message
 //
-// See https://goo.gl/FDkCdQ for more details.
+// See https://goo.gl/1kmPKZ for more details.
 type CreateNetworkOptions struct {
-	Name    string                 `json:"Name"`
-	Driver  string                 `json:"Driver"`
-	Options map[string]interface{} `json:"options"`
+	Name           string                 `json:"Name"`
+	CheckDuplicate bool                   `json:"CheckDuplicate"`
+	Driver         string                 `json:"Driver"`
+	IPAM           IPAMOptions            `json:"IPAM"`
+	Options        map[string]interface{} `json:"options"`
+}
+
+// IPAMOptions controls IP Address Management when creating a network
+//
+// See https://goo.gl/T8kRVH for more details.
+type IPAMOptions struct {
+	Driver string       `json:"Driver"`
+	Config []IPAMConfig `json:"IPAMConfig"`
+}
+
+// IPAMConfig represents IPAM configurations
+//
+// See https://goo.gl/T8kRVH for more details.
+type IPAMConfig struct {
+	Subnet     string            `json:",omitempty"`
+	IPRange    string            `json:",omitempty"`
+	Gateway    string            `json:",omitempty"`
+	AuxAddress map[string]string `json:"AuxiliaryAddresses,omitempty"`
 }
 
 // CreateNetwork creates a new network, returning the network instance,
