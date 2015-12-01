@@ -75,7 +75,7 @@ func TestNetworkCreate(t *testing.T) {
 	jsonNetwork := `{
              "ID": "8dfafdbc3a40",
              "Name": "foobar",
-             "Type": "bridge"
+             "Driver": "bridge"
         }`
 	var expected Network
 	err := json.Unmarshal([]byte(jsonNetwork), &expected)

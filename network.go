@@ -17,21 +17,25 @@ var ErrNetworkAlreadyExists = errors.New("network already exists")
 
 // Network represents a network.
 //
-// See https://goo.gl/FDkCdQ for more details.
+// See https://goo.gl/1kmPKZ for more details.
 type Network struct {
-	Name      string      `json:"name"`
-	ID        string      `json:"id"`
-	Type      string      `json:"type"`
-	Endpoints []*Endpoint `json:"endpoints"`
+	Name       string
+	ID         string `json:"Id"`
+	Scope      string
+	Driver     string
+	Containers map[string]Endpoint
+	Options    map[string]string
 }
 
-// Endpoint represents an endpoint.
+// Endpoint contains network resources allocated and used for a container in a network
 //
-// See https://goo.gl/FDkCdQ for more details.
+// See https://goo.gl/1kmPKZ for more details.
 type Endpoint struct {
-	Name    string `json:"name"`
-	ID      string `json:"id"`
-	Network string `json:"network"`
+	Name        string
+	ID          string `json:"EndpointID"`
+	MacAddress  string
+	IPv4Address string
+	IPv6Address string
 }
 
 // ListNetworks returns all networks.
@@ -113,7 +117,7 @@ func (c *Client) CreateNetwork(opts CreateNetworkOptions) (*Network, error) {
 
 	network.Name = opts.Name
 	network.ID = cnr.ID
-	network.Type = opts.Driver
+	network.Driver = opts.Driver
 
 	return &network, nil
 }
