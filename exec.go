@@ -101,7 +101,7 @@ func (c *Client) StartExec(id string, opts StartExecOptions) error {
 		return nil
 	}
 
-	return c.hijack("POST", path, hijackOptions{
+	cw, err := c.hijack("POST", path, hijackOptions{
 		success:        opts.Success,
 		setRawTerminal: opts.RawTerminal,
 		in:             opts.InputStream,
@@ -109,6 +109,10 @@ func (c *Client) StartExec(id string, opts StartExecOptions) error {
 		stderr:         opts.ErrorStream,
 		data:           opts,
 	})
+	if err != nil {
+		return err
+	}
+	return cw.Wait()
 }
 
 // ResizeExecTTY resizes the tty session used by the exec command id. This API
