@@ -586,6 +586,36 @@ func TestStartContainer(t *testing.T) {
 	}
 }
 
+func TestStartContainerChangeNetwork(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.buildMuxer()
+	hostConfig := docker.HostConfig{
+		PortBindings: map[docker.Port][]docker.PortBinding{
+			"8888/tcp": {{HostIP: "", HostPort: "12345"}},
+		},
+	}
+	configBytes, err := json.Marshal(hostConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, bytes.NewBuffer(configBytes))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if !server.containers[0].State.Running {
+		t.Error("StartContainer: did not set the container to running state")
+	}
+	portMapping := server.containers[0].NetworkSettings.Ports["8888/tcp"]
+	expected := []docker.PortBinding{{HostIP: "0.0.0.0", HostPort: "12345"}}
+	if !reflect.DeepEqual(portMapping, expected) {
+		t.Errorf("StartContainer: network not updated. Wants %#v ports. Got %#v", expected, portMapping)
+	}
+}
+
 func TestStartContainerWithNotifyChannel(t *testing.T) {
 	ch := make(chan *docker.Container, 1)
 	server := DockerServer{}
@@ -1153,6 +1183,11 @@ func addContainers(server *DockerServer, n int) {
 				Bridge:      "docker0",
 				PortMapping: map[string]docker.PortMapping{
 					"Tcp": {"8888": fmt.Sprintf("%d", 49600+i)},
+				},
+				Ports: map[docker.Port][]docker.PortBinding{
+					"8888/tcp": []docker.PortBinding{
+						{HostIP: "0.0.0.0", HostPort: fmt.Sprintf("%d", 49600+i)},
+					},
 				},
 			},
 			ResolvConfPath: "/etc/resolv.conf",

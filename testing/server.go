@@ -376,7 +376,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 	for port := range config.ExposedPorts {
 		ports[port] = []docker.PortBinding{{
 			HostIP:   "0.0.0.0",
-			HostPort: strconv.Itoa(mathrand.Int() % 65536),
+			HostPort: strconv.Itoa(mathrand.Int() % 0xffff),
 		}}
 	}
 
@@ -532,6 +532,27 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	container.HostConfig = &hostConfig
+	if len(hostConfig.PortBindings) > 0 {
+		ports := map[docker.Port][]docker.PortBinding{}
+		for key, items := range hostConfig.PortBindings {
+			bindings := make([]docker.PortBinding, len(items))
+			for i := range items {
+				binding := docker.PortBinding{
+					HostIP:   items[i].HostIP,
+					HostPort: items[i].HostPort,
+				}
+				if binding.HostIP == "" {
+					binding.HostIP = "0.0.0.0"
+				}
+				if binding.HostPort == "" {
+					binding.HostPort = strconv.Itoa(mathrand.Int() % 0xffff)
+				}
+				bindings[i] = binding
+			}
+			ports[key] = bindings
+		}
+		container.NetworkSettings.Ports = ports
+	}
 	if container.State.Running {
 		http.Error(w, "", http.StatusNotModified)
 		return
