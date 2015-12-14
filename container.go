@@ -238,8 +238,10 @@ type Config struct {
 // It has been added in the version 1.20 of the Docker API, available since
 // Docker 1.8.
 type Mount struct {
+	Name        string
 	Source      string
 	Destination string
+	Driver      string
 	Mode        string
 	RW          bool
 }
