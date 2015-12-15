@@ -1036,17 +1036,7 @@ type AttachToContainerOptions struct {
 //
 // See https://goo.gl/NKpkFk for more details.
 func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
-	if opts.Container == "" {
-		return &NoSuchContainer{ID: opts.Container}
-	}
-	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
-	cw, err := c.hijack("POST", path, hijackOptions{
-		success:        opts.Success,
-		setRawTerminal: opts.RawTerminal,
-		in:             opts.InputStream,
-		stdout:         opts.OutputStream,
-		stderr:         opts.ErrorStream,
-	})
+	cw, err := c.AttachToContainerNonBlocking(opts)
 	if err != nil {
 		return err
 	}
