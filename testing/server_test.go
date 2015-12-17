@@ -1887,12 +1887,7 @@ func TestListVolumes(t *testing.T) {
 		Name:       "test-vol-1",
 		Driver:     "local",
 		Mountpoint: "/var/lib/docker/volumes/test-vol-1",
-	},
-		docker.Volume{
-			Name:       "test-vol-2",
-			Driver:     "local",
-			Mountpoint: "/var/lib/docker/volumes/test-vol-2",
-		}}
+	}}
 	server.volStore = make(map[string]*volumeCounter)
 	for _, vol := range expected {
 		server.volStore[vol.Name] = &volumeCounter{
