@@ -1133,11 +1133,7 @@ func (s *DockerServer) listVolumes(w http.ResponseWriter, r *http.Request) {
 	s.volMut.RLock()
 	result := make([]docker.Volume, 0, len(s.volStore))
 	for _, volumeCounter := range s.volStore {
-		result = append(result, docker.Volume{
-			Name:       volumeCounter.volume.Name,
-			Driver:     volumeCounter.volume.Driver,
-			Mountpoint: volumeCounter.volume.Mountpoint,
-		})
+		result = append(result, volumeCounter.volume)
 	}
 	s.volMut.RUnlock()
 	w.Header().Set("Content-Type", "application/json")
@@ -1172,14 +1168,9 @@ func (s *DockerServer) createVolume(w http.ResponseWriter, r *http.Request) {
 
 	// If the volume already exists, don't re-add it.
 	exists := false
-	s.volMut.RLock()
+	s.volMut.Lock()
 	if s.volStore != nil {
-		for _, vol := range s.volStore {
-			if vol.volume.Name == volume.Name {
-				exists = true
-				break
-			}
-		}
+		_, exists = s.volStore[volume.Name]
 	} else {
 		// No volumes, create volStore
 		s.volStore = make(map[string]*volumeCounter)
@@ -1190,12 +1181,14 @@ func (s *DockerServer) createVolume(w http.ResponseWriter, r *http.Request) {
 			count:  0,
 		}
 	}
-	s.volMut.RUnlock()
+	s.volMut.Unlock()
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(volume)
 }
 
 func (s *DockerServer) inspectVolume(w http.ResponseWriter, r *http.Request) {
+	s.volMut.Lock()
+	defer s.volMut.Unlock()
 	name := mux.Vars(r)["name"]
 	vol, err := s.findVolume(name)
 	if err != nil {
@@ -1208,22 +1201,17 @@ func (s *DockerServer) inspectVolume(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) findVolume(name string) (*volumeCounter, error) {
-	s.volMut.RLock()
-	defer s.volMut.RUnlock()
-	if s.volStore != nil {
-		for _, vol := range s.volStore {
-			if vol.volume.Name == name {
-				return vol, nil
-			}
-		}
+	vol, ok := s.volStore[name]
+	if !ok {
+		return nil, errors.New("no such volume")
 	}
-	return nil, errors.New("No such volume")
+	return vol, nil
 }
 
 func (s *DockerServer) removeVolume(w http.ResponseWriter, r *http.Request) {
+	s.volMut.Lock()
+	defer s.volMut.Unlock()
 	name := mux.Vars(r)["name"]
-	s.volMut.RLock()
-	defer s.volMut.RUnlock()
 	vol, err := s.findVolume(name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
