@@ -1187,8 +1187,8 @@ func (s *DockerServer) createVolume(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) inspectVolume(w http.ResponseWriter, r *http.Request) {
-	s.volMut.Lock()
-	defer s.volMut.Unlock()
+	s.volMut.RLock()
+	defer s.volMut.RUnlock()
 	name := mux.Vars(r)["name"]
 	vol, err := s.findVolume(name)
 	if err != nil {
