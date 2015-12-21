@@ -1041,8 +1041,20 @@ type AttachToContainerOptions struct {
 //
 // See https://goo.gl/NKpkFk for more details.
 func (c *Client) AttachToContainer(opts AttachToContainerOptions) error {
+	cw, err := c.AttachToContainerNonBlocking(opts)
+	if err != nil {
+		return err
+	}
+	return cw.Wait()
+}
+
+// AttachToContainerNonBlocking attaches to a container, using the given options.
+// This function does not block.
+//
+// See https://goo.gl/NKpkFk for more details.
+func (c *Client) AttachToContainerNonBlocking(opts AttachToContainerOptions) (CloseWaiter, error) {
 	if opts.Container == "" {
-		return &NoSuchContainer{ID: opts.Container}
+		return nil, &NoSuchContainer{ID: opts.Container}
 	}
 	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
 	return c.hijack("POST", path, hijackOptions{
