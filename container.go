@@ -976,7 +976,7 @@ type CommitContainerOptions struct {
 	Container  string
 	Repository string `qs:"repo"`
 	Tag        string
-	Message    string `qs:"m"`
+	Message    string `qs:"comment"`
 	Author     string
 	Run        *Config `qs:"-"`
 }
