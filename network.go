@@ -161,7 +161,7 @@ func (c *Client) RemoveNetwork(id string) error {
 //
 // See https://goo.gl/1kmPKZ for more details.
 type NetworkConnectionOptions struct {
-	Container     string
+	Container string
 }
 
 // ConnectNetwork adds a container to a network or returns an error in case of failure.
@@ -205,7 +205,7 @@ func (err *NoSuchNetwork) Error() string {
 
 // NoSuchNetwork is the error returned when a given network or container does not exist.
 type NoSuchNetworkOrContainer struct {
-	NetworkID string
+	NetworkID   string
 	ContainerID string
 }
 
