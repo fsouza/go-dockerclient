@@ -113,3 +113,59 @@ func TestNetworkRemove(t *testing.T) {
 		t.Errorf("RemoveNetwork(%q): Wrong request path. Want %q. Got %q.", id, u.Path, req.URL.Path)
 	}
 }
+
+func TestNetworkConnect(t *testing.T) {
+	id := "8dfafdbc3a40"
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	opts := CreateNetworkOptions{"foobar"}
+	err := client.ConnectNetwork(id, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "POST"
+	if req.Method != expectedMethod {
+		t.Errorf("ConnectNetwork(%q): Wrong HTTP method. Want %s. Got %s.", id, expectedMethod, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/networks/" + id + "/connect"))
+	if req.URL.Path != u.Path {
+		t.Errorf("ConnectNetwork(%q): Wrong request path. Want %q. Got %q.", id, u.Path, req.URL.Path)
+	}
+}
+
+func TestNetworkConnectNotFound(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "no such network container", status: http.StatusNotFound})
+	opts := CreateNetworkOptions{"foobar"}
+	if serr, ok := err.(*model.ModelMissingError), !ok {
+		t.Errorf("ConnectNetwork: wrong error type: %s.", serr)
+	}
+}
+
+func TestNetworkDisconnect(t *testing.T) {
+	id := "8dfafdbc3a40"
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	opts := CreateNetworkOptions{"foobar"}
+	err := client.DisonnectNetwork(id, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "POST"
+	if req.Method != expectedMethod {
+		t.Errorf("DisconnectNetwork(%q): Wrong HTTP method. Want %s. Got %s.", id, expectedMethod, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/networks/" + id + "/disconnect"))
+	if req.URL.Path != u.Path {
+		t.Errorf("DisconnectNetwork(%q): Wrong request path. Want %q. Got %q.", id, u.Path, req.URL.Path)
+	}
+}
+
+func TestNetworkDisconnectNotFound(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "no such network container", status: http.StatusNotFound})
+	opts := CreateNetworkOptions{"foobar"}
+	if serr, ok := err.(*model.ModelMissingError), !ok {
+		t.Errorf("DisconnectNetwork: wrong error type: %s.", serr)
+	}
+}
