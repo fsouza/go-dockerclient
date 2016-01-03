@@ -137,6 +137,7 @@ func TestNetworkConnect(t *testing.T) {
 func TestNetworkConnectNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such network container", status: http.StatusNotFound})
 	opts := NetworkConnectionOptions{"foobar"}
+	err := client.ConnectNetwork("8dfafdbc3a40", opts)
 	if serr, ok := err.(*model.ModelMissingError), !ok {
 		t.Errorf("ConnectNetwork: wrong error type: %s.", serr)
 	}
@@ -165,6 +166,7 @@ func TestNetworkDisconnect(t *testing.T) {
 func TestNetworkDisconnectNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such network container", status: http.StatusNotFound})
 	opts := NetworkConnectionOptions{"foobar"}
+	err := client.DisconnectNetwork("8dfafdbc3a40", opts)
 	if serr, ok := err.(*model.ModelMissingError), !ok {
 		t.Errorf("DisconnectNetwork: wrong error type: %s.", serr)
 	}
