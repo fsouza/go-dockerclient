@@ -168,9 +168,7 @@ type NetworkConnectionOptions struct {
 //
 // See https://goo.gl/1kmPKZ for more details.
 func (c *Client) ConnectNetwork(id string, opts NetworkConnectionOptions) error {
-	resp, err := c.do("POST", "/networks/"+id+"/connect", doOptions{
-		data: opts
-	})
+	resp, err := c.do("POST", "/networks/"+id+"/connect", doOptions{data: opts})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchNetworkOrContainer{NetworkID: id, ContainerID: opts.Container}
@@ -185,9 +183,7 @@ func (c *Client) ConnectNetwork(id string, opts NetworkConnectionOptions) error 
 //
 // See https://goo.gl/1kmPKZ for more details.
 func (c *Client) DisconnectNetwork(id string, opts ConnectNetworkOptions) error {
-	resp, err := c.do("POST", "/networks/"+id+"/disconnect", doOptions{
-		data: opts
-	})
+	resp, err := c.do("POST", "/networks/"+id+"/disconnect", doOptions{data: opts})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchNetworkOrContainer{NetworkID: id, ContainerID: opts.Container}
