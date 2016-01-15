@@ -511,6 +511,7 @@ func (s *DockerServer) uploadToContainer(w http.ResponseWriter, r *http.Request)
 	container, _, err := s.findContainer(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
 	if !container.State.Running {
 		w.WriteHeader(http.StatusInternalServerError)
