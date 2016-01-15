@@ -2090,3 +2090,14 @@ func TestUploadToContainer(t *testing.T) {
 		t.Errorf("UploadToContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 }
+
+func TestUploadToContainerMissingContainer(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("PUT", "/containers/missing-container/archive?path=abcd", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("UploadToContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
