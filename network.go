@@ -23,6 +23,7 @@ type Network struct {
 	ID         string `json:"Id"`
 	Scope      string
 	Driver     string
+	IPAM       IPAMOptions
 	Containers map[string]Endpoint
 	Options    map[string]string
 }
