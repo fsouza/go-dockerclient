@@ -336,6 +336,9 @@ func TestAPIVersions(t *testing.T) {
 		{"1.10", "1.11", true, true, false, false},
 		{"1.11", "1.10", false, false, true, true},
 
+		{"1.11-ubuntu0", "1.11", false, true, false, true},
+		{"1.10", "1.11-el7", true, true, false, false},
+
 		{"1.9", "1.11", true, true, false, false},
 		{"1.11", "1.9", false, false, true, true},
 
