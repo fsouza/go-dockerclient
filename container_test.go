@@ -1966,7 +1966,9 @@ func TestStats(t *testing.T) {
              "active_file" : 0,
              "pgfault" : 964,
              "inactive_file" : 0,
-             "total_pgpgin" : 477
+             "total_pgpgin" : 477,
+             "swap" : 47312896,
+             "hierarchical_memsw_limit" : 1610612736
           },
           "max_usage" : 6651904,
           "usage" : 6537216,
@@ -2082,7 +2084,9 @@ func TestStats(t *testing.T) {
              "active_file" : 0,
              "pgfault" : 964,
              "inactive_file" : 0,
-             "total_pgpgin" : 477
+             "total_pgpgin" : 477,
+             "swap" : 47312896,
+             "hierarchical_memsw_limit" : 1610612736
           },
           "max_usage" : 6651904,
           "usage" : 6537216,
