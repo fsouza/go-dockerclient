@@ -241,7 +241,8 @@ func TestInspectContainer(t *testing.T) {
                "CgroupParent": "/mesos",
                "Memory": 17179869184,
                "MemorySwap": 34359738368,
-               "GroupAdd": ["fake", "12345"]
+               "GroupAdd": ["fake", "12345"],
+               "OomScoreAdj": 642
              }
 }`
 	var expected Container
