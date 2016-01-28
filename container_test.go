@@ -1925,6 +1925,16 @@ func TestStatsTimeout(t *testing.T) {
 func TestStats(t *testing.T) {
 	jsonStats1 := `{
        "read" : "2015-01-08T22:57:31.547920715Z",
+       "network" : {
+          "rx_dropped" : 0,
+          "rx_bytes" : 648,
+          "rx_errors" : 0,
+          "tx_packets" : 8,
+          "tx_dropped" : 0,
+          "rx_packets" : 8,
+          "tx_errors" : 0,
+          "tx_bytes" : 648
+       },
 	   "networks" : {
 		   "eth0":{
 			   "rx_dropped" : 0,

@@ -639,6 +639,7 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 // See https://goo.gl/GNmLHb for more details.
 type Stats struct {
 	Read        time.Time               `json:"read,omitempty" yaml:"read,omitempty"`
+	Network     NetworkStats            `json:"network,omitempty" yaml:"network,omitempty"`
 	Networks    map[string]NetworkStats `json:"networks,omitempty" yaml:"networks,omitempty"`
 	MemoryStats struct {
 		Stats struct {
