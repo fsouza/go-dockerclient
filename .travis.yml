@@ -13,6 +13,8 @@ env:
   - GOARCH=386   DOCKER_VERSION=1.8.3
   - GOARCH=amd64 DOCKER_VERSION=1.9.1
   - GOARCH=386   DOCKER_VERSION=1.9.1
+  - GOARCH=amd64 DOCKER_VERSION=1.10.0
+  - GOARCH=386   DOCKER_VERSION=1.10.0
 install:
   - make prepare_docker
 script:
