@@ -421,7 +421,7 @@ type BuildImageOptions struct {
 	AuthConfigs         AuthConfigurations `qs:"-"` // for newer docker X-Registry-Config header
 	ContextDir          string             `qs:"-"`
 	Ulimits             []ULimit           `qs:"-"`
-	BuildArgs        []BuildArg         `qs:"buildarg"`
+	BuildArgs           []BuildArg         `qs:"buildarg"`
 }
 
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input

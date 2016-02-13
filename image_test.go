@@ -685,7 +685,7 @@ func TestBuildImageParameters(t *testing.T) {
 		CPUPeriod:           100000,
 		CPUSetCPUs:          "0-3",
 		Ulimits:             []ULimit{{Name: "nofile", Soft: 100, Hard: 200}},
-		BuildArgs:        []BuildArg{{Name: "SOME_VAR", Value: "some_value"}},
+		BuildArgs:           []BuildArg{{Name: "SOME_VAR", Value: "some_value"}},
 		InputStream:         &buf,
 		OutputStream:        &buf,
 	}
@@ -712,7 +712,7 @@ func TestBuildImageParameters(t *testing.T) {
 	}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("BuildImage: wrong query string. Want %#v. \nGot %#v.", expected, got)
+		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
 }
 

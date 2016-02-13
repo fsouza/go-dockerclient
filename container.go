@@ -253,7 +253,7 @@ type LogConfig struct {
 }
 
 type BuildArg struct {
-	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Name  string `json:"Name,omitempty" yaml:"Name,omitempty"`
 	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
 }
 
