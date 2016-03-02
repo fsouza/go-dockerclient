@@ -438,6 +438,7 @@ func TestInspectContainerNetwork(t *testing.T) {
                 "MacAddress": "",
                 "Networks": {
                     "swl-net": {
+                        "NetworkID": "7ea29fc1412292a2d7bba362f9253545fecdfa8ce9a6e37dd10ba8bee7129812",
                         "EndpointID": "683e3092275782a53c3b0968cc7e3a10f23264022ded9cb20490902f96fc5981",
                         "Gateway": "",
                         "IPAddress": "10.0.0.3",
@@ -454,7 +455,8 @@ func TestInspectContainerNetwork(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	id := "81e1bbe20b55"
-	exp := "10.0.0.3"
+	expIP := "10.0.0.3"
+	expNetworkID := "7ea29fc1412292a2d7bba362f9253545fecdfa8ce9a6e37dd10ba8bee7129812"
 
 	container, err := client.InspectContainer(id)
 	if err != nil {
@@ -471,8 +473,19 @@ func TestInspectContainerNetwork(t *testing.T) {
 				t.Logf("%s %v", net, ip)
 			}
 		}
-		if ip != exp {
-			t.Errorf("InspectContainerNetworks(%q): Expected %#v. Got %#v.", id, exp, ip)
+		if ip != expIP {
+			t.Errorf("InspectContainerNetworks(%q): Expected %#v. Got %#v.", id, expIP, ip)
+		}
+
+		var networkID string
+		for _, net := range networks.MapKeys() {
+			if net.Interface().(string) == container.HostConfig.NetworkMode {
+				networkID = networks.MapIndex(net).FieldByName("NetworkID").Interface().(string)
+				t.Logf("%s %v", net, networkID)
+			}
+		}
+		if networkID != expNetworkID {
+			t.Errorf("InspectContainerNetworks(%q): Expected %#v. Got %#v.", id, expNetworkID, networkID)
 		}
 	} else {
 		t.Errorf("InspectContainerNetworks(%q): No method Networks for NetworkSettings", id)

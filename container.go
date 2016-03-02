@@ -135,6 +135,7 @@ type ContainerNetwork struct {
 	IPAddress           string `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
 	Gateway             string `json:"Gateway,omitempty" yaml:"Gateway,omitempty"`
 	EndpointID          string `json:"EndpointID,omitempty" yaml:"EndpointID,omitempty"`
+	NetworkID           string `json:"NetworkID,omitempty" yaml:"NetworkID,omitempty"`
 }
 
 // NetworkSettings contains network-related information about a container
