@@ -2101,3 +2101,26 @@ func TestUploadToContainerMissingContainer(t *testing.T) {
 		t.Errorf("UploadToContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
 	}
 }
+
+func TestInfoDocker(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	addContainers(server, 1)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/info", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("InfoDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var infoData map[string]interface{}
+	err := json.Unmarshal(recorder.Body.Bytes(), &infoData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if infoData["Containers"].(float64) != 1.0 {
+		t.Fatalf("InfoDocker: wrong containers count. Want %f. Got %f.", 1.0, infoData["Containers"])
+	}
+	if infoData["DockerRootDir"].(string) != "/var/lib/docker" {
+		t.Fatalf("InfoDocker: wrong docker root. Want /var/lib/docker. Got %s.", infoData["DockerRootDir"])
+	}
+}
