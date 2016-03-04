@@ -163,6 +163,18 @@ func (c *Client) RemoveNetwork(id string) error {
 // See https://goo.gl/6GugX3 for more details.
 type NetworkConnectionOptions struct {
 	Container string
+	EndpointConfig *EndpointSettings `json:",omitempty"`
+}
+
+type EndpointSettings struct {
+	IPAMConfig *EndpointIPAMConfig
+	Links      []string
+	Aliases    []string
+}
+
+type EndpointIPAMConfig struct {
+	IPv4Address string `json:",omitempty"`
+	IPv6Address string `json:",omitempty"`
 }
 
 // ConnectNetwork adds a container to a network or returns an error in case of failure.
