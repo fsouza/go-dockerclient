@@ -53,7 +53,7 @@ type APIContainers struct {
 	SizeRootFs int64             `json:"SizeRootFs,omitempty" yaml:"SizeRootFs,omitempty"`
 	Names      []string          `json:"Names,omitempty" yaml:"Names,omitempty"`
 	Labels     map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	Networks   NetworkList       `json:"NetworkSettings,omitempty" yaml:"NetworkSettings,omitempty`
+	Networks   NetworkList       `json:"NetworkSettings,omitempty" yaml:"NetworkSettings,omitempty"`
 }
 
 type NetworkList struct {
@@ -523,7 +523,7 @@ type BlockWeight struct {
 // See https://goo.gl/FSdP0H for more details.
 type BlockLimit struct {
 	Path string `json:"Path,omitempty"`
-	Rate string `json:"Rate",omitempty`
+	Rate string `json:"Rate,omitempty"`
 }
 
 // HostConfig contains the container options related to starting a container on

@@ -752,15 +752,15 @@ func TestUpdateContainer(t *testing.T) {
 	}
 	req := fakeRT.requests[0]
 	if req.Method != "POST" {
-		t.Errorf("UpdateContainer: wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		t.Errorf("UpdateContainer: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/update"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
-		t.Errorf("UpdateContainer: Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+		t.Errorf("UpdateContainer: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
 	}
 	expectedContentType := "application/json"
 	if contentType := req.Header.Get("Content-Type"); contentType != expectedContentType {
-		t.Errorf("UpdateContainer: Wrong content-type in request. Want %q. Got %q.", id, expectedContentType, contentType)
+		t.Errorf("UpdateContainer: Wrong content-type in request. Want %q. Got %q.", expectedContentType, contentType)
 	}
 	var out UpdateContainerOptions
 	if err := json.NewDecoder(req.Body).Decode(&out); err != nil {
