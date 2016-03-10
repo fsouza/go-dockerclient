@@ -381,6 +381,9 @@ func TestCommitContainer(t *testing.T) {
 	if got := recorder.Body.String(); got != expected {
 		t.Errorf("CommitContainer: wrong response body. Want %q. Got %q.", expected, got)
 	}
+	if server.images[0].Config == nil {
+		t.Error("CommitContainer: image Config should not be nil.")
+	}
 }
 
 func TestCommitContainerComplete(t *testing.T) {
@@ -1058,6 +1061,9 @@ func TestPullImage(t *testing.T) {
 	}
 	if _, ok := server.imgIDs["base"]; !ok {
 		t.Error("PullImage: Repository should not be empty.")
+	}
+	if server.images[0].Config == nil {
+		t.Error("PullImage: Image Config should not be nil.")
 	}
 }
 

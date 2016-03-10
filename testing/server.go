@@ -744,10 +744,9 @@ func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	var config *docker.Config
+	config := new(docker.Config)
 	runConfig := r.URL.Query().Get("run")
 	if runConfig != "" {
-		config = new(docker.Config)
 		err = json.Unmarshal([]byte(runConfig), config)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -829,7 +828,8 @@ func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
 	fromImageName := r.URL.Query().Get("fromImage")
 	tag := r.URL.Query().Get("tag")
 	image := docker.Image{
-		ID: s.generateID(),
+		ID:     s.generateID(),
+		Config: &docker.Config{},
 	}
 	s.iMut.Lock()
 	s.images = append(s.images, image)
