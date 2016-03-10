@@ -16,7 +16,7 @@ env:
   - GOARCH=amd64 DOCKER_VERSION=1.10.2
   - GOARCH=386   DOCKER_VERSION=1.10.2
 install:
-  - make prepare_docker
+  - travis_retry make prepare_docker
 script:
   - make test
   - DOCKER_HOST=tcp://127.0.0.1:2375 make integration
