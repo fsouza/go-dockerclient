@@ -187,10 +187,33 @@ func (c *Client) RemoveNetwork(id string) error {
 
 // NetworkConnectionOptions specify parameters to the ConnectNetwork and DisconnectNetwork function.
 //
-// See https://goo.gl/6GugX3 for more details.
+// See https://goo.gl/RV7BJU for more details.
 type NetworkConnectionOptions struct {
 	Container string
-	Force     bool
+
+	// EndpointConfig is only applicable to the ConnectNetwork call
+	EndpointConfig *EndpointConfig `json:"EndpointConfig,omitempty"`
+
+	// Force is only applicable to the DisconnectNetwork call
+	Force bool
+}
+
+// EndpointConfig stores network endpoint details
+//
+// See https://goo.gl/RV7BJU for more details.
+type EndpointConfig struct {
+	IPAMConfig *EndpointIPAMConfig
+	Links      []string
+	Aliases    []string
+}
+
+// EndpointIPAMCOnfig represents IPAM configurations for an
+// endpoint
+//
+// See https://goo.gl/RV7BJU for more details.
+type EndpointIPAMConfig struct {
+	IPv4Address string `json:",omitempty"`
+	IPv6Address string `json:",omitempty"`
 }
 
 // ConnectNetwork adds a container to a network or returns an error in case of failure.
