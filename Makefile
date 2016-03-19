@@ -21,7 +21,11 @@ vendor:
 
 lint:
 	@ go get -v github.com/golang/lint/golint
-	$(foreach pkg,$(PKGS),golint $(pkg) || exit;)
+	@for file in $$(find . -name '*.go' | grep -v 'external/'); do \
+		export output="$$(golint $${file} | grep -v 'type name will be used as docker.DockerInfo')"; \
+		[ -n "$${output}" ] && echo "$${output}" && export status=1; \
+	done; \
+	exit $${status:-0}
 
 vet:
 	@-go get -v golang.org/x/tools/cmd/vet
