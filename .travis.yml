@@ -18,7 +18,7 @@ env:
 install:
   - travis_retry make prepare_docker
 script:
-  - make test
+  - travis-scripts/run-tests.bash
   - DOCKER_HOST=tcp://127.0.0.1:2375 make integration
 services:
   - docker
