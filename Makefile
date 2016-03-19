@@ -50,8 +50,10 @@ prepare_docker:
 
 pretest: lint vet fmtcheck
 
-test: pretest
+gotest:
 	$(foreach pkg,$(PKGS),go test $(pkg) || exit;)
+
+test: pretest gotest
 
 integration:
 	go test -tags docker_integration -run TestIntegration -v
