@@ -424,6 +424,16 @@ type BuildImageOptions struct {
 	BuildArgs           []BuildArg         `qs:"-"`
 }
 
+// BuildArg represents arguments that can be passed to the image when building
+// it from a Dockerfile.
+//
+// For more details about the Docker building process, see
+// http://goo.gl/tlPXPu.
+type BuildArg struct {
+	Name  string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
+}
+
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
 // stream.
 //

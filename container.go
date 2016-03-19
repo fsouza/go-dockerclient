@@ -56,6 +56,8 @@ type APIContainers struct {
 	Networks   NetworkList       `json:"NetworkSettings,omitempty" yaml:"NetworkSettings,omitempty"`
 }
 
+// NetworkList encapsulates a map of networks, as returned by the Docker API in
+// ListContainers.
 type NetworkList struct {
 	Networks map[string]ContainerNetwork `json:"Networks" yaml:"Networks,omitempty"`
 }
@@ -256,11 +258,6 @@ type Mount struct {
 type LogConfig struct {
 	Type   string            `json:"Type,omitempty" yaml:"Type,omitempty"`
 	Config map[string]string `json:"Config,omitempty" yaml:"Config,omitempty"`
-}
-
-type BuildArg struct {
-	Name  string `json:"Name,omitempty" yaml:"Name,omitempty"`
-	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
 }
 
 // ULimit defines system-wide resource limitations
