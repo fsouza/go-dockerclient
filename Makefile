@@ -11,8 +11,7 @@
 	cov \
 	clean
 
-SRCS = $(shell git ls-files '*.go' | grep -v '^external/')
-PKGS = ./. ./testing
+PKGS = . ./testing
 
 all: test
 
@@ -22,17 +21,17 @@ vendor:
 
 lint:
 	@ go get -v github.com/golang/lint/golint
-	$(foreach file,$(SRCS),golint $(file) || exit;)
+	$(foreach pkg,$(PKGS),golint $(pkg) || exit;)
 
 vet:
 	@-go get -v golang.org/x/tools/cmd/vet
 	$(foreach pkg,$(PKGS),go vet $(pkg);)
 
 fmt:
-	gofmt -s -w $(SRCS)
+	gofmt -s -w $(PKGS)
 
 fmtcheck:
-	@ export output=$$(gofmt -s -d $(SRCS)); \
+	@ export output=$$(gofmt -s -d $(PKGS)); \
 		[ -n "$${output}" ] && echo "$${output}" && export status=1; \
 		exit $${status:-0}
 
