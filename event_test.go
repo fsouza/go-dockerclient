@@ -58,7 +58,8 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 {"status":"create","id":"dfdf82bd3881","from":"base:latest","time":1374067924}
 {"status":"start","id":"dfdf82bd3881","from":"base:latest","time":1374067924}
 {"status":"stop","id":"dfdf82bd3881","from":"base:latest","time":1374067966}
-{"status":"destroy","id":"dfdf82bd3881","from":"base:latest","time":1374067970}`
+{"status":"destroy","id":"dfdf82bd3881","from":"base:latest","time":1374067970}
+{"Action":"create","Actor":{"Attributes":{"HAProxyMode":"http","HealthCheck":"HttpGet","HealthCheckArgs":"http://127.0.0.1:39051/status/check","ServicePort_8080":"17801","image":"datanerd.us/siteeng/sample-app-go:latest","name":"sample-app-client-go-69818c1223ddb5"},"ID":"a925eaf4084d5c3bcf337b2abb05f566ebb94276dff34f6effb00d8ecd380e16"},"Type":"container","from":"datanerd.us/siteeng/sample-app-go:latest","id":"a925eaf4084d5c3bcf337b2abb05f566ebb94276dff34f6effb00d8ecd380e16","status":"create","time":1459133932,"timeNano":1459133932961735842}`
 
 	wantResponse := []*APIEvents{
 		{
@@ -191,6 +192,26 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 
 			Time: 1374067970,
 		},
+		{
+			Action:   "create",
+			Type:     "container",
+			Status:   "create",
+			From:     "datanerd.us/siteeng/sample-app-go:latest",
+			ID:       "a925eaf4084d5c3bcf337b2abb05f566ebb94276dff34f6effb00d8ecd380e16",
+			Time:     1459133932,
+			TimeNano: 1459133932961735842,
+			Actor: APIActor{
+				ID: "a925eaf4084d5c3bcf337b2abb05f566ebb94276dff34f6effb00d8ecd380e16",
+				Attributes: map[string]string{
+					"HAProxyMode":      "http",
+					"HealthCheck":      "HttpGet",
+					"HealthCheckArgs":  "http://127.0.0.1:39051/status/check",
+					"ServicePort_8080": "17801",
+					"image":            "datanerd.us/siteeng/sample-app-go:latest",
+					"name":             "sample-app-client-go-69818c1223ddb5",
+				},
+			},
+		},
 	}
 	server := buildServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rsc := bufio.NewScanner(strings.NewReader(response))
@@ -223,7 +244,7 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 
 	timeout := time.After(1 * time.Second)
 
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 9; i++ {
 		select {
 		case msg := <-listener:
 			t.Logf("%d: Received: %v", i, msg)
