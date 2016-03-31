@@ -32,6 +32,7 @@ type APIImages struct {
 // Image is the type representing a docker image and its various properties
 type Image struct {
 	ID              string    `json:"Id" yaml:"Id"`
+	RepoTags        []string  `json:"RepoTags,omitempty" yaml:"RepoTags,omitempty"`
 	Parent          string    `json:"Parent,omitempty" yaml:"Parent,omitempty"`
 	Comment         string    `json:"Comment,omitempty" yaml:"Comment,omitempty"`
 	Created         time.Time `json:"Created,omitempty" yaml:"Created,omitempty"`
