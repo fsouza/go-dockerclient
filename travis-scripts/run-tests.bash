@@ -9,3 +9,7 @@ if ! [[ $TRAVIS_GO_VERSION =~ ^1\.[34] ]]; then
 fi
 
 make vet fmtcheck gotest
+
+if [[ $TRAVIS_OS_NAME == "linux" ]]; then
+	DOCKER_HOST=tcp://127.0.0.1:2375 make integration
+fi

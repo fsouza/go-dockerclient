@@ -6,6 +6,9 @@ go:
   - 1.5.3
   - 1.6
   - tip
+os:
+  - linux
+  - osx
 env:
   - GOARCH=amd64 DOCKER_VERSION=1.7.1
   - GOARCH=386   DOCKER_VERSION=1.7.1
@@ -16,10 +19,9 @@ env:
   - GOARCH=amd64 DOCKER_VERSION=1.10.3
   - GOARCH=386   DOCKER_VERSION=1.10.3
 install:
-  - travis_retry make prepare_docker
+  - travis_retry travis-scripts/install.bash
 script:
   - travis-scripts/run-tests.bash
-  - DOCKER_HOST=tcp://127.0.0.1:2375 make integration
 services:
   - docker
 matrix:
