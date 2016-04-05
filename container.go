@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/go-units"
 )
 
 // ErrContainerAlreadyExists is the error returned by CreateContainer when the
@@ -99,26 +101,73 @@ func (p Port) Proto() string {
 
 // State represents the state of a container.
 type State struct {
-	Running    bool      `json:"Running,omitempty" yaml:"Running,omitempty"`
-	Paused     bool      `json:"Paused,omitempty" yaml:"Paused,omitempty"`
-	Restarting bool      `json:"Restarting,omitempty" yaml:"Restarting,omitempty"`
-	OOMKilled  bool      `json:"OOMKilled,omitempty" yaml:"OOMKilled,omitempty"`
-	Pid        int       `json:"Pid,omitempty" yaml:"Pid,omitempty"`
-	ExitCode   int       `json:"ExitCode,omitempty" yaml:"ExitCode,omitempty"`
-	Error      string    `json:"Error,omitempty" yaml:"Error,omitempty"`
-	StartedAt  time.Time `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
-	FinishedAt time.Time `json:"FinishedAt,omitempty" yaml:"FinishedAt,omitempty"`
+	Status            string    `json:"Status,omitempty" yaml:"Status,omitempty"`
+	Running           bool      `json:"Running,omitempty" yaml:"Running,omitempty"`
+	Paused            bool      `json:"Paused,omitempty" yaml:"Paused,omitempty"`
+	Restarting        bool      `json:"Restarting,omitempty" yaml:"Restarting,omitempty"`
+	OOMKilled         bool      `json:"OOMKilled,omitempty" yaml:"OOMKilled,omitempty"`
+	RemovalInProgress bool      `json:"RemovalInProgress,omitempty" yaml:"RemovalInProgress,omitempty"`
+	Dead              bool      `json:"Dead,omitempty" yaml:"Dead,omitempty"`
+	Pid               int       `json:"Pid,omitempty" yaml:"Pid,omitempty"`
+	ExitCode          int       `json:"ExitCode,omitempty" yaml:"ExitCode,omitempty"`
+	Error             string    `json:"Error,omitempty" yaml:"Error,omitempty"`
+	StartedAt         time.Time `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
+	FinishedAt        time.Time `json:"FinishedAt,omitempty" yaml:"FinishedAt,omitempty"`
 }
 
-// String returns the string representation of a state.
+// String returns a human-readable description of the state
 func (s *State) String() string {
+	if s.Running {
+		if s.Paused {
+			return fmt.Sprintf("Up %s (Paused)", units.HumanDuration(time.Now().UTC().Sub(s.StartedAt)))
+		}
+		if s.Restarting {
+			return fmt.Sprintf("Restarting (%d) %s ago", s.ExitCode, units.HumanDuration(time.Now().UTC().Sub(s.FinishedAt)))
+		}
+
+		return fmt.Sprintf("Up %s", units.HumanDuration(time.Now().UTC().Sub(s.StartedAt)))
+	}
+
+	if s.RemovalInProgress {
+		return "Removal In Progress"
+	}
+
+	if s.Dead {
+		return "Dead"
+	}
+
+	if s.StartedAt.IsZero() {
+		return "Created"
+	}
+
+	if s.FinishedAt.IsZero() {
+		return ""
+	}
+
+	return fmt.Sprintf("Exited (%d) %s ago", s.ExitCode, units.HumanDuration(time.Now().UTC().Sub(s.FinishedAt)))
+}
+
+// StateString returns a single string to describe state
+func (s *State) StateString() string {
 	if s.Running {
 		if s.Paused {
 			return "paused"
 		}
-		return fmt.Sprintf("Up %s", time.Now().UTC().Sub(s.StartedAt))
+		if s.Restarting {
+			return "restarting"
+		}
+		return "running"
 	}
-	return fmt.Sprintf("Exit %d", s.ExitCode)
+
+	if s.Dead {
+		return "dead"
+	}
+
+	if s.StartedAt.IsZero() {
+		return "created"
+	}
+
+	return "exited"
 }
 
 // PortBinding represents the host/container port mapping as returned in the

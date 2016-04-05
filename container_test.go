@@ -16,7 +16,6 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -32,13 +31,37 @@ func TestStateString(t *testing.T) {
 		input    State
 		expected string
 	}{
-		{State{Running: true, Paused: true}, "^paused$"},
-		{State{Running: true, StartedAt: started}, "^Up 3h.*$"},
-		{State{Running: false, ExitCode: 7}, "^Exit 7$"},
+		{State{Running: true, Paused: true, StartedAt: started}, "Up 3 hours (Paused)"},
+		{State{Running: true, Restarting: true, ExitCode: 7, FinishedAt: started}, "Restarting (7) 3 hours ago"},
+		{State{Running: true, StartedAt: started}, "Up 3 hours"},
+		{State{RemovalInProgress: true}, "Removal In Progress"},
+		{State{Dead: true}, "Dead"},
+		{State{}, "Created"},
+		{State{StartedAt: started}, ""},
+		{State{ExitCode: 7, StartedAt: started, FinishedAt: started}, "Exited (7) 3 hours ago"},
 	}
 	for _, tt := range tests {
-		re := regexp.MustCompile(tt.expected)
-		if got := tt.input.String(); !re.MatchString(got) {
+		if got := tt.input.String(); got != tt.expected {
+			t.Errorf("State.String(): wrong result. Want %q. Got %q.", tt.expected, got)
+		}
+	}
+}
+
+func TestStateStateString(t *testing.T) {
+	started := time.Now().Add(-3 * time.Hour)
+	var tests = []struct {
+		input    State
+		expected string
+	}{
+		{State{Running: true, Paused: true}, "paused"},
+		{State{Running: true, Restarting: true}, "restarting"},
+		{State{Running: true}, "running"},
+		{State{Dead: true}, "dead"},
+		{State{}, "created"},
+		{State{StartedAt: started}, "exited"},
+	}
+	for _, tt := range tests {
+		if got := tt.input.StateString(); got != tt.expected {
 			t.Errorf("State.String(): wrong result. Want %q. Got %q.", tt.expected, got)
 		}
 	}
