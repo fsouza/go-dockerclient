@@ -28,7 +28,6 @@ lint:
 	exit $${status:-0}
 
 vet:
-	@-go get -v golang.org/x/tools/cmd/vet
 	$(foreach pkg,$(PKGS),go vet $(pkg);)
 
 fmt:
