@@ -5,10 +5,10 @@
 # license that can be found in the LICENSE file.
 
 if ! [[ $TRAVIS_GO_VERSION =~ ^1\.[34] ]]; then
-	make lint
+	make lint vet
 fi
 
-make vet fmtcheck gotest
+make fmtcheck gotest
 
 if [[ $TRAVIS_OS_NAME == "linux" ]]; then
 	DOCKER_HOST=tcp://127.0.0.1:2375 make integration
