@@ -1,6 +1,6 @@
 # go-dockerclient
 
-[![Travis](https://img.shields.io/travis/fsouza/go-dockerclient.svg?style=flat-square)](https://travis-ci.org/fsouza/go-dockerclient)
+[![Travis](https://img.shields.io/travis/fsouza/go-dockerclient/master.svg?style=flat-square)](https://travis-ci.org/fsouza/go-dockerclient)
 [![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/fsouza/go-dockerclient)
 
 This package presents a client for the Docker remote API. It also provides
