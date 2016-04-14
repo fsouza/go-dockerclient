@@ -708,7 +708,7 @@ func TestBuildImageParameters(t *testing.T) {
 		"cpuperiod":  {"100000"},
 		"cpusetcpus": {"0-3"},
 		"ulimits":    {`[{"Name":"nofile","Soft":100,"Hard":200}]`},
-		"buildargs":  {`[{"Name":"SOME_VAR","Value":"some_value"}]`},
+		"buildargs":  {`{"SOME_VAR":"some_value"}`},
 	}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {

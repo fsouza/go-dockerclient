@@ -32,6 +32,7 @@ type APIImages struct {
 // Image is the type representing a docker image and its various properties
 type Image struct {
 	ID              string    `json:"Id" yaml:"Id"`
+	RepoTags        []string  `json:"RepoTags,omitempty" yaml:"RepoTags,omitempty"`
 	Parent          string    `json:"Parent,omitempty" yaml:"Parent,omitempty"`
 	Comment         string    `json:"Comment,omitempty" yaml:"Comment,omitempty"`
 	Created         time.Time `json:"Created,omitempty" yaml:"Created,omitempty"`
@@ -424,6 +425,16 @@ type BuildImageOptions struct {
 	BuildArgs           []BuildArg         `qs:"-"`
 }
 
+// BuildArg represents arguments that can be passed to the image when building
+// it from a Dockerfile.
+//
+// For more details about the Docker building process, see
+// http://goo.gl/tlPXPu.
+type BuildArg struct {
+	Name  string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
+}
+
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
 // stream.
 //
@@ -465,7 +476,11 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	}
 
 	if len(opts.BuildArgs) > 0 {
-		if b, err := json.Marshal(opts.BuildArgs); err == nil {
+		v := make(map[string]string)
+		for _, arg := range opts.BuildArgs {
+			v[arg.Name] = arg.Value
+		}
+		if b, err := json.Marshal(v); err == nil {
 			item := url.Values(map[string][]string{})
 			item.Add("buildargs", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
@@ -570,10 +585,10 @@ type APIImageSearch struct {
 // See https://goo.gl/AYjyrF for more details.
 func (c *Client) SearchImages(term string) ([]APIImageSearch, error) {
 	resp, err := c.do("GET", "/images/search?term="+term, doOptions{})
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	var searchResult []APIImageSearch
 	if err := json.NewDecoder(resp.Body).Decode(&searchResult); err != nil {
 		return nil, err
