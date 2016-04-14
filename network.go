@@ -112,7 +112,9 @@ type CreateNetworkOptions struct {
 	CheckDuplicate bool                   `json:"CheckDuplicate"`
 	Driver         string                 `json:"Driver"`
 	IPAM           IPAMOptions            `json:"IPAM"`
-	Options        map[string]interface{} `json:"options"`
+	Options        map[string]interface{} `json:"Options"`
+	Internal       bool                   `json:"Internal"`
+	EnableIPv6     bool                   `json:"EnableIPv6"`
 }
 
 // IPAMOptions controls IP Address Management when creating a network
