@@ -382,16 +382,17 @@ type Container struct {
 //
 // See https://goo.gl/Y6fXUy for more details.
 type UpdateContainerOptions struct {
-	BlkioWeight       int    `json:"BlkioWeight"`
-	CPUShares         int    `json:"CpuShares"`
-	CPUPeriod         int    `json:"CpuPeriod"`
-	CPUQuota          int    `json:"CpuQuota"`
-	CpusetCpus        string `json:"CpusetCpus"`
-	CpusetMems        string `json:"CpusetMems"`
-	Memory            int    `json:"Memory"`
-	MemorySwap        int    `json:"MemorySwap"`
-	MemoryReservation int    `json:"MemoryReservation"`
-	KernelMemory      int    `json:"KernelMemory"`
+	BlkioWeight       int           `json:"BlkioWeight"`
+	CPUShares         int           `json:"CpuShares"`
+	CPUPeriod         int           `json:"CpuPeriod"`
+	CPUQuota          int           `json:"CpuQuota"`
+	CpusetCpus        string        `json:"CpusetCpus"`
+	CpusetMems        string        `json:"CpusetMems"`
+	Memory            int           `json:"Memory"`
+	MemorySwap        int           `json:"MemorySwap"`
+	MemoryReservation int           `json:"MemoryReservation"`
+	KernelMemory      int           `json:"KernelMemory"`
+	RestartPolicy     RestartPolicy `json:"RestartPolicy,omitempty"`
 }
 
 // UpdateContainer updates the container at ID with the options
