@@ -42,6 +42,17 @@ type APIPort struct {
 	IP          string `json:"IP,omitempty" yaml:"IP,omitempty"`
 }
 
+// APIMount represents a mount point for a container.
+type APIMount struct {
+	Name        string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Source      string `json:"Source,omitempty" yaml:"Source,omitempty"`
+	Destination string `json:"Destination,omitempty" yaml:"Destination,omitempty"`
+	Driver      string `json:"Driver,omitempty" yaml:"Driver,omitempty"`
+	Mode        string `json:"Mode,omitempty" yaml:"Mode,omitempty"`
+	RW          string `json:"RW,omitempty" yaml:"RW,omitempty"`
+	Propogation string `json:"Propogation,omitempty" yaml:"Propogation,omitempty"`
+}
+
 // APIContainers represents each container in the list returned by
 // ListContainers.
 type APIContainers struct {
@@ -49,6 +60,7 @@ type APIContainers struct {
 	Image      string            `json:"Image,omitempty" yaml:"Image,omitempty"`
 	Command    string            `json:"Command,omitempty" yaml:"Command,omitempty"`
 	Created    int64             `json:"Created,omitempty" yaml:"Created,omitempty"`
+	State      string            `json:"State,omitempty" yaml:"State,omitempty"`
 	Status     string            `json:"Status,omitempty" yaml:"Status,omitempty"`
 	Ports      []APIPort         `json:"Ports,omitempty" yaml:"Ports,omitempty"`
 	SizeRw     int64             `json:"SizeRw,omitempty" yaml:"SizeRw,omitempty"`
@@ -56,6 +68,7 @@ type APIContainers struct {
 	Names      []string          `json:"Names,omitempty" yaml:"Names,omitempty"`
 	Labels     map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 	Networks   NetworkList       `json:"NetworkSettings,omitempty" yaml:"NetworkSettings,omitempty"`
+	Mounts     []APIMount        `json:"Mounts,omitempty" yaml:"Mounts,omitempty"`
 }
 
 // NetworkList encapsulates a map of networks, as returned by the Docker API in

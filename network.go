@@ -28,6 +28,7 @@ type Network struct {
 	Containers map[string]Endpoint
 	Options    map[string]string
 	Internal   bool
+	EnableIPv6 bool `json:"EnableIPv6"`
 }
 
 // Endpoint contains network resources allocated and used for a container in a network
