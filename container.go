@@ -605,6 +605,7 @@ type HostConfig struct {
 	DNSSearch            []string               `json:"DnsSearch,omitempty" yaml:"DnsSearch,omitempty"`
 	ExtraHosts           []string               `json:"ExtraHosts,omitempty" yaml:"ExtraHosts,omitempty"`
 	VolumesFrom          []string               `json:"VolumesFrom,omitempty" yaml:"VolumesFrom,omitempty"`
+	UsernsMode           string                 `json:"UsernsMode,omitempty" yaml:"UsernsMode,omitempty"`
 	NetworkMode          string                 `json:"NetworkMode,omitempty" yaml:"NetworkMode,omitempty"`
 	IpcMode              string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty"`
 	PidMode              string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
