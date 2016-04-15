@@ -49,7 +49,7 @@ type APIMount struct {
 	Destination string `json:"Destination,omitempty" yaml:"Destination,omitempty"`
 	Driver      string `json:"Driver,omitempty" yaml:"Driver,omitempty"`
 	Mode        string `json:"Mode,omitempty" yaml:"Mode,omitempty"`
-	RW          string `json:"RW,omitempty" yaml:"RW,omitempty"`
+	RW          bool   `json:"RW,omitempty" yaml:"RW,omitempty"`
 	Propogation string `json:"Propogation,omitempty" yaml:"Propogation,omitempty"`
 }
 
