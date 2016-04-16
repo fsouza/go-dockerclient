@@ -29,6 +29,7 @@ type APIImages struct {
 	Labels      map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 }
 
+// RootFS represents the underlying layers used by an image
 type RootFS struct {
 	Type   string   `json:"Type,omitempty" yaml:"Type,omitempty"`
 	Layers []string `json:"Layers,omitempty" yaml:"Layers,omitempty"`
