@@ -122,7 +122,7 @@ type CreateNetworkOptions struct {
 // See https://goo.gl/T8kRVH for more details.
 type IPAMOptions struct {
 	Driver string       `json:"Driver"`
-	Config []IPAMConfig `json:"IPAMConfig"`
+	Config []IPAMConfig `json:"Config"`
 }
 
 // IPAMConfig represents IPAM configurations
