@@ -1310,12 +1310,14 @@ func TestAttachToContainerSentinel(t *testing.T) {
 		RawTerminal:  true,
 		Success:      success,
 	}
+	errCh := make(chan error)
 	go func() {
-		if err := client.AttachToContainer(opts); err != nil {
-			t.Error(err)
-		}
+		errCh <- client.AttachToContainer(opts)
 	}()
 	success <- <-success
+	if err := <-errCh; err != nil {
+		t.Error(err)
+	}
 }
 
 func TestAttachToContainerNilStdout(t *testing.T) {
