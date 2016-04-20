@@ -875,6 +875,9 @@ type StatsOptions struct {
 	Done <-chan bool
 	// Initial connection timeout
 	Timeout time.Duration
+	// Timeout with no data is received, it's reset every time new data
+	// arrives
+	InactivityTimeout time.Duration `qs:"-"`
 }
 
 // Stats sends container statistics for the given container to the given channel.
@@ -909,10 +912,11 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 
 	go func() {
 		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats?stream=%v", opts.ID, opts.Stream), streamOptions{
-			rawJSONStream:  true,
-			useJSONDecoder: true,
-			stdout:         writeCloser,
-			timeout:        opts.Timeout,
+			rawJSONStream:     true,
+			useJSONDecoder:    true,
+			stdout:            writeCloser,
+			timeout:           opts.Timeout,
+			inactivityTimeout: opts.InactivityTimeout,
 		})
 		if err != nil {
 			dockerError, ok := err.(*Error)
@@ -1042,8 +1046,9 @@ func (c *Client) UploadToContainer(id string, opts UploadToContainerOptions) err
 //
 // See https://goo.gl/KnZJDX for more details.
 type DownloadFromContainerOptions struct {
-	OutputStream io.Writer `json:"-" qs:"-"`
-	Path         string    `qs:"path"`
+	OutputStream      io.Writer     `json:"-" qs:"-"`
+	Path              string        `qs:"path"`
+	InactivityTimeout time.Duration `qs:"-"`
 }
 
 // DownloadFromContainer downloads a tar archive of files or folders in a container.
@@ -1053,8 +1058,9 @@ func (c *Client) DownloadFromContainer(id string, opts DownloadFromContainerOpti
 	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
 
 	return c.stream("GET", url, streamOptions{
-		setRawTerminal: true,
-		stdout:         opts.OutputStream,
+		setRawTerminal:    true,
+		stdout:            opts.OutputStream,
+		inactivityTimeout: opts.InactivityTimeout,
 	})
 }
 
@@ -1209,15 +1215,16 @@ func (c *Client) AttachToContainerNonBlocking(opts AttachToContainerOptions) (Cl
 //
 // See https://goo.gl/yl8PGm for more details.
 type LogsOptions struct {
-	Container    string    `qs:"-"`
-	OutputStream io.Writer `qs:"-"`
-	ErrorStream  io.Writer `qs:"-"`
-	Follow       bool
-	Stdout       bool
-	Stderr       bool
-	Since        int64
-	Timestamps   bool
-	Tail         string
+	Container         string        `qs:"-"`
+	OutputStream      io.Writer     `qs:"-"`
+	ErrorStream       io.Writer     `qs:"-"`
+	InactivityTimeout time.Duration `qs:"-"`
+	Follow            bool
+	Stdout            bool
+	Stderr            bool
+	Since             int64
+	Timestamps        bool
+	Tail              string
 
 	// Use raw terminal? Usually true when the container contains a TTY.
 	RawTerminal bool `qs:"-"`
@@ -1235,9 +1242,10 @@ func (c *Client) Logs(opts LogsOptions) error {
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
 	return c.stream("GET", path, streamOptions{
-		setRawTerminal: opts.RawTerminal,
-		stdout:         opts.OutputStream,
-		stderr:         opts.ErrorStream,
+		setRawTerminal:    opts.RawTerminal,
+		stdout:            opts.OutputStream,
+		stderr:            opts.ErrorStream,
+		inactivityTimeout: opts.InactivityTimeout,
 	})
 }
 
@@ -1261,8 +1269,9 @@ func (c *Client) ResizeContainerTTY(id string, height, width int) error {
 //
 // See https://goo.gl/dOkTyk for more details.
 type ExportContainerOptions struct {
-	ID           string
-	OutputStream io.Writer
+	ID                string
+	OutputStream      io.Writer
+	InactivityTimeout time.Duration `qs:"-"`
 }
 
 // ExportContainer export the contents of container id as tar archive
@@ -1275,8 +1284,9 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
 	return c.stream("GET", url, streamOptions{
-		setRawTerminal: true,
-		stdout:         opts.OutputStream,
+		setRawTerminal:    true,
+		stdout:            opts.OutputStream,
+		inactivityTimeout: opts.InactivityTimeout,
 	})
 }
 

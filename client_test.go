@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -454,6 +455,103 @@ func TestPingErrorWithUnixSocket(t *testing.T) {
 	err := client.Ping()
 	if err == nil {
 		t.Fatal("Expected non nil error, got nil")
+	}
+}
+
+func TestClientStreamTimeoutNotHit(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for i := 0; i < 5; i++ {
+			fmt.Fprintf(w, "%d\n", i)
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var w bytes.Buffer
+	err = client.stream("POST", "/image/create", streamOptions{
+		setRawTerminal:    true,
+		stdout:            &w,
+		inactivityTimeout: 300 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "0\n1\n2\n3\n4\n"
+	result := w.String()
+	if result != expected {
+		t.Fatalf("expected stream result %q, got: %q", expected, result)
+	}
+}
+
+func TestClientStreamTimeout(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for i := 0; i < 5; i++ {
+			fmt.Fprintf(w, "%d\n", i)
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var w bytes.Buffer
+	err = client.stream("POST", "/image/create", streamOptions{
+		setRawTerminal:    true,
+		stdout:            &w,
+		inactivityTimeout: 100 * time.Millisecond,
+	})
+	if err != ErrInactivityTimeout {
+		t.Fatalf("expected request canceled error, got: %s", err)
+	}
+	expected := "0\n"
+	result := w.String()
+	if result != expected {
+		t.Fatalf("expected stream result %q, got: %q", expected, result)
+	}
+}
+
+func TestClientStreamTimeoutUnixSocket(t *testing.T) {
+	l, err := net.Listen("unix", "/tmp/docker_test.sock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	go func() {
+		http.Serve(l, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			for i := 0; i < 5; i++ {
+				fmt.Fprintf(w, "%d\n", i)
+				if f, ok := w.(http.Flusher); ok {
+					f.Flush()
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+		}))
+	}()
+	client, err := NewClient("unix:///tmp/docker_test.sock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var w bytes.Buffer
+	err = client.stream("POST", "/image/create", streamOptions{
+		setRawTerminal:    true,
+		stdout:            &w,
+		inactivityTimeout: 100 * time.Millisecond,
+	})
+	if err != ErrInactivityTimeout {
+		t.Fatalf("expected request canceled error, got: %s", err)
+	}
+	expected := "0\n"
+	result := w.String()
+	if result != expected {
+		t.Fatalf("expected stream result %q, got: %q", expected, result)
 	}
 }
 

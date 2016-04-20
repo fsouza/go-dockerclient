@@ -243,8 +243,9 @@ type PushImageOptions struct {
 	// Registry server to push the image
 	Registry string
 
-	OutputStream  io.Writer `qs:"-"`
-	RawJSONStream bool      `qs:"-"`
+	OutputStream      io.Writer     `qs:"-"`
+	RawJSONStream     bool          `qs:"-"`
+	InactivityTimeout time.Duration `qs:"-"`
 }
 
 // PushImage pushes an image to a remote registry, logging progress to w.
@@ -265,10 +266,11 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
 	return c.stream("POST", path, streamOptions{
-		setRawTerminal: true,
-		rawJSONStream:  opts.RawJSONStream,
-		headers:        headers,
-		stdout:         opts.OutputStream,
+		setRawTerminal:    true,
+		rawJSONStream:     opts.RawJSONStream,
+		headers:           headers,
+		stdout:            opts.OutputStream,
+		inactivityTimeout: opts.InactivityTimeout,
 	})
 }
 
@@ -277,11 +279,13 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 //
 // See https://goo.gl/iJkZjD for more details.
 type PullImageOptions struct {
-	Repository    string `qs:"fromImage"`
-	Registry      string
-	Tag           string
-	OutputStream  io.Writer `qs:"-"`
-	RawJSONStream bool      `qs:"-"`
+	Repository string `qs:"fromImage"`
+	Registry   string
+	Tag        string
+
+	OutputStream      io.Writer     `qs:"-"`
+	RawJSONStream     bool          `qs:"-"`
+	InactivityTimeout time.Duration `qs:"-"`
 }
 
 // PullImage pulls an image from a remote registry, logging progress to
@@ -297,17 +301,18 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 	if err != nil {
 		return err
 	}
-	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream)
+	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout)
 }
 
-func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool) error {
+func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool, timeout time.Duration) error {
 	path := "/images/create?" + qs
 	return c.stream("POST", path, streamOptions{
-		setRawTerminal: true,
-		rawJSONStream:  rawJSONStream,
-		headers:        headers,
-		in:             in,
-		stdout:         w,
+		setRawTerminal:    true,
+		headers:           headers,
+		in:                in,
+		stdout:            w,
+		rawJSONStream:     rawJSONStream,
+		inactivityTimeout: timeout,
 	})
 }
 
@@ -332,8 +337,9 @@ func (c *Client) LoadImage(opts LoadImageOptions) error {
 //
 // See https://goo.gl/le7vK8 for more details.
 type ExportImageOptions struct {
-	Name         string
-	OutputStream io.Writer
+	Name              string
+	OutputStream      io.Writer
+	InactivityTimeout time.Duration `qs:"-"`
 }
 
 // ExportImage exports an image (as a tar file) into the stream.
@@ -341,8 +347,9 @@ type ExportImageOptions struct {
 // See https://goo.gl/le7vK8 for more details.
 func (c *Client) ExportImage(opts ExportImageOptions) error {
 	return c.stream("GET", fmt.Sprintf("/images/%s/get", opts.Name), streamOptions{
-		setRawTerminal: true,
-		stdout:         opts.OutputStream,
+		setRawTerminal:    true,
+		stdout:            opts.OutputStream,
+		inactivityTimeout: opts.InactivityTimeout,
 	})
 }
 
@@ -350,8 +357,9 @@ func (c *Client) ExportImage(opts ExportImageOptions) error {
 //
 // See https://goo.gl/huC7HA for more details.
 type ExportImagesOptions struct {
-	Names        []string
-	OutputStream io.Writer `qs:"-"`
+	Names             []string
+	OutputStream      io.Writer     `qs:"-"`
+	InactivityTimeout time.Duration `qs:"-"`
 }
 
 // ExportImages exports one or more images (as a tar file) into the stream
@@ -362,8 +370,9 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 		return ErrMustSpecifyNames
 	}
 	return c.stream("GET", "/images/get?"+queryString(&opts), streamOptions{
-		setRawTerminal: true,
-		stdout:         opts.OutputStream,
+		setRawTerminal:    true,
+		stdout:            opts.OutputStream,
+		inactivityTimeout: opts.InactivityTimeout,
 	})
 }
 
@@ -376,9 +385,10 @@ type ImportImageOptions struct {
 	Source     string `qs:"fromSrc"`
 	Tag        string `qs:"tag"`
 
-	InputStream   io.Reader `qs:"-"`
-	OutputStream  io.Writer `qs:"-"`
-	RawJSONStream bool      `qs:"-"`
+	InputStream       io.Reader     `qs:"-"`
+	OutputStream      io.Writer     `qs:"-"`
+	RawJSONStream     bool          `qs:"-"`
+	InactivityTimeout time.Duration `qs:"-"`
 }
 
 // ImportImage imports an image from a url, a file or stdin
@@ -399,7 +409,7 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 		opts.InputStream = f
 		opts.Source = "-"
 	}
-	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream, opts.RawJSONStream)
+	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout)
 }
 
 // BuildImageOptions present the set of informations available for building an
@@ -430,6 +440,7 @@ type BuildImageOptions struct {
 	ContextDir          string             `qs:"-"`
 	Ulimits             []ULimit           `qs:"-"`
 	BuildArgs           []BuildArg         `qs:"-"`
+	InactivityTimeout   time.Duration      `qs:"-"`
 }
 
 // BuildArg represents arguments that can be passed to the image when building
@@ -495,11 +506,12 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 	}
 
 	return c.stream("POST", fmt.Sprintf("/build?%s", qs), streamOptions{
-		setRawTerminal: true,
-		rawJSONStream:  opts.RawJSONStream,
-		headers:        headers,
-		in:             opts.InputStream,
-		stdout:         opts.OutputStream,
+		setRawTerminal:    true,
+		rawJSONStream:     opts.RawJSONStream,
+		headers:           headers,
+		in:                opts.InputStream,
+		stdout:            opts.OutputStream,
+		inactivityTimeout: opts.InactivityTimeout,
 	})
 }
 

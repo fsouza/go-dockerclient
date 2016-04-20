@@ -1977,7 +1977,7 @@ func TestStatsTimeout(t *testing.T) {
 	statsC := make(chan *Stats)
 	done := make(chan bool)
 	go func() {
-		errC <- client.Stats(StatsOptions{"c", statsC, true, done, time.Millisecond * 100})
+		errC <- client.Stats(StatsOptions{ID: "c", Stats: statsC, Stream: true, Done: done, Timeout: time.Millisecond * 100})
 		close(errC)
 	}()
 	err = <-errC
@@ -2267,7 +2267,7 @@ func TestStats(t *testing.T) {
 	statsC := make(chan *Stats)
 	done := make(chan bool)
 	go func() {
-		errC <- client.Stats(StatsOptions{id, statsC, true, done, 0})
+		errC <- client.Stats(StatsOptions{ID: id, Stats: statsC, Stream: true, Done: done})
 		close(errC)
 	}()
 	var resultStats []*Stats
@@ -2304,7 +2304,7 @@ func TestStatsContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	statsC := make(chan *Stats)
 	done := make(chan bool)
-	err := client.Stats(StatsOptions{"abef348", statsC, true, done, 0})
+	err := client.Stats(StatsOptions{ID: "abef348", Stats: statsC, Stream: true, Done: done})
 	expected := &NoSuchContainer{ID: "abef348"}
 	if !reflect.DeepEqual(err, expected) {
 		t.Errorf("Stats: Wrong error returned. Want %#v. Got %#v.", expected, err)
