@@ -1962,11 +1962,11 @@ func TestStatsTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	received := false
+	received := make(chan bool)
 	defer l.Close()
 	go func() {
 		l.Accept()
-		received = true
+		received <- true
 		time.Sleep(time.Second)
 	}()
 	client, _ := NewClient("unix:///tmp/docker_test.sock")
@@ -1983,8 +1983,12 @@ func TestStatsTimeout(t *testing.T) {
 	if !ok || !e.Timeout() {
 		t.Error("Failed to receive timeout exception")
 	}
-	if !received {
-		t.Fatal("Failed to receive message")
+	recvTimeout := 2 * time.Second
+	select {
+	case <-received:
+		return
+	case <-time.After(recvTimeout):
+		t.Fatalf("Timeout waiting to receive message after %v", recvTimeout)
 	}
 }
 
