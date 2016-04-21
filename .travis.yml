@@ -3,7 +3,7 @@ sudo: required
 go:
   - 1.4.2
   - 1.5.4
-  - 1.6.1
+  - 1.6.2
   - tip
 os:
   - linux
