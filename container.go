@@ -642,6 +642,7 @@ type HostConfig struct {
 	Ulimits              []ULimit               `json:"Ulimits,omitempty" yaml:"Ulimits,omitempty"`
 	VolumeDriver         string                 `json:"VolumeDriver,omitempty" yaml:"VolumeDriver,omitempty"`
 	OomScoreAdj          int                    `json:"OomScoreAdj,omitempty" yaml:"OomScoreAdj,omitempty"`
+	ShmSize              int64                  `json:"ShmSize,omitempty" yaml:"ShmSize,omitempty"`
 }
 
 // StartContainer starts a container, returning an error in case of failure.
