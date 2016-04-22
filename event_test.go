@@ -256,3 +256,36 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 		}
 	}
 }
+
+func TestEventListenerReAdding(t *testing.T) {
+	endChan := make(chan bool)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-endChan
+	}))
+
+	client, err := NewClient(server.URL)
+	if err != nil {
+		t.Errorf("Failed to create client: %s", err)
+	}
+
+	listener := make(chan *APIEvents, 10)
+	if err := client.AddEventListener(listener); err != nil {
+		t.Errorf("Failed to add event listener: %s", err)
+	}
+
+	// Make sure eventHijack() is started with the current eventMonitoringState.
+	time.Sleep(10 * time.Millisecond)
+
+	if err := client.RemoveEventListener(listener); err != nil {
+		t.Errorf("Failed to remove event listener: %s", err)
+	}
+
+	if err := client.AddEventListener(listener); err != nil {
+		t.Errorf("Failed to add event listener: %s", err)
+	}
+
+	endChan <- true
+
+	// Give the goroutine of the first eventHijack() time to handle the EOF.
+	time.Sleep(10 * time.Millisecond)
+}
