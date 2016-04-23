@@ -23,5 +23,3 @@ services:
   - docker
 matrix:
   fast_finish: true
-  allow_failures:
-    - go: tip
