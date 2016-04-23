@@ -1,7 +1,7 @@
 language: go
 sudo: required
 go:
-  - 1.4.2
+  - 1.4.3
   - 1.5.4
   - 1.6.2
   - tip
