@@ -1970,7 +1970,21 @@ func TestStatsTimeout(t *testing.T) {
 	received := make(chan bool)
 	defer l.Close()
 	go func() {
-		l.Accept()
+		conn, err := l.Accept()
+		if err != nil {
+			t.Logf("Failed to accept connection: %s", err)
+			return
+		}
+		breader := bufio.NewReader(conn)
+		req, err := http.ReadRequest(breader)
+		if err != nil {
+			t.Logf("Failed to read request: %s", err)
+			return
+		}
+		if req.URL.Path != "/containers/c/stats" {
+			t.Logf("Wrong URL path for stats: %q", req.URL.Path)
+			return
+		}
 		received <- true
 		time.Sleep(time.Second)
 	}()
