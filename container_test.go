@@ -1691,9 +1691,6 @@ func TestExportContainer(t *testing.T) {
 }
 
 func TestExportContainerViaUnixSocket(t *testing.T) {
-	if runtime.GOOS != "darwin" {
-		t.Skip(fmt.Sprintf("skipping test on %s", runtime.GOOS))
-	}
 	content := "exported container tar content"
 	var buf []byte
 	out := bytes.NewBuffer(buf)
