@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -1705,9 +1706,10 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	}
 	listening := make(chan string)
 	done := make(chan int)
-	go runStreamConnServer(t, "unix", tempSocket, listening, done)
+	containerID := "4fa6e0f0c678"
+	go runStreamConnServer(t, "unix", tempSocket, listening, done, containerID)
 	<-listening // wait for server to start
-	opts := ExportContainerOptions{ID: "4fa6e0f0c678", OutputStream: out}
+	opts := ExportContainerOptions{ID: containerID, OutputStream: out}
 	err := client.ExportContainer(opts)
 	<-done // make sure server stopped
 	if err != nil {
@@ -1718,7 +1720,7 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	}
 }
 
-func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- string, done chan<- int) {
+func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- string, done chan<- int, containerID string) {
 	defer close(done)
 	l, err := net.Listen(network, laddr)
 	if err != nil {
@@ -1733,8 +1735,14 @@ func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- s
 		t.Logf("Accept failed: %v", err)
 		return
 	}
+	defer c.Close()
+	breader := bufio.NewReader(c)
+	req, err := http.ReadRequest(breader)
+	if path := "/containers/" + containerID + "/export"; req.URL.Path != path {
+		t.Errorf("wrong path. Want %q. Got %q", path, req.URL.Path)
+		return
+	}
 	c.Write([]byte("HTTP/1.1 200 OK\n\nexported container tar content"))
-	c.Close()
 }
 
 func tempfile(filename string) string {
