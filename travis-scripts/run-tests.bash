@@ -8,7 +8,7 @@ if ! [[ $TRAVIS_GO_VERSION =~ ^1\.[34] ]]; then
 	make lint vet
 fi
 
-make fmtcheck gotest
+make fmtcheck gotest GO_TEST_FLAGS=-race
 
 if [[ $TRAVIS_OS_NAME == "linux" ]]; then
 	DOCKER_HOST=tcp://127.0.0.1:2375 make integration
