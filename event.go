@@ -225,11 +225,19 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 
 func (eventState *eventMonitoringState) connectWithRetry(c *Client) error {
 	var retries int
-	err := c.eventHijack(atomic.LoadInt64(&eventState.lastSeen), eventState.C, eventState.errC)
+	eventState.RLock()
+	eventChan := eventState.C
+	errChan := eventState.errC
+	eventState.RUnlock()
+	err := c.eventHijack(atomic.LoadInt64(&eventState.lastSeen), eventChan, errChan)
 	for ; err != nil && retries < maxMonitorConnRetries; retries++ {
 		waitTime := int64(retryInitialWaitTime * math.Pow(2, float64(retries)))
 		time.Sleep(time.Duration(waitTime) * time.Millisecond)
-		err = c.eventHijack(atomic.LoadInt64(&eventState.lastSeen), eventState.C, eventState.errC)
+		eventState.RLock()
+		eventChan = eventState.C
+		errChan = eventState.errC
+		eventState.RUnlock()
+		err = c.eventHijack(atomic.LoadInt64(&eventState.lastSeen), eventChan, errChan)
 	}
 	return err
 }
