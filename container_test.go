@@ -1993,6 +1993,7 @@ func TestStatsTimeout(t *testing.T) {
 	errC := make(chan error, 1)
 	statsC := make(chan *Stats)
 	done := make(chan bool)
+	defer close(done)
 	go func() {
 		errC <- client.Stats(StatsOptions{ID: "c", Stats: statsC, Stream: true, Done: done, Timeout: time.Millisecond * 100})
 		close(errC)
@@ -2283,6 +2284,7 @@ func TestStats(t *testing.T) {
 	errC := make(chan error, 1)
 	statsC := make(chan *Stats)
 	done := make(chan bool)
+	defer close(done)
 	go func() {
 		errC <- client.Stats(StatsOptions{ID: id, Stats: statsC, Stream: true, Done: done})
 		close(errC)
@@ -2321,6 +2323,7 @@ func TestStatsContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	statsC := make(chan *Stats)
 	done := make(chan bool)
+	defer close(done)
 	err := client.Stats(StatsOptions{ID: "abef348", Stats: statsC, Stream: true, Done: done})
 	expected := &NoSuchContainer{ID: "abef348"}
 	if !reflect.DeepEqual(err, expected) {
