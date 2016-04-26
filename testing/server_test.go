@@ -38,12 +38,17 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestServerStop(t *testing.T) {
+	const retries = 3
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	server.Stop()
 	_, err = net.Dial("tcp", server.listener.Addr().String())
+	for i := 0; i < retries && err == nil; i++ {
+		time.Sleep(100 * time.Millisecond)
+		_, err = net.Dial("tcp", server.listener.Addr().String())
+	}
 	if err == nil {
 		t.Error("Unexpected <nil> error when dialing to stopped server")
 	}
