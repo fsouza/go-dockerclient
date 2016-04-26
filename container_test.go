@@ -1986,7 +1986,7 @@ func TestStatsTimeout(t *testing.T) {
 			return
 		}
 		received <- true
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 	}()
 	client, _ := NewClient("unix:///tmp/docker_test.sock")
 	client.SkipServerVersionCheck = true
