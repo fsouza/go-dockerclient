@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsouza/go-dockerclient/external/github.com/docker/go-units"
+	"github.com/docker/go-units"
 )
 
 // ErrContainerAlreadyExists is the error returned by CreateContainer when the
