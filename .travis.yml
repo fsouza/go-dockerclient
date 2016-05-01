@@ -1,7 +1,6 @@
 language: go
 sudo: required
 go:
-  - 1.4.2
   - 1.5.4
   - 1.6.1
   - tip
@@ -9,14 +8,19 @@ os:
   - linux
   - osx
 env:
-  - GOARCH=amd64 DOCKER_VERSION=1.9.1
-  - GOARCH=386   DOCKER_VERSION=1.9.1
-  - GOARCH=amd64 DOCKER_VERSION=1.10.3
-  - GOARCH=386   DOCKER_VERSION=1.10.3
-  - GOARCH=amd64 DOCKER_VERSION=1.11.0
-  - GOARCH=386   DOCKER_VERSION=1.11.0
+  matrix:
+    - GOARCH=amd64 DOCKER_VERSION=1.9.1
+    - GOARCH=386   DOCKER_VERSION=1.9.1
+    - GOARCH=amd64 DOCKER_VERSION=1.10.3
+    - GOARCH=386   DOCKER_VERSION=1.10.3
+    - GOARCH=amd64 DOCKER_VERSION=1.11.1
+    - GOARCH=386   DOCKER_VERSION=1.11.1
+  global:
+    - GO_TEST_FLAGS=-race
+    - DOCKER_HOST=tcp://127.0.0.1:2375
 install:
-  - travis_retry travis-scripts/install.bash
+  - make testdeps
+  - travis_retry travis-scripts/install-docker.bash
 script:
   - travis-scripts/run-tests.bash
 services:

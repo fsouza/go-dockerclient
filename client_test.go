@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fsouza/go-dockerclient/external/github.com/hashicorp/go-cleanhttp"
+	"github.com/hashicorp/go-cleanhttp"
 )
 
 func TestNewAPIClient(t *testing.T) {
