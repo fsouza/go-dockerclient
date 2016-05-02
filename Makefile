@@ -43,10 +43,5 @@ test: pretest gotest
 integration:
 	go test -tags docker_integration -run TestIntegration -v
 
-cov:
-	@ go get -v github.com/axw/gocov/gocov
-	@ go get golang.org/x/tools/cmd/cover
-	gocov test | gocov report
-
 clean:
 	go clean $(PKGS)
