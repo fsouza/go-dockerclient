@@ -7,7 +7,6 @@
 	pretest \
 	test \
 	integration \
-	cov \
 	clean
 
 all: test
@@ -42,4 +41,4 @@ integration:
 	go test -tags docker_integration -run TestIntegration -v
 
 clean:
-	go clean $(PKGS)
+	go clean ./...
