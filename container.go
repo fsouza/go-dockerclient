@@ -481,9 +481,10 @@ func (c *Client) ContainerChanges(id string) ([]Change, error) {
 //
 // See https://goo.gl/WxQzrr for more details.
 type CreateContainerOptions struct {
-	Name       string
-	Config     *Config     `qs:"-"`
-	HostConfig *HostConfig `qs:"-"`
+	Name             string
+	Config           *Config           `qs:"-"`
+	HostConfig       *HostConfig       `qs:"-"`
+	NetworkingConfig *NetworkingConfig `qs:"-"`
 }
 
 // CreateContainer creates a new container, returning the container instance,
@@ -498,10 +499,12 @@ func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error
 		doOptions{
 			data: struct {
 				*Config
-				HostConfig *HostConfig `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
+				HostConfig       *HostConfig       `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
+				NetworkingConfig *NetworkingConfig `json:"NetworkingConfig,omitempty" yaml:"NetworkingConfig,omitempty"`
 			}{
 				opts.Config,
 				opts.HostConfig,
+				opts.NetworkingConfig,
 			},
 		},
 	)
@@ -643,6 +646,12 @@ type HostConfig struct {
 	OomScoreAdj          int                    `json:"OomScoreAdj,omitempty" yaml:"OomScoreAdj,omitempty"`
 	PidsLimit            int64                  `json:"PidsLimit,omitempty" yaml:"PidsLimit,omitempty"`
 	ShmSize              int64                  `json:"ShmSize,omitempty" yaml:"ShmSize,omitempty"`
+}
+
+// NetworkingConfig represents the container's networking configuration for each of its interfaces
+// Carries the networking configs specified in the `docker run` and `docker network connect` commands
+type NetworkingConfig struct {
+	EndpointsConfig map[string]*EndpointConfig // Endpoint configs for each connecting network
 }
 
 // StartContainer starts a container, returning an error in case of failure.
