@@ -1870,6 +1870,16 @@ func TestRestartOnFailure(t *testing.T) {
 	}
 }
 
+func TestRestartUnlessStopped(t *testing.T) {
+	policy := RestartUnlessStopped()
+	if policy.Name != "unless-stopped" {
+		t.Errorf("RestartUnlessStopped(): wrong policy name. Want %q. Got %q", "unless-stopped", policy.Name)
+	}
+	if policy.MaximumRetryCount != 0 {
+		t.Errorf("RestartUnlessStopped(): wrong MaximumRetryCount. Want 0. Got %d", policy.MaximumRetryCount)
+	}
+}
+
 func TestNeverRestart(t *testing.T) {
 	policy := NeverRestart()
 	if policy.Name != "no" {
