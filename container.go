@@ -546,6 +546,8 @@ type KeyValuePair struct {
 //   - always: the docker daemon will always restart the container
 //   - on-failure: the docker daemon will restart the container on failures, at
 //                 most MaximumRetryCount times
+//   - unless-stopped: the docker daemon will always restart the container except
+//                 when user has manually stopped the container
 //   - no: the docker daemon will not restart the container automatically
 type RestartPolicy struct {
 	Name              string `json:"Name,omitempty" yaml:"Name,omitempty"`
@@ -562,6 +564,12 @@ func AlwaysRestart() RestartPolicy {
 // restart the container on failures, trying at most maxRetry times.
 func RestartOnFailure(maxRetry int) RestartPolicy {
 	return RestartPolicy{Name: "on-failure", MaximumRetryCount: maxRetry}
+}
+
+// RestartUnlessStopped returns a restart policy that tells the Docker daemon to
+// always restart the container except when user has manually stopped the container.
+func RestartUnlessStopped() RestartPolicy {
+	return RestartPolicy{Name: "unless-stopped"}
 }
 
 // NeverRestart returns a restart policy that tells the Docker daemon to never
