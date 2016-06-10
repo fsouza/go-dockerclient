@@ -7,10 +7,53 @@ package docker
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path"
 	"strings"
 	"testing"
 )
+
+func TestAuthConfigurationSearchPath(t *testing.T) {
+	var testData = []struct {
+		dockerConfigEnv string
+		homeEnv         string
+		expectedPaths   []string
+	}{
+		{"", "", []string{}},
+		{"", "home", []string{path.Join("home", ".docker", "config.json"), path.Join("home", ".dockercfg")}},
+		{"docker_config", "", []string{path.Join("docker_config", "config.json")}},
+		{"a", "b", []string{path.Join("a", "config.json"), path.Join("b", ".docker", "config.json"), path.Join("b", ".dockercfg")}},
+	}
+	for _, tt := range testData {
+		paths := cfgPaths(tt.dockerConfigEnv, tt.homeEnv)
+		if got, want := strings.Join(paths, ","), strings.Join(tt.expectedPaths, ","); got != want {
+			t.Errorf("cfgPaths: wrong result. Want: %s. Got: %s", want, got)
+		}
+	}
+}
+
+func TestAuthConfigurationsFromFile(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "go-dockerclient-auth-test")
+	if err != nil {
+		t.Errorf("Unable to create temporary directory for TestAuthConfigurationsFromFile: %s", err)
+	}
+	defer os.RemoveAll(tmpDir)
+	authString := base64.StdEncoding.EncodeToString([]byte("user:pass"))
+	content := fmt.Sprintf("{\"auths\":{\"foo\": {\"auth\": \"%s\"}}}", authString)
+	configFile := path.Join(tmpDir, "docker_config")
+	if err := ioutil.WriteFile(configFile, []byte(content), 0600); err != nil {
+		t.Errorf("Error writing auth config for TestAuthConfigurationsFromFile: %s", err)
+	}
+	auths, err := NewAuthConfigurationsFromFile(configFile)
+	if err != nil {
+		t.Errorf("Error calling NewAuthConfigurationsFromFile: %s", err)
+	}
+	if _, hasKey := auths.Configs["foo"]; !hasKey {
+		t.Errorf("Returned auths did not include expected auth key foo")
+	}
+}
 
 func TestAuthLegacyConfig(t *testing.T) {
 	auth := base64.StdEncoding.EncodeToString([]byte("user:pa:ss"))
