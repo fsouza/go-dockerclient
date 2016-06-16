@@ -590,6 +590,45 @@ func TestClientStreamContextCancel(t *testing.T) {
 	}
 }
 
+func TestClientDoContextDeadline(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(500 * time.Millisecond)
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	_, err = client.do("POST", "/image/create", doOptions{
+		context: ctx,
+	})
+	if err != context.DeadlineExceeded {
+		t.Fatalf("expected %s, got: %s", context.DeadlineExceeded, err)
+	}
+}
+
+func TestClientDoContextCancel(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(500 * time.Millisecond)
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		cancel()
+	}()
+	_, err = client.do("POST", "/image/create", doOptions{
+		context: ctx,
+	})
+	if err != context.Canceled {
+		t.Fatalf("expected %s, got: %s", context.Canceled, err)
+	}
+}
+
 func TestClientStreamTimeoutUnixSocket(t *testing.T) {
 	tmpdir, err := ioutil.TempDir("", "socket")
 	if err != nil {

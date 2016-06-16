@@ -449,13 +449,7 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 			return nil, ErrConnectionRefused
 		}
 
-		// if error in context, return that instead
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-			return nil, err
-		}
+		return nil, chooseError(ctx, err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, newError(resp)
@@ -477,6 +471,16 @@ type streamOptions struct {
 	// arrives
 	inactivityTimeout time.Duration
 	context           context.Context
+}
+
+// if error in context, return that instead of generic http error
+func chooseError(ctx context.Context, err error) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return err
+	}
 }
 
 func (c *Client) stream(method, path string, streamOptions streamOptions) error {
@@ -529,16 +533,10 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 				dial.Close()
 			}
 		}()
-		defer dial.Close()
 		breader := bufio.NewReader(dial)
 		err = req.Write(dial)
 		if err != nil {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-				return err
-			}
+			return chooseError(subCtx, err)
 		}
 
 		// ReadResponse may hang if server does not replay
@@ -554,24 +552,15 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 			if strings.Contains(err.Error(), "connection refused") {
 				return ErrConnectionRefused
 			}
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-				return err
-			}
+
+			return chooseError(subCtx, err)
 		}
 	} else {
 		if resp, err = ctxhttp.Do(subCtx, c.HTTPClient, req); err != nil {
 			if strings.Contains(err.Error(), "connection refused") {
 				return ErrConnectionRefused
 			}
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-				return err
-			}
+			return chooseError(subCtx, err)
 		}
 	}
 	defer resp.Body.Close()
@@ -588,12 +577,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		if atomic.LoadUint32(&canceled) != 0 {
 			return ErrInactivityTimeout
 		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			return err
-		}
+		return chooseError(subCtx, err)
 	}
 	return nil
 }
