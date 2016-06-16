@@ -543,8 +543,8 @@ func TestClientStreamContextDeadline(t *testing.T) {
 		stdout:         &w,
 		context:        ctx,
 	})
-	if err.Error() != "net/http: request canceled" {
-		t.Fatalf("expected net/http: request canceled, got: %s", err)
+	if err != context.DeadlineExceeded {
+		t.Fatalf("expected %s, got: %s", context.DeadlineExceeded, err)
 	}
 	expected := "abc\n"
 	result := w.String()
@@ -580,8 +580,8 @@ func TestClientStreamContextCancel(t *testing.T) {
 		stdout:         &w,
 		context:        ctx,
 	})
-	if err.Error() != "net/http: request canceled" {
-		t.Fatalf("expected net/http: request canceled, got: %s", err)
+	if err != context.Canceled {
+		t.Fatalf("expected %s, got: %s", context.Canceled, err)
 	}
 	expected := "abc\n"
 	result := w.String()
