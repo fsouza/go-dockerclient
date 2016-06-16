@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
+	"golang.org/x/net/context"
 )
 
 func TestNewAPIClient(t *testing.T) {
@@ -488,7 +489,7 @@ func TestClientStreamTimeoutNotHit(t *testing.T) {
 	}
 }
 
-func TestClientStreamTimeout(t *testing.T) {
+func TestClientStreamInactivityTimeout(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < 5; i++ {
 			fmt.Fprintf(w, "%d\n", i)
@@ -512,6 +513,77 @@ func TestClientStreamTimeout(t *testing.T) {
 		t.Fatalf("expected request canceled error, got: %s", err)
 	}
 	expected := "0\n"
+	result := w.String()
+	if result != expected {
+		t.Fatalf("expected stream result %q, got: %q", expected, result)
+	}
+}
+
+func TestClientStreamContextDeadline(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "abc\n")
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		time.Sleep(500 * time.Millisecond)
+		fmt.Fprint(w, "def\n")
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var w bytes.Buffer
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	err = client.stream("POST", "/image/create", streamOptions{
+		setRawTerminal: true,
+		stdout:         &w,
+		context:        ctx,
+	})
+	if err.Error() != "net/http: request canceled" {
+		t.Fatalf("expected net/http: request canceled, got: %s", err)
+	}
+	expected := "abc\n"
+	result := w.String()
+	if result != expected {
+		t.Fatalf("expected stream result %q, got: %q", expected, result)
+	}
+}
+
+func TestClientStreamContextCancel(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "abc\n")
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		time.Sleep(500 * time.Millisecond)
+		fmt.Fprint(w, "def\n")
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var w bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		cancel()
+	}()
+	err = client.stream("POST", "/image/create", streamOptions{
+		setRawTerminal: true,
+		stdout:         &w,
+		context:        ctx,
+	})
+	if err.Error() != "net/http: request canceled" {
+		t.Fatalf("expected net/http: request canceled, got: %s", err)
+	}
+	expected := "abc\n"
 	result := w.String()
 	if result != expected {
 		t.Fatalf("expected stream result %q, got: %q", expected, result)

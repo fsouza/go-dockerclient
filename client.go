@@ -34,6 +34,8 @@ import (
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/hashicorp/go-cleanhttp"
+	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 const userAgent = "go-dockerclient"
@@ -388,6 +390,7 @@ type doOptions struct {
 	data      interface{}
 	forceJSON bool
 	headers   map[string]string
+	context   context.Context
 }
 
 func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, error) {
@@ -434,7 +437,13 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 	for k, v := range doOptions.headers {
 		req.Header.Set(k, v)
 	}
-	resp, err := httpClient.Do(req)
+
+	ctx := doOptions.context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	resp, err := ctxhttp.Do(ctx, httpClient, req)
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return nil, ErrConnectionRefused
@@ -460,6 +469,7 @@ type streamOptions struct {
 	// Timeout with no data is received, it's reset every time new data
 	// arrives
 	inactivityTimeout time.Duration
+	context           context.Context
 }
 
 func (c *Client) stream(method, path string, streamOptions streamOptions) error {
@@ -492,13 +502,26 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 	if streamOptions.stderr == nil {
 		streamOptions.stderr = ioutil.Discard
 	}
-	cancelRequest := cancelable(c.HTTPClient, req)
+
+	// make a sub-context so that our active cancellation does not affect parent
+	ctx := streamOptions.context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	subCtx, cancelRequest := context.WithCancel(ctx)
+	defer cancelRequest()
+
 	if protocol == "unix" {
 		dial, err := c.Dialer.Dial(protocol, address)
 		if err != nil {
 			return err
 		}
-		cancelRequest = func() { dial.Close() }
+		go func() {
+			select {
+			case <-subCtx.Done():
+				dial.Close()
+			}
+		}()
 		defer dial.Close()
 		breader := bufio.NewReader(dial)
 		err = req.Write(dial)
@@ -522,7 +545,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 			return err
 		}
 	} else {
-		if resp, err = c.HTTPClient.Do(req); err != nil {
+		if resp, err = ctxhttp.Do(subCtx, c.HTTPClient, req); err != nil {
 			if strings.Contains(err.Error(), "connection refused") {
 				return ErrConnectionRefused
 			}
