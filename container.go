@@ -667,10 +667,22 @@ type NetworkingConfig struct {
 
 // StartContainer starts a container, returning an error in case of failure.
 //
+// Passing the HostConfig to this method has been deprecated in Docker API 1.22
+// (Docker Engine 1.10.x) and totally removed in Docker API 1.24 (Docker Engine
+// 1.12.x). The client will ignore the parameter when communicating with Docker
+// API 1.24 or greater.
+//
 // See https://goo.gl/MrBAJv for more details.
 func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
+	var opts doOptions
 	path := "/containers/" + id + "/start"
-	resp, err := c.do("POST", path, doOptions{data: hostConfig, forceJSON: true})
+	if c.serverAPIVersion == nil {
+		c.checkAPIVersion()
+	}
+	if c.serverAPIVersion != nil && c.serverAPIVersion.LessThan(apiVersion124) {
+		opts = doOptions{data: hostConfig, forceJSON: true}
+	}
+	resp, err := c.do("POST", path, opts)
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id, Err: err}
