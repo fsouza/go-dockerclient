@@ -2135,3 +2135,14 @@ func TestInfoDocker(t *testing.T) {
 		t.Fatalf("InfoDocker: wrong docker root. Want /var/lib/docker. Got %s.", infoData["DockerRootDir"])
 	}
 }
+
+func TestVersionDocker(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/version", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("VersionDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}

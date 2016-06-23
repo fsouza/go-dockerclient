@@ -145,6 +145,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/volumes/{name:.*}").Methods("GET").HandlerFunc(s.handlerWrapper(s.inspectVolume))
 	s.mux.Path("/volumes/{name:.*}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.removeVolume))
 	s.mux.Path("/info").Methods("GET").HandlerFunc(s.handlerWrapper(s.infoDocker))
+	s.mux.Path("/version").Methods("GET").HandlerFunc(s.handlerWrapper(s.versionDocker))
 }
 
 // SetHook changes the hook function used by the server.
@@ -1328,6 +1329,22 @@ func (s *DockerServer) infoDocker(w http.ResponseWriter, r *http.Request) {
 		"ServerVersion":     "1.10.1",
 		"ClusterStore":      "",
 		"ClusterAdvertise":  "",
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(envs)
+}
+
+func (s *DockerServer) versionDocker(w http.ResponseWriter, r *http.Request) {
+	envs := map[string]interface{}{
+		"Version":       "1.10.1",
+		"Os":            "linux",
+		"KernelVersion": "3.13.0-77-generic",
+		"GoVersion":     "go1.4.2",
+		"GitCommit":     "9e83765",
+		"Arch":          "amd64",
+		"ApiVersion":    "1.22",
+		"BuildTime":     "2015-12-01T07:09:13.444803460+00:00",
+		"Experimental":  false,
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(envs)
