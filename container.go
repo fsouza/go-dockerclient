@@ -282,6 +282,8 @@ type Config struct {
 	AttachStderr      bool                `json:"AttachStderr,omitempty" yaml:"AttachStderr,omitempty"`
 	PortSpecs         []string            `json:"PortSpecs,omitempty" yaml:"PortSpecs,omitempty"`
 	ExposedPorts      map[Port]struct{}   `json:"ExposedPorts,omitempty" yaml:"ExposedPorts,omitempty"`
+	PublishService    string              `json:"PublishService,omitempty" yaml:"PublishService,omitempty"`
+	ArgsEscaped       bool                `json:"ArgsEscaped,omitempty" yaml:"ArgsEscaped,omitempty"`
 	StopSignal        string              `json:"StopSignal,omitempty" yaml:"StopSignal,omitempty"`
 	Tty               bool                `json:"Tty,omitempty" yaml:"Tty,omitempty"`
 	OpenStdin         bool                `json:"OpenStdin,omitempty" yaml:"OpenStdin,omitempty"`
@@ -632,6 +634,7 @@ type HostConfig struct {
 	LogConfig            LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty"`
 	ReadonlyRootfs       bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
 	SecurityOpt          []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty"`
+	Cgroup               string                 `json:"Cgroup,omitempty" yaml:"Cgroup,omitempty"`
 	CgroupParent         string                 `json:"CgroupParent,omitempty" yaml:"CgroupParent,omitempty"`
 	Memory               int64                  `json:"Memory,omitempty" yaml:"Memory,omitempty"`
 	MemoryReservation    int64                  `json:"MemoryReservation,omitempty" yaml:"MemoryReservation,omitempty"`
@@ -657,6 +660,9 @@ type HostConfig struct {
 	PidsLimit            int64                  `json:"PidsLimit,omitempty" yaml:"PidsLimit,omitempty"`
 	ShmSize              int64                  `json:"ShmSize,omitempty" yaml:"ShmSize,omitempty"`
 	Tmpfs                map[string]string      `json:"Tmpfs,omitempty" yaml:"Tmpfs,omitempty"`
+	AutoRemove           bool                   `json:"AutoRemove,omitempty" yaml:"AutoRemove,omitempty"`
+	StorageOpt           map[string]string      `json:"StorageOpt,omitempty" yaml:"StorageOpt,omitempty"`
+	Sysctls              map[string]string      `json:"Sysctls,omitempty" yaml:"Sysctls,omitempty"`
 }
 
 // NetworkingConfig represents the container's networking configuration for each of its interfaces
