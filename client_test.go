@@ -519,7 +519,13 @@ func TestClientStreamTimeout(t *testing.T) {
 }
 
 func TestClientStreamTimeoutUnixSocket(t *testing.T) {
-	l, err := net.Listen("unix", "/tmp/docker_test.sock")
+	tmpdir, err := ioutil.TempDir("", "socket")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+	socketPath := filepath.Join(tmpdir, "docker_test.sock")
+	l, err := net.Listen("unix", socketPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -535,7 +541,7 @@ func TestClientStreamTimeoutUnixSocket(t *testing.T) {
 			}
 		}))
 	}()
-	client, err := NewClient("unix:///tmp/docker_test.sock")
+	client, err := NewClient("unix://" + socketPath)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,6 +15,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -2000,7 +2001,14 @@ func TestTopContainerWithPsArgs(t *testing.T) {
 }
 
 func TestStatsTimeout(t *testing.T) {
-	l, err := net.Listen("unix", "/tmp/docker_test.sock")
+	tmpdir, err := ioutil.TempDir("", "socket")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+	socketPath := filepath.Join(tmpdir, "docker_test.sock")
+	t.Logf("socketPath=%s", socketPath)
+	l, err := net.Listen("unix", socketPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2025,20 +2033,20 @@ func TestStatsTimeout(t *testing.T) {
 		received <- true
 		time.Sleep(2 * time.Second)
 	}()
-	client, _ := NewClient("unix:///tmp/docker_test.sock")
+	client, _ := NewClient("unix://" + socketPath)
 	client.SkipServerVersionCheck = true
 	errC := make(chan error, 1)
 	statsC := make(chan *Stats)
 	done := make(chan bool)
 	defer close(done)
 	go func() {
-		errC <- client.Stats(StatsOptions{ID: "c", Stats: statsC, Stream: true, Done: done, Timeout: time.Millisecond * 100})
+		errC <- client.Stats(StatsOptions{ID: "c", Stats: statsC, Stream: true, Done: done, Timeout: time.Millisecond})
 		close(errC)
 	}()
 	err = <-errC
 	e, ok := err.(net.Error)
 	if !ok || !e.Timeout() {
-		t.Error("Failed to receive timeout exception")
+		t.Errorf("Failed to receive timeout error, got %#v", err)
 	}
 	recvTimeout := 2 * time.Second
 	select {
