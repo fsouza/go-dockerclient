@@ -108,21 +108,21 @@ func (c *Client) NetworkInfo(id string) (*Network, error) {
 //
 // See https://goo.gl/6GugX3 for more details.
 type CreateNetworkOptions struct {
-	Name           string                 `json:"Name"`
-	CheckDuplicate bool                   `json:"CheckDuplicate"`
-	Driver         string                 `json:"Driver"`
-	IPAM           IPAMOptions            `json:"IPAM"`
-	Options        map[string]interface{} `json:"Options"`
-	Internal       bool                   `json:"Internal"`
-	EnableIPv6     bool                   `json:"EnableIPv6"`
+	Name           string                 `json:"Name" yaml:"Name"`
+	CheckDuplicate bool                   `json:"CheckDuplicate" yaml:"CheckDuplicate"`
+	Driver         string                 `json:"Driver" yaml:"Driver"`
+	IPAM           IPAMOptions            `json:"IPAM" yaml:"IPAM"`
+	Options        map[string]interface{} `json:"Options" yaml:"Options"`
+	Internal       bool                   `json:"Internal yaml:"Internal""`
+	EnableIPv6     bool                   `json:"EnableIPv6" yaml:"EnableIPv6"`
 }
 
 // IPAMOptions controls IP Address Management when creating a network
 //
 // See https://goo.gl/T8kRVH for more details.
 type IPAMOptions struct {
-	Driver string       `json:"Driver"`
-	Config []IPAMConfig `json:"Config"`
+	Driver string       `json:"Driver" yaml:"Driver"`
+	Config []IPAMConfig `json:"Config" yaml:"Config"`
 }
 
 // IPAMConfig represents IPAM configurations
