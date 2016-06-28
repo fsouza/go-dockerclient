@@ -668,7 +668,7 @@ type HostConfig struct {
 // NetworkingConfig represents the container's networking configuration for each of its interfaces
 // Carries the networking configs specified in the `docker run` and `docker network connect` commands
 type NetworkingConfig struct {
-	EndpointsConfig map[string]*EndpointConfig // Endpoint configs for each connecting network
+	EndpointsConfig map[string]*EndpointConfig `json:"EndpointsConfig" yaml:"EndpointsConfig"` // Endpoint configs for each connecting network
 }
 
 // StartContainer starts a container, returning an error in case of failure.
