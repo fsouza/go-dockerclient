@@ -57,7 +57,7 @@ func TestFilteredListNetworks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantQuery := "filters={\"name\":{\"blah\":true}}\n"
+	wantQuery := "filters=" + url.QueryEscape("{\"name\":{\"blah\":true}}\n")
 	fakeRT := &FakeRoundTripper{message: jsonNetworks, status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	opts := NetworkFilterOpts{
