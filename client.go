@@ -460,6 +460,7 @@ type streamOptions struct {
 	// Timeout with no data is received, it's reset every time new data
 	// arrives
 	inactivityTimeout time.Duration
+	cancelChannel     chan struct{}
 }
 
 func (c *Client) stream(method, path string, streamOptions streamOptions) error {
@@ -538,6 +539,12 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		ch := handleInactivityTimeout(&streamOptions, cancelRequest, &canceled)
 		defer close(ch)
 	}
+
+	if nil != streamOptions.cancelChannel {
+		ch := handleCancelRequest(&streamOptions, cancelRequest)
+		defer close(ch)
+	}
+
 	err = handleStreamResponse(resp, &streamOptions)
 	if err != nil {
 		if atomic.LoadUint32(&canceled) != 0 {
@@ -598,6 +605,23 @@ func (p *proxyWriter) callCount() uint64 {
 func (p *proxyWriter) Write(data []byte) (int, error) {
 	atomic.AddUint64(&p.calls, 1)
 	return p.Writer.Write(data)
+}
+
+func handleCancelRequest(options *streamOptions, cancelRequest func()) chan<- struct{} {
+	done := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-options.cancelChannel:
+				cancelRequest()
+				return
+			}
+		}
+	}()
+
+	return done
 }
 
 func handleInactivityTimeout(options *streamOptions, cancelRequest func(), canceled *uint32) chan<- struct{} {
