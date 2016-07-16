@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // ErrNetworkAlreadyExists is the error returned by CreateNetwork when the
@@ -70,7 +71,7 @@ func (c *Client) FilteredListNetworks(opts NetworkFilterOpts) ([]Network, error)
 	if err := json.NewEncoder(params).Encode(&opts); err != nil {
 		return nil, err
 	}
-	path := "/networks?filters=" + params.String()
+	path := "/networks?filters=" + url.QueryEscape(params.String())
 	resp, err := c.do("GET", path, doOptions{})
 	if err != nil {
 		return nil, err
