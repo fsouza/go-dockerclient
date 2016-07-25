@@ -594,6 +594,28 @@ func TestStartContainer(t *testing.T) {
 	}
 }
 
+func TestStartContainerNoHostConfig(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.buildMuxer()
+	memory := int64(536870912)
+	hostConfig := docker.HostConfig{Memory: memory}
+	server.containers[0].HostConfig = &hostConfig
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, strings.NewReader(""))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if !server.containers[0].State.Running {
+		t.Error("StartContainer: did not set the container to running state")
+	}
+	if gotMemory := server.containers[0].HostConfig.Memory; gotMemory != memory {
+		t.Errorf("StartContainer: wrong HostConfig. Wants %d of memory. Got %d", memory, gotMemory)
+	}
+}
+
 func TestStartContainerChangeNetwork(t *testing.T) {
 	server := DockerServer{}
 	addContainers(&server, 1)

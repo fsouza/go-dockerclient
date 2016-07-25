@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	mathrand "math/rand"
 	"net"
@@ -558,14 +559,22 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 	s.cMut.Lock()
 	defer s.cMut.Unlock()
 	defer r.Body.Close()
-	var hostConfig docker.HostConfig
+	if container.State.Running {
+		http.Error(w, "", http.StatusNotModified)
+		return
+	}
+	var hostConfig *docker.HostConfig
 	err = json.NewDecoder(r.Body).Decode(&hostConfig)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	container.HostConfig = &hostConfig
-	if len(hostConfig.PortBindings) > 0 {
+	if hostConfig == nil {
+		hostConfig = container.HostConfig
+	} else {
+		container.HostConfig = hostConfig
+	}
+	if hostConfig != nil && len(hostConfig.PortBindings) > 0 {
 		ports := map[docker.Port][]docker.PortBinding{}
 		for key, items := range hostConfig.PortBindings {
 			bindings := make([]docker.PortBinding, len(items))
@@ -585,10 +594,6 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 			ports[key] = bindings
 		}
 		container.NetworkSettings.Ports = ports
-	}
-	if container.State.Running {
-		http.Error(w, "", http.StatusNotModified)
-		return
 	}
 	container.State.Running = true
 	s.notify(container)
