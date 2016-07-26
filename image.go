@@ -280,8 +280,12 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 // See https://goo.gl/iJkZjD for more details.
 type PullImageOptions struct {
 	Repository string `qs:"fromImage"`
-	Registry   string
 	Tag        string
+
+	// Only required for Docker Engine 1.9 or 1.10 w/ Remote API < 1.21
+	// and Docker Engine < 1.9
+	// This parameter was removed in Docker Engine 1.11
+	Registry string
 
 	OutputStream      io.Writer     `qs:"-"`
 	RawJSONStream     bool          `qs:"-"`
