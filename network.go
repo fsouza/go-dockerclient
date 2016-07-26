@@ -113,7 +113,7 @@ type CreateNetworkOptions struct {
 	Driver         string                 `json:"Driver" yaml:"Driver"`
 	IPAM           IPAMOptions            `json:"IPAM" yaml:"IPAM"`
 	Options        map[string]interface{} `json:"Options" yaml:"Options"`
-	Internal       bool                   `json:"Internal yaml:"Internal""`
+	Internal       bool                   `json:"Internal" yaml:"Internal"`
 	EnableIPv6     bool                   `json:"EnableIPv6" yaml:"EnableIPv6"`
 }
 
