@@ -37,6 +37,32 @@ func TestNewServer(t *testing.T) {
 	conn.Close()
 }
 
+func TestNewTLSServer(t *testing.T) {
+	tlsConfig := TLSConfig{
+		CertPath:    "./data/server.pem",
+		CertKeyPath: "./data/serverkey.pem",
+		RootCAPath:  "./data/ca.pem",
+	}
+	server, err := NewTLSServer("127.0.0.1:0", nil, nil, tlsConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.listener.Close()
+	conn, err := net.Dial("tcp", server.listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn.Close()
+	client, err := docker.NewTLSClient(server.URL(), "./data/cert.pem", "./data/key.pem", "./data/ca.pem")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = client.Ping()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestServerStop(t *testing.T) {
 	const retries = 3
 	server, err := NewServer("127.0.0.1:0", nil, nil)

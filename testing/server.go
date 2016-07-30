@@ -9,6 +9,8 @@ package testing
 import (
 	"archive/tar"
 	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -67,6 +69,22 @@ type volumeCounter struct {
 	count  int
 }
 
+func buildDockerServer(listener net.Listener, containerChan chan<- *docker.Container, hook func(*http.Request)) DockerServer {
+	server := DockerServer{
+		listener:       listener,
+		imgIDs:         make(map[string]string),
+		hook:           hook,
+		failures:       make(map[string]string),
+		execCallbacks:  make(map[string]func()),
+		statsCallbacks: make(map[string]func(string) docker.Stats),
+		customHandlers: make(map[string]http.Handler),
+		uploadedFiles:  make(map[string]string),
+		cChan:          containerChan,
+	}
+	server.buildMuxer()
+	return server
+}
+
 // NewServer returns a new instance of the fake server, in standalone mode. Use
 // the method URL to get the URL of the server.
 //
@@ -83,19 +101,40 @@ func NewServer(bind string, containerChan chan<- *docker.Container, hook func(*h
 	if err != nil {
 		return nil, err
 	}
-	server := DockerServer{
-		listener:       listener,
-		imgIDs:         make(map[string]string),
-		hook:           hook,
-		failures:       make(map[string]string),
-		execCallbacks:  make(map[string]func()),
-		statsCallbacks: make(map[string]func(string) docker.Stats),
-		customHandlers: make(map[string]http.Handler),
-		uploadedFiles:  make(map[string]string),
-		cChan:          containerChan,
-	}
-	server.buildMuxer()
+	server := buildDockerServer(listener, containerChan, hook)
 	go http.Serve(listener, &server)
+	return &server, nil
+}
+
+type TLSConfig struct {
+	CertPath    string
+	CertKeyPath string
+	RootCAPath  string
+}
+
+func NewTLSServer(bind string, containerChan chan<- *docker.Container, hook func(*http.Request), tlsConfig TLSConfig) (*DockerServer, error) {
+	listener, err := net.Listen("tcp", bind)
+	if err != nil {
+		return nil, err
+	}
+	defaultCertificate, err := tls.LoadX509KeyPair(tlsConfig.CertPath, tlsConfig.CertKeyPath)
+	if err != nil {
+		return nil, err
+	}
+	tlsServerConfig := new(tls.Config)
+	tlsServerConfig.Certificates = []tls.Certificate{defaultCertificate}
+	if tlsConfig.RootCAPath != "" {
+		rootCertPEM, err := ioutil.ReadFile(tlsConfig.RootCAPath)
+		if err != nil {
+			return nil, err
+		}
+		certsPool := x509.NewCertPool()
+		certsPool.AppendCertsFromPEM(rootCertPEM)
+		tlsServerConfig.RootCAs = certsPool
+	}
+	tlsListener := tls.NewListener(listener, tlsServerConfig)
+	server := buildDockerServer(tlsListener, containerChan, hook)
+	go http.Serve(tlsListener, &server)
 	return &server, nil
 }
 
