@@ -69,7 +69,7 @@ type volumeCounter struct {
 	count  int
 }
 
-func buildDockerServer(listener net.Listener, containerChan chan<- *docker.Container, hook func(*http.Request)) DockerServer {
+func buildDockerServer(listener net.Listener, containerChan chan<- *docker.Container, hook func(*http.Request)) *DockerServer {
 	server := DockerServer{
 		listener:       listener,
 		imgIDs:         make(map[string]string),
@@ -82,7 +82,7 @@ func buildDockerServer(listener net.Listener, containerChan chan<- *docker.Conta
 		cChan:          containerChan,
 	}
 	server.buildMuxer()
-	return server
+	return &server
 }
 
 // NewServer returns a new instance of the fake server, in standalone mode. Use
@@ -102,8 +102,8 @@ func NewServer(bind string, containerChan chan<- *docker.Container, hook func(*h
 		return nil, err
 	}
 	server := buildDockerServer(listener, containerChan, hook)
-	go http.Serve(listener, &server)
-	return &server, nil
+	go http.Serve(listener, server)
+	return server, nil
 }
 
 type TLSConfig struct {
@@ -134,8 +134,8 @@ func NewTLSServer(bind string, containerChan chan<- *docker.Container, hook func
 	}
 	tlsListener := tls.NewListener(listener, tlsServerConfig)
 	server := buildDockerServer(tlsListener, containerChan, hook)
-	go http.Serve(tlsListener, &server)
-	return &server, nil
+	go http.Serve(tlsListener, server)
+	return server, nil
 }
 
 func (s *DockerServer) notify(container *docker.Container) {
