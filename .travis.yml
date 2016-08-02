@@ -10,14 +10,12 @@ os:
   - osx
 env:
   matrix:
-    - GOARCH=amd64 DOCKER_VERSION=1.9.1
-    - GOARCH=386   DOCKER_VERSION=1.9.1
     - GOARCH=amd64 DOCKER_VERSION=1.10.3
     - GOARCH=386   DOCKER_VERSION=1.10.3
     - GOARCH=amd64 DOCKER_VERSION=1.11.2
     - GOARCH=386   DOCKER_VERSION=1.11.2
-    - GOARCH=amd64 DOCKER_VERSION=1.12.0~rc2
-    - GOARCH=386   DOCKER_VERSION=1.12.0~rc2
+    - GOARCH=amd64 DOCKER_VERSION=1.12.0
+    - GOARCH=386   DOCKER_VERSION=1.12.0
   global:
     - GO_TEST_FLAGS=-race
     - DOCKER_HOST=tcp://127.0.0.1:2375
@@ -32,10 +30,14 @@ matrix:
   fast_finish: true
   exclude:
     - os: osx
-      env: GOARCH=amd64 DOCKER_VERSION=1.9.1
-    - os: osx
-      env: GOARCH=386   DOCKER_VERSION=1.9.1
-    - os: osx
       env: GOARCH=amd64 DOCKER_VERSION=1.10.3
     - os: osx
       env: GOARCH=386   DOCKER_VERSION=1.10.3
+    - os: osx
+      env: GOARCH=amd64 DOCKER_VERSION=1.11.2
+    - os: osx
+      env: GOARCH=386   DOCKER_VERSION=1.11.2
+    - os: osx
+      env: GOARCH=amd64 DOCKER_VERSION=1.12.0
+    - os: osx
+      env: GOARCH=386   DOCKER_VERSION=1.12.0
