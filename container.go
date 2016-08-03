@@ -362,15 +362,15 @@ type HealthConfig struct {
 	// {"NONE"} : disable healthcheck
 	// {"CMD", args...} : exec arguments directly
 	// {"CMD-SHELL", command} : run command with system's default shell
-	Test []string `json:",omitempty"`
+	Test []string `json:"Test,omitempty" yaml:"Test,omitempty"`
 
 	// Zero means to inherit. Durations are expressed as integer nanoseconds.
-	Interval time.Duration `json:",omitempty"` // Interval is the time to wait between checks.
-	Timeout  time.Duration `json:",omitempty"` // Timeout is the time to wait before considering the check to have hung.
+	Interval time.Duration `json:"Interval,omitempty" yaml:"Interval,omitempty"` // Interval is the time to wait between checks.
+	Timeout  time.Duration `json:"Timeout,omitempty" yaml:"Timeout,omitempty"`   // Timeout is the time to wait before considering the check to have hung.
 
 	// Retries is the number of consecutive failures needed to consider a container as unhealthy.
 	// Zero means inherit.
-	Retries int `json:",omitempty"`
+	Retries int `json:"Retries,omitempty" yaml:"Retries,omitempty"`
 }
 
 // Container is the type encompasing everything about a container - its config,
