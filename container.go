@@ -1288,6 +1288,7 @@ type LogsOptions struct {
 	Since             int64
 	Timestamps        bool
 	Tail              string
+	CancelChannel     chan struct{}
 
 	// Use raw terminal? Usually true when the container contains a TTY.
 	RawTerminal bool `qs:"-"`
@@ -1309,6 +1310,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		stdout:            opts.OutputStream,
 		stderr:            opts.ErrorStream,
 		inactivityTimeout: opts.InactivityTimeout,
+		cancelChannel:     opts.CancelChannel,
 	})
 }
 
