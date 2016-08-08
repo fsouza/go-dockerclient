@@ -34,6 +34,8 @@ import (
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/hashicorp/go-cleanhttp"
+	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 const userAgent = "go-dockerclient"
@@ -388,6 +390,7 @@ type doOptions struct {
 	data      interface{}
 	forceJSON bool
 	headers   map[string]string
+	context   context.Context
 }
 
 func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, error) {
@@ -434,12 +437,19 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 	for k, v := range doOptions.headers {
 		req.Header.Set(k, v)
 	}
-	resp, err := httpClient.Do(req)
+
+	ctx := doOptions.context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	resp, err := ctxhttp.Do(ctx, httpClient, req)
 	if err != nil {
 		if strings.Contains(err.Error(), "connection refused") {
 			return nil, ErrConnectionRefused
 		}
-		return nil, err
+
+		return nil, chooseError(ctx, err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, newError(resp)
@@ -460,6 +470,17 @@ type streamOptions struct {
 	// Timeout with no data is received, it's reset every time new data
 	// arrives
 	inactivityTimeout time.Duration
+	context           context.Context
+}
+
+// if error in context, return that instead of generic http error
+func chooseError(ctx context.Context, err error) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return err
+	}
 }
 
 func (c *Client) stream(method, path string, streamOptions streamOptions) error {
@@ -492,18 +513,30 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 	if streamOptions.stderr == nil {
 		streamOptions.stderr = ioutil.Discard
 	}
-	cancelRequest := cancelable(c.HTTPClient, req)
+
+	// make a sub-context so that our active cancellation does not affect parent
+	ctx := streamOptions.context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	subCtx, cancelRequest := context.WithCancel(ctx)
+	defer cancelRequest()
+
 	if protocol == "unix" {
 		dial, err := c.Dialer.Dial(protocol, address)
 		if err != nil {
 			return err
 		}
-		cancelRequest = func() { dial.Close() }
-		defer dial.Close()
+		go func() {
+			select {
+			case <-subCtx.Done():
+				dial.Close()
+			}
+		}()
 		breader := bufio.NewReader(dial)
 		err = req.Write(dial)
 		if err != nil {
-			return err
+			return chooseError(subCtx, err)
 		}
 
 		// ReadResponse may hang if server does not replay
@@ -519,14 +552,15 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 			if strings.Contains(err.Error(), "connection refused") {
 				return ErrConnectionRefused
 			}
-			return err
+
+			return chooseError(subCtx, err)
 		}
 	} else {
-		if resp, err = c.HTTPClient.Do(req); err != nil {
+		if resp, err = ctxhttp.Do(subCtx, c.HTTPClient, req); err != nil {
 			if strings.Contains(err.Error(), "connection refused") {
 				return ErrConnectionRefused
 			}
-			return err
+			return chooseError(subCtx, err)
 		}
 	}
 	defer resp.Body.Close()
@@ -543,7 +577,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		if atomic.LoadUint32(&canceled) != 0 {
 			return ErrInactivityTimeout
 		}
-		return err
+		return chooseError(subCtx, err)
 	}
 	return nil
 }
