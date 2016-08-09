@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/docker/go-units"
+	"golang.org/x/net/context"
 )
 
 // ErrContainerAlreadyExists is the error returned by CreateContainer when the
@@ -32,6 +33,7 @@ type ListContainersOptions struct {
 	Since   string
 	Before  string
 	Filters map[string][]string
+	Context context.Context
 }
 
 // APIPort is a type that represents a port mapping returned by the Docker API
@@ -82,7 +84,7 @@ type NetworkList struct {
 // See https://goo.gl/47a6tO for more details.
 func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, error) {
 	path := "/containers/json?" + queryString(opts)
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do("GET", path, doOptions{context: opts.Context})
 	if err != nil {
 		return nil, err
 	}
@@ -426,13 +428,18 @@ type UpdateContainerOptions struct {
 	MemoryReservation int           `json:"MemoryReservation"`
 	KernelMemory      int           `json:"KernelMemory"`
 	RestartPolicy     RestartPolicy `json:"RestartPolicy,omitempty"`
+	Context           context.Context
 }
 
 // UpdateContainer updates the container at ID with the options
 //
 // See https://goo.gl/Y6fXUy for more details.
 func (c *Client) UpdateContainer(id string, opts UpdateContainerOptions) error {
-	resp, err := c.do("POST", fmt.Sprintf("/containers/"+id+"/update"), doOptions{data: opts, forceJSON: true})
+	resp, err := c.do("POST", fmt.Sprintf("/containers/"+id+"/update"), doOptions{
+		data:      opts,
+		forceJSON: true,
+		context:   opts.Context,
+	})
 	if err != nil {
 		return err
 	}
@@ -448,14 +455,17 @@ type RenameContainerOptions struct {
 	ID string `qs:"-"`
 
 	// New name
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name    string `json:"name,omitempty" yaml:"name,omitempty"`
+	Context context.Context
 }
 
 // RenameContainer updates and existing containers name
 //
 // See https://goo.gl/laSOIy for more details.
 func (c *Client) RenameContainer(opts RenameContainerOptions) error {
-	resp, err := c.do("POST", fmt.Sprintf("/containers/"+opts.ID+"/rename?%s", queryString(opts)), doOptions{})
+	resp, err := c.do("POST", fmt.Sprintf("/containers/"+opts.ID+"/rename?%s", queryString(opts)), doOptions{
+		context: opts.Context,
+	})
 	if err != nil {
 		return err
 	}
@@ -511,6 +521,7 @@ type CreateContainerOptions struct {
 	Config           *Config           `qs:"-"`
 	HostConfig       *HostConfig       `qs:"-"`
 	NetworkingConfig *NetworkingConfig `qs:"-"`
+	Context          context.Context
 }
 
 // CreateContainer creates a new container, returning the container instance,
@@ -532,6 +543,7 @@ func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error
 				opts.HostConfig,
 				opts.NetworkingConfig,
 			},
+			context: opts.Context,
 		},
 	)
 
@@ -941,6 +953,7 @@ type StatsOptions struct {
 	// Timeout with no data is received, it's reset every time new data
 	// arrives
 	InactivityTimeout time.Duration `qs:"-"`
+	Context           context.Context
 }
 
 // Stats sends container statistics for the given container to the given channel.
@@ -980,6 +993,7 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 			stdout:            writeCloser,
 			timeout:           opts.Timeout,
 			inactivityTimeout: opts.InactivityTimeout,
+			context:           opts.Context,
 		})
 		if err != nil {
 			dockerError, ok := err.(*Error)
@@ -1030,7 +1044,8 @@ type KillContainerOptions struct {
 
 	// The signal to send to the container. When omitted, Docker server
 	// will assume SIGKILL.
-	Signal Signal
+	Signal  Signal
+	Context context.Context
 }
 
 // KillContainer sends a signal to a container, returning an error in case of
@@ -1039,7 +1054,7 @@ type KillContainerOptions struct {
 // See https://goo.gl/hkS9i8 for more details.
 func (c *Client) KillContainer(opts KillContainerOptions) error {
 	path := "/containers/" + opts.ID + "/kill" + "?" + queryString(opts)
-	resp, err := c.do("POST", path, doOptions{})
+	resp, err := c.do("POST", path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: opts.ID}
@@ -1063,7 +1078,8 @@ type RemoveContainerOptions struct {
 
 	// A flag that indicates whether Docker should remove the container
 	// even if it is currently running.
-	Force bool
+	Force   bool
+	Context context.Context
 }
 
 // RemoveContainer removes a container, returning an error in case of failure.
@@ -1071,7 +1087,7 @@ type RemoveContainerOptions struct {
 // See https://goo.gl/RQyX62 for more details.
 func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 	path := "/containers/" + opts.ID + "?" + queryString(opts)
-	resp, err := c.do("DELETE", path, doOptions{})
+	resp, err := c.do("DELETE", path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: opts.ID}
@@ -1090,6 +1106,7 @@ type UploadToContainerOptions struct {
 	InputStream          io.Reader `json:"-" qs:"-"`
 	Path                 string    `qs:"path"`
 	NoOverwriteDirNonDir bool      `qs:"noOverwriteDirNonDir"`
+	Context              context.Context
 }
 
 // UploadToContainer uploads a tar archive to be extracted to a path in the
@@ -1100,7 +1117,8 @@ func (c *Client) UploadToContainer(id string, opts UploadToContainerOptions) err
 	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
 
 	return c.stream("PUT", url, streamOptions{
-		in: opts.InputStream,
+		in:      opts.InputStream,
+		context: opts.Context,
 	})
 }
 
@@ -1112,6 +1130,7 @@ type DownloadFromContainerOptions struct {
 	OutputStream      io.Writer     `json:"-" qs:"-"`
 	Path              string        `qs:"path"`
 	InactivityTimeout time.Duration `qs:"-"`
+	Context           context.Context
 }
 
 // DownloadFromContainer downloads a tar archive of files or folders in a container.
@@ -1124,6 +1143,7 @@ func (c *Client) DownloadFromContainer(id string, opts DownloadFromContainerOpti
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
+		context:           opts.Context,
 	})
 }
 
@@ -1134,6 +1154,7 @@ type CopyFromContainerOptions struct {
 	OutputStream io.Writer `json:"-"`
 	Container    string    `json:"-"`
 	Resource     string
+	Context      context.Context `json:"-"`
 }
 
 // CopyFromContainer has been DEPRECATED, please use DownloadFromContainerOptions along with DownloadFromContainer.
@@ -1144,7 +1165,10 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 		return &NoSuchContainer{ID: opts.Container}
 	}
 	url := fmt.Sprintf("/containers/%s/copy", opts.Container)
-	resp, err := c.do("POST", url, doOptions{data: opts})
+	resp, err := c.do("POST", url, doOptions{
+		data:    opts,
+		context: opts.Context,
+	})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: opts.Container}
@@ -1186,6 +1210,7 @@ type CommitContainerOptions struct {
 	Message    string `qs:"comment"`
 	Author     string
 	Run        *Config `qs:"-"`
+	Context    context.Context
 }
 
 // CommitContainer creates a new image from a container's changes.
@@ -1193,7 +1218,10 @@ type CommitContainerOptions struct {
 // See https://goo.gl/mqfoCw for more details.
 func (c *Client) CommitContainer(opts CommitContainerOptions) (*Image, error) {
 	path := "/commit?" + queryString(opts)
-	resp, err := c.do("POST", path, doOptions{data: opts.Run})
+	resp, err := c.do("POST", path, doOptions{
+		data:    opts.Run,
+		context: opts.Context,
+	})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchContainer{ID: opts.Container}
@@ -1291,6 +1319,7 @@ type LogsOptions struct {
 
 	// Use raw terminal? Usually true when the container contains a TTY.
 	RawTerminal bool `qs:"-"`
+	Context     context.Context
 }
 
 // Logs gets stdout and stderr logs from the specified container.
@@ -1309,6 +1338,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		stdout:            opts.OutputStream,
 		stderr:            opts.ErrorStream,
 		inactivityTimeout: opts.InactivityTimeout,
+		context:           opts.Context,
 	})
 }
 
@@ -1335,6 +1365,7 @@ type ExportContainerOptions struct {
 	ID                string
 	OutputStream      io.Writer
 	InactivityTimeout time.Duration `qs:"-"`
+	Context           context.Context
 }
 
 // ExportContainer export the contents of container id as tar archive
@@ -1350,6 +1381,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
+		context:           opts.Context,
 	})
 }
 
