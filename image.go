@@ -354,7 +354,8 @@ func (c *Client) LoadImage(opts LoadImageOptions) error {
 type ExportImageOptions struct {
 	Name              string
 	OutputStream      io.Writer
-	InactivityTimeout time.Duration `qs:"-"`
+	InactivityTimeout time.Duration
+	Context           context.Context
 }
 
 // ExportImage exports an image (as a tar file) into the stream.
@@ -365,6 +366,7 @@ func (c *Client) ExportImage(opts ExportImageOptions) error {
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
+		context:           opts.Context,
 	})
 }
 
@@ -375,6 +377,7 @@ type ExportImagesOptions struct {
 	Names             []string
 	OutputStream      io.Writer     `qs:"-"`
 	InactivityTimeout time.Duration `qs:"-"`
+	Context           context.Context
 }
 
 // ExportImages exports one or more images (as a tar file) into the stream
@@ -547,9 +550,10 @@ func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) interface{
 //
 // See https://goo.gl/98ZzkU for more details.
 type TagImageOptions struct {
-	Repo  string
-	Tag   string
-	Force bool
+	Repo    string
+	Tag     string
+	Force   bool
+	Context context.Context
 }
 
 // TagImage adds a tag to the image identified by the given name.
@@ -559,8 +563,9 @@ func (c *Client) TagImage(name string, opts TagImageOptions) error {
 	if name == "" {
 		return ErrNoSuchImage
 	}
-	resp, err := c.do("POST", fmt.Sprintf("/images/"+name+"/tag?%s",
-		queryString(&opts)), doOptions{})
+	resp, err := c.do("POST", "/images/"+name+"/tag?"+queryString(&opts), doOptions{
+		context: opts.Context,
+	})
 
 	if err != nil {
 		return err
