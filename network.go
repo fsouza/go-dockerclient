@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"golang.org/x/net/context"
 )
 
 // ErrNetworkAlreadyExists is the error returned by CreateNetwork when the
@@ -116,6 +118,7 @@ type CreateNetworkOptions struct {
 	Label          map[string]string      `json:"Labels" yaml:"Labels"`
 	Internal       bool                   `json:"Internal" yaml:"Internal"`
 	EnableIPv6     bool                   `json:"EnableIPv6" yaml:"EnableIPv6"`
+	Context        context.Context        `json:"-"`
 }
 
 // IPAMOptions controls IP Address Management when creating a network
@@ -145,7 +148,8 @@ func (c *Client) CreateNetwork(opts CreateNetworkOptions) (*Network, error) {
 		"POST",
 		"/networks/create",
 		doOptions{
-			data: opts,
+			data:    opts,
+			context: opts.Context,
 		},
 	)
 	if err != nil {
@@ -201,6 +205,8 @@ type NetworkConnectionOptions struct {
 
 	// Force is only applicable to the DisconnectNetwork call
 	Force bool
+
+	Context context.Context `json:"-"`
 }
 
 // EndpointConfig stores network endpoint details
@@ -235,7 +241,10 @@ type EndpointIPAMConfig struct {
 //
 // See https://goo.gl/6GugX3 for more details.
 func (c *Client) ConnectNetwork(id string, opts NetworkConnectionOptions) error {
-	resp, err := c.do("POST", "/networks/"+id+"/connect", doOptions{data: opts})
+	resp, err := c.do("POST", "/networks/"+id+"/connect", doOptions{
+		data:    opts,
+		context: opts.Context,
+	})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchNetworkOrContainer{NetworkID: id, ContainerID: opts.Container}

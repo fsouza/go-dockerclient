@@ -118,7 +118,7 @@ func TestNetworkCreate(t *testing.T) {
 	}
 
 	client := newTestClient(&FakeRoundTripper{message: jsonID, status: http.StatusOK})
-	opts := CreateNetworkOptions{"foobar", false, "bridge", IPAMOptions{}, nil, nil, false, false}
+	opts := CreateNetworkOptions{Name: "foobar", Driver: "bridge"}
 	network, err := client.CreateNetwork(opts)
 	if err != nil {
 		t.Fatal(err)
