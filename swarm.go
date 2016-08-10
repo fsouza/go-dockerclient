@@ -14,6 +14,8 @@ import (
 	"github.com/docker/engine-api/types/swarm"
 )
 
+// InitSwarmOptions specify parameters to the InitSwarm function.
+// See https://goo.gl/hzkgWu for more details.
 type InitSwarmOptions struct {
 	swarm.InitRequest
 	Context context.Context
@@ -39,6 +41,8 @@ func (c *Client) InitSwarm(opts InitSwarmOptions) (string, error) {
 	return response, nil
 }
 
+// JoinSwarmOptions specify parameters to the JoinSwarm function.
+// See https://goo.gl/TdhJWU for more details.
 type JoinSwarmOptions struct {
 	swarm.JoinRequest
 	Context context.Context
@@ -56,6 +60,8 @@ func (c *Client) JoinSwarm(opts JoinSwarmOptions) error {
 	return err
 }
 
+// LeaveSwarmOptions specify parameters to the LeaveSwarm function.
+// See https://goo.gl/UWDlLg for more details.
 type LeaveSwarmOptions struct {
 	Force   bool
 	Context context.Context
@@ -75,6 +81,8 @@ func (c *Client) LeaveSwarm(opts LeaveSwarmOptions) error {
 	return err
 }
 
+// UpdateSwarmOptions specify parameters to the UpdateSwarm function.
+// See https://goo.gl/vFbq36 for more details.
 type UpdateSwarmOptions struct {
 	Version            int
 	RotateWorkerToken  bool
@@ -83,7 +91,7 @@ type UpdateSwarmOptions struct {
 	Context            context.Context
 }
 
-// SwarmUpdate updates a Swarm.
+// UpdateSwarm updates a Swarm.
 // See https://goo.gl/vFbq36 for more details.
 func (c *Client) UpdateSwarm(opts UpdateSwarmOptions) error {
 	params := make(url.Values)
