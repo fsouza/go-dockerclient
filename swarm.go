@@ -7,6 +7,7 @@ package docker
 import (
 	"encoding/json"
 	"net/url"
+	"strconv"
 
 	"github.com/docker/engine-api/types/swarm"
 )
@@ -44,5 +45,25 @@ func (c *Client) SwarmLeave(force bool) error {
 	}
 	path := "/swarm/leave?" + params.Encode()
 	_, err := c.do("POST", path, doOptions{})
+	return err
+}
+
+type SwarmUpdateOptions struct {
+	Version            int
+	RotateWorkerToken  bool
+	RotateManagerToken bool
+	Swarm              swarm.Spec
+}
+
+func (c *Client) SwarmUpdate(opts SwarmUpdateOptions) error {
+	params := make(url.Values)
+	params.Set("version", strconv.Itoa(opts.Version))
+	params.Set("rotateWorkerToken", strconv.FormatBool(opts.RotateWorkerToken))
+	params.Set("rotateManagerToken", strconv.FormatBool(opts.RotateManagerToken))
+	path := "/swarm/update?" + params.Encode()
+	_, err := c.do("POST", path, doOptions{
+		data:      opts.Swarm,
+		forceJSON: true,
+	})
 	return err
 }

@@ -7,6 +7,7 @@ package docker
 import (
 	"net/http"
 	"net/url"
+	"reflect"
 	"testing"
 
 	"github.com/docker/engine-api/types/swarm"
@@ -76,5 +77,31 @@ func TestSwarmLeave(t *testing.T) {
 		if req.URL.String() != expected.String() {
 			t.Errorf("SwarmLeave: Wrong request string. Want %q. Got %q.", expected.String(), req.URL.String())
 		}
+	}
+}
+
+func TestSwarmUpdate(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := SwarmUpdateOptions{
+		Version:            10,
+		RotateManagerToken: true,
+		RotateWorkerToken:  false,
+	}
+	err := client.SwarmUpdate(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "POST"
+	if req.Method != expectedMethod {
+		t.Errorf("SwarmUpdate: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+	}
+	expected, _ := url.Parse(client.getURL("/swarm/update?version=10&rotateManagerToken=true&rotateWorkerToken=false"))
+	if req.URL.Path != expected.Path {
+		t.Errorf("SwarmUpdate: Wrong request path. Want %q. Got %q.", expected.Path, req.URL.Path)
+	}
+	if !reflect.DeepEqual(req.URL.Query(), expected.Query()) {
+		t.Errorf("SwarmUpdate: Wrong request query. Want %v. Got %v", expected.Query(), req.URL.Query())
 	}
 }
