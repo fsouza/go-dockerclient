@@ -9,14 +9,12 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
-
-	"github.com/docker/engine-api/types/swarm"
 )
 
 func TestSwarmInit(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: `"body"`, status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	response, err := client.SwarmInit(swarm.InitRequest{})
+	response, err := client.SwarmInit(SwarmInitOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +36,7 @@ func TestSwarmInit(t *testing.T) {
 func TestSwarmJoin(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	err := client.SwarmJoin(swarm.JoinRequest{})
+	err := client.SwarmJoin(SwarmJoinOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +62,7 @@ func TestSwarmLeave(t *testing.T) {
 		{true, "/swarm/leave?force=1"},
 	}
 	for i, tt := range testData {
-		err := client.SwarmLeave(tt.force)
+		err := client.SwarmLeave(SwarmLeaveOptions{Force: tt.force})
 		if err != nil {
 			t.Fatal(err)
 		}

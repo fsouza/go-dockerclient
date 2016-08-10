@@ -9,14 +9,24 @@ import (
 	"net/url"
 	"strconv"
 
+	"golang.org/x/net/context"
+
 	"github.com/docker/engine-api/types/swarm"
 )
 
-func (c *Client) SwarmInit(opts swarm.InitRequest) (string, error) {
+type SwarmInitOptions struct {
+	swarm.InitRequest
+	Context context.Context
+}
+
+// SwarmInit initializes a new Swarm and returns the node ID.
+// See https://goo.gl/hzkgWu for more details.
+func (c *Client) SwarmInit(opts SwarmInitOptions) (string, error) {
 	path := "/swarm/init"
 	resp, err := c.do("POST", path, doOptions{
-		data:      opts,
+		data:      opts.InitRequest,
 		forceJSON: true,
+		context:   opts.Context,
 	})
 	if err != nil {
 		return "", err
@@ -29,22 +39,39 @@ func (c *Client) SwarmInit(opts swarm.InitRequest) (string, error) {
 	return response, nil
 }
 
-func (c *Client) SwarmJoin(opts swarm.JoinRequest) error {
+type SwarmJoinOptions struct {
+	swarm.JoinRequest
+	Context context.Context
+}
+
+// SwarmJoin joins an existing Swarm.
+// See https://goo.gl/TdhJWU for more details.
+func (c *Client) SwarmJoin(opts SwarmJoinOptions) error {
 	path := "/swarm/join"
 	_, err := c.do("POST", path, doOptions{
-		data:      opts,
+		data:      opts.JoinRequest,
 		forceJSON: true,
+		context:   opts.Context,
 	})
 	return err
 }
 
-func (c *Client) SwarmLeave(force bool) error {
+type SwarmLeaveOptions struct {
+	Force   bool
+	Context context.Context
+}
+
+// SwarmLeave leaves a Swarm.
+// See https://goo.gl/UWDlLg for more details.
+func (c *Client) SwarmLeave(opts SwarmLeaveOptions) error {
 	params := make(url.Values)
-	if force {
+	if opts.Force {
 		params.Set("force", "1")
 	}
 	path := "/swarm/leave?" + params.Encode()
-	_, err := c.do("POST", path, doOptions{})
+	_, err := c.do("POST", path, doOptions{
+		context: opts.Context,
+	})
 	return err
 }
 
@@ -53,8 +80,11 @@ type SwarmUpdateOptions struct {
 	RotateWorkerToken  bool
 	RotateManagerToken bool
 	Swarm              swarm.Spec
+	Context            context.Context
 }
 
+// SwarmUpdate updates a Swarm.
+// See https://goo.gl/vFbq36 for more details.
 func (c *Client) SwarmUpdate(opts SwarmUpdateOptions) error {
 	params := make(url.Values)
 	params.Set("version", strconv.Itoa(opts.Version))
@@ -64,6 +94,7 @@ func (c *Client) SwarmUpdate(opts SwarmUpdateOptions) error {
 	_, err := c.do("POST", path, doOptions{
 		data:      opts.Swarm,
 		forceJSON: true,
+		context:   opts.Context,
 	})
 	return err
 }
