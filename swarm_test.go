@@ -11,10 +11,10 @@ import (
 	"testing"
 )
 
-func TestSwarmInit(t *testing.T) {
+func TestInitSwarm(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: `"body"`, status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	response, err := client.SwarmInit(SwarmInitOptions{})
+	response, err := client.InitSwarm(InitSwarmOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,10 +33,10 @@ func TestSwarmInit(t *testing.T) {
 	}
 }
 
-func TestSwarmJoin(t *testing.T) {
+func TestJoinSwarm(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	err := client.SwarmJoin(SwarmJoinOptions{})
+	err := client.JoinSwarm(JoinSwarmOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestSwarmJoin(t *testing.T) {
 	}
 }
 
-func TestSwarmLeave(t *testing.T) {
+func TestLeaveSwarm(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	var testData = []struct {
@@ -62,7 +62,7 @@ func TestSwarmLeave(t *testing.T) {
 		{true, "/swarm/leave?force=1"},
 	}
 	for i, tt := range testData {
-		err := client.SwarmLeave(SwarmLeaveOptions{Force: tt.force})
+		err := client.LeaveSwarm(LeaveSwarmOptions{Force: tt.force})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -78,15 +78,15 @@ func TestSwarmLeave(t *testing.T) {
 	}
 }
 
-func TestSwarmUpdate(t *testing.T) {
+func TestUpdateSwarm(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	opts := SwarmUpdateOptions{
+	opts := UpdateSwarmOptions{
 		Version:            10,
 		RotateManagerToken: true,
 		RotateWorkerToken:  false,
 	}
-	err := client.SwarmUpdate(opts)
+	err := client.UpdateSwarm(opts)
 	if err != nil {
 		t.Fatal(err)
 	}

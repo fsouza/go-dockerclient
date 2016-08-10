@@ -14,14 +14,14 @@ import (
 	"github.com/docker/engine-api/types/swarm"
 )
 
-type SwarmInitOptions struct {
+type InitSwarmOptions struct {
 	swarm.InitRequest
 	Context context.Context
 }
 
-// SwarmInit initializes a new Swarm and returns the node ID.
+// InitSwarm initializes a new Swarm and returns the node ID.
 // See https://goo.gl/hzkgWu for more details.
-func (c *Client) SwarmInit(opts SwarmInitOptions) (string, error) {
+func (c *Client) InitSwarm(opts InitSwarmOptions) (string, error) {
 	path := "/swarm/init"
 	resp, err := c.do("POST", path, doOptions{
 		data:      opts.InitRequest,
@@ -39,14 +39,14 @@ func (c *Client) SwarmInit(opts SwarmInitOptions) (string, error) {
 	return response, nil
 }
 
-type SwarmJoinOptions struct {
+type JoinSwarmOptions struct {
 	swarm.JoinRequest
 	Context context.Context
 }
 
-// SwarmJoin joins an existing Swarm.
+// JoinSwarm joins an existing Swarm.
 // See https://goo.gl/TdhJWU for more details.
-func (c *Client) SwarmJoin(opts SwarmJoinOptions) error {
+func (c *Client) JoinSwarm(opts JoinSwarmOptions) error {
 	path := "/swarm/join"
 	_, err := c.do("POST", path, doOptions{
 		data:      opts.JoinRequest,
@@ -56,14 +56,14 @@ func (c *Client) SwarmJoin(opts SwarmJoinOptions) error {
 	return err
 }
 
-type SwarmLeaveOptions struct {
+type LeaveSwarmOptions struct {
 	Force   bool
 	Context context.Context
 }
 
-// SwarmLeave leaves a Swarm.
+// LeaveSwarm leaves a Swarm.
 // See https://goo.gl/UWDlLg for more details.
-func (c *Client) SwarmLeave(opts SwarmLeaveOptions) error {
+func (c *Client) LeaveSwarm(opts LeaveSwarmOptions) error {
 	params := make(url.Values)
 	if opts.Force {
 		params.Set("force", "1")
@@ -75,7 +75,7 @@ func (c *Client) SwarmLeave(opts SwarmLeaveOptions) error {
 	return err
 }
 
-type SwarmUpdateOptions struct {
+type UpdateSwarmOptions struct {
 	Version            int
 	RotateWorkerToken  bool
 	RotateManagerToken bool
@@ -85,7 +85,7 @@ type SwarmUpdateOptions struct {
 
 // SwarmUpdate updates a Swarm.
 // See https://goo.gl/vFbq36 for more details.
-func (c *Client) SwarmUpdate(opts SwarmUpdateOptions) error {
+func (c *Client) UpdateSwarm(opts UpdateSwarmOptions) error {
 	params := make(url.Values)
 	params.Set("version", strconv.Itoa(opts.Version))
 	params.Set("rotateWorkerToken", strconv.FormatBool(opts.RotateWorkerToken))
