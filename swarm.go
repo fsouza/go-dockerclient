@@ -6,6 +6,7 @@ package docker
 
 import (
 	"encoding/json"
+	"net/url"
 
 	"github.com/docker/engine-api/types/swarm"
 )
@@ -33,5 +34,15 @@ func (c *Client) SwarmJoin(opts swarm.JoinRequest) error {
 		data:      opts,
 		forceJSON: true,
 	})
+	return err
+}
+
+func (c *Client) SwarmLeave(force bool) error {
+	params := make(url.Values)
+	if force {
+		params.Set("force", "1")
+	}
+	path := "/swarm/leave?" + params.Encode()
+	_, err := c.do("POST", path, doOptions{})
 	return err
 }

@@ -48,6 +48,33 @@ func TestSwarmJoin(t *testing.T) {
 	}
 	u, _ := url.Parse(client.getURL("/swarm/join"))
 	if req.URL.Path != u.Path {
-		t.Errorf("SwarmInit: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+		t.Errorf("SwarmJoin: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+}
+
+func TestSwarmLeave(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var testData = []struct {
+		force       bool
+		expectedURI string
+	}{
+		{false, "/swarm/leave?"},
+		{true, "/swarm/leave?force=1"},
+	}
+	for i, tt := range testData {
+		err := client.SwarmLeave(tt.force)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedMethod := "POST"
+		req := fakeRT.requests[i]
+		if req.Method != expectedMethod {
+			t.Errorf("SwarmLeave: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+		}
+		expected, _ := url.Parse(client.getURL(tt.expectedURI))
+		if req.URL.String() != expected.String() {
+			t.Errorf("SwarmLeave: Wrong request string. Want %q. Got %q.", expected.String(), req.URL.String())
+		}
 	}
 }
