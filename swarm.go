@@ -26,3 +26,12 @@ func (c *Client) SwarmInit(opts swarm.InitRequest) (string, error) {
 	}
 	return response, nil
 }
+
+func (c *Client) SwarmJoin(opts swarm.JoinRequest) error {
+	path := "/swarm/join"
+	_, err := c.do("POST", path, doOptions{
+		data:      opts,
+		forceJSON: true,
+	})
+	return err
+}

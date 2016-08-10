@@ -33,3 +33,21 @@ func TestSwarmInit(t *testing.T) {
 		t.Errorf("SwarmInit: Wrong response. Want %q. Got %q.", expected, response)
 	}
 }
+
+func TestSwarmJoin(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	err := client.SwarmJoin(swarm.JoinRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "POST"
+	if req.Method != expectedMethod {
+		t.Errorf("SwarmJoin: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/swarm/join"))
+	if req.URL.Path != u.Path {
+		t.Errorf("SwarmInit: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+}
