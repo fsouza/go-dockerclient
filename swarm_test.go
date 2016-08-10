@@ -95,11 +95,17 @@ func TestUpdateSwarm(t *testing.T) {
 	if req.Method != expectedMethod {
 		t.Errorf("SwarmUpdate: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 	}
-	expected, _ := url.Parse(client.getURL("/swarm/update?version=10&rotateManagerToken=true&rotateWorkerToken=false"))
-	if req.URL.Path != expected.Path {
-		t.Errorf("SwarmUpdate: Wrong request path. Want %q. Got %q.", expected.Path, req.URL.Path)
+	expectedPath := "/swarm/update"
+	if req.URL.Path != expectedPath {
+		t.Errorf("SwarmUpdate: Wrong request path. Want %q. Got %q.", expectedPath, req.URL.Path)
 	}
-	if !reflect.DeepEqual(req.URL.Query(), expected.Query()) {
-		t.Errorf("SwarmUpdate: Wrong request query. Want %v. Got %v", expected.Query(), req.URL.Query())
+	expected := map[string][]string{
+		"version":            {"10"},
+		"rotateManagerToken": {"true"},
+		"rotateWorkerToken":  {"false"},
+	}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("SwarmUpdate: Wrong request query. Want %v. Got %v", expected, got)
 	}
 }
