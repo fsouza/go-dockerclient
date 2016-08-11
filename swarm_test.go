@@ -21,15 +21,23 @@ func TestInitSwarm(t *testing.T) {
 	req := fakeRT.requests[0]
 	expectedMethod := "POST"
 	if req.Method != expectedMethod {
-		t.Errorf("SwarmInit: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+		t.Errorf("InitSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/swarm/init"))
 	if req.URL.Path != u.Path {
-		t.Errorf("SwarmInit: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+		t.Errorf("InitSwarm: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
 	}
 	expected := "body"
 	if response != expected {
-		t.Errorf("SwarmInit: Wrong response. Want %q. Got %q.", expected, response)
+		t.Errorf("InitSwarm: Wrong response. Want %q. Got %q.", expected, response)
+	}
+}
+
+func TestInitSwarmAlreadyInSwarm(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusNotAcceptable})
+	_, err := client.InitSwarm(InitSwarmOptions{})
+	if err != ErrNodeAlreadyInSwarm {
+		t.Errorf("InitSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeAlreadyInSwarm, err)
 	}
 }
 
@@ -43,11 +51,19 @@ func TestJoinSwarm(t *testing.T) {
 	req := fakeRT.requests[0]
 	expectedMethod := "POST"
 	if req.Method != expectedMethod {
-		t.Errorf("SwarmJoin: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+		t.Errorf("JoinSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/swarm/join"))
 	if req.URL.Path != u.Path {
-		t.Errorf("SwarmJoin: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+		t.Errorf("JoinSwarm: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+}
+
+func TestJoinSwarmAlreadyInSwarm(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusNotAcceptable})
+	err := client.JoinSwarm(JoinSwarmOptions{})
+	if err != ErrNodeAlreadyInSwarm {
+		t.Errorf("JoinSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeAlreadyInSwarm, err)
 	}
 }
 
@@ -69,12 +85,20 @@ func TestLeaveSwarm(t *testing.T) {
 		expectedMethod := "POST"
 		req := fakeRT.requests[i]
 		if req.Method != expectedMethod {
-			t.Errorf("SwarmLeave: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+			t.Errorf("LeaveSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 		}
 		expected, _ := url.Parse(client.getURL(tt.expectedURI))
 		if req.URL.String() != expected.String() {
-			t.Errorf("SwarmLeave: Wrong request string. Want %q. Got %q.", expected.String(), req.URL.String())
+			t.Errorf("LeaveSwarm: Wrong request string. Want %q. Got %q.", expected.String(), req.URL.String())
 		}
+	}
+}
+
+func TestLeaveSwarmNotInSwarm(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusNotAcceptable})
+	err := client.LeaveSwarm(LeaveSwarmOptions{})
+	if err != ErrNodeNotInSwarm {
+		t.Errorf("LeaveSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
 	}
 }
 
@@ -93,11 +117,11 @@ func TestUpdateSwarm(t *testing.T) {
 	req := fakeRT.requests[0]
 	expectedMethod := "POST"
 	if req.Method != expectedMethod {
-		t.Errorf("SwarmUpdate: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+		t.Errorf("UpdateSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 	}
 	expectedPath := "/swarm/update"
 	if req.URL.Path != expectedPath {
-		t.Errorf("SwarmUpdate: Wrong request path. Want %q. Got %q.", expectedPath, req.URL.Path)
+		t.Errorf("UpdateSwarm: Wrong request path. Want %q. Got %q.", expectedPath, req.URL.Path)
 	}
 	expected := map[string][]string{
 		"version":            {"10"},
@@ -106,6 +130,14 @@ func TestUpdateSwarm(t *testing.T) {
 	}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("SwarmUpdate: Wrong request query. Want %v. Got %v", expected, got)
+		t.Errorf("UpdateSwarm: Wrong request query. Want %v. Got %v", expected, got)
+	}
+}
+
+func TestUpdateSwarmNotInSwarm(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusNotAcceptable})
+	err := client.UpdateSwarm(UpdateSwarmOptions{})
+	if err != ErrNodeNotInSwarm {
+		t.Errorf("UpdateSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
 	}
 }

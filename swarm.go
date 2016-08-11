@@ -6,12 +6,22 @@ package docker
 
 import (
 	"encoding/json"
+	"errors"
+	"net/http"
 	"net/url"
 	"strconv"
 
 	"github.com/docker/engine-api/types/swarm"
 	"golang.org/x/net/context"
 )
+
+// ErrNodeAlreadyInSwarm is the error returned by InitSwarm and JoinSwarm
+// when the node is already part of a Swarm.
+var ErrNodeAlreadyInSwarm = errors.New("node already in a Swarm")
+
+// ErrNodeNotInSwarm is the error returned by LeaveSwarm and UpdateSwarm
+// when the node is not part of a Swarm.
+var ErrNodeNotInSwarm = errors.New("node is not in a Swarm")
 
 // InitSwarmOptions specify parameters to the InitSwarm function.
 // See https://goo.gl/hzkgWu for more details.
@@ -30,6 +40,9 @@ func (c *Client) InitSwarm(opts InitSwarmOptions) (string, error) {
 		context:   opts.Context,
 	})
 	if err != nil {
+		if e, ok := err.(*Error); ok && e.Status == http.StatusNotAcceptable {
+			return "", ErrNodeAlreadyInSwarm
+		}
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -56,6 +69,11 @@ func (c *Client) JoinSwarm(opts JoinSwarmOptions) error {
 		forceJSON: true,
 		context:   opts.Context,
 	})
+	if err != nil {
+		if e, ok := err.(*Error); ok && e.Status == http.StatusNotAcceptable {
+			return ErrNodeAlreadyInSwarm
+		}
+	}
 	return err
 }
 
@@ -75,6 +93,11 @@ func (c *Client) LeaveSwarm(opts LeaveSwarmOptions) error {
 	_, err := c.do("POST", path, doOptions{
 		context: opts.Context,
 	})
+	if err != nil {
+		if e, ok := err.(*Error); ok && e.Status == http.StatusNotAcceptable {
+			return ErrNodeNotInSwarm
+		}
+	}
 	return err
 }
 
@@ -101,5 +124,10 @@ func (c *Client) UpdateSwarm(opts UpdateSwarmOptions) error {
 		forceJSON: true,
 		context:   opts.Context,
 	})
+	if err != nil {
+		if e, ok := err.(*Error); ok && e.Status == http.StatusNotAcceptable {
+			return ErrNodeNotInSwarm
+		}
+	}
 	return err
 }
