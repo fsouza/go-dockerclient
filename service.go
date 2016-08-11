@@ -25,7 +25,7 @@ func (err *NoSuchService) Error() string {
 	return "No such service: " + err.ID
 }
 
-// CreateServiceOptions pecify parameters to the CreateService function.
+// CreateServiceOptions specify parameters to the CreateService function.
 //
 // See https://goo.gl/KrVjHz for more details.
 type CreateServiceOptions struct {
@@ -79,7 +79,7 @@ func (c *Client) RemoveService(opts RemoveServiceOptions) error {
 	return nil
 }
 
-// UpdateServiceOptions pecify parameters to the UpdateService function.
+// UpdateServiceOptions specify parameters to the UpdateService function.
 //
 // See https://goo.gl/wu3MmS for more details.
 type UpdateServiceOptions struct {
@@ -126,7 +126,7 @@ func (c *Client) InspectService(id string) (*swarm.Service, error) {
 	return &service, nil
 }
 
-// ListServicesOptions pecify parameters to the ListServices function.
+// ListServicesOptions specify parameters to the ListServices function.
 //
 // See https://goo.gl/DwvNMd for more details.
 type ListServicesOptions struct {
