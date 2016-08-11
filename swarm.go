@@ -70,9 +70,7 @@ type LeaveSwarmOptions struct {
 // See https://goo.gl/UWDlLg for more details.
 func (c *Client) LeaveSwarm(opts LeaveSwarmOptions) error {
 	params := make(url.Values)
-	if opts.Force {
-		params.Set("force", "1")
-	}
+	params.Set("force", strconv.FormatBool(opts.Force))
 	path := "/swarm/leave?" + params.Encode()
 	_, err := c.do("POST", path, doOptions{
 		context: opts.Context,

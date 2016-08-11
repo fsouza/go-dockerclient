@@ -58,8 +58,8 @@ func TestLeaveSwarm(t *testing.T) {
 		force       bool
 		expectedURI string
 	}{
-		{false, "/swarm/leave?"},
-		{true, "/swarm/leave?force=1"},
+		{false, "/swarm/leave?force=false"},
+		{true, "/swarm/leave?force=true"},
 	}
 	for i, tt := range testData {
 		err := client.LeaveSwarm(LeaveSwarmOptions{Force: tt.force})
