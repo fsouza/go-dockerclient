@@ -9,9 +9,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"golang.org/x/net/context"
-
 	"github.com/docker/engine-api/types/swarm"
+	"golang.org/x/net/context"
 )
 
 // InitSwarmOptions specify parameters to the InitSwarm function.
