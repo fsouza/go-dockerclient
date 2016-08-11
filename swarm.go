@@ -15,13 +15,15 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ErrNodeAlreadyInSwarm is the error returned by InitSwarm and JoinSwarm
-// when the node is already part of a Swarm.
-var ErrNodeAlreadyInSwarm = errors.New("node already in a Swarm")
+var (
+	// ErrNodeAlreadyInSwarm is the error returned by InitSwarm and JoinSwarm
+	// when the node is already part of a Swarm.
+	ErrNodeAlreadyInSwarm = errors.New("node already in a Swarm")
 
-// ErrNodeNotInSwarm is the error returned by LeaveSwarm and UpdateSwarm
-// when the node is not part of a Swarm.
-var ErrNodeNotInSwarm = errors.New("node is not in a Swarm")
+	// ErrNodeNotInSwarm is the error returned by LeaveSwarm and UpdateSwarm
+	// when the node is not part of a Swarm.
+	ErrNodeNotInSwarm = errors.New("node is not in a Swarm")
+)
 
 // InitSwarmOptions specify parameters to the InitSwarm function.
 // See https://goo.gl/hzkgWu for more details.
