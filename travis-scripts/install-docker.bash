@@ -15,4 +15,5 @@ if [[ $TRAVIS_OS_NAME == "linux" ]]; then
 	echo "deb https://apt.dockerproject.org/repo ubuntu-trusty testing" | sudo tee -a /etc/apt/sources.list.d/docker.list
 	sudo apt-get update
 	sudo apt-get install docker-engine=${DOCKER_VERSION}-0~$(lsb_release -cs) -y --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+	sudo start docker || true
 fi
