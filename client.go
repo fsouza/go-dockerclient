@@ -725,7 +725,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 		}
 	}
 
-	errs := make(chan error)
+	errs := make(chan error, 1)
 	quit := make(chan struct{})
 	go func() {
 		clientconn := httputil.NewClientConn(dial, nil)
@@ -739,7 +739,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 		defer rwc.Close()
 
 		errChanOut := make(chan error, 1)
-		errChanIn := make(chan error, 1)
+		errChanIn := make(chan error, 2)
 		if hijackOptions.stdout == nil && hijackOptions.stderr == nil {
 			close(errChanOut)
 		} else {
@@ -789,14 +789,12 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 		select {
 		case errIn = <-errChanIn:
 		case <-quit:
-			return
 		}
 
 		var errOut error
 		select {
 		case errOut = <-errChanOut:
 		case <-quit:
-			return
 		}
 
 		if errIn != nil {
