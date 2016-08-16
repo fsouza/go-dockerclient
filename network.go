@@ -31,6 +31,7 @@ type Network struct {
 	Options    map[string]string
 	Internal   bool
 	EnableIPv6 bool `json:"EnableIPv6"`
+	Labels     map[string]string
 }
 
 // Endpoint contains network resources allocated and used for a container in a network
@@ -115,7 +116,7 @@ type CreateNetworkOptions struct {
 	Driver         string                 `json:"Driver" yaml:"Driver"`
 	IPAM           IPAMOptions            `json:"IPAM" yaml:"IPAM"`
 	Options        map[string]interface{} `json:"Options" yaml:"Options"`
-	Label          map[string]string      `json:"Labels" yaml:"Labels"`
+	Labels         map[string]string      `json:"Labels" yaml:"Labels"`
 	Internal       bool                   `json:"Internal" yaml:"Internal"`
 	EnableIPv6     bool                   `json:"EnableIPv6" yaml:"EnableIPv6"`
 	Context        context.Context        `json:"-"`
