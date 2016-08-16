@@ -146,9 +146,6 @@ type Client struct {
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
 	unixHTTPClient      *http.Client
-
-	// A timeout to use when using both the unixHTTPClient and HTTPClient
-	timeout time.Duration
 }
 
 // NewClient returns a Client instance ready for communication with the given
@@ -201,14 +198,16 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 			return nil, err
 		}
 	}
-	return &Client{
+	c := &Client{
 		HTTPClient:          cleanhttp.DefaultClient(),
 		Dialer:              &net.Dialer{},
 		endpoint:            endpoint,
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
-	}, nil
+	}
+	c.initializeUnixClient()
+	return c, nil
 }
 
 // NewVersionnedTLSClient has been DEPRECATED, please use NewVersionedTLSClient.
@@ -310,7 +309,7 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 	if err != nil {
 		return nil, err
 	}
-	return &Client{
+	c := &Client{
 		HTTPClient:          &http.Client{Transport: tr},
 		TLSConfig:           tlsConfig,
 		Dialer:              &net.Dialer{},
@@ -318,13 +317,21 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
-	}, nil
+	}
+	c.initializeUnixClient()
+	return c, nil
 }
 
-// SetTimeout takes a timeout and applies it to subsequent requests to the
-// docker engine
+// SetTimeout takes a timeout and applies it to both the HTTPClient and
+// unixHTTPClient. It should not be called concurrently with any other Client
+// methods.
 func (c *Client) SetTimeout(t time.Duration) {
-	c.timeout = t
+	if c.HTTPClient != nil {
+		c.HTTPClient.Timeout = t
+	}
+	if c.unixHTTPClient != nil {
+		c.unixHTTPClient.Timeout = t
+	}
 }
 
 func (c *Client) checkAPIVersion() error {
@@ -412,15 +419,10 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 	protocol := c.endpointURL.Scheme
 	var u string
 	if protocol == "unix" {
-		httpClient = c.unixClient()
+		httpClient = c.unixHTTPClient
 		u = c.getFakeUnixURL(path)
 	} else {
 		u = c.getURL(path)
-	}
-
-	// If the user has provided a timeout, apply it.
-	if c.timeout != 0 {
-		httpClient.Timeout = c.timeout
 	}
 
 	req, err := http.NewRequest(method, u, params)
@@ -840,9 +842,9 @@ func (c *Client) getFakeUnixURL(path string) string {
 	return fmt.Sprintf("%s%s", urlStr, path)
 }
 
-func (c *Client) unixClient() *http.Client {
-	if c.unixHTTPClient != nil {
-		return c.unixHTTPClient
+func (c *Client) initializeUnixClient() {
+	if c.endpointURL.Scheme != "unix" {
+		return
 	}
 	socketPath := c.endpointURL.Path
 	tr := cleanhttp.DefaultTransport()
@@ -850,7 +852,6 @@ func (c *Client) unixClient() *http.Client {
 		return c.Dialer.Dial("unix", socketPath)
 	}
 	c.unixHTTPClient = &http.Client{Transport: tr}
-	return c.unixHTTPClient
 }
 
 type jsonMessage struct {
@@ -955,7 +956,7 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 	if err != nil {
 		return nil, ErrInvalidEndpoint
 	}
-	if tls {
+	if tls && u.Scheme != "unix" {
 		u.Scheme = "https"
 	}
 	switch u.Scheme {
