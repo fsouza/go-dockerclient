@@ -2,7 +2,7 @@ language: go
 sudo: required
 go:
   - 1.6.3
-  - 1.7rc6
+  - 1.7
   - tip
 os:
   - linux
