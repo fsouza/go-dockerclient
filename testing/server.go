@@ -457,10 +457,9 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		Config:     config.Config,
 		HostConfig: config.HostConfig,
 		State: docker.State{
-			Running:   false,
-			Pid:       mathrand.Int() % 50000,
-			ExitCode:  0,
-			StartedAt: time.Now(),
+			Running:  false,
+			Pid:      mathrand.Int() % 50000,
+			ExitCode: 0,
 		},
 		Image: config.Image,
 		NetworkSettings: &docker.NetworkSettings{
@@ -635,6 +634,7 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 		container.NetworkSettings.Ports = ports
 	}
 	container.State.Running = true
+	container.State.StartedAt = time.Now()
 	s.notify(container)
 }
 
@@ -730,7 +730,7 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 		for {
 			time.Sleep(1e6)
 			s.cMut.RLock()
-			if !container.State.Running {
+			if !container.State.StartedAt.IsZero() && !container.State.Running {
 				s.cMut.RUnlock()
 				break
 			}

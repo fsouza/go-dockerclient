@@ -244,6 +244,9 @@ func TestCreateContainer(t *testing.T) {
 	if stored.State.Running {
 		t.Errorf("CreateContainer should not set container to running state.")
 	}
+	if !stored.State.StartedAt.IsZero() {
+		t.Errorf("CreateContainer should not set startedAt in container state.")
+	}
 	if stored.Config.User != "ubuntu" {
 		t.Errorf("CreateContainer: wrong config. Expected: %q. Returned: %q.", "ubuntu", stored.Config.User)
 	}
@@ -614,6 +617,9 @@ func TestStartContainer(t *testing.T) {
 	}
 	if !server.containers[0].State.Running {
 		t.Error("StartContainer: did not set the container to running state")
+	}
+	if server.containers[0].State.StartedAt.IsZero() {
+		t.Error("StartContainer: did not set the startedAt container state")
 	}
 	if gotMemory := server.containers[0].HostConfig.Memory; gotMemory != memory {
 		t.Errorf("StartContainer: wrong HostConfig. Wants %d of memory. Got %d", memory, gotMemory)
@@ -1013,6 +1019,45 @@ func TestAttachContainerWithStreamBlocks(t *testing.T) {
 	}
 	lines := []string{
 		"\x01\x00\x00\x00\x00\x00\x00\x15Container is running",
+		"\x01\x00\x00\x00\x00\x00\x00\x0fWhat happened?",
+		"\x01\x00\x00\x00\x00\x00\x00\x13Something happened",
+	}
+	expected := strings.Join(lines, "\n") + "\n"
+	if body != expected {
+		t.Errorf("AttachContainer: wrong body. Want %q. Got %q.", expected, body)
+	}
+}
+
+func TestAttachContainerWithStreamBlocksOnCreatedContainers(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.containers[0].State.Running = false
+	server.containers[0].State.StartedAt = time.Time{}
+	server.buildMuxer()
+	path := fmt.Sprintf("/containers/%s/attach?logs=1&stdout=1&stream=1", server.containers[0].ID)
+	request, _ := http.NewRequest("POST", path, nil)
+	done := make(chan string)
+	go func() {
+		recorder := &HijackableResponseRecorder{}
+		server.ServeHTTP(recorder, request)
+		done <- recorder.HijackBuffer()
+	}()
+	select {
+	case <-done:
+		t.Fatalf("attach stream returned before container is stopped")
+	case <-time.After(500 * time.Millisecond):
+	}
+	server.cMut.Lock()
+	server.containers[0].State.StartedAt = time.Now()
+	server.cMut.Unlock()
+	var body string
+	select {
+	case body = <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatalf("timed out waiting for attach to finish")
+	}
+	lines := []string{
+		"\x01\x00\x00\x00\x00\x00\x00\x19Container is not running",
 		"\x01\x00\x00\x00\x00\x00\x00\x0fWhat happened?",
 		"\x01\x00\x00\x00\x00\x00\x00\x13Something happened",
 	}

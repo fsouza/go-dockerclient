@@ -15,12 +15,13 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-cleanhttp"
 	"golang.org/x/net/context"
 )
 
@@ -167,6 +168,37 @@ func TestNewTLSVersionedClientInvalidCA(t *testing.T) {
 	_, err := NewVersionedTLSClient(endpoint, certPath, keyPath, caPath, "1.14")
 	if err == nil {
 		t.Errorf("Expected invalid ca at %s", caPath)
+	}
+}
+
+func TestNewTSLAPIClientUnixEndpoint(t *testing.T) {
+	srv, cleanup, err := newUnixServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ok"))
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+	srv.Start()
+	defer srv.Close()
+	endpoint := "unix://" + srv.Listener.Addr().String()
+	client, err := newTLSClient(endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	}
+	rsp, err := client.do("GET", "/", doOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "ok" {
+		t.Fatalf("Expected response to be %q, got: %q", "ok", string(data))
 	}
 }
 
@@ -408,52 +440,21 @@ func TestPingFailingWrongStatus(t *testing.T) {
 }
 
 func TestPingErrorWithUnixSocket(t *testing.T) {
-	go func() {
-		li, err := net.Listen("unix", "/tmp/echo.sock")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer li.Close()
-		if err != nil {
-			t.Fatalf("Expected to get listener, but failed: %#v", err)
-		}
-
-		fd, err := li.Accept()
-		if err != nil {
-			t.Fatalf("Expected to accept connection, but failed: %#v", err)
-		}
-
-		buf := make([]byte, 512)
-		nr, err := fd.Read(buf)
-
-		// Create invalid response message to trigger error.
-		data := buf[0:nr]
-		for i := 0; i < 10; i++ {
-			data[i] = 63
-		}
-
-		_, err = fd.Write(data)
-		if err != nil {
-			t.Fatalf("Expected to write to socket, but failed: %#v", err)
-		}
-
-		return
-	}()
-
-	// Wait for unix socket to listen
-	time.Sleep(10 * time.Millisecond)
-
-	endpoint := "unix:///tmp/echo.sock"
-	u, _ := parseEndpoint(endpoint, false)
-	client := Client{
-		HTTPClient:             cleanhttp.DefaultClient(),
-		Dialer:                 &net.Dialer{},
-		endpoint:               endpoint,
-		endpointURL:            u,
-		SkipServerVersionCheck: true,
+	srv, cleanup, err := newUnixServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("aaaaaaaaaaa-invalid-aaaaaaaaaaa"))
+	}))
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	err := client.Ping()
+	defer cleanup()
+	srv.Start()
+	defer srv.Close()
+	endpoint := "unix:///tmp/echo.sock"
+	client, err := NewClient(endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = client.Ping()
 	if err == nil {
 		t.Fatal("Expected non nil error, got nil")
 	}
@@ -630,29 +631,22 @@ func TestClientDoContextCancel(t *testing.T) {
 }
 
 func TestClientStreamTimeoutUnixSocket(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "socket")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
-	socketPath := filepath.Join(tmpdir, "docker_test.sock")
-	l, err := net.Listen("unix", socketPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer l.Close()
-	go func() {
-		http.Serve(l, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			for i := 0; i < 5; i++ {
-				fmt.Fprintf(w, "%d\n", i)
-				if f, ok := w.(http.Flusher); ok {
-					f.Flush()
-				}
-				time.Sleep(500 * time.Millisecond)
+	srv, cleanup, err := newUnixServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for i := 0; i < 5; i++ {
+			fmt.Fprintf(w, "%d\n", i)
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
 			}
-		}))
-	}()
-	client, err := NewClient("unix://" + socketPath)
+			time.Sleep(500 * time.Millisecond)
+		}
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+	srv.Start()
+	defer srv.Close()
+	client, err := NewClient("unix://" + srv.Listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -670,6 +664,133 @@ func TestClientStreamTimeoutUnixSocket(t *testing.T) {
 	if result != expected {
 		t.Fatalf("expected stream result %q, got: %q", expected, result)
 	}
+}
+
+func TestClientDoConcurrentStress(t *testing.T) {
+	var reqs []*http.Request
+	var mu sync.Mutex
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		reqs = append(reqs, r)
+		mu.Unlock()
+	})
+	var unixSrvs []*httptest.Server
+	for i := 0; i < 3; i++ {
+		srv, cleanup, err := newUnixServer(handler)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cleanup()
+		unixSrvs = append(unixSrvs, srv)
+	}
+	var tests = []struct {
+		srv           *httptest.Server
+		scheme        string
+		withTimeout   bool
+		withTLSServer bool
+		withTLSClient bool
+	}{
+		{srv: httptest.NewUnstartedServer(handler), scheme: "http"},
+		{srv: unixSrvs[0], scheme: "unix"},
+		{srv: httptest.NewUnstartedServer(handler), scheme: "http", withTimeout: true},
+		{srv: unixSrvs[1], scheme: "unix", withTimeout: true},
+		{srv: httptest.NewUnstartedServer(handler), scheme: "https", withTLSServer: true, withTLSClient: true},
+		{srv: unixSrvs[2], scheme: "unix", withTLSServer: false, withTLSClient: true},
+	}
+	for _, tt := range tests {
+		reqs = nil
+		var client *Client
+		var err error
+		endpoint := tt.scheme + "://" + tt.srv.Listener.Addr().String()
+		if tt.withTLSServer {
+			tt.srv.StartTLS()
+		} else {
+			tt.srv.Start()
+		}
+		if tt.withTLSClient {
+			certPEMBlock, certErr := ioutil.ReadFile("testing/data/cert.pem")
+			if certErr != nil {
+				t.Fatal(certErr)
+			}
+			keyPEMBlock, certErr := ioutil.ReadFile("testing/data/key.pem")
+			if certErr != nil {
+				t.Fatal(certErr)
+			}
+			client, err = NewTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, nil)
+		} else {
+			client, err = NewClient(endpoint)
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if tt.withTimeout {
+			client.SetTimeout(time.Minute)
+		}
+		n := 50
+		wg := sync.WaitGroup{}
+		var paths []string
+		errsCh := make(chan error, 3*n)
+		waiters := make(chan CloseWaiter, n)
+		for i := 0; i < n; i++ {
+			path := fmt.Sprintf("/%05d", i)
+			paths = append(paths, "GET"+path)
+			paths = append(paths, "POST"+path)
+			paths = append(paths, "HEAD"+path)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				_, clientErr := client.do("GET", path, doOptions{})
+				if clientErr != nil {
+					errsCh <- clientErr
+				}
+				clientErr = client.stream("POST", path, streamOptions{})
+				if clientErr != nil {
+					errsCh <- clientErr
+				}
+				cw, clientErr := client.hijack("HEAD", path, hijackOptions{})
+				if clientErr != nil {
+					errsCh <- clientErr
+				} else {
+					waiters <- cw
+				}
+			}()
+		}
+		wg.Wait()
+		close(errsCh)
+		close(waiters)
+		for cw := range waiters {
+			cw.Wait()
+			cw.Close()
+		}
+		for err = range errsCh {
+			t.Error(err)
+		}
+		var reqPaths []string
+		for _, r := range reqs {
+			reqPaths = append(reqPaths, r.Method+r.URL.Path)
+		}
+		sort.Strings(paths)
+		sort.Strings(reqPaths)
+		if !reflect.DeepEqual(reqPaths, paths) {
+			t.Fatalf("expected server request paths to equal %v, got: %v", paths, reqPaths)
+		}
+		tt.srv.Close()
+	}
+}
+
+func newUnixServer(handler http.Handler) (*httptest.Server, func(), error) {
+	tmpdir, err := ioutil.TempDir("", "socket")
+	if err != nil {
+		return nil, nil, err
+	}
+	socketPath := filepath.Join(tmpdir, "docker_test_stress.sock")
+	l, err := net.Listen("unix", socketPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	srv := httptest.NewUnstartedServer(handler)
+	srv.Listener = l
+	return srv, func() { os.RemoveAll(tmpdir) }, nil
 }
 
 type FakeRoundTripper struct {
