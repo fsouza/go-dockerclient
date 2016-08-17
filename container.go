@@ -527,6 +527,9 @@ type CreateContainerOptions struct {
 // CreateContainer creates a new container, returning the container instance,
 // or an error in case of failure.
 //
+// The returned container instance contains only the container ID. To get more
+// details about the container after creating it, use InspectContainer.
+//
 // See https://goo.gl/WxQzrr for more details.
 func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error) {
 	path := "/containers/create?" + queryString(opts)
