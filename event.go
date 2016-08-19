@@ -292,11 +292,11 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 	if startTime != 0 {
 		uri += fmt.Sprintf("?since=%d", startTime)
 	}
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
+	protocol := c.EndpointURL.Scheme
+	address := c.EndpointURL.Path
 	if protocol != "unix" {
 		protocol = "tcp"
-		address = c.endpointURL.Host
+		address = c.EndpointURL.Host
 	}
 	var dial net.Conn
 	var err error

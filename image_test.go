@@ -26,8 +26,8 @@ func newTestClient(rt *FakeRoundTripper) Client {
 	client := Client{
 		HTTPClient:             &http.Client{Transport: rt},
 		Dialer:                 &net.Dialer{},
-		endpoint:               endpoint,
-		endpointURL:            u,
+		Endpoint:               endpoint,
+		EndpointURL:            u,
 		SkipServerVersionCheck: true,
 		serverAPIVersion:       testAPIVersion,
 	}
