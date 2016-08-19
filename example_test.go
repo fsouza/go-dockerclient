@@ -8,7 +8,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"time"
 
@@ -42,35 +41,6 @@ func ExampleClient_AttachToContainer() {
 		Stream:       true,
 	})
 	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(buf.String())
-}
-
-func ExampleClient_CopyFromContainer() {
-	client, err := docker.NewClient("http://localhost:4243")
-	if err != nil {
-		log.Fatal(err)
-	}
-	cid := "a84849"
-	var buf bytes.Buffer
-	filename := "/tmp/output.txt"
-	err = client.CopyFromContainer(docker.CopyFromContainerOptions{
-		Container:    cid,
-		Resource:     filename,
-		OutputStream: &buf,
-	})
-	if err != nil {
-		log.Fatalf("Error while copying from %s: %s\n", cid, err)
-	}
-	content := new(bytes.Buffer)
-	r := bytes.NewReader(buf.Bytes())
-	tr := tar.NewReader(r)
-	tr.Next()
-	if err != nil && err != io.EOF {
-		log.Fatal(err)
-	}
-	if _, err := io.Copy(content, tr); err != nil {
 		log.Fatal(err)
 	}
 	log.Println(buf.String())
