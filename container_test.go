@@ -1859,6 +1859,22 @@ func TestCopyFromContainerEmptyContainer(t *testing.T) {
 	}
 }
 
+func TestCopyFromContainerDockerAPI124(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
+	client.serverAPIVersion = apiVersion124
+	opts := CopyFromContainerOptions{
+		Container: "a123456",
+	}
+	err := client.CopyFromContainer(opts)
+	if err == nil {
+		t.Fatal("got unexpected <nil> error")
+	}
+	expectedMsg := "go-dockerclient: CopyFromContainer is no longer available in Docker >= 1.12, use DownloadFromContainer instead"
+	if err.Error() != expectedMsg {
+		t.Errorf("wrong error message\nWant %q\nGot  %q", expectedMsg, err.Error())
+	}
+}
+
 func TestPassingNameOptToCreateContainerReturnsItInContainer(t *testing.T) {
 	jsonContainer := `{
              "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
