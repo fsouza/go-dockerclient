@@ -297,7 +297,6 @@ type Config struct {
 	Image             string              `json:"Image,omitempty" yaml:"Image,omitempty"`
 	Volumes           map[string]struct{} `json:"Volumes,omitempty" yaml:"Volumes,omitempty"`
 	VolumeDriver      string              `json:"VolumeDriver,omitempty" yaml:"VolumeDriver,omitempty"`
-	VolumesFrom       string              `json:"VolumesFrom,omitempty" yaml:"VolumesFrom,omitempty"`
 	WorkingDir        string              `json:"WorkingDir,omitempty" yaml:"WorkingDir,omitempty"`
 	MacAddress        string              `json:"MacAddress,omitempty" yaml:"MacAddress,omitempty"`
 	Entrypoint        []string            `json:"Entrypoint" yaml:"Entrypoint"`
@@ -306,6 +305,10 @@ type Config struct {
 	OnBuild           []string            `json:"OnBuild,omitempty" yaml:"OnBuild,omitempty"`
 	Mounts            []Mount             `json:"Mounts,omitempty" yaml:"Mounts,omitempty"`
 	Labels            map[string]string   `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+
+	// This is no longer used and has been kept here for backward
+	// compatibility, please use HostConfig.VolumesFrom.
+	VolumesFrom string `json:"VolumesFrom,omitempty" yaml:"VolumesFrom,omitempty"`
 }
 
 // Mount represents a mount point in the container.
