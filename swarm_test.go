@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+
+	"github.com/docker/engine-api/types/swarm"
 )
 
 func TestInitSwarm(t *testing.T) {
@@ -139,5 +141,27 @@ func TestUpdateSwarmNotInSwarm(t *testing.T) {
 	err := client.UpdateSwarm(UpdateSwarmOptions{})
 	if err != ErrNodeNotInSwarm {
 		t.Errorf("UpdateSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
+	}
+}
+
+func TestInspectSwarm(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: `{"ID": "123"}`, status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	response, err := client.InspectSwarm(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "GET"
+	if req.Method != expectedMethod {
+		t.Errorf("InspectSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/swarm"))
+	if req.URL.Path != u.Path {
+		t.Errorf("InspectSwarm: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+	expected := swarm.Swarm{ClusterInfo: swarm.ClusterInfo{ID: "123"}}
+	if !reflect.DeepEqual(expected, response) {
+		t.Errorf("InspectSwarm: Wrong response. Want %#v. Got %#v.", expected, response)
 	}
 }
