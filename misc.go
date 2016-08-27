@@ -7,6 +7,8 @@ package docker
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/docker/engine-api/types/swarm"
 )
 
 // Version returns version information about the docker server.
@@ -75,6 +77,7 @@ type DockerInfo struct {
 	ServerVersion      string
 	ClusterStore       string
 	ClusterAdvertise   string
+	Swarm              swarm.Info
 }
 
 // PluginsInfo is a struct with the plugins registered with the docker daemon
