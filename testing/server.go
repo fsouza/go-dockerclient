@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/docker/engine-api/types/swarm"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
 )
@@ -186,6 +187,9 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/volumes/{name:.*}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.removeVolume))
 	s.mux.Path("/info").Methods("GET").HandlerFunc(s.handlerWrapper(s.infoDocker))
 	s.mux.Path("/version").Methods("GET").HandlerFunc(s.handlerWrapper(s.versionDocker))
+	s.mux.Path("/swarm/init").Methods("POST").HandlerFunc(s.handlerWrapper(s.swarmInit))
+	s.mux.Path("/services/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.serviceCreate))
+	s.mux.Path("/networks/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.networkCreate))
 }
 
 // SetHook changes the hook function used by the server.
@@ -1392,4 +1396,72 @@ func (s *DockerServer) versionDocker(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(envs)
+}
+
+func (s *DockerServer) swarmInit(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`"test"`))
+}
+
+func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	var config swarm.ServiceSpec
+	defer r.Body.Close()
+	json.NewDecoder(r.Body).Decode(&config)
+	service := swarm.Service{
+		ID:   s.generateID(),
+		Spec: config,
+	}
+	portBindings := map[docker.Port][]docker.PortBinding{}
+	exposedPort := map[docker.Port]struct{}{}
+	for _, p := range config.EndpointSpec.Ports {
+		targetPort := fmt.Sprintf("%d/%s", p.TargetPort, p.Protocol)
+		portBindings[docker.Port(targetPort)] = []docker.PortBinding{
+			{HostIP: "0.0.0.0", HostPort: fmt.Sprintf("%d", p.PublishedPort)},
+		}
+		exposedPort[docker.Port(targetPort)] = struct{}{}
+	}
+	hostConfig := docker.HostConfig{
+		PortBindings: portBindings,
+	}
+	dockerConfig := docker.Config{
+		Cmd:          config.TaskTemplate.ContainerSpec.Args,
+		Env:          config.TaskTemplate.ContainerSpec.Env,
+		ExposedPorts: exposedPort,
+	}
+	container := docker.Container{
+		ID:         s.generateID(),
+		Name:       config.Name,
+		Image:      config.TaskTemplate.ContainerSpec.Image,
+		Created:    time.Now(),
+		Config:     &dockerConfig,
+		HostConfig: &hostConfig,
+	}
+	s.cMut.Lock()
+	if container.Name != "" {
+		for _, c := range s.containers {
+			if c.Name == container.Name {
+				defer s.cMut.Unlock()
+				http.Error(w, "there's already a container with this name", http.StatusConflict)
+				return
+			}
+		}
+	}
+	s.containers = append(s.containers, &container)
+	s.cMut.Unlock()
+	s.notify(&container)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(service)
+}
+
+func (s *DockerServer) networkCreate(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	type createNetworkResponse struct {
+		ID string
+	}
+	cnr := createNetworkResponse{
+		ID: s.generateID(),
+	}
+	json.NewEncoder(w).Encode(cnr)
 }
