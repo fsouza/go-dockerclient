@@ -2308,12 +2308,12 @@ func TestServiceCreate(t *testing.T) {
 		Config: &docker.Config{
 			Cmd:          []string{"--test"},
 			Env:          []string{"ENV=1"},
-			ExposedPorts: map[docker.Port]struct{}{"80/tcp": struct{}{}},
+			ExposedPorts: map[docker.Port]struct{}{"80/tcp": {}},
 		},
 		HostConfig: &docker.HostConfig{
 			PortBindings: map[docker.Port][]docker.PortBinding{
-				"80/tcp": []docker.PortBinding{
-					docker.PortBinding{HostIP: "0.0.0.0", HostPort: "80"},
+				"80/tcp": {
+					{HostIP: "0.0.0.0", HostPort: "80"},
 				},
 			},
 		},
