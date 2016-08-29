@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -21,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/engine-api/types/swarm"
 	"github.com/fsouza/go-dockerclient"
 )
 
@@ -2237,5 +2239,118 @@ func TestVersionDocker(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("VersionDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}
+
+func TestSwarmInit(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/swarm/init", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("SwarmInit: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var id string
+	err := json.Unmarshal(recorder.Body.Bytes(), &id)
+	if err != nil {
+		t.Fatalf("SwarmInit: got error. %s", err.Error())
+	}
+	if id == "" {
+		t.Fatal("SwarmInit: id not found")
+	}
+}
+
+func TestServiceCreate(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	serviceCreateOpts := docker.CreateServiceOptions{
+		ServiceSpec: swarm.ServiceSpec{
+			Annotations: swarm.Annotations{
+				Name: "test",
+			},
+			TaskTemplate: swarm.TaskSpec{
+				ContainerSpec: swarm.ContainerSpec{
+					Image: "test/test",
+					Args:  []string{"--test"},
+					Env:   []string{"ENV=1"},
+					User:  "test",
+				},
+			},
+			EndpointSpec: &swarm.EndpointSpec{
+				Mode: swarm.ResolutionModeVIP,
+				Ports: []swarm.PortConfig{{
+					Protocol:      swarm.PortConfigProtocolTCP,
+					TargetPort:    uint32(80),
+					PublishedPort: uint32(80),
+				}},
+			},
+		},
+	}
+	buf, err := json.Marshal(serviceCreateOpts)
+	if err != nil {
+		t.Fatalf("ServiceCreate error: %s", err.Error())
+	}
+	var params io.Reader
+	params = bytes.NewBuffer(buf)
+	request, _ := http.NewRequest("POST", "/services/create", params)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceCreate: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if len(server.containers) != 1 {
+		t.Fatal("ServiceCreate: service not started")
+	}
+	expectedContainer := docker.Container{
+		Image: "test/test",
+		Name:  "test",
+		Config: &docker.Config{
+			Cmd:          []string{"--test"},
+			Env:          []string{"ENV=1"},
+			ExposedPorts: map[docker.Port]struct{}{"80/tcp": struct{}{}},
+		},
+		HostConfig: &docker.HostConfig{
+			PortBindings: map[docker.Port][]docker.PortBinding{
+				"80/tcp": []docker.PortBinding{
+					docker.PortBinding{HostIP: "0.0.0.0", HostPort: "80"},
+				},
+			},
+		},
+	}
+	cont := server.containers[0]
+	if cont.Config.Env == nil {
+		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Config.Env, cont.Config.Env)
+	}
+	if cont.Config.ExposedPorts == nil {
+		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Config.ExposedPorts, cont.Config.ExposedPorts)
+	}
+	if cont.Config.Cmd == nil {
+		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Config.Cmd, cont.Config.Cmd)
+	}
+	if cont.Name != expectedContainer.Name {
+		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Name, cont.Name)
+	}
+	if cont.Image != expectedContainer.Image {
+		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Image, cont.Image)
+	}
+	if cont.HostConfig.PortBindings == nil {
+		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.HostConfig.PortBindings, cont.HostConfig.PortBindings)
+	}
+}
+
+func TestNetworkCreate(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/networks/create", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("NetworkCreate: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var resp map[string]string
+	json.Unmarshal(recorder.Body.Bytes(), &resp)
+	if resp["ID"] == "" {
+		t.Fatal("NetworkCreate: network id can't be empty.")
 	}
 }
