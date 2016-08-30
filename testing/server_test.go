@@ -2335,15 +2335,8 @@ func TestSwarmInspect(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
 	server.buildMuxer()
 	expected := &swarm.Swarm{
-		JoinTokens: swarm.JoinTokens{
-			Manager: "manager-token",
-			Worker:  "worker-token",
-		},
 		ClusterInfo: swarm.ClusterInfo{
-			Meta: swarm.Meta{
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
+			ID: "swarm-id",
 		},
 	}
 	server.swarm = expected
@@ -2358,7 +2351,7 @@ func TestSwarmInspect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SwarmInspect: got error. %s", err.Error())
 	}
-	if !reflect.DeepEqual(swarmInspect, expected) {
+	if expected.ClusterInfo.ID != swarmInspect.ClusterInfo.ID {
 		t.Fatalf("SwarmInspect: wrong response. Want %+v. Got %+v.", expected, swarmInspect)
 	}
 }
