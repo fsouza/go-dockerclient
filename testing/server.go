@@ -63,6 +63,8 @@ type DockerServer struct {
 	cChan          chan<- *docker.Container
 	volStore       map[string]*volumeCounter
 	volMut         sync.RWMutex
+	swarm          *swarm.Swarm
+	swarmMut       sync.RWMutex
 }
 
 type volumeCounter struct {
@@ -188,6 +190,9 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/info").Methods("GET").HandlerFunc(s.handlerWrapper(s.infoDocker))
 	s.mux.Path("/version").Methods("GET").HandlerFunc(s.handlerWrapper(s.versionDocker))
 	s.mux.Path("/swarm/init").Methods("POST").HandlerFunc(s.handlerWrapper(s.swarmInit))
+	s.mux.Path("/swarm").Methods("GET").HandlerFunc(s.handlerWrapper(s.swarmInspect))
+	s.mux.Path("/swarm/join").Methods("POST").HandlerFunc(s.handlerWrapper(s.swarmJoin))
+	s.mux.Path("/swarm/leave").Methods("POST").HandlerFunc(s.handlerWrapper(s.swarmLeave))
 	s.mux.Path("/services/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.serviceCreate))
 	s.mux.Path("/networks/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.networkCreate))
 }
@@ -1399,9 +1404,60 @@ func (s *DockerServer) versionDocker(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) swarmInit(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`"test"`))
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if s.swarm == nil {
+		s.swarm = &swarm.Swarm{
+			JoinTokens: swarm.JoinTokens{
+				Manager: s.generateID(),
+				Worker:  s.generateID(),
+			},
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`"teste"`))
+	} else {
+		w.WriteHeader(http.StatusNotAcceptable)
+	}
+}
+
+func (s *DockerServer) swarmInspect(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if s.swarm == nil {
+		w.WriteHeader(http.StatusNotAcceptable)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(s.swarm)
+	}
+}
+
+func (s *DockerServer) swarmJoin(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if s.swarm == nil {
+		s.swarm = &swarm.Swarm{
+			JoinTokens: swarm.JoinTokens{
+				Manager: s.generateID(),
+				Worker:  s.generateID(),
+			},
+		}
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusNotAcceptable)
+	}
+}
+
+func (s *DockerServer) swarmLeave(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if s.swarm == nil {
+		w.WriteHeader(http.StatusNotAcceptable)
+	} else {
+		s.swarm = nil
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {

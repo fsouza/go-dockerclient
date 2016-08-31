@@ -2259,6 +2259,112 @@ func TestSwarmInit(t *testing.T) {
 	if id == "" {
 		t.Fatal("SwarmInit: id not found")
 	}
+	if server.swarm == nil {
+		t.Fatalf("SwarmInit: expected swarm to be set.")
+	}
+}
+
+func TestSwarmInitAlreadyInSwarm(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	server.swarm = &swarm.Swarm{}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/swarm/init", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotAcceptable {
+		t.Fatalf("SwarmInit: wrong status. Want %d. Got %d.", http.StatusNotAcceptable, recorder.Code)
+	}
+}
+
+func TestSwarmJoin(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/swarm/join", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("SwarmJoin: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if server.swarm == nil {
+		t.Fatalf("SwarmJoin: expected swarm to be set.")
+	}
+}
+
+func TestSwarmJoinAlreadyInSwarm(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	server.swarm = &swarm.Swarm{}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/swarm/join", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotAcceptable {
+		t.Fatalf("SwarmJoin: wrong status. Want %d. Got %d.", http.StatusNotAcceptable, recorder.Code)
+	}
+}
+
+func TestSwarmLeave(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	server.swarm = &swarm.Swarm{}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/swarm/leave", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("SwarmLeave: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if server.swarm != nil {
+		t.Fatalf("SwarmLeave: expected swarm to be nil. Got %+v.", server.swarm)
+	}
+}
+
+func TestSwarmLeaveNotInSwarm(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/swarm/leave", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotAcceptable {
+		t.Fatalf("SwarmLeave: wrong status. Want %d. Got %d.", http.StatusNotAcceptable, recorder.Code)
+	}
+	if server.swarm != nil {
+		t.Fatalf("SwarmLeave: expected swarm to be nil. Got %+v.", server.swarm)
+	}
+}
+
+func TestSwarmInspect(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	expected := &swarm.Swarm{
+		ClusterInfo: swarm.ClusterInfo{
+			ID: "swarm-id",
+		},
+	}
+	server.swarm = expected
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/swarm", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("SwarmInspect: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var swarmInspect *swarm.Swarm
+	err := json.Unmarshal(recorder.Body.Bytes(), &swarmInspect)
+	if err != nil {
+		t.Fatalf("SwarmInspect: got error. %s", err.Error())
+	}
+	if expected.ClusterInfo.ID != swarmInspect.ClusterInfo.ID {
+		t.Fatalf("SwarmInspect: wrong response. Want %+v. Got %+v.", expected, swarmInspect)
+	}
+}
+
+func TestSwarmInspectNotInSwarm(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/swarm", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotAcceptable {
+		t.Fatalf("SwarmInspect: wrong status. Want %d. Got %d.", http.StatusNotAcceptable, recorder.Code)
+	}
 }
 
 func TestServiceCreate(t *testing.T) {
