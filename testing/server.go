@@ -1471,12 +1471,14 @@ func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	portBindings := map[docker.Port][]docker.PortBinding{}
 	exposedPort := map[docker.Port]struct{}{}
-	for _, p := range config.EndpointSpec.Ports {
-		targetPort := fmt.Sprintf("%d/%s", p.TargetPort, p.Protocol)
-		portBindings[docker.Port(targetPort)] = []docker.PortBinding{
-			{HostIP: "0.0.0.0", HostPort: fmt.Sprintf("%d", p.PublishedPort)},
+	if config.EndpointSpec != nil {
+		for _, p := range config.EndpointSpec.Ports {
+			targetPort := fmt.Sprintf("%d/%s", p.TargetPort, p.Protocol)
+			portBindings[docker.Port(targetPort)] = []docker.PortBinding{
+				{HostIP: "0.0.0.0", HostPort: fmt.Sprintf("%d", p.PublishedPort)},
+			}
+			exposedPort[docker.Port(targetPort)] = struct{}{}
 		}
-		exposedPort[docker.Port(targetPort)] = struct{}{}
 	}
 	hostConfig := docker.HostConfig{
 		PortBindings: portBindings,
