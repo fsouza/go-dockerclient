@@ -30,6 +30,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Microsoft/go-winio"
 	"github.com/docker/docker/opts"
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -137,7 +138,7 @@ type Client struct {
 	SkipServerVersionCheck bool
 	HTTPClient             *http.Client
 	TLSConfig              *tls.Config
-	Dialer                 *net.Dialer
+	Dialer                 Dialer
 
 	endpoint            string
 	endpointURL         *url.URL
@@ -146,6 +147,14 @@ type Client struct {
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
 	unixHTTPClient      *http.Client
+	windowsHTTPClient   *http.Client
+}
+
+// Dialer is an interface that allows network connections to be dialed
+// (net.Dialer fulfills this interface) and named pipes (a shim using
+// winio.DialPipe)
+type Dialer interface {
+	Dial(network, address string) (net.Conn, error)
 }
 
 // NewClient returns a Client instance ready for communication with the given
@@ -207,6 +216,7 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 		requestedAPIVersion: requestedAPIVersion,
 	}
 	c.initializeUnixClient()
+	c.initializeWindowsClient()
 	return c, nil
 }
 
@@ -421,6 +431,9 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 	if protocol == "unix" {
 		httpClient = c.unixHTTPClient
 		u = c.getFakeUnixURL(path)
+	} else if protocol == "npipe" {
+		httpClient = c.windowsHTTPClient
+		u = c.getFakeUnixURL(path)
 	} else {
 		u = c.getURL(path)
 	}
@@ -524,7 +537,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 	subCtx, cancelRequest := context.WithCancel(ctx)
 	defer cancelRequest()
 
-	if protocol == "unix" {
+	if protocol == "unix" || protocol == "npipe" {
 		var dial net.Conn
 		dial, err = c.Dialer.Dial(protocol, address)
 		if err != nil {
@@ -709,13 +722,17 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 	req.Header.Set("Upgrade", "tcp")
 	protocol := c.endpointURL.Scheme
 	address := c.endpointURL.Path
-	if protocol != "unix" {
+	if protocol != "unix" && protocol != "npipe" {
 		protocol = "tcp"
 		address = c.endpointURL.Host
 	}
 	var dial net.Conn
-	if c.TLSConfig != nil && protocol != "unix" {
-		dial, err = tlsDialWithDialer(c.Dialer, protocol, address, c.TLSConfig)
+	if c.TLSConfig != nil && protocol != "unix" && protocol != "npipe" {
+		netDialer, ok := c.Dialer.(*net.Dialer)
+		if !ok {
+			return nil, ErrTLSNotSupported
+		}
+		dial, err = tlsDialWithDialer(netDialer, protocol, address, c.TLSConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -853,6 +870,28 @@ func (c *Client) initializeUnixClient() {
 	c.unixHTTPClient = &http.Client{Transport: tr}
 }
 
+type pipeDialer struct {
+	dialFunc func(network, addr string) (net.Conn, error)
+}
+
+func (p pipeDialer) Dial(network, address string) (net.Conn, error) {
+	return p.dialFunc(network, address)
+}
+
+func (c *Client) initializeWindowsClient() {
+	if c.endpointURL.Scheme != "npipe" {
+		return
+	}
+	namedPipePath := c.endpointURL.Path
+	tr := cleanhttp.DefaultTransport()
+	tr.Dial = func(network, addr string) (net.Conn, error) {
+		timeout := 10 * time.Second
+		return winio.DialPipe(namedPipePath, &timeout)
+	}
+	c.Dialer = &pipeDialer{tr.Dial}
+	c.windowsHTTPClient = &http.Client{Transport: tr}
+}
+
 type jsonMessage struct {
 	Status   string `json:"status,omitempty"`
 	Progress string `json:"progress,omitempty"`
@@ -960,6 +999,8 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 	}
 	switch u.Scheme {
 	case "unix":
+		return u, nil
+	case "npipe":
 		return u, nil
 	case "http", "https", "tcp":
 		_, port, err := net.SplitHostPort(u.Host)
