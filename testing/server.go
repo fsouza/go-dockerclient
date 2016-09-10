@@ -1,4 +1,4 @@
-// Copyright 2015 go-dockerclient authors. All rights reserved.
+// Copyright 2013 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -109,12 +109,14 @@ func NewServer(bind string, containerChan chan<- *docker.Container, hook func(*h
 	return server, nil
 }
 
+// TLSConfig is the set of options to start the TLS-enabled testing server.
 type TLSConfig struct {
 	CertPath    string
 	CertKeyPath string
 	RootCAPath  string
 }
 
+// NewTLSServer creates and starts a TLS-enabled testing server.
 func NewTLSServer(bind string, containerChan chan<- *docker.Container, hook func(*http.Request), tlsConfig TLSConfig) (*DockerServer, error) {
 	listener, err := net.Listen("tcp", bind)
 	if err != nil {
