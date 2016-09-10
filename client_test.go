@@ -31,8 +31,8 @@ func TestNewAPIClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	if client.Endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.Endpoint)
 	}
 	// test unix socket endpoints
 	endpoint = "unix:///var/run/docker.sock"
@@ -40,8 +40,8 @@ func TestNewAPIClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	if client.Endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.Endpoint)
 	}
 	if !client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be true, got false")
@@ -64,8 +64,8 @@ func TestNewTSLAPIClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	if client.Endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.Endpoint)
 	}
 	if !client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be true, got false")
@@ -81,8 +81,8 @@ func TestNewVersionedClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	if client.Endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.Endpoint)
 	}
 	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.12" {
 		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.12", reqVersion)
@@ -101,11 +101,11 @@ func TestNewVersionedClientFromEnv(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	if client.Endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.Endpoint)
 	}
-	if client.endpointURL.String() != endpointURL {
-		t.Errorf("Expected endpointURL %s. Got %s.", endpoint, client.endpoint)
+	if client.EndpointURL.String() != endpointURL {
+		t.Errorf("Expected endpointURL %s. Got %s.", endpoint, client.Endpoint)
 	}
 	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.12" {
 		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.12", reqVersion)
@@ -126,11 +126,11 @@ func TestNewVersionedClientFromEnvTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	if client.Endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.Endpoint)
 	}
-	if client.endpointURL.String() != endpointURL {
-		t.Errorf("Expected endpointURL %s. Got %s.", endpoint, client.endpoint)
+	if client.EndpointURL.String() != endpointURL {
+		t.Errorf("Expected endpointURL %s. Got %s.", endpoint, client.Endpoint)
 	}
 	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.12" {
 		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.12", reqVersion)
@@ -149,8 +149,8 @@ func TestNewTLSVersionedClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	if client.Endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.Endpoint)
 	}
 	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.14" {
 		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.14", reqVersion)
@@ -186,8 +186,8 @@ func TestNewTSLAPIClientUnixEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	if client.Endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.Endpoint)
 	}
 	rsp, err := client.do("GET", "/", doOptions{})
 	if err != nil {
@@ -247,20 +247,10 @@ func TestNewTLSClient(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		got := client.endpointURL.Scheme
+		got := client.EndpointURL.Scheme
 		if got != tt.expected {
 			t.Errorf("endpointURL.Scheme: Got %s. Want %s.", got, tt.expected)
 		}
-	}
-}
-
-func TestEndpoint(t *testing.T) {
-	client, err := NewVersionedClient("http://localhost:4243", "1.12")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if endpoint := client.Endpoint(); endpoint != client.endpoint {
-		t.Errorf("Client.Endpoint(): want %q. Got %q", client.endpoint, endpoint)
 	}
 }
 
@@ -279,7 +269,7 @@ func TestGetURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		client, _ := NewClient(tt.endpoint)
-		client.endpoint = tt.endpoint
+		client.Endpoint = tt.endpoint
 		client.SkipServerVersionCheck = true
 		got := client.getURL(tt.path)
 		if got != tt.expected {
@@ -300,7 +290,7 @@ func TestGetFakeUnixURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		client, _ := NewClient(tt.endpoint)
-		client.endpoint = tt.endpoint
+		client.Endpoint = tt.endpoint
 		client.SkipServerVersionCheck = true
 		got := client.getFakeUnixURL(tt.path)
 		if got != tt.expected {

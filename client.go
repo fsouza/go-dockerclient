@@ -139,8 +139,8 @@ type Client struct {
 	TLSConfig              *tls.Config
 	Dialer                 *net.Dialer
 
-	endpoint            string
-	endpointURL         *url.URL
+	Endpoint            string
+	EndpointURL         *url.URL
 	eventMonitor        *eventMonitoringState
 	requestedAPIVersion APIVersion
 	serverAPIVersion    APIVersion
@@ -201,8 +201,8 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	c := &Client{
 		HTTPClient:          cleanhttp.DefaultClient(),
 		Dialer:              &net.Dialer{},
-		endpoint:            endpoint,
-		endpointURL:         u,
+		Endpoint:            endpoint,
+		EndpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
 	}
@@ -313,8 +313,8 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 		HTTPClient:          &http.Client{Transport: tr},
 		TLSConfig:           tlsConfig,
 		Dialer:              &net.Dialer{},
-		endpoint:            endpoint,
-		endpointURL:         u,
+		Endpoint:            endpoint,
+		EndpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
 	}
@@ -349,13 +349,6 @@ func (c *Client) checkAPIVersion() error {
 		c.expectedAPIVersion = c.requestedAPIVersion
 	}
 	return nil
-}
-
-// Endpoint returns the current endpoint. It's useful for getting the endpoint
-// when using functions that get this data from the environment (like
-// NewClientFromEnv.
-func (c *Client) Endpoint() string {
-	return c.endpoint
 }
 
 // Ping pings the docker server
@@ -416,7 +409,7 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 		}
 	}
 	httpClient := c.HTTPClient
-	protocol := c.endpointURL.Scheme
+	protocol := c.EndpointURL.Scheme
 	var u string
 	if protocol == "unix" {
 		httpClient = c.unixHTTPClient
@@ -507,8 +500,8 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		req.Header.Set(key, val)
 	}
 	var resp *http.Response
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
+	protocol := c.EndpointURL.Scheme
+	address := c.EndpointURL.Path
 	if streamOptions.stdout == nil {
 		streamOptions.stdout = ioutil.Discard
 	}
@@ -708,11 +701,11 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Connection", "Upgrade")
 	req.Header.Set("Upgrade", "tcp")
-	protocol := c.endpointURL.Scheme
-	address := c.endpointURL.Path
+	protocol := c.EndpointURL.Scheme
+	address := c.EndpointURL.Path
 	if protocol != "unix" {
 		protocol = "tcp"
-		address = c.endpointURL.Host
+		address = c.EndpointURL.Host
 	}
 	var dial net.Conn
 	if c.TLSConfig != nil && protocol != "unix" {
@@ -816,8 +809,8 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 }
 
 func (c *Client) getURL(path string) string {
-	urlStr := strings.TrimRight(c.endpointURL.String(), "/")
-	if c.endpointURL.Scheme == "unix" {
+	urlStr := strings.TrimRight(c.EndpointURL.String(), "/")
+	if c.EndpointURL.Scheme == "unix" {
 		urlStr = ""
 	}
 	if c.requestedAPIVersion != nil {
@@ -829,7 +822,7 @@ func (c *Client) getURL(path string) string {
 // getFakeUnixURL returns the URL needed to make an HTTP request over a UNIX
 // domain socket to the given path.
 func (c *Client) getFakeUnixURL(path string) string {
-	u := *c.endpointURL // Copy.
+	u := *c.EndpointURL // Copy.
 
 	// Override URL so that net/http will not complain.
 	u.Scheme = "http"
@@ -843,10 +836,10 @@ func (c *Client) getFakeUnixURL(path string) string {
 }
 
 func (c *Client) initializeUnixClient() {
-	if c.endpointURL.Scheme != "unix" {
+	if c.EndpointURL.Scheme != "unix" {
 		return
 	}
-	socketPath := c.endpointURL.Path
+	socketPath := c.EndpointURL.Path
 	tr := cleanhttp.DefaultTransport()
 	tr.Dial = func(network, addr string) (net.Conn, error) {
 		return c.Dialer.Dial("unix", socketPath)

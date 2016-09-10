@@ -1728,8 +1728,8 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 	client := Client{
 		HTTPClient:             cleanhttp.DefaultClient(),
 		Dialer:                 &net.Dialer{},
-		endpoint:               endpoint,
-		endpointURL:            u,
+		Endpoint:               endpoint,
+		EndpointURL:            u,
 		SkipServerVersionCheck: true,
 	}
 	listening := make(chan string)
