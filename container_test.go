@@ -1466,7 +1466,6 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		conn.Write([]byte("hello!"))
 		conn.Close()
 	}))
-	defer server.Close()
 	client, _ := NewClient(server.URL)
 	client.SkipServerVersionCheck = true
 	var stdout, stderr bytes.Buffer
@@ -1489,6 +1488,7 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		"stream": {"1"},
 	}
 	got := map[string][]string(req.URL.Query())
+	server.Close()
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
 	}

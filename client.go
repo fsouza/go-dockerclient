@@ -832,7 +832,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 
 func (c *Client) getURL(path string) string {
 	urlStr := strings.TrimRight(c.endpointURL.String(), "/")
-	if c.endpointURL.Scheme == "unix" {
+	if c.endpointURL.Scheme == unixProtocol || c.endpointURL.Scheme == namedPipeProtocol {
 		urlStr = ""
 	}
 	if c.requestedAPIVersion != nil {
