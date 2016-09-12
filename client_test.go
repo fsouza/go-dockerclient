@@ -302,7 +302,7 @@ func TestGetFakeUnixURL(t *testing.T) {
 		client, _ := NewClient(tt.endpoint)
 		client.endpoint = tt.endpoint
 		client.SkipServerVersionCheck = true
-		got := client.getFakeUnixURL(tt.path)
+		got := client.getFakeNativeURL(tt.path)
 		if got != tt.expected {
 			t.Errorf("getURL(%q): Got %s. Want %s.", tt.path, got, tt.expected)
 		}
