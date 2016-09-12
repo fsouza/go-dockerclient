@@ -9,19 +9,11 @@
 package docker
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 
-	"github.com/docker/docker/opts"
 	"github.com/hashicorp/go-cleanhttp"
 )
-
-// DefaultDockerHost returns the default docker socket for the current OS
-func DefaultDockerHost() (string, error) {
-	// If we do not have a host, default to unix socket
-	return opts.ValidateHost(fmt.Sprintf("unix://%s", opts.DefaultUnixSocket))
-}
 
 // initializeNativeClient initializes the native Unix domain socket client on
 // Unix-style operating systems
