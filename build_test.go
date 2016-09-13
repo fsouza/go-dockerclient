@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -48,6 +49,7 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 			t.Errorf("error removing symlink on demand: %s", err)
 		}
 	}()
+	workingdir, err := os.Getwd()
 
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
@@ -57,9 +59,9 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 		RmTmpContainer:      true,
 		ForceRmTmpContainer: true,
 		OutputStream:        &buf,
-		ContextDir:          "testing/data",
+		ContextDir:          filepath.Join(workingdir, "testing", "data"),
 	}
-	err := client.BuildImage(opts)
+	err = client.BuildImage(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
