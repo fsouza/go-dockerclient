@@ -7,6 +7,7 @@ package docker
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/docker/engine-api/types/swarm"
@@ -93,8 +94,9 @@ type UpdateServiceOptions struct {
 //
 // See https://goo.gl/wu3MmS for more details.
 func (c *Client) UpdateService(id string, opts UpdateServiceOptions) error {
-	path := "/services/" + id + "/update?version=" + strconv.FormatUint(opts.Version, 10)
-	resp, err := c.do("POST", path, doOptions{
+	params := make(url.Values)
+	params.Set("version", strconv.FormatUint(opts.Version, 10))
+	resp, err := c.do("POST", "/services/"+id+"/update?"+params.Encode(), doOptions{
 		data:      opts.ServiceSpec,
 		forceJSON: true,
 		context:   opts.Context,
