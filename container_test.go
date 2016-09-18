@@ -2034,15 +2034,15 @@ func TestStatsTimeout(t *testing.T) {
 	received := make(chan bool)
 	defer l.Close()
 	go func() {
-		conn, err := l.Accept()
-		if err != nil {
-			t.Logf("Failed to accept connection: %s", err)
+		conn, connErr := l.Accept()
+		if connErr != nil {
+			t.Logf("Failed to accept connection: %s", connErr)
 			return
 		}
 		breader := bufio.NewReader(conn)
-		req, err := http.ReadRequest(breader)
-		if err != nil {
-			t.Logf("Failed to read request: %s", err)
+		req, connErr := http.ReadRequest(breader)
+		if connErr != nil {
+			t.Logf("Failed to read request: %s", connErr)
 			return
 		}
 		if req.URL.Path != "/containers/c/stats" {

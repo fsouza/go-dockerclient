@@ -525,7 +525,8 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 	defer cancelRequest()
 
 	if protocol == "unix" {
-		dial, err := c.Dialer.Dial(protocol, address)
+		var dial net.Conn
+		dial, err = c.Dialer.Dial(protocol, address)
 		if err != nil {
 			return err
 		}

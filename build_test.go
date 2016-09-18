@@ -70,7 +70,7 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 	}
 
 	defer func() {
-		if err := os.RemoveAll(tmpdir); err != nil {
+		if err = os.RemoveAll(tmpdir); err != nil {
 			t.Fatal(err)
 		}
 	}()
