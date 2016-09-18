@@ -41,7 +41,7 @@ type CreateExecOptions struct {
 // See https://goo.gl/1KSIb7 for more details
 func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
 	path := fmt.Sprintf("/containers/%s/exec", opts.Container)
-	resp, err := c.do("POST", path, doOptions{data: opts, context: opts.Context})
+	resp, err := c.do(http.MethodPost, path, doOptions{data: opts, context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchContainer{ID: opts.Container}
@@ -61,13 +61,12 @@ func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
 //
 // See https://goo.gl/iQCnto for more details
 type StartExecOptions struct {
-	Detach bool `json:"Detach,omitempty" yaml:"Detach,omitempty"`
-
-	Tty bool `json:"Tty,omitempty" yaml:"Tty,omitempty"`
-
 	InputStream  io.Reader `qs:"-"`
 	OutputStream io.Writer `qs:"-"`
 	ErrorStream  io.Writer `qs:"-"`
+
+	Detach bool `json:"Detach,omitempty" yaml:"Detach,omitempty"`
+	Tty    bool `json:"Tty,omitempty" yaml:"Tty,omitempty"`
 
 	// Use raw terminal? Usually true when the container contains a TTY.
 	RawTerminal bool `qs:"-"`
@@ -111,7 +110,7 @@ func (c *Client) StartExecNonBlocking(id string, opts StartExecOptions) (CloseWa
 	path := fmt.Sprintf("/exec/%s/start", id)
 
 	if opts.Detach {
-		resp, err := c.do("POST", path, doOptions{data: opts, context: opts.Context})
+		resp, err := c.do(http.MethodPost, path, doOptions{data: opts, context: opts.Context})
 		if err != nil {
 			if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 				return nil, &NoSuchExec{ID: id}
@@ -122,7 +121,7 @@ func (c *Client) StartExecNonBlocking(id string, opts StartExecOptions) (CloseWa
 		return nil, nil
 	}
 
-	return c.hijack("POST", path, hijackOptions{
+	return c.hijack(http.MethodPost, path, hijackOptions{
 		success:        opts.Success,
 		setRawTerminal: opts.RawTerminal,
 		in:             opts.InputStream,
@@ -143,7 +142,7 @@ func (c *Client) ResizeExecTTY(id string, height, width int) error {
 	params.Set("w", strconv.Itoa(width))
 
 	path := fmt.Sprintf("/exec/%s/resize?%s", id, params.Encode())
-	resp, err := c.do("POST", path, doOptions{})
+	resp, err := c.do(http.MethodPost, path, doOptions{})
 	if err != nil {
 		return err
 	}
@@ -154,8 +153,8 @@ func (c *Client) ResizeExecTTY(id string, height, width int) error {
 // ExecProcessConfig is a type describing the command associated to a Exec
 // instance. It's used in the ExecInspect type.
 type ExecProcessConfig struct {
-	Privileged bool     `json:"privileged,omitempty" yaml:"privileged,omitempty"`
 	User       string   `json:"user,omitempty" yaml:"user,omitempty"`
+	Privileged bool     `json:"privileged,omitempty" yaml:"privileged,omitempty"`
 	Tty        bool     `json:"tty,omitempty" yaml:"tty,omitempty"`
 	EntryPoint string   `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
 	Arguments  []string `json:"arguments,omitempty" yaml:"arguments,omitempty"`
@@ -168,8 +167,8 @@ type ExecProcessConfig struct {
 // See https://goo.gl/gPtX9R for more details
 type ExecInspect struct {
 	ID            string            `json:"ID,omitempty" yaml:"ID,omitempty"`
-	Running       bool              `json:"Running,omitempty" yaml:"Running,omitempty"`
 	ExitCode      int               `json:"ExitCode,omitempty" yaml:"ExitCode,omitempty"`
+	Running       bool              `json:"Running,omitempty" yaml:"Running,omitempty"`
 	OpenStdin     bool              `json:"OpenStdin,omitempty" yaml:"OpenStdin,omitempty"`
 	OpenStderr    bool              `json:"OpenStderr,omitempty" yaml:"OpenStderr,omitempty"`
 	OpenStdout    bool              `json:"OpenStdout,omitempty" yaml:"OpenStdout,omitempty"`
@@ -182,7 +181,7 @@ type ExecInspect struct {
 // See https://goo.gl/gPtX9R for more details
 func (c *Client) InspectExec(id string) (*ExecInspect, error) {
 	path := fmt.Sprintf("/exec/%s/json", id)
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do(http.MethodGet, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchExec{ID: id}

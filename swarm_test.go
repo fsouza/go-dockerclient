@@ -21,7 +21,7 @@ func TestInitSwarm(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "POST"
+	expectedMethod := http.MethodPost
 	if req.Method != expectedMethod {
 		t.Errorf("InitSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 	}
@@ -51,7 +51,7 @@ func TestJoinSwarm(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "POST"
+	expectedMethod := http.MethodPost
 	if req.Method != expectedMethod {
 		t.Errorf("JoinSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 	}
@@ -84,7 +84,7 @@ func TestLeaveSwarm(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		expectedMethod := "POST"
+		expectedMethod := http.MethodPost
 		req := fakeRT.requests[i]
 		if req.Method != expectedMethod {
 			t.Errorf("LeaveSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
@@ -117,7 +117,7 @@ func TestUpdateSwarm(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "POST"
+	expectedMethod := http.MethodPost
 	if req.Method != expectedMethod {
 		t.Errorf("UpdateSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 	}
@@ -152,7 +152,7 @@ func TestInspectSwarm(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "GET"
+	expectedMethod := http.MethodGet
 	if req.Method != expectedMethod {
 		t.Errorf("InspectSwarm: Wrong HTTP method. Want %s. Got %s.", expectedMethod, req.Method)
 	}

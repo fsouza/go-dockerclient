@@ -84,7 +84,7 @@ type NetworkList struct {
 // See https://goo.gl/47a6tO for more details.
 func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, error) {
 	path := "/containers/json?" + queryString(opts)
-	resp, err := c.do("GET", path, doOptions{context: opts.Context})
+	resp, err := c.do(http.MethodGet, path, doOptions{context: opts.Context})
 	if err != nil {
 		return nil, err
 	}
@@ -279,17 +279,10 @@ type Config struct {
 	KernelMemory      int64               `json:"KernelMemory,omitempty" yaml:"KernelMemory,omitempty"`
 	CPUShares         int64               `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
 	CPUSet            string              `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
-	AttachStdin       bool                `json:"AttachStdin,omitempty" yaml:"AttachStdin,omitempty"`
-	AttachStdout      bool                `json:"AttachStdout,omitempty" yaml:"AttachStdout,omitempty"`
-	AttachStderr      bool                `json:"AttachStderr,omitempty" yaml:"AttachStderr,omitempty"`
 	PortSpecs         []string            `json:"PortSpecs,omitempty" yaml:"PortSpecs,omitempty"`
 	ExposedPorts      map[Port]struct{}   `json:"ExposedPorts,omitempty" yaml:"ExposedPorts,omitempty"`
 	PublishService    string              `json:"PublishService,omitempty" yaml:"PublishService,omitempty"`
-	ArgsEscaped       bool                `json:"ArgsEscaped,omitempty" yaml:"ArgsEscaped,omitempty"`
 	StopSignal        string              `json:"StopSignal,omitempty" yaml:"StopSignal,omitempty"`
-	Tty               bool                `json:"Tty,omitempty" yaml:"Tty,omitempty"`
-	OpenStdin         bool                `json:"OpenStdin,omitempty" yaml:"OpenStdin,omitempty"`
-	StdinOnce         bool                `json:"StdinOnce,omitempty" yaml:"StdinOnce,omitempty"`
 	Env               []string            `json:"Env,omitempty" yaml:"Env,omitempty"`
 	Cmd               []string            `json:"Cmd" yaml:"Cmd"`
 	Healthcheck       *HealthConfig       `json:"Healthcheck,omitempty" yaml:"Healthcheck,omitempty"`
@@ -300,11 +293,18 @@ type Config struct {
 	WorkingDir        string              `json:"WorkingDir,omitempty" yaml:"WorkingDir,omitempty"`
 	MacAddress        string              `json:"MacAddress,omitempty" yaml:"MacAddress,omitempty"`
 	Entrypoint        []string            `json:"Entrypoint" yaml:"Entrypoint"`
-	NetworkDisabled   bool                `json:"NetworkDisabled,omitempty" yaml:"NetworkDisabled,omitempty"`
 	SecurityOpts      []string            `json:"SecurityOpts,omitempty" yaml:"SecurityOpts,omitempty"`
 	OnBuild           []string            `json:"OnBuild,omitempty" yaml:"OnBuild,omitempty"`
 	Mounts            []Mount             `json:"Mounts,omitempty" yaml:"Mounts,omitempty"`
 	Labels            map[string]string   `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	AttachStdin       bool                `json:"AttachStdin,omitempty" yaml:"AttachStdin,omitempty"`
+	AttachStdout      bool                `json:"AttachStdout,omitempty" yaml:"AttachStdout,omitempty"`
+	AttachStderr      bool                `json:"AttachStderr,omitempty" yaml:"AttachStderr,omitempty"`
+	ArgsEscaped       bool                `json:"ArgsEscaped,omitempty" yaml:"ArgsEscaped,omitempty"`
+	Tty               bool                `json:"Tty,omitempty" yaml:"Tty,omitempty"`
+	OpenStdin         bool                `json:"OpenStdin,omitempty" yaml:"OpenStdin,omitempty"`
+	StdinOnce         bool                `json:"StdinOnce,omitempty" yaml:"StdinOnce,omitempty"`
+	NetworkDisabled   bool                `json:"NetworkDisabled,omitempty" yaml:"NetworkDisabled,omitempty"`
 
 	// This is no longer used and has been kept here for backward
 	// compatibility, please use HostConfig.VolumesFrom.
@@ -438,7 +438,7 @@ type UpdateContainerOptions struct {
 //
 // See https://goo.gl/Y6fXUy for more details.
 func (c *Client) UpdateContainer(id string, opts UpdateContainerOptions) error {
-	resp, err := c.do("POST", fmt.Sprintf("/containers/"+id+"/update"), doOptions{
+	resp, err := c.do(http.MethodPost, fmt.Sprintf("/containers/"+id+"/update"), doOptions{
 		data:      opts,
 		forceJSON: true,
 		context:   opts.Context,
@@ -466,7 +466,7 @@ type RenameContainerOptions struct {
 //
 // See https://goo.gl/laSOIy for more details.
 func (c *Client) RenameContainer(opts RenameContainerOptions) error {
-	resp, err := c.do("POST", fmt.Sprintf("/containers/"+opts.ID+"/rename?%s", queryString(opts)), doOptions{
+	resp, err := c.do(http.MethodPost, fmt.Sprintf("/containers/"+opts.ID+"/rename?%s", queryString(opts)), doOptions{
 		context: opts.Context,
 	})
 	if err != nil {
@@ -481,7 +481,7 @@ func (c *Client) RenameContainer(opts RenameContainerOptions) error {
 // See https://goo.gl/RdIq0b for more details.
 func (c *Client) InspectContainer(id string) (*Container, error) {
 	path := "/containers/" + id + "/json"
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do(http.MethodGet, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchContainer{ID: id}
@@ -501,7 +501,7 @@ func (c *Client) InspectContainer(id string) (*Container, error) {
 // See https://goo.gl/9GsTIF for more details.
 func (c *Client) ContainerChanges(id string) ([]Change, error) {
 	path := "/containers/" + id + "/changes"
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do(http.MethodGet, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchContainer{ID: id}
@@ -537,7 +537,7 @@ type CreateContainerOptions struct {
 func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error) {
 	path := "/containers/create?" + queryString(opts)
 	resp, err := c.do(
-		"POST",
+		http.MethodPost,
 		path,
 		doOptions{
 			data: struct {
@@ -657,10 +657,8 @@ type HostConfig struct {
 	GroupAdd             []string               `json:"GroupAdd,omitempty" yaml:"GroupAdd,omitempty"`
 	ContainerIDFile      string                 `json:"ContainerIDFile,omitempty" yaml:"ContainerIDFile,omitempty"`
 	LxcConf              []KeyValuePair         `json:"LxcConf,omitempty" yaml:"LxcConf,omitempty"`
-	Privileged           bool                   `json:"Privileged,omitempty" yaml:"Privileged,omitempty"`
 	PortBindings         map[Port][]PortBinding `json:"PortBindings,omitempty" yaml:"PortBindings,omitempty"`
 	Links                []string               `json:"Links,omitempty" yaml:"Links,omitempty"`
-	PublishAllPorts      bool                   `json:"PublishAllPorts,omitempty" yaml:"PublishAllPorts,omitempty"`
 	DNS                  []string               `json:"Dns,omitempty" yaml:"Dns,omitempty"` // For Docker API v1.10 and above only
 	DNSOptions           []string               `json:"DnsOptions,omitempty" yaml:"DnsOptions,omitempty"`
 	DNSSearch            []string               `json:"DnsSearch,omitempty" yaml:"DnsSearch,omitempty"`
@@ -674,7 +672,6 @@ type HostConfig struct {
 	RestartPolicy        RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty"`
 	Devices              []Device               `json:"Devices,omitempty" yaml:"Devices,omitempty"`
 	LogConfig            LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty"`
-	ReadonlyRootfs       bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
 	SecurityOpt          []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty"`
 	Cgroup               string                 `json:"Cgroup,omitempty" yaml:"Cgroup,omitempty"`
 	CgroupParent         string                 `json:"CgroupParent,omitempty" yaml:"CgroupParent,omitempty"`
@@ -683,7 +680,6 @@ type HostConfig struct {
 	KernelMemory         int64                  `json:"KernelMemory,omitempty" yaml:"KernelMemory,omitempty"`
 	MemorySwap           int64                  `json:"MemorySwap,omitempty" yaml:"MemorySwap,omitempty"`
 	MemorySwappiness     int64                  `json:"MemorySwappiness,omitempty" yaml:"MemorySwappiness,omitempty"`
-	OOMKillDisable       bool                   `json:"OomKillDisable,omitempty" yaml:"OomKillDisable,omitempty"`
 	CPUShares            int64                  `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
 	CPUSet               string                 `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
 	CPUSetCPUs           string                 `json:"CpusetCpus,omitempty" yaml:"CpusetCpus,omitempty"`
@@ -702,6 +698,10 @@ type HostConfig struct {
 	PidsLimit            int64                  `json:"PidsLimit,omitempty" yaml:"PidsLimit,omitempty"`
 	ShmSize              int64                  `json:"ShmSize,omitempty" yaml:"ShmSize,omitempty"`
 	Tmpfs                map[string]string      `json:"Tmpfs,omitempty" yaml:"Tmpfs,omitempty"`
+	Privileged           bool                   `json:"Privileged,omitempty" yaml:"Privileged,omitempty"`
+	PublishAllPorts      bool                   `json:"PublishAllPorts,omitempty" yaml:"PublishAllPorts,omitempty"`
+	ReadonlyRootfs       bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty"`
+	OOMKillDisable       bool                   `json:"OomKillDisable,omitempty" yaml:"OomKillDisable,omitempty"`
 	AutoRemove           bool                   `json:"AutoRemove,omitempty" yaml:"AutoRemove,omitempty"`
 	StorageOpt           map[string]string      `json:"StorageOpt,omitempty" yaml:"StorageOpt,omitempty"`
 	Sysctls              map[string]string      `json:"Sysctls,omitempty" yaml:"Sysctls,omitempty"`
@@ -730,7 +730,7 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 	if c.serverAPIVersion != nil && c.serverAPIVersion.LessThan(apiVersion124) {
 		opts = doOptions{data: hostConfig, forceJSON: true}
 	}
-	resp, err := c.do("POST", path, opts)
+	resp, err := c.do(http.MethodPost, path, opts)
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id, Err: err}
@@ -750,7 +750,7 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 // See https://goo.gl/USqsFt for more details.
 func (c *Client) StopContainer(id string, timeout uint) error {
 	path := fmt.Sprintf("/containers/%s/stop?t=%d", id, timeout)
-	resp, err := c.do("POST", path, doOptions{})
+	resp, err := c.do(http.MethodPost, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
@@ -770,7 +770,7 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 // See https://goo.gl/QzsDnz for more details.
 func (c *Client) RestartContainer(id string, timeout uint) error {
 	path := fmt.Sprintf("/containers/%s/restart?t=%d", id, timeout)
-	resp, err := c.do("POST", path, doOptions{})
+	resp, err := c.do(http.MethodPost, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
@@ -786,7 +786,7 @@ func (c *Client) RestartContainer(id string, timeout uint) error {
 // See https://goo.gl/OF7W9X for more details.
 func (c *Client) PauseContainer(id string) error {
 	path := fmt.Sprintf("/containers/%s/pause", id)
-	resp, err := c.do("POST", path, doOptions{})
+	resp, err := c.do(http.MethodPost, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
@@ -802,7 +802,7 @@ func (c *Client) PauseContainer(id string) error {
 // See https://goo.gl/7dwyPA for more details.
 func (c *Client) UnpauseContainer(id string) error {
 	path := fmt.Sprintf("/containers/%s/unpause", id)
-	resp, err := c.do("POST", path, doOptions{})
+	resp, err := c.do(http.MethodPost, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
@@ -832,7 +832,7 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 		args = fmt.Sprintf("?ps_args=%s", psArgs)
 	}
 	path := fmt.Sprintf("/containers/%s/top%s", id, args)
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do(http.MethodGet, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return result, &NoSuchContainer{ID: id}
@@ -840,10 +840,8 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 		return result, err
 	}
 	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return result, err
-	}
-	return result, nil
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return result, err
 }
 
 // Stats represents container statistics, returned by /containers/<id>/stats.
@@ -993,7 +991,7 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 	}()
 
 	go func() {
-		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats?stream=%v", opts.ID, opts.Stream), streamOptions{
+		err := c.stream(http.MethodGet, fmt.Sprintf("/containers/%s/stats?stream=%v", opts.ID, opts.Stream), streamOptions{
 			rawJSONStream:     true,
 			useJSONDecoder:    true,
 			stdout:            writeCloser,
@@ -1060,7 +1058,7 @@ type KillContainerOptions struct {
 // See https://goo.gl/hkS9i8 for more details.
 func (c *Client) KillContainer(opts KillContainerOptions) error {
 	path := "/containers/" + opts.ID + "/kill" + "?" + queryString(opts)
-	resp, err := c.do("POST", path, doOptions{context: opts.Context})
+	resp, err := c.do(http.MethodPost, path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: opts.ID}
@@ -1093,7 +1091,7 @@ type RemoveContainerOptions struct {
 // See https://goo.gl/RQyX62 for more details.
 func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 	path := "/containers/" + opts.ID + "?" + queryString(opts)
-	resp, err := c.do("DELETE", path, doOptions{context: opts.Context})
+	resp, err := c.do(http.MethodDelete, path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: opts.ID}
@@ -1122,7 +1120,7 @@ type UploadToContainerOptions struct {
 func (c *Client) UploadToContainer(id string, opts UploadToContainerOptions) error {
 	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
 
-	return c.stream("PUT", url, streamOptions{
+	return c.stream(http.MethodPut, url, streamOptions{
 		in:      opts.InputStream,
 		context: opts.Context,
 	})
@@ -1145,7 +1143,7 @@ type DownloadFromContainerOptions struct {
 func (c *Client) DownloadFromContainer(id string, opts DownloadFromContainerOptions) error {
 	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
 
-	return c.stream("GET", url, streamOptions{
+	return c.stream(http.MethodGet, url, streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
@@ -1177,7 +1175,7 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 		return errors.New("go-dockerclient: CopyFromContainer is no longer available in Docker >= 1.12, use DownloadFromContainer instead")
 	}
 	url := fmt.Sprintf("/containers/%s/copy", opts.Container)
-	resp, err := c.do("POST", url, doOptions{
+	resp, err := c.do(http.MethodPost, url, doOptions{
 		data:    opts,
 		context: opts.Context,
 	})
@@ -1197,7 +1195,7 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 //
 // See https://goo.gl/Gc1rge for more details.
 func (c *Client) WaitContainer(id string) (int, error) {
-	resp, err := c.do("POST", "/containers/"+id+"/wait", doOptions{})
+	resp, err := c.do(http.MethodPost, "/containers/"+id+"/wait", doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return 0, &NoSuchContainer{ID: id}
@@ -1230,7 +1228,7 @@ type CommitContainerOptions struct {
 // See https://goo.gl/mqfoCw for more details.
 func (c *Client) CommitContainer(opts CommitContainerOptions) (*Image, error) {
 	path := "/commit?" + queryString(opts)
-	resp, err := c.do("POST", path, doOptions{
+	resp, err := c.do(http.MethodPost, path, doOptions{
 		data:    opts.Run,
 		context: opts.Context,
 	})
@@ -1258,6 +1256,16 @@ type AttachToContainerOptions struct {
 	OutputStream io.Writer `qs:"-"`
 	ErrorStream  io.Writer `qs:"-"`
 
+	// If set, after a successful connect, a sentinel will be sent and then the
+	// client will block on receive before continuing.
+	//
+	// It must be an unbuffered channel. Using a buffered channel can lead
+	// to unexpected behavior.
+	Success chan struct{}
+
+	// Use raw terminal? Usually true when the container contains a TTY.
+	RawTerminal bool `qs:"-"`
+
 	// Get container logs, sending it to OutputStream.
 	Logs bool
 
@@ -1272,16 +1280,6 @@ type AttachToContainerOptions struct {
 
 	// Attach to stderr, and use ErrorStream.
 	Stderr bool
-
-	// If set, after a successful connect, a sentinel will be sent and then the
-	// client will block on receive before continuing.
-	//
-	// It must be an unbuffered channel. Using a buffered channel can lead
-	// to unexpected behavior.
-	Success chan struct{}
-
-	// Use raw terminal? Usually true when the container contains a TTY.
-	RawTerminal bool `qs:"-"`
 }
 
 // AttachToContainer attaches to a container, using the given options.
@@ -1304,7 +1302,7 @@ func (c *Client) AttachToContainerNonBlocking(opts AttachToContainerOptions) (Cl
 		return nil, &NoSuchContainer{ID: opts.Container}
 	}
 	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
-	return c.hijack("POST", path, hijackOptions{
+	return c.hijack(http.MethodPost, path, hijackOptions{
 		success:        opts.Success,
 		setRawTerminal: opts.RawTerminal,
 		in:             opts.InputStream,
@@ -1318,20 +1316,21 @@ func (c *Client) AttachToContainerNonBlocking(opts AttachToContainerOptions) (Cl
 //
 // See https://goo.gl/yl8PGm for more details.
 type LogsOptions struct {
+	Context           context.Context
 	Container         string        `qs:"-"`
 	OutputStream      io.Writer     `qs:"-"`
 	ErrorStream       io.Writer     `qs:"-"`
 	InactivityTimeout time.Duration `qs:"-"`
-	Follow            bool
-	Stdout            bool
-	Stderr            bool
-	Since             int64
-	Timestamps        bool
 	Tail              string
+
+	Since      int64
+	Follow     bool
+	Stdout     bool
+	Stderr     bool
+	Timestamps bool
 
 	// Use raw terminal? Usually true when the container contains a TTY.
 	RawTerminal bool `qs:"-"`
-	Context     context.Context
 }
 
 // Logs gets stdout and stderr logs from the specified container.
@@ -1345,7 +1344,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream("GET", path, streamOptions{
+	return c.stream(http.MethodGet, path, streamOptions{
 		setRawTerminal:    opts.RawTerminal,
 		stdout:            opts.OutputStream,
 		stderr:            opts.ErrorStream,
@@ -1361,7 +1360,7 @@ func (c *Client) ResizeContainerTTY(id string, height, width int) error {
 	params := make(url.Values)
 	params.Set("h", strconv.Itoa(height))
 	params.Set("w", strconv.Itoa(width))
-	resp, err := c.do("POST", "/containers/"+id+"/resize?"+params.Encode(), doOptions{})
+	resp, err := c.do(http.MethodPost, "/containers/"+id+"/resize?"+params.Encode(), doOptions{})
 	if err != nil {
 		return err
 	}
@@ -1389,7 +1388,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream("GET", url, streamOptions{
+	return c.stream(http.MethodGet, url, streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,

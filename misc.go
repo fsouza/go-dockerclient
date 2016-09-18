@@ -6,6 +6,7 @@ package docker
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 
 	"github.com/docker/engine-api/types/swarm"
@@ -15,7 +16,7 @@ import (
 //
 // See https://goo.gl/ND9R8L for more details.
 func (c *Client) Version() (*Env, error) {
-	resp, err := c.do("GET", "/version", doOptions{})
+	resp, err := c.do(http.MethodGet, "/version", doOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +53,9 @@ type DockerInfo struct {
 	BridgeNfIptables   bool
 	BridgeNfIP6tables  bool `json:"BridgeNfIp6tables"`
 	Debug              bool
-	NFd                int
 	OomKillDisable     bool
+	ExperimentalBuild  bool
+	NFd                int
 	NGoroutines        int
 	SystemTime         string
 	ExecutionDriver    string
@@ -73,7 +75,6 @@ type DockerInfo struct {
 	NoProxy            string
 	Name               string
 	Labels             []string
-	ExperimentalBuild  bool
 	ServerVersion      string
 	ClusterStore       string
 	ClusterAdvertise   string
@@ -96,7 +97,7 @@ type PluginsInfo struct {
 //
 // See https://goo.gl/ElTHi2 for more details.
 func (c *Client) Info() (*DockerInfo, error) {
-	resp, err := c.do("GET", "/info", doOptions{})
+	resp, err := c.do(http.MethodGet, "/info", doOptions{})
 	if err != nil {
 		return nil, err
 	}

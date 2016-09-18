@@ -96,11 +96,7 @@ func (c *Client) AddEventListener(listener chan<- *APIEvents) error {
 			return err
 		}
 	}
-	err = c.eventMonitor.addListener(listener)
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.eventMonitor.addListener(listener)
 }
 
 // RemoveEventListener removes a listener from the monitor.
@@ -309,7 +305,7 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 		return err
 	}
 	conn := httputil.NewClientConn(dial, nil)
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
 		return err
 	}

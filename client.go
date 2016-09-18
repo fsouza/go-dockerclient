@@ -363,7 +363,7 @@ func (c *Client) Endpoint() string {
 // See https://goo.gl/kQCfJj for more details.
 func (c *Client) Ping() error {
 	path := "/_ping"
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do(http.MethodGet, path, doOptions{})
 	if err != nil {
 		return err
 	}
@@ -375,7 +375,7 @@ func (c *Client) Ping() error {
 }
 
 func (c *Client) getServerAPIVersionString() (version string, err error) {
-	resp, err := c.do("GET", "/version", doOptions{})
+	resp, err := c.do(http.MethodGet, "/version", doOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -432,7 +432,7 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 	req.Header.Set("User-Agent", userAgent)
 	if doOptions.data != nil {
 		req.Header.Set("Content-Type", "application/json")
-	} else if method == "POST" {
+	} else if method == http.MethodPost {
 		req.Header.Set("Content-Type", "plain/text")
 	}
 
@@ -486,7 +486,7 @@ func chooseError(ctx context.Context, err error) error {
 }
 
 func (c *Client) stream(method, path string, streamOptions streamOptions) error {
-	if (method == "POST" || method == "PUT") && streamOptions.in == nil {
+	if (method == http.MethodPost || method == "PUT") && streamOptions.in == nil {
 		streamOptions.in = bytes.NewReader(nil)
 	}
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedAPIVersion == nil {
@@ -500,7 +500,7 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 		return err
 	}
 	req.Header.Set("User-Agent", userAgent)
-	if method == "POST" {
+	if method == http.MethodPost {
 		req.Header.Set("Content-Type", "plain/text")
 	}
 	for key, val := range streamOptions.headers {
@@ -530,10 +530,8 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 			return err
 		}
 		go func() {
-			select {
-			case <-subCtx.Done():
-				dial.Close()
-			}
+			<-subCtx.Done()
+			dial.Close()
 		}()
 		breader := bufio.NewReader(dial)
 		err = req.Write(dial)

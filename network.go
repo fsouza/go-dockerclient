@@ -49,7 +49,7 @@ type Endpoint struct {
 //
 // See https://goo.gl/6GugX3 for more details.
 func (c *Client) ListNetworks() ([]Network, error) {
-	resp, err := c.do("GET", "/networks", doOptions{})
+	resp, err := c.do(http.MethodGet, "/networks", doOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *Client) FilteredListNetworks(opts NetworkFilterOpts) ([]Network, error)
 		return nil, err
 	}
 	path := "/networks?filters=" + params.String()
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do(http.MethodGet, path, doOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (c *Client) FilteredListNetworks(opts NetworkFilterOpts) ([]Network, error)
 // See https://goo.gl/6GugX3 for more details.
 func (c *Client) NetworkInfo(id string) (*Network, error) {
 	path := "/networks/" + id
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do(http.MethodGet, path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchNetwork{ID: id}
@@ -112,11 +112,11 @@ func (c *Client) NetworkInfo(id string) (*Network, error) {
 // See https://goo.gl/6GugX3 for more details.
 type CreateNetworkOptions struct {
 	Name           string                 `json:"Name" yaml:"Name"`
-	CheckDuplicate bool                   `json:"CheckDuplicate" yaml:"CheckDuplicate"`
 	Driver         string                 `json:"Driver" yaml:"Driver"`
 	IPAM           IPAMOptions            `json:"IPAM" yaml:"IPAM"`
 	Options        map[string]interface{} `json:"Options" yaml:"Options"`
 	Labels         map[string]string      `json:"Labels" yaml:"Labels"`
+	CheckDuplicate bool                   `json:"CheckDuplicate" yaml:"CheckDuplicate"`
 	Internal       bool                   `json:"Internal" yaml:"Internal"`
 	EnableIPv6     bool                   `json:"EnableIPv6" yaml:"EnableIPv6"`
 	Context        context.Context        `json:"-"`
@@ -146,7 +146,7 @@ type IPAMConfig struct {
 // See https://goo.gl/6GugX3 for more details.
 func (c *Client) CreateNetwork(opts CreateNetworkOptions) (*Network, error) {
 	resp, err := c.do(
-		"POST",
+		http.MethodPost,
 		"/networks/create",
 		doOptions{
 			data:    opts,
@@ -183,7 +183,7 @@ func (c *Client) CreateNetwork(opts CreateNetworkOptions) (*Network, error) {
 //
 // See https://goo.gl/6GugX3 for more details.
 func (c *Client) RemoveNetwork(id string) error {
-	resp, err := c.do("DELETE", "/networks/"+id, doOptions{})
+	resp, err := c.do(http.MethodDelete, "/networks/"+id, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchNetwork{ID: id}
@@ -242,7 +242,7 @@ type EndpointIPAMConfig struct {
 //
 // See https://goo.gl/6GugX3 for more details.
 func (c *Client) ConnectNetwork(id string, opts NetworkConnectionOptions) error {
-	resp, err := c.do("POST", "/networks/"+id+"/connect", doOptions{
+	resp, err := c.do(http.MethodPost, "/networks/"+id+"/connect", doOptions{
 		data:    opts,
 		context: opts.Context,
 	})
@@ -261,7 +261,7 @@ func (c *Client) ConnectNetwork(id string, opts NetworkConnectionOptions) error 
 //
 // See https://goo.gl/6GugX3 for more details.
 func (c *Client) DisconnectNetwork(id string, opts NetworkConnectionOptions) error {
-	resp, err := c.do("POST", "/networks/"+id+"/disconnect", doOptions{data: opts})
+	resp, err := c.do(http.MethodPost, "/networks/"+id+"/disconnect", doOptions{data: opts})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchNetworkOrContainer{NetworkID: id, ContainerID: opts.Container}

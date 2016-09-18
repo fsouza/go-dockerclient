@@ -138,7 +138,7 @@ func TestNetworkRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "DELETE"
+	expectedMethod := http.MethodDelete
 	if req.Method != expectedMethod {
 		t.Errorf("RemoveNetwork(%q): Wrong HTTP method. Want %s. Got %s.", id, expectedMethod, req.Method)
 	}
@@ -158,7 +158,7 @@ func TestNetworkConnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "POST"
+	expectedMethod := http.MethodPost
 	if req.Method != expectedMethod {
 		t.Errorf("ConnectNetwork(%q): Wrong HTTP method. Want %s. Got %s.", id, expectedMethod, req.Method)
 	}
@@ -188,7 +188,7 @@ func TestNetworkConnectWithEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "POST"
+	expectedMethod := http.MethodPost
 	if req.Method != expectedMethod {
 		t.Errorf("ConnectNetwork(%q): Wrong HTTP method. Want %s. Got %s.", id, expectedMethod, req.Method)
 	}
@@ -224,7 +224,7 @@ func TestNetworkDisconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "POST"
+	expectedMethod := http.MethodPost
 	if req.Method != expectedMethod {
 		t.Errorf("DisconnectNetwork(%q): Wrong HTTP method. Want %s. Got %s.", id, expectedMethod, req.Method)
 	}

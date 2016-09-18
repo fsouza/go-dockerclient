@@ -96,7 +96,7 @@ func ExampleClient_ListenEvents() {
 		case msg := <-listener:
 			log.Println(msg)
 		case <-timeout:
-			break
+			return
 		}
 	}
 
