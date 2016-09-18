@@ -85,13 +85,14 @@ func (c *Client) RemoveService(opts RemoveServiceOptions) error {
 type UpdateServiceOptions struct {
 	swarm.ServiceSpec
 	Context context.Context
+	Version string
 }
 
 // UpdateService updates the service at ID with the options
 //
 // See https://goo.gl/wu3MmS for more details.
 func (c *Client) UpdateService(id string, opts UpdateServiceOptions) error {
-	resp, err := c.do("POST", "/services/"+id+"/update", doOptions{
+	resp, err := c.do("POST", "/services/"+id+"/update?version="+opts.Version, doOptions{
 		data:      opts.ServiceSpec,
 		forceJSON: true,
 		context:   opts.Context,
