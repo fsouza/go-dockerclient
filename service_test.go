@@ -81,7 +81,7 @@ func TestUpdateService(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
-	update := UpdateServiceOptions{Version: "23"}
+	update := UpdateServiceOptions{Version: 23}
 	err := client.UpdateService(id, update)
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +102,7 @@ func TestUpdateService(t *testing.T) {
 	if err := json.NewDecoder(req.Body).Decode(&out); err != nil {
 		t.Fatal(err)
 	}
-	update.Version = ""
+	update.Version = 0
 	if !reflect.DeepEqual(out, update) {
 		t.Errorf("UpdateService: wrong body\ngot  %#v\nwant %#v", out, update)
 	}

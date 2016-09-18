@@ -7,6 +7,7 @@ package docker
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/docker/engine-api/types/swarm"
 	"golang.org/x/net/context"
@@ -85,14 +86,15 @@ func (c *Client) RemoveService(opts RemoveServiceOptions) error {
 type UpdateServiceOptions struct {
 	swarm.ServiceSpec
 	Context context.Context
-	Version string
+	Version uint64
 }
 
 // UpdateService updates the service at ID with the options
 //
 // See https://goo.gl/wu3MmS for more details.
 func (c *Client) UpdateService(id string, opts UpdateServiceOptions) error {
-	resp, err := c.do("POST", "/services/"+id+"/update?version="+opts.Version, doOptions{
+	path := "/services/" + id + "/update?version=" + strconv.FormatUint(opts.Version, 10)
+	resp, err := c.do("POST", path, doOptions{
 		data:      opts.ServiceSpec,
 		forceJSON: true,
 		context:   opts.Context,
