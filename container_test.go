@@ -1446,7 +1446,9 @@ func TestAttachToContainerStdinOnly(t *testing.T) {
 func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 	input := strings.NewReader("send value")
 	var req http.Request
+	finish := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer close(finish)
 		req = *r
 		w.WriteHeader(http.StatusOK)
 		hj, ok := w.(http.Hijacker)
@@ -1484,8 +1486,13 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		"stderr": {"1"},
 		"stream": {"1"},
 	}
-	got := map[string][]string(req.URL.Query())
 	server.Close()
+	select {
+	case <-finish:
+	case <-time.After(2 * time.Second):
+		t.Error("timed out waiting for request to finish")
+	}
+	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
