@@ -109,7 +109,7 @@ type ListImagesOptions struct {
 // See https://goo.gl/xBe1u3 for more details.
 func (c *Client) ListImages(opts ListImagesOptions) ([]APIImages, error) {
 	path := "/images/json?" + queryString(opts)
-	resp, err := c.do(http.MethodGet, path, doOptions{context: opts.Context})
+	resp, err := c.do("GET", path, doOptions{context: opts.Context})
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ type ImageHistory struct {
 //
 // See https://goo.gl/8bnTId for more details.
 func (c *Client) ImageHistory(name string) ([]ImageHistory, error) {
-	resp, err := c.do(http.MethodGet, "/images/"+name+"/history", doOptions{})
+	resp, err := c.do("GET", "/images/"+name+"/history", doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, ErrNoSuchImage
@@ -154,7 +154,7 @@ func (c *Client) ImageHistory(name string) ([]ImageHistory, error) {
 //
 // See https://goo.gl/V3ZWnK for more details.
 func (c *Client) RemoveImage(name string) error {
-	resp, err := c.do(http.MethodDelete, "/images/"+name, doOptions{})
+	resp, err := c.do("DELETE", "/images/"+name, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return ErrNoSuchImage
@@ -181,7 +181,7 @@ type RemoveImageOptions struct {
 // See https://goo.gl/V3ZWnK for more details.
 func (c *Client) RemoveImageExtended(name string, opts RemoveImageOptions) error {
 	uri := fmt.Sprintf("/images/%s?%s", name, queryString(&opts))
-	resp, err := c.do(http.MethodDelete, uri, doOptions{context: opts.Context})
+	resp, err := c.do("DELETE", uri, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return ErrNoSuchImage
@@ -196,7 +196,7 @@ func (c *Client) RemoveImageExtended(name string, opts RemoveImageOptions) error
 //
 // See https://goo.gl/jHPcg6 for more details.
 func (c *Client) InspectImage(name string) (*Image, error) {
-	resp, err := c.do(http.MethodGet, "/images/"+name+"/json", doOptions{})
+	resp, err := c.do("GET", "/images/"+name+"/json", doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, ErrNoSuchImage
@@ -271,7 +271,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 	name := opts.Name
 	opts.Name = ""
 	path := "/images/" + name + "/push?" + queryString(&opts)
-	return c.stream(http.MethodPost, path, streamOptions{
+	return c.stream("POST", path, streamOptions{
 		setRawTerminal:    true,
 		rawJSONStream:     opts.RawJSONStream,
 		headers:           headers,
@@ -318,7 +318,7 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 
 func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool, timeout time.Duration, context context.Context) error {
 	path := "/images/create?" + qs
-	return c.stream(http.MethodPost, path, streamOptions{
+	return c.stream("POST", path, streamOptions{
 		setRawTerminal:    true,
 		headers:           headers,
 		in:                in,
@@ -341,7 +341,7 @@ type LoadImageOptions struct {
 //
 // See https://goo.gl/JyClMX for more details.
 func (c *Client) LoadImage(opts LoadImageOptions) error {
-	return c.stream(http.MethodPost, "/images/load", streamOptions{
+	return c.stream("POST", "/images/load", streamOptions{
 		setRawTerminal: true,
 		in:             opts.InputStream,
 		context:        opts.Context,
@@ -362,7 +362,7 @@ type ExportImageOptions struct {
 //
 // See https://goo.gl/le7vK8 for more details.
 func (c *Client) ExportImage(opts ExportImageOptions) error {
-	return c.stream(http.MethodGet, fmt.Sprintf("/images/%s/get", opts.Name), streamOptions{
+	return c.stream("GET", fmt.Sprintf("/images/%s/get", opts.Name), streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
@@ -387,7 +387,7 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 	if opts.Names == nil || len(opts.Names) == 0 {
 		return ErrMustSpecifyNames
 	}
-	return c.stream(http.MethodGet, "/images/get?"+queryString(&opts), streamOptions{
+	return c.stream("GET", "/images/get?"+queryString(&opts), streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
@@ -525,7 +525,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		}
 	}
 
-	return c.stream(http.MethodPost, fmt.Sprintf("/build?%s", qs), streamOptions{
+	return c.stream("POST", fmt.Sprintf("/build?%s", qs), streamOptions{
 		setRawTerminal:    true,
 		rawJSONStream:     opts.RawJSONStream,
 		headers:           headers,
@@ -563,7 +563,7 @@ func (c *Client) TagImage(name string, opts TagImageOptions) error {
 	if name == "" {
 		return ErrNoSuchImage
 	}
-	resp, err := c.do(http.MethodPost, "/images/"+name+"/tag?"+queryString(&opts), doOptions{
+	resp, err := c.do("POST", "/images/"+name+"/tag?"+queryString(&opts), doOptions{
 		context: opts.Context,
 	})
 
@@ -626,7 +626,7 @@ type APIImageSearch struct {
 //
 // See https://goo.gl/AYjyrF for more details.
 func (c *Client) SearchImages(term string) ([]APIImageSearch, error) {
-	resp, err := c.do(http.MethodGet, "/images/search?term="+term, doOptions{})
+	resp, err := c.do("GET", "/images/search?term="+term, doOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -647,7 +647,7 @@ func (c *Client) SearchImagesEx(term string, auth AuthConfiguration) ([]APIImage
 		return nil, err
 	}
 
-	resp, err := c.do(http.MethodGet, "/images/search?term="+term, doOptions{
+	resp, err := c.do("GET", "/images/search?term="+term, doOptions{
 		headers: headers,
 	})
 	if err != nil {

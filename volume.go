@@ -42,7 +42,7 @@ type ListVolumesOptions struct {
 //
 // See https://goo.gl/FZA4BK for more details.
 func (c *Client) ListVolumes(opts ListVolumesOptions) ([]Volume, error) {
-	resp, err := c.do(http.MethodGet, "/volumes?"+queryString(opts), doOptions{
+	resp, err := c.do("GET", "/volumes?"+queryString(opts), doOptions{
 		context: opts.Context,
 	})
 	if err != nil {
@@ -82,7 +82,7 @@ type CreateVolumeOptions struct {
 //
 // See https://goo.gl/pBUbZ9 for more details.
 func (c *Client) CreateVolume(opts CreateVolumeOptions) (*Volume, error) {
-	resp, err := c.do(http.MethodPost, "/volumes/create", doOptions{
+	resp, err := c.do("POST", "/volumes/create", doOptions{
 		data:    opts,
 		context: opts.Context,
 	})
@@ -101,7 +101,7 @@ func (c *Client) CreateVolume(opts CreateVolumeOptions) (*Volume, error) {
 //
 // See https://goo.gl/0g9A6i for more details.
 func (c *Client) InspectVolume(name string) (*Volume, error) {
-	resp, err := c.do(http.MethodGet, "/volumes/"+name, doOptions{})
+	resp, err := c.do("GET", "/volumes/"+name, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, ErrNoSuchVolume
@@ -120,7 +120,7 @@ func (c *Client) InspectVolume(name string) (*Volume, error) {
 //
 // See https://goo.gl/79GNQz for more details.
 func (c *Client) RemoveVolume(name string) error {
-	resp, err := c.do(http.MethodDelete, "/volumes/"+name, doOptions{})
+	resp, err := c.do("DELETE", "/volumes/"+name, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok {
 			if e.Status == http.StatusNotFound {

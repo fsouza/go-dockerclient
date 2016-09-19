@@ -189,7 +189,7 @@ func TestNewTSLAPIClientUnixEndpoint(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
-	rsp, err := client.do(http.MethodGet, "/", doOptions{})
+	rsp, err := client.do("GET", "/", doOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -475,7 +475,7 @@ func TestClientStreamTimeoutNotHit(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w bytes.Buffer
-	err = client.stream(http.MethodPost, "/image/create", streamOptions{
+	err = client.stream("POST", "/image/create", streamOptions{
 		setRawTerminal:    true,
 		stdout:            &w,
 		inactivityTimeout: 300 * time.Millisecond,
@@ -505,7 +505,7 @@ func TestClientStreamInactivityTimeout(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w bytes.Buffer
-	err = client.stream(http.MethodPost, "/image/create", streamOptions{
+	err = client.stream("POST", "/image/create", streamOptions{
 		setRawTerminal:    true,
 		stdout:            &w,
 		inactivityTimeout: 100 * time.Millisecond,
@@ -539,7 +539,7 @@ func TestClientStreamContextDeadline(t *testing.T) {
 	var w bytes.Buffer
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
-	err = client.stream(http.MethodPost, "/image/create", streamOptions{
+	err = client.stream("POST", "/image/create", streamOptions{
 		setRawTerminal: true,
 		stdout:         &w,
 		context:        ctx,
@@ -576,7 +576,7 @@ func TestClientStreamContextCancel(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 		cancel()
 	}()
-	err = client.stream(http.MethodPost, "/image/create", streamOptions{
+	err = client.stream("POST", "/image/create", streamOptions{
 		setRawTerminal: true,
 		stdout:         &w,
 		context:        ctx,
@@ -601,7 +601,7 @@ func TestClientDoContextDeadline(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	_, err = client.do(http.MethodPost, "/image/create", doOptions{
+	_, err = client.do("POST", "/image/create", doOptions{
 		context: ctx,
 	})
 	if err != context.DeadlineExceeded {
@@ -622,7 +622,7 @@ func TestClientDoContextCancel(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		cancel()
 	}()
-	_, err = client.do(http.MethodPost, "/image/create", doOptions{
+	_, err = client.do("POST", "/image/create", doOptions{
 		context: ctx,
 	})
 	if err != context.Canceled {
@@ -651,7 +651,7 @@ func TestClientStreamTimeoutUnixSocket(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w bytes.Buffer
-	err = client.stream(http.MethodPost, "/image/create", streamOptions{
+	err = client.stream("POST", "/image/create", streamOptions{
 		setRawTerminal:    true,
 		stdout:            &w,
 		inactivityTimeout: 100 * time.Millisecond,
@@ -733,17 +733,17 @@ func TestClientDoConcurrentStress(t *testing.T) {
 		waiters := make(chan CloseWaiter, n)
 		for i := 0; i < n; i++ {
 			path := fmt.Sprintf("/%05d", i)
-			paths = append(paths, http.MethodGet+path)
-			paths = append(paths, http.MethodPost+path)
+			paths = append(paths, "GET"+path)
+			paths = append(paths, "POST"+path)
 			paths = append(paths, "HEAD"+path)
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				_, clientErr := client.do(http.MethodGet, path, doOptions{})
+				_, clientErr := client.do("GET", path, doOptions{})
 				if clientErr != nil {
 					errsCh <- clientErr
 				}
-				clientErr = client.stream(http.MethodPost, path, streamOptions{})
+				clientErr = client.stream("POST", path, streamOptions{})
 				if clientErr != nil {
 					errsCh <- clientErr
 				}

@@ -84,7 +84,7 @@ type NetworkList struct {
 // See https://goo.gl/47a6tO for more details.
 func (c *Client) ListContainers(opts ListContainersOptions) ([]APIContainers, error) {
 	path := "/containers/json?" + queryString(opts)
-	resp, err := c.do(http.MethodGet, path, doOptions{context: opts.Context})
+	resp, err := c.do("GET", path, doOptions{context: opts.Context})
 	if err != nil {
 		return nil, err
 	}
@@ -438,7 +438,7 @@ type UpdateContainerOptions struct {
 //
 // See https://goo.gl/Y6fXUy for more details.
 func (c *Client) UpdateContainer(id string, opts UpdateContainerOptions) error {
-	resp, err := c.do(http.MethodPost, fmt.Sprintf("/containers/"+id+"/update"), doOptions{
+	resp, err := c.do("POST", fmt.Sprintf("/containers/"+id+"/update"), doOptions{
 		data:      opts,
 		forceJSON: true,
 		context:   opts.Context,
@@ -466,7 +466,7 @@ type RenameContainerOptions struct {
 //
 // See https://goo.gl/laSOIy for more details.
 func (c *Client) RenameContainer(opts RenameContainerOptions) error {
-	resp, err := c.do(http.MethodPost, fmt.Sprintf("/containers/"+opts.ID+"/rename?%s", queryString(opts)), doOptions{
+	resp, err := c.do("POST", fmt.Sprintf("/containers/"+opts.ID+"/rename?%s", queryString(opts)), doOptions{
 		context: opts.Context,
 	})
 	if err != nil {
@@ -481,7 +481,7 @@ func (c *Client) RenameContainer(opts RenameContainerOptions) error {
 // See https://goo.gl/RdIq0b for more details.
 func (c *Client) InspectContainer(id string) (*Container, error) {
 	path := "/containers/" + id + "/json"
-	resp, err := c.do(http.MethodGet, path, doOptions{})
+	resp, err := c.do("GET", path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchContainer{ID: id}
@@ -501,7 +501,7 @@ func (c *Client) InspectContainer(id string) (*Container, error) {
 // See https://goo.gl/9GsTIF for more details.
 func (c *Client) ContainerChanges(id string) ([]Change, error) {
 	path := "/containers/" + id + "/changes"
-	resp, err := c.do(http.MethodGet, path, doOptions{})
+	resp, err := c.do("GET", path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchContainer{ID: id}
@@ -537,7 +537,7 @@ type CreateContainerOptions struct {
 func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error) {
 	path := "/containers/create?" + queryString(opts)
 	resp, err := c.do(
-		http.MethodPost,
+		"POST",
 		path,
 		doOptions{
 			data: struct {
@@ -730,7 +730,7 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 	if c.serverAPIVersion != nil && c.serverAPIVersion.LessThan(apiVersion124) {
 		opts = doOptions{data: hostConfig, forceJSON: true}
 	}
-	resp, err := c.do(http.MethodPost, path, opts)
+	resp, err := c.do("POST", path, opts)
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id, Err: err}
@@ -750,7 +750,7 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 // See https://goo.gl/USqsFt for more details.
 func (c *Client) StopContainer(id string, timeout uint) error {
 	path := fmt.Sprintf("/containers/%s/stop?t=%d", id, timeout)
-	resp, err := c.do(http.MethodPost, path, doOptions{})
+	resp, err := c.do("POST", path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
@@ -770,7 +770,7 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 // See https://goo.gl/QzsDnz for more details.
 func (c *Client) RestartContainer(id string, timeout uint) error {
 	path := fmt.Sprintf("/containers/%s/restart?t=%d", id, timeout)
-	resp, err := c.do(http.MethodPost, path, doOptions{})
+	resp, err := c.do("POST", path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
@@ -786,7 +786,7 @@ func (c *Client) RestartContainer(id string, timeout uint) error {
 // See https://goo.gl/OF7W9X for more details.
 func (c *Client) PauseContainer(id string) error {
 	path := fmt.Sprintf("/containers/%s/pause", id)
-	resp, err := c.do(http.MethodPost, path, doOptions{})
+	resp, err := c.do("POST", path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
@@ -802,7 +802,7 @@ func (c *Client) PauseContainer(id string) error {
 // See https://goo.gl/7dwyPA for more details.
 func (c *Client) UnpauseContainer(id string) error {
 	path := fmt.Sprintf("/containers/%s/unpause", id)
-	resp, err := c.do(http.MethodPost, path, doOptions{})
+	resp, err := c.do("POST", path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
@@ -832,7 +832,7 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 		args = fmt.Sprintf("?ps_args=%s", psArgs)
 	}
 	path := fmt.Sprintf("/containers/%s/top%s", id, args)
-	resp, err := c.do(http.MethodGet, path, doOptions{})
+	resp, err := c.do("GET", path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return result, &NoSuchContainer{ID: id}
@@ -991,7 +991,7 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 	}()
 
 	go func() {
-		err := c.stream(http.MethodGet, fmt.Sprintf("/containers/%s/stats?stream=%v", opts.ID, opts.Stream), streamOptions{
+		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats?stream=%v", opts.ID, opts.Stream), streamOptions{
 			rawJSONStream:     true,
 			useJSONDecoder:    true,
 			stdout:            writeCloser,
@@ -1058,7 +1058,7 @@ type KillContainerOptions struct {
 // See https://goo.gl/hkS9i8 for more details.
 func (c *Client) KillContainer(opts KillContainerOptions) error {
 	path := "/containers/" + opts.ID + "/kill" + "?" + queryString(opts)
-	resp, err := c.do(http.MethodPost, path, doOptions{context: opts.Context})
+	resp, err := c.do("POST", path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: opts.ID}
@@ -1091,7 +1091,7 @@ type RemoveContainerOptions struct {
 // See https://goo.gl/RQyX62 for more details.
 func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 	path := "/containers/" + opts.ID + "?" + queryString(opts)
-	resp, err := c.do(http.MethodDelete, path, doOptions{context: opts.Context})
+	resp, err := c.do("DELETE", path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: opts.ID}
@@ -1120,7 +1120,7 @@ type UploadToContainerOptions struct {
 func (c *Client) UploadToContainer(id string, opts UploadToContainerOptions) error {
 	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
 
-	return c.stream(http.MethodPut, url, streamOptions{
+	return c.stream("PUT", url, streamOptions{
 		in:      opts.InputStream,
 		context: opts.Context,
 	})
@@ -1143,7 +1143,7 @@ type DownloadFromContainerOptions struct {
 func (c *Client) DownloadFromContainer(id string, opts DownloadFromContainerOptions) error {
 	url := fmt.Sprintf("/containers/%s/archive?", id) + queryString(opts)
 
-	return c.stream(http.MethodGet, url, streamOptions{
+	return c.stream("GET", url, streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
@@ -1175,7 +1175,7 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 		return errors.New("go-dockerclient: CopyFromContainer is no longer available in Docker >= 1.12, use DownloadFromContainer instead")
 	}
 	url := fmt.Sprintf("/containers/%s/copy", opts.Container)
-	resp, err := c.do(http.MethodPost, url, doOptions{
+	resp, err := c.do("POST", url, doOptions{
 		data:    opts,
 		context: opts.Context,
 	})
@@ -1195,7 +1195,7 @@ func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 //
 // See https://goo.gl/Gc1rge for more details.
 func (c *Client) WaitContainer(id string) (int, error) {
-	resp, err := c.do(http.MethodPost, "/containers/"+id+"/wait", doOptions{})
+	resp, err := c.do("POST", "/containers/"+id+"/wait", doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return 0, &NoSuchContainer{ID: id}
@@ -1228,7 +1228,7 @@ type CommitContainerOptions struct {
 // See https://goo.gl/mqfoCw for more details.
 func (c *Client) CommitContainer(opts CommitContainerOptions) (*Image, error) {
 	path := "/commit?" + queryString(opts)
-	resp, err := c.do(http.MethodPost, path, doOptions{
+	resp, err := c.do("POST", path, doOptions{
 		data:    opts.Run,
 		context: opts.Context,
 	})
@@ -1302,7 +1302,7 @@ func (c *Client) AttachToContainerNonBlocking(opts AttachToContainerOptions) (Cl
 		return nil, &NoSuchContainer{ID: opts.Container}
 	}
 	path := "/containers/" + opts.Container + "/attach?" + queryString(opts)
-	return c.hijack(http.MethodPost, path, hijackOptions{
+	return c.hijack("POST", path, hijackOptions{
 		success:        opts.Success,
 		setRawTerminal: opts.RawTerminal,
 		in:             opts.InputStream,
@@ -1344,7 +1344,7 @@ func (c *Client) Logs(opts LogsOptions) error {
 		opts.Tail = "all"
 	}
 	path := "/containers/" + opts.Container + "/logs?" + queryString(opts)
-	return c.stream(http.MethodGet, path, streamOptions{
+	return c.stream("GET", path, streamOptions{
 		setRawTerminal:    opts.RawTerminal,
 		stdout:            opts.OutputStream,
 		stderr:            opts.ErrorStream,
@@ -1360,7 +1360,7 @@ func (c *Client) ResizeContainerTTY(id string, height, width int) error {
 	params := make(url.Values)
 	params.Set("h", strconv.Itoa(height))
 	params.Set("w", strconv.Itoa(width))
-	resp, err := c.do(http.MethodPost, "/containers/"+id+"/resize?"+params.Encode(), doOptions{})
+	resp, err := c.do("POST", "/containers/"+id+"/resize?"+params.Encode(), doOptions{})
 	if err != nil {
 		return err
 	}
@@ -1388,7 +1388,7 @@ func (c *Client) ExportContainer(opts ExportContainerOptions) error {
 		return &NoSuchContainer{ID: opts.ID}
 	}
 	url := fmt.Sprintf("/containers/%s/export", opts.ID)
-	return c.stream(http.MethodGet, url, streamOptions{
+	return c.stream("GET", url, streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,

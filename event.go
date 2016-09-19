@@ -305,7 +305,7 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 		return err
 	}
 	conn := httputil.NewClientConn(dial, nil)
-	req, err := http.NewRequest(http.MethodGet, uri, nil)
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return err
 	}

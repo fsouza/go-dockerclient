@@ -45,7 +45,7 @@ func TestVersion(t *testing.T) {
 		t.Errorf("GoVersion(): Wrong result. Want %#v. Got %#v.", expected.GoVersion, version.Get("GoVersion"))
 	}
 	req := fakeRT.requests[0]
-	if req.Method != http.MethodGet {
+	if req.Method != "GET" {
 		t.Errorf("Version(): wrong request method. Want GET. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/version"))
@@ -95,7 +95,7 @@ func TestInfo(t *testing.T) {
 		t.Errorf("Info(): Wrong result.\nWant %#v.\nGot %#v.", expected, info)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != http.MethodGet {
+	if req.Method != "GET" {
 		t.Errorf("Info(): Wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/info"))

@@ -197,8 +197,8 @@ func TestUpdateNode(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != http.MethodPost {
-		t.Errorf("UpdateNode: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
+	if req.Method != "POST" {
+		t.Errorf("UpdateNode: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/nodes/" + id + "/update"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -235,8 +235,8 @@ func TestRemoveNode(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != http.MethodDelete {
-		t.Errorf("RemoveNode(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodDelete, req.Method)
+	if req.Method != "DELETE" {
+		t.Errorf("RemoveNode(%q): wrong HTTP method. Want %q. Got %q.", id, "DELETE", req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/nodes/" + id))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {

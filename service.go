@@ -41,7 +41,7 @@ type CreateServiceOptions struct {
 // See https://goo.gl/KrVjHz for more details.
 func (c *Client) CreateService(opts CreateServiceOptions) (*swarm.Service, error) {
 	path := "/services/create?" + queryString(opts)
-	resp, err := c.do(http.MethodPost, path, doOptions{
+	resp, err := c.do("POST", path, doOptions{
 		data:      opts.ServiceSpec,
 		forceJSON: true,
 		context:   opts.Context,
@@ -70,7 +70,7 @@ type RemoveServiceOptions struct {
 // See https://goo.gl/Tqrtya for more details.
 func (c *Client) RemoveService(opts RemoveServiceOptions) error {
 	path := "/services/" + opts.ID
-	resp, err := c.do(http.MethodDelete, path, doOptions{context: opts.Context})
+	resp, err := c.do("DELETE", path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchService{ID: opts.ID}
@@ -96,7 +96,7 @@ type UpdateServiceOptions struct {
 func (c *Client) UpdateService(id string, opts UpdateServiceOptions) error {
 	params := make(url.Values)
 	params.Set("version", strconv.FormatUint(opts.Version, 10))
-	resp, err := c.do(http.MethodPost, "/services/"+id+"/update?"+params.Encode(), doOptions{
+	resp, err := c.do("POST", "/services/"+id+"/update?"+params.Encode(), doOptions{
 		data:      opts.ServiceSpec,
 		forceJSON: true,
 		context:   opts.Context,
@@ -116,7 +116,7 @@ func (c *Client) UpdateService(id string, opts UpdateServiceOptions) error {
 // See https://goo.gl/dHmr75 for more details.
 func (c *Client) InspectService(id string) (*swarm.Service, error) {
 	path := "/services/" + id
-	resp, err := c.do(http.MethodGet, path, doOptions{})
+	resp, err := c.do("GET", path, doOptions{})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchService{ID: id}
@@ -144,7 +144,7 @@ type ListServicesOptions struct {
 // See https://goo.gl/DwvNMd for more details.
 func (c *Client) ListServices(opts ListServicesOptions) ([]swarm.Service, error) {
 	path := "/services?" + queryString(opts)
-	resp, err := c.do(http.MethodGet, path, doOptions{context: opts.Context})
+	resp, err := c.do("GET", path, doOptions{context: opts.Context})
 	if err != nil {
 		return nil, err
 	}
