@@ -1461,6 +1461,7 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		conn.Write([]byte("hello"))
 		conn.Write([]byte{2, 0, 0, 0, 0, 0, 0, 6})
 		conn.Write([]byte("hello!"))
+		time.Sleep(10 * time.Millisecond)
 		conn.Close()
 	}))
 	client, _ := NewClient(server.URL)
