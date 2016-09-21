@@ -1452,6 +1452,13 @@ func (s *DockerServer) versionDocker(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(envs)
 }
 
+func (s *DockerServer) SwarmAddress() string {
+	if s.swarmServer == nil {
+		return ""
+	}
+	return s.swarmServer.listener.Addr().String()
+}
+
 func (s *DockerServer) initSwarmNode(listenAddr, advertiseAddr string) (swarm.Node, error) {
 	if listenAddr == "" {
 		listenAddr = "127.0.0.1:0"
@@ -1462,7 +1469,14 @@ func (s *DockerServer) initSwarmNode(listenAddr, advertiseAddr string) (swarm.No
 		return swarm.Node{}, err
 	}
 	if advertiseAddr == "" {
-		advertiseAddr = s.swarmServer.URL()
+		advertiseAddr = s.SwarmAddress()
+	}
+	hostPart, portPart, err := net.SplitHostPort(advertiseAddr)
+	if err != nil {
+		hostPart = advertiseAddr
+	}
+	if portPart == "" || portPart == "0" {
+		_, portPart, _ = net.SplitHostPort(s.SwarmAddress())
 	}
 	s.nodeId = s.generateID()
 	return swarm.Node{
@@ -1471,7 +1485,7 @@ func (s *DockerServer) initSwarmNode(listenAddr, advertiseAddr string) (swarm.No
 			State: swarm.NodeStateReady,
 		},
 		ManagerStatus: &swarm.ManagerStatus{
-			Addr: advertiseAddr,
+			Addr: fmt.Sprintf("%s:%s", hostPart, portPart),
 		},
 	}, nil
 }
@@ -1495,7 +1509,7 @@ func (s *DockerServer) swarmInit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	node.ManagerStatus.Leader = true
-	err = s.runNodeOperation(node.ManagerStatus.Addr, nodeOperation{
+	err = s.runNodeOperation(s.swarmServer.URL(), nodeOperation{
 		Op:   "add",
 		Node: node,
 	})
@@ -1550,7 +1564,7 @@ func (s *DockerServer) swarmJoin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = s.runNodeOperation(req.RemoteAddrs[0], nodeOperation{
+	err = s.runNodeOperation(fmt.Sprintf("http://%s", req.RemoteAddrs[0]), nodeOperation{
 		Op:   "add",
 		Node: node,
 	})
@@ -1775,10 +1789,10 @@ func (s *DockerServer) internalUpdateNodes(w http.ResponseWriter, r *http.Reques
 	}
 	if propagate {
 		for _, node := range s.nodes {
-			if s.swarmServer.URL() == node.ManagerStatus.Addr {
+			if s.nodeId == node.ID {
 				continue
 			}
-			url := fmt.Sprintf("%s/internal/updatenodes?propagate=0", strings.TrimRight(node.ManagerStatus.Addr, "/"))
+			url := fmt.Sprintf("http://%s/internal/updatenodes?propagate=0", node.ManagerStatus.Addr)
 			_, err = http.Post(url, "application/json", bytes.NewReader(data))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)

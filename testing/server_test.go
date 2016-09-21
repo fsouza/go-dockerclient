@@ -2265,11 +2265,31 @@ func TestSwarmInit(t *testing.T) {
 	if len(server.nodes) != 1 {
 		t.Fatalf("SwarmInit: expected node len to be 1, got: %d", len(server.nodes))
 	}
-	if server.nodes[0].ManagerStatus.Addr != server.swarmServer.URL() {
-		t.Fatalf("SwarmInit: expected current node to have addr %q, got: %q", server.swarmServer.URL(), server.nodes[0].ManagerStatus.Addr)
+	if server.nodes[0].ManagerStatus.Addr != server.SwarmAddress() {
+		t.Fatalf("SwarmInit: expected current node to have addr %q, got: %q", server.SwarmAddress(), server.nodes[0].ManagerStatus.Addr)
 	}
 	if !server.nodes[0].ManagerStatus.Leader {
 		t.Fatalf("SwarmInit: expected current node to be leader")
+	}
+}
+
+func TestSwarmInitDynamicAdvertiseAddrPort(t *testing.T) {
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server.buildMuxer()
+	data := `{"ListenAddr": "127.0.0.1:0", "AdvertiseAddr": "localhost"}`
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/swarm/init", strings.NewReader(data))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("SwarmInit: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if len(server.nodes) != 1 {
+		t.Fatalf("SwarmInit: expected node len to be 1, got: %d", len(server.nodes))
+	}
+	_, port, _ := net.SplitHostPort(server.SwarmAddress())
+	expectedAddr := fmt.Sprintf("localhost:%s", port)
+	if server.nodes[0].ManagerStatus.Addr != expectedAddr {
+		t.Fatalf("SwarmInit: expected current node to have addr %q, got: %q", expectedAddr, server.nodes[0].ManagerStatus.Addr)
 	}
 }
 
@@ -2313,7 +2333,7 @@ func TestSwarmJoin(t *testing.T) {
 		t.Fatalf("SwarmJoin: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 	data, err = json.Marshal(swarm.JoinRequest{
-		RemoteAddrs: []string{server1.swarmServer.URL()},
+		RemoteAddrs: []string{server1.SwarmAddress()},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -2330,14 +2350,14 @@ func TestSwarmJoin(t *testing.T) {
 	if len(server1.nodes) != 2 {
 		t.Fatalf("SwarmJoin: expected node len to be 2, got: %d", len(server1.nodes))
 	}
-	if server1.nodes[0].ManagerStatus.Addr != server1.swarmServer.URL() {
-		t.Fatalf("SwarmJoin: expected nodes[0] to have addr %q, got: %q", server1.swarmServer.URL(), server1.nodes[0].ManagerStatus.Addr)
+	if server1.nodes[0].ManagerStatus.Addr != server1.SwarmAddress() {
+		t.Fatalf("SwarmJoin: expected nodes[0] to have addr %q, got: %q", server1.SwarmAddress(), server1.nodes[0].ManagerStatus.Addr)
 	}
 	if server1.nodes[1].ManagerStatus.Leader {
 		t.Fatalf("SwarmInit: expected nodes[1] not to be leader")
 	}
-	if server1.nodes[1].ManagerStatus.Addr != server2.swarmServer.URL() {
-		t.Fatalf("SwarmJoin: expected nodes[1] to have addr %q, got: %q", server2.swarmServer.URL(), server1.nodes[1].ManagerStatus.Addr)
+	if server1.nodes[1].ManagerStatus.Addr != server2.SwarmAddress() {
+		t.Fatalf("SwarmJoin: expected nodes[1] to have addr %q, got: %q", server2.SwarmAddress(), server1.nodes[1].ManagerStatus.Addr)
 	}
 	if !reflect.DeepEqual(server1.nodes, server2.nodes) {
 		t.Fatalf("SwarmJoin: expected nodes to be equal in server1 and server2, got:\n%#v\n%#v", server1.nodes, server2.nodes)
@@ -2626,7 +2646,7 @@ func setUpSwarm() (*DockerServer, *DockerServer, error) {
 		return nil, nil, fmt.Errorf("invalid status code %d", recorder.Code)
 	}
 	data, err := json.Marshal(swarm.JoinRequest{
-		RemoteAddrs: []string{server1.swarmServer.URL()},
+		RemoteAddrs: []string{server1.SwarmAddress()},
 	})
 	if err != nil {
 		return nil, nil, err
