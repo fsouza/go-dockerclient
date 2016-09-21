@@ -43,7 +43,7 @@ func TestAuthConfigurationsFromFile(t *testing.T) {
 	authString := base64.StdEncoding.EncodeToString([]byte("user:pass"))
 	content := fmt.Sprintf("{\"auths\":{\"foo\": {\"auth\": \"%s\"}}}", authString)
 	configFile := path.Join(tmpDir, "docker_config")
-	if err := ioutil.WriteFile(configFile, []byte(content), 0600); err != nil {
+	if err = ioutil.WriteFile(configFile, []byte(content), 0600); err != nil {
 		t.Errorf("Error writing auth config for TestAuthConfigurationsFromFile: %s", err)
 	}
 	auths, err := NewAuthConfigurationsFromFile(configFile)

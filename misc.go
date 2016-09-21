@@ -1,4 +1,4 @@
-// Copyright 2015 go-dockerclient authors. All rights reserved.
+// Copyright 2013 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -52,8 +52,9 @@ type DockerInfo struct {
 	BridgeNfIptables   bool
 	BridgeNfIP6tables  bool `json:"BridgeNfIp6tables"`
 	Debug              bool
-	NFd                int
 	OomKillDisable     bool
+	ExperimentalBuild  bool
+	NFd                int
 	NGoroutines        int
 	SystemTime         string
 	ExecutionDriver    string
@@ -73,7 +74,6 @@ type DockerInfo struct {
 	NoProxy            string
 	Name               string
 	Labels             []string
-	ExperimentalBuild  bool
 	ServerVersion      string
 	ClusterStore       string
 	ClusterAdvertise   string
@@ -109,13 +109,17 @@ func (c *Client) Info() (*DockerInfo, error) {
 }
 
 // ParseRepositoryTag gets the name of the repository and returns it splitted
-// in two parts: the repository and the tag.
+// in two parts: the repository and the tag. It ignores the digest when it is
+// present.
 //
 // Some examples:
 //
 //     localhost.localdomain:5000/samalba/hipache:latest -> localhost.localdomain:5000/samalba/hipache, latest
 //     localhost.localdomain:5000/samalba/hipache -> localhost.localdomain:5000/samalba/hipache, ""
+//     busybox:latest@sha256:4a731fb46adc5cefe3ae374a8b6020fc1b6ad667a279647766e9a3cd89f6fa92 -> busybox, latest
 func ParseRepositoryTag(repoTag string) (repository string, tag string) {
+	parts := strings.SplitN(repoTag, "@", 2)
+	repoTag = parts[0]
 	n := strings.LastIndex(repoTag, ":")
 	if n < 0 {
 		return repoTag, ""

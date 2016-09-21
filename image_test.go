@@ -1,4 +1,4 @@
-// Copyright 2015 go-dockerclient authors. All rights reserved.
+// Copyright 2013 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -704,7 +704,7 @@ func TestBuildImageParameters(t *testing.T) {
 		OutputStream:        &buf,
 	}
 	err := client.BuildImage(opts)
-	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
+	if err != nil && !strings.Contains(err.Error(), "build image fail") {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
@@ -841,7 +841,7 @@ func TestTagImageParameters(t *testing.T) {
 	client := newTestClient(fakeRT)
 	opts := TagImageOptions{Repo: "testImage"}
 	err := client.TagImage("base", opts)
-	if err != nil && strings.Index(err.Error(), "tag image fail") == -1 {
+	if err != nil && !strings.Contains(err.Error(), "tag image fail") {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]

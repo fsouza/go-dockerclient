@@ -1,3 +1,7 @@
+// Copyright 2016 go-dockerclient authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -77,7 +81,7 @@ func TestUpdateService(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
-	update := UpdateServiceOptions{}
+	update := UpdateServiceOptions{Version: 23}
 	err := client.UpdateService(id, update)
 	if err != nil {
 		t.Fatal(err)
@@ -86,9 +90,9 @@ func TestUpdateService(t *testing.T) {
 	if req.Method != "POST" {
 		t.Errorf("UpdateService: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
 	}
-	expectedURL, _ := url.Parse(client.getURL("/services/" + id + "/update"))
-	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
-		t.Errorf("UpdateService: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
+	expectedURL, _ := url.Parse(client.getURL("/services/" + id + "/update?version=23"))
+	if gotURI := req.URL.RequestURI(); gotURI != expectedURL.RequestURI() {
+		t.Errorf("UpdateService: Wrong path in request. Want %q. Got %q.", expectedURL.RequestURI(), gotURI)
 	}
 	expectedContentType := "application/json"
 	if contentType := req.Header.Get("Content-Type"); contentType != expectedContentType {
@@ -98,8 +102,9 @@ func TestUpdateService(t *testing.T) {
 	if err := json.NewDecoder(req.Body).Decode(&out); err != nil {
 		t.Fatal(err)
 	}
+	update.Version = 0
 	if !reflect.DeepEqual(out, update) {
-		t.Errorf("UpdateService: wrong body, got: %#v, want %#v", out, update)
+		t.Errorf("UpdateService: wrong body\ngot  %#v\nwant %#v", out, update)
 	}
 }
 

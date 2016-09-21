@@ -1,4 +1,4 @@
-// Copyright 2015 go-dockerclient authors. All rights reserved.
+// Copyright 2013 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -15,14 +15,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/hashicorp/go-cleanhttp"
 )
 
 func TestStateString(t *testing.T) {
@@ -1203,7 +1200,7 @@ func TestCommitContainerParams(t *testing.T) {
 		}
 		if tt.body != nil {
 			if requestBody, err := ioutil.ReadAll(fakeRT.requests[0].Body); err == nil {
-				if bytes.Compare(requestBody, tt.body) != 0 {
+				if !bytes.Equal(requestBody, tt.body) {
 					t.Errorf("Expected body %#v, got %#v", tt.body, requestBody)
 				}
 			} else {
@@ -1464,9 +1461,9 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		conn.Write([]byte("hello"))
 		conn.Write([]byte{2, 0, 0, 0, 0, 0, 0, 6})
 		conn.Write([]byte("hello!"))
+		time.Sleep(10 * time.Millisecond)
 		conn.Close()
 	}))
-	defer server.Close()
 	client, _ := NewClient(server.URL)
 	client.SkipServerVersionCheck = true
 	var stdout, stderr bytes.Buffer
@@ -1489,6 +1486,7 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		"stream": {"1"},
 	}
 	got := map[string][]string(req.URL.Query())
+	server.Close()
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
@@ -1717,37 +1715,6 @@ func TestExportContainer(t *testing.T) {
 	}
 }
 
-func TestExportContainerViaUnixSocket(t *testing.T) {
-	content := "exported container tar content"
-	var buf []byte
-	out := bytes.NewBuffer(buf)
-	tempSocket := tempfile("export_socket")
-	defer os.Remove(tempSocket)
-	endpoint := "unix://" + tempSocket
-	u, _ := parseEndpoint(endpoint, false)
-	client := Client{
-		HTTPClient:             cleanhttp.DefaultClient(),
-		Dialer:                 &net.Dialer{},
-		endpoint:               endpoint,
-		endpointURL:            u,
-		SkipServerVersionCheck: true,
-	}
-	listening := make(chan string)
-	done := make(chan int)
-	containerID := "4fa6e0f0c678"
-	go runStreamConnServer(t, "unix", tempSocket, listening, done, containerID)
-	<-listening // wait for server to start
-	opts := ExportContainerOptions{ID: containerID, OutputStream: out}
-	err := client.ExportContainer(opts)
-	<-done // make sure server stopped
-	if err != nil {
-		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
-	}
-	if out.String() != content {
-		t.Errorf("ExportContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
-	}
-}
-
 func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- string, done chan<- int, containerID string) {
 	defer close(done)
 	l, err := net.Listen(network, laddr)
@@ -1766,6 +1733,9 @@ func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- s
 	defer c.Close()
 	breader := bufio.NewReader(c)
 	req, err := http.ReadRequest(breader)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if path := "/containers/" + containerID + "/export"; req.URL.Path != path {
 		t.Errorf("wrong path. Want %q. Got %q", path, req.URL.Path)
 		return
@@ -2013,63 +1983,6 @@ func TestTopContainerWithPsArgs(t *testing.T) {
 	expectedURI := "/containers/abef348/top?ps_args=aux"
 	if !strings.HasSuffix(fakeRT.requests[0].URL.String(), expectedURI) {
 		t.Errorf("TopContainer: Expected URI to have %q. Got %q.", expectedURI, fakeRT.requests[0].URL.String())
-	}
-}
-
-func TestStatsTimeout(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "socket")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
-	socketPath := filepath.Join(tmpdir, "docker_test.sock")
-	t.Logf("socketPath=%s", socketPath)
-	l, err := net.Listen("unix", socketPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	received := make(chan bool)
-	defer l.Close()
-	go func() {
-		conn, err := l.Accept()
-		if err != nil {
-			t.Logf("Failed to accept connection: %s", err)
-			return
-		}
-		breader := bufio.NewReader(conn)
-		req, err := http.ReadRequest(breader)
-		if err != nil {
-			t.Logf("Failed to read request: %s", err)
-			return
-		}
-		if req.URL.Path != "/containers/c/stats" {
-			t.Logf("Wrong URL path for stats: %q", req.URL.Path)
-			return
-		}
-		received <- true
-		time.Sleep(2 * time.Second)
-	}()
-	client, _ := NewClient("unix://" + socketPath)
-	client.SkipServerVersionCheck = true
-	errC := make(chan error, 1)
-	statsC := make(chan *Stats)
-	done := make(chan bool)
-	defer close(done)
-	go func() {
-		errC <- client.Stats(StatsOptions{ID: "c", Stats: statsC, Stream: true, Done: done, Timeout: time.Millisecond})
-		close(errC)
-	}()
-	err = <-errC
-	e, ok := err.(net.Error)
-	if !ok || !e.Timeout() {
-		t.Errorf("Failed to receive timeout error, got %#v", err)
-	}
-	recvTimeout := 2 * time.Second
-	select {
-	case <-received:
-		return
-	case <-time.After(recvTimeout):
-		t.Fatalf("Timeout waiting to receive message after %v", recvTimeout)
 	}
 }
 

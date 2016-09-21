@@ -1,4 +1,4 @@
-// Copyright 2015 go-dockerclient authors. All rights reserved.
+// Copyright 2013 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -34,8 +33,8 @@ func TestNewAPIClient(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
-	// test unix socket endpoints
-	endpoint = "unix:///var/run/docker.sock"
+	// test native endpoints
+	endpoint = nativeRealEndpoint
 	client, err = NewClient(endpoint)
 	if err != nil {
 		t.Fatal(err)
@@ -171,37 +170,6 @@ func TestNewTLSVersionedClientInvalidCA(t *testing.T) {
 	}
 }
 
-func TestNewTSLAPIClientUnixEndpoint(t *testing.T) {
-	srv, cleanup, err := newUnixServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
-	srv.Start()
-	defer srv.Close()
-	endpoint := "unix://" + srv.Listener.Addr().String()
-	client, err := newTLSClient(endpoint)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
-	}
-	rsp, err := client.do("GET", "/", doOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	data, err := ioutil.ReadAll(rsp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(data) != "ok" {
-		t.Fatalf("Expected response to be %q, got: %q", "ok", string(data))
-	}
-}
-
 func TestNewClientInvalidEndpoint(t *testing.T) {
 	cases := []string{
 		"htp://localhost:3243", "http://localhost:a",
@@ -275,7 +243,7 @@ func TestGetURL(t *testing.T) {
 		{"http://localhost:4243", "/containers/ps", "http://localhost:4243/containers/ps"},
 		{"tcp://localhost:4243", "/containers/ps", "http://localhost:4243/containers/ps"},
 		{"http://localhost:4243/////", "/", "http://localhost:4243/"},
-		{"unix:///var/run/docker.socket", "/containers", "/containers"},
+		{nativeRealEndpoint, "/containers", "/containers"},
 	}
 	for _, tt := range tests {
 		client, _ := NewClient(tt.endpoint)
@@ -288,21 +256,21 @@ func TestGetURL(t *testing.T) {
 	}
 }
 
-func TestGetFakeUnixURL(t *testing.T) {
+func TestGetFakeNativeURL(t *testing.T) {
 	var tests = []struct {
 		endpoint string
 		path     string
 		expected string
 	}{
-		{"unix://var/run/docker.sock", "/", "http://unix.sock/"},
-		{"unix://var/run/docker.socket", "/", "http://unix.sock/"},
-		{"unix://var/run/docker.sock", "/containers/ps", "http://unix.sock/containers/ps"},
+		{nativeRealEndpoint, "/", "http://unix.sock/"},
+		{nativeRealEndpoint, "/", "http://unix.sock/"},
+		{nativeRealEndpoint, "/containers/ps", "http://unix.sock/containers/ps"},
 	}
 	for _, tt := range tests {
 		client, _ := NewClient(tt.endpoint)
 		client.endpoint = tt.endpoint
 		client.SkipServerVersionCheck = true
-		got := client.getFakeUnixURL(tt.path)
+		got := client.getFakeNativeURL(tt.path)
 		if got != tt.expected {
 			t.Errorf("getURL(%q): Got %s. Want %s.", tt.path, got, tt.expected)
 		}
@@ -439,8 +407,8 @@ func TestPingFailingWrongStatus(t *testing.T) {
 	}
 }
 
-func TestPingErrorWithUnixSocket(t *testing.T) {
-	srv, cleanup, err := newUnixServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func TestPingErrorWithNativeClient(t *testing.T) {
+	srv, cleanup, err := newNativeServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("aaaaaaaaaaa-invalid-aaaaaaaaaaa"))
 	}))
 	if err != nil {
@@ -449,7 +417,7 @@ func TestPingErrorWithUnixSocket(t *testing.T) {
 	defer cleanup()
 	srv.Start()
 	defer srv.Close()
-	endpoint := "unix:///tmp/echo.sock"
+	endpoint := nativeBadEndpoint
 	client, err := NewClient(endpoint)
 	if err != nil {
 		t.Fatal(err)
@@ -630,8 +598,8 @@ func TestClientDoContextCancel(t *testing.T) {
 	}
 }
 
-func TestClientStreamTimeoutUnixSocket(t *testing.T) {
-	srv, cleanup, err := newUnixServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func TestClientStreamTimeoutNativeClient(t *testing.T) {
+	srv, cleanup, err := newNativeServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < 5; i++ {
 			fmt.Fprintf(w, "%d\n", i)
 			if f, ok := w.(http.Flusher); ok {
@@ -646,7 +614,7 @@ func TestClientStreamTimeoutUnixSocket(t *testing.T) {
 	defer cleanup()
 	srv.Start()
 	defer srv.Close()
-	client, err := NewClient("unix://" + srv.Listener.Addr().String())
+	client, err := NewClient(nativeProtocol + "://" + srv.Listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -674,14 +642,14 @@ func TestClientDoConcurrentStress(t *testing.T) {
 		reqs = append(reqs, r)
 		mu.Unlock()
 	})
-	var unixSrvs []*httptest.Server
+	var nativeSrvs []*httptest.Server
 	for i := 0; i < 3; i++ {
-		srv, cleanup, err := newUnixServer(handler)
+		srv, cleanup, err := newNativeServer(handler)
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer cleanup()
-		unixSrvs = append(unixSrvs, srv)
+		nativeSrvs = append(nativeSrvs, srv)
 	}
 	var tests = []struct {
 		srv           *httptest.Server
@@ -691,11 +659,11 @@ func TestClientDoConcurrentStress(t *testing.T) {
 		withTLSClient bool
 	}{
 		{srv: httptest.NewUnstartedServer(handler), scheme: "http"},
-		{srv: unixSrvs[0], scheme: "unix"},
+		{srv: nativeSrvs[0], scheme: nativeProtocol},
 		{srv: httptest.NewUnstartedServer(handler), scheme: "http", withTimeout: true},
-		{srv: unixSrvs[1], scheme: "unix", withTimeout: true},
+		{srv: nativeSrvs[1], scheme: nativeProtocol, withTimeout: true},
 		{srv: httptest.NewUnstartedServer(handler), scheme: "https", withTLSServer: true, withTLSClient: true},
-		{srv: unixSrvs[2], scheme: "unix", withTLSServer: false, withTLSClient: true},
+		{srv: nativeSrvs[2], scheme: nativeProtocol, withTLSServer: false, withTLSClient: nativeProtocol == unixProtocol}, // TLS client only works with unix protocol
 	}
 	for _, tt := range tests {
 		reqs = nil
@@ -778,21 +746,6 @@ func TestClientDoConcurrentStress(t *testing.T) {
 	}
 }
 
-func newUnixServer(handler http.Handler) (*httptest.Server, func(), error) {
-	tmpdir, err := ioutil.TempDir("", "socket")
-	if err != nil {
-		return nil, nil, err
-	}
-	socketPath := filepath.Join(tmpdir, "docker_test_stress.sock")
-	l, err := net.Listen("unix", socketPath)
-	if err != nil {
-		return nil, nil, err
-	}
-	srv := httptest.NewUnstartedServer(handler)
-	srv.Listener = l
-	return srv, func() { os.RemoveAll(tmpdir) }, nil
-}
-
 type FakeRoundTripper struct {
 	message  string
 	status   int
@@ -831,8 +784,4 @@ type dumb struct {
 	Y      float64
 	Z      int     `qs:"zee"`
 	Person *person `qs:"p"`
-}
-
-type fakeEndpointURL struct {
-	Scheme string
 }
