@@ -2231,6 +2231,36 @@ func TestInfoDocker(t *testing.T) {
 	}
 }
 
+func TestInfoDockerWithSwarm(t *testing.T) {
+	srv1, srv2, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/info", nil)
+	srv1.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("InfoDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var infoData docker.DockerInfo
+	err = json.Unmarshal(recorder.Body.Bytes(), &infoData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedSwarm := swarm.Info{
+		NodeID: srv1.nodeId,
+		RemoteManagers: []swarm.Peer{
+			{NodeID: srv1.nodeId, Addr: srv1.SwarmAddress()},
+			{NodeID: srv2.nodeId, Addr: srv2.SwarmAddress()},
+		},
+	}
+	infoData.Swarm.Cluster.CreatedAt = time.Time{}
+	infoData.Swarm.Cluster.UpdatedAt = time.Time{}
+	if !reflect.DeepEqual(infoData.Swarm, expectedSwarm) {
+		t.Fatalf("InfoDocker: wrong swarm info. Want:\n%#v\nGot:\n%#v", expectedSwarm, infoData.Swarm)
+	}
+}
+
 func TestVersionDocker(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
 	server.buildMuxer()
