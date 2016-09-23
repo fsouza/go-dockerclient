@@ -2007,12 +2007,17 @@ func TestListVolumes(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Errorf("ListVolumes: wrong status.  Want %d. Got %d.", http.StatusCreated, recorder.Code)
 	}
-	var got []docker.Volume
+	var got map[string][]docker.Volume
 	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(got, expected) {
+	
+	gotVolumes, ok := got["Volumes"]
+	if !ok {
+	        t.Fatal(fmt.Errorf("ListVolumes failed can not find Volumes"))	
+	}
+	if !reflect.DeepEqual(gotVolumes, expected) {
 		t.Errorf("ListVolumes.  Want %#v.  Got %#v.", expected, got)
 	}
 }

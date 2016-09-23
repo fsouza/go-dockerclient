@@ -1256,10 +1256,11 @@ func (s *DockerServer) listVolumes(w http.ResponseWriter, r *http.Request) {
 	for _, volumeCounter := range s.volStore {
 		result = append(result, volumeCounter.volume)
 	}
+	dockerResult := map[string][]docker.Volume{"Volumes": result}
 	s.volMut.RUnlock()
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(result)
+	json.NewEncoder(w).Encode(dockerResult)
 }
 
 func (s *DockerServer) createVolume(w http.ResponseWriter, r *http.Request) {
