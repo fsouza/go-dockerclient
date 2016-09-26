@@ -658,6 +658,45 @@ func TestTaskListFilterNotFound(t *testing.T) {
 	}
 }
 
+func TestServiceDelete(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("DELETE", "/services/"+srv.ID, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceDelete: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if len(server.services) != 0 {
+		t.Fatalf("ServiceDelete: expected empty services, got %d", len(server.services))
+	}
+	if len(server.tasks) != 0 {
+		t.Fatalf("ServiceDelete: expected empty tasks, got %d", len(server.tasks))
+	}
+	if len(server.containers) != 0 {
+		t.Fatalf("ServiceDelete: expected empty containers, got %d", len(server.containers))
+	}
+}
+
+func TestServiceDeleteNotFound(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("DELETE", "/services/blahblah", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("ServiceDelete: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
 func TestNodeList(t *testing.T) {
 	srv1, srv2, err := setUpSwarm()
 	if err != nil {

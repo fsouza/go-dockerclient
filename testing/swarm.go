@@ -345,6 +345,42 @@ func inFilter(list []string, wanted string) bool {
 	return false
 }
 
+func (s *DockerServer) serviceDelete(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	s.cMut.Lock()
+	defer s.cMut.Unlock()
+	if s.swarm == nil {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	id := mux.Vars(r)["id"]
+	var i int
+	var toDelete *swarm.Service
+	for i = range s.services {
+		if s.services[i].ID == id || s.services[i].Spec.Name == id {
+			toDelete = s.services[i]
+			break
+		}
+	}
+	if toDelete == nil {
+		http.Error(w, "service not found", http.StatusNotFound)
+		return
+	}
+	s.services[i] = s.services[len(s.services)-1]
+	s.services = s.services[:len(s.services)-1]
+	for i := 0; i < len(s.tasks); i++ {
+		if s.tasks[i].ServiceID == toDelete.ID {
+			_, contIdx, _ := s.findContainerWithLock(s.tasks[i].Status.ContainerStatus.ContainerID, false)
+			if contIdx != -1 {
+				s.containers = append(s.containers[:contIdx], s.containers[contIdx+1:]...)
+			}
+			s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
+			i--
+		}
+	}
+}
+
 func (s *DockerServer) nodeUpdate(w http.ResponseWriter, r *http.Request) {
 	s.swarmMut.Lock()
 	defer s.swarmMut.Unlock()
