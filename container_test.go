@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -20,6 +21,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 func TestStateString(t *testing.T) {
@@ -283,6 +286,139 @@ func TestInspectContainer(t *testing.T) {
 	expectedURL, _ := url.Parse(client.getURL("/containers/4fa6e0f0c678/json"))
 	if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("InspectContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+	}
+}
+
+func TestInspectContainerWithContext(t *testing.T) {
+	jsonContainer := `{
+             "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
+             "AppArmorProfile": "Profile",
+             "Created": "2013-05-07T14:51:42.087658+02:00",
+             "Path": "date",
+             "Args": [],
+             "Config": {
+                     "Hostname": "4fa6e0f0c678",
+                     "User": "",
+                     "Memory": 17179869184,
+                     "MemorySwap": 34359738368,
+                     "AttachStdin": false,
+                     "AttachStdout": true,
+                     "AttachStderr": true,
+                     "PortSpecs": null,
+                     "Tty": false,
+                     "OpenStdin": false,
+                     "StdinOnce": false,
+                     "Env": null,
+                     "Cmd": [
+                             "date"
+                     ],
+                     "Image": "base",
+                     "Volumes": {},
+                     "VolumesFrom": "",
+                     "SecurityOpt": [
+                         "label:user:USER"
+                      ],
+                      "Ulimits": [
+                          { "Name": "nofile", "Soft": 1024, "Hard": 2048 }
+                      ]
+             },
+             "State": {
+                     "Running": false,
+                     "Pid": 0,
+                     "ExitCode": 0,
+                     "StartedAt": "2013-05-07T14:51:42.087658+02:00",
+                     "Ghost": false
+             },
+             "Node": {
+                  "ID": "4I4E:QR4I:Z733:QEZK:5X44:Q4T7:W2DD:JRDY:KB2O:PODO:Z5SR:XRB6",
+                  "IP": "192.168.99.105",
+                  "Addra": "192.168.99.105:2376",
+                  "Name": "node-01",
+                  "Cpus": 4,
+                  "Memory": 1048436736,
+                  "Labels": {
+                      "executiondriver": "native-0.2",
+                      "kernelversion": "3.18.5-tinycore64",
+                      "operatingsystem": "Boot2Docker 1.5.0 (TCL 5.4); master : a66bce5 - Tue Feb 10 23:31:27 UTC 2015",
+                      "provider": "virtualbox",
+                      "storagedriver": "aufs"
+                  }
+              },
+             "Image": "b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
+             "NetworkSettings": {
+                     "IpAddress": "",
+                     "IpPrefixLen": 0,
+                     "Gateway": "",
+                     "Bridge": "",
+                     "PortMapping": null
+             },
+             "SysInitPath": "/home/kitty/go/src/github.com/dotcloud/docker/bin/docker",
+             "ResolvConfPath": "/etc/resolv.conf",
+             "Volumes": {},
+             "HostConfig": {
+               "Binds": null,
+               "ContainerIDFile": "",
+               "LxcConf": [],
+               "Privileged": false,
+               "PortBindings": {
+                 "80/tcp": [
+                   {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "49153"
+                   }
+                 ]
+               },
+               "Links": null,
+               "PublishAllPorts": false,
+               "CgroupParent": "/mesos",
+               "Memory": 17179869184,
+               "MemorySwap": 34359738368,
+               "GroupAdd": ["fake", "12345"],
+               "OomScoreAdj": 642
+             }
+}`
+	var expected Container
+	err := json.Unmarshal([]byte(jsonContainer), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	id := "4fa6e0f0c678"
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	defer cancel()
+
+	inspectError := make(chan error)
+	// Invoke InspectContainer in a goroutine. The response is sent to the 'inspectError'
+	// channel.
+	go func() {
+		container, err := client.InspectContainer(id)
+		if err != nil {
+			inspectError <- err
+			return
+		}
+		if !reflect.DeepEqual(*container, expected) {
+			inspectError <- fmt.Errorf("InspectContainer(%q): Expected %#v. Got %#v.", id, expected, container)
+			return
+		}
+		expectedURL, _ := url.Parse(client.getURL("/containers/4fa6e0f0c678/json"))
+		if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {
+			inspectError <- fmt.Errorf("InspectContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+			return
+		}
+		// No errors to tbe reported. Send 'nil'
+		inspectError <- nil
+	}()
+	// Wait for either the inspect response or for the context.
+	select {
+	case err := <-inspectError:
+		if err != nil {
+			t.Fatalf("Error inspecting container with context: %v", err)
+		}
+	case <-ctx.Done():
+		// Context was canceled unexpectedly. Report the same.
+		t.Fatalf("Context canceled when waiting for inspect container response: %v", ctx.Err())
 	}
 }
 
@@ -2325,5 +2461,30 @@ func TestRenameContainer(t *testing.T) {
 	actualValues := req.URL.Query()["name"]
 	if len(actualValues) != 1 || expectedValues[0] != actualValues[0] {
 		t.Errorf("RenameContainer: Wrong params in request. Want %q. Got %q.", expectedValues, actualValues)
+	}
+}
+
+// sleepyRoundTripper implements the http.RoundTripper interface. It sleeps
+// for the 'sleep' duration and then returns an error for RoundTrip method.
+type sleepyRoudTripper struct {
+	sleepDuration time.Duration
+}
+
+func (rt *sleepyRoudTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	time.Sleep(rt.sleepDuration)
+	return nil, fmt.Errorf("Can't complete roung trip")
+}
+
+func TestInspectContainerWhenContextTimesOut(t *testing.T) {
+	rt := sleepyRoudTripper{sleepDuration: 200 * time.Millisecond}
+
+	client := newTestClient(&rt)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
+	defer cancel()
+
+	_, err := client.InspectContainerWithContext("id", ctx)
+	if err != context.DeadlineExceeded {
+		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
 }

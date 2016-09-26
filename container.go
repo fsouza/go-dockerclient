@@ -480,8 +480,20 @@ func (c *Client) RenameContainer(opts RenameContainerOptions) error {
 //
 // See https://goo.gl/RdIq0b for more details.
 func (c *Client) InspectContainer(id string) (*Container, error) {
+	return c.inspectContainer(id, doOptions{})
+}
+
+// InspectContainerWithContext returns information about a container by its ID.
+// The context object can be used to cancel the inspect request.
+//
+// See https://goo.gl/RdIq0b for more details.
+func (c *Client) InspectContainerWithContext(id string, ctx context.Context) (*Container, error) {
+	return c.inspectContainer(id, doOptions{context: ctx})
+}
+
+func (c *Client) inspectContainer(id string, opts doOptions) (*Container, error) {
 	path := "/containers/" + id + "/json"
-	resp, err := c.do("GET", path, doOptions{})
+	resp, err := c.do("GET", path, opts)
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchContainer{ID: id}
