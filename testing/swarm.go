@@ -244,6 +244,107 @@ func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(service)
 }
 
+func (s *DockerServer) serviceInspect(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if s.swarm == nil {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	id := mux.Vars(r)["id"]
+	for _, srv := range s.services {
+		if srv.ID == id || srv.Spec.Name == id {
+			json.NewEncoder(w).Encode(srv)
+			return
+		}
+	}
+	http.Error(w, "service not found", http.StatusNotFound)
+}
+
+func (s *DockerServer) taskInspect(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if s.swarm == nil {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	id := mux.Vars(r)["id"]
+	for _, task := range s.tasks {
+		if task.ID == id {
+			json.NewEncoder(w).Encode(task)
+			return
+		}
+	}
+	http.Error(w, "task not found", http.StatusNotFound)
+}
+
+func (s *DockerServer) serviceList(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if s.swarm == nil {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	filtersRaw := r.FormValue("filters")
+	var filters map[string][]string
+	json.Unmarshal([]byte(filtersRaw), &filters)
+	if filters == nil {
+		json.NewEncoder(w).Encode(s.services)
+		return
+	}
+	var ret []*swarm.Service
+	for i, srv := range s.services {
+		if inFilter(filters["id"], srv.ID) ||
+			inFilter(filters["name"], srv.Spec.Name) {
+			ret = append(ret, s.services[i])
+		}
+	}
+	json.NewEncoder(w).Encode(ret)
+}
+
+func (s *DockerServer) taskList(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if s.swarm == nil {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	filtersRaw := r.FormValue("filters")
+	var filters map[string][]string
+	json.Unmarshal([]byte(filtersRaw), &filters)
+	if filters == nil {
+		json.NewEncoder(w).Encode(s.tasks)
+		return
+	}
+	var ret []*swarm.Task
+	for i, task := range s.tasks {
+		var srvName string
+		for _, srv := range s.services {
+			if task.ServiceID == srv.ID {
+				srvName = srv.Spec.Name
+				break
+			}
+		}
+		if inFilter(filters["id"], task.ID) ||
+			inFilter(filters["service"], task.ServiceID) ||
+			inFilter(filters["service"], srvName) ||
+			inFilter(filters["node"], task.NodeID) ||
+			inFilter(filters["desired-state"], string(task.DesiredState)) {
+			ret = append(ret, s.tasks[i])
+		}
+	}
+	json.NewEncoder(w).Encode(ret)
+}
+
+func inFilter(list []string, wanted string) bool {
+	for _, item := range list {
+		if item == wanted {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *DockerServer) nodeUpdate(w http.ResponseWriter, r *http.Request) {
 	s.swarmMut.Lock()
 	defer s.swarmMut.Unlock()

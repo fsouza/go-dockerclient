@@ -312,6 +312,352 @@ func TestServiceCreate(t *testing.T) {
 	}
 }
 
+func compareServices(srv1 *swarm.Service, srv2 *swarm.Service) bool {
+	srv1.CreatedAt = srv2.CreatedAt
+	srv1.UpdatedAt = srv2.UpdatedAt
+	srv1.UpdateStatus.StartedAt = srv2.UpdateStatus.StartedAt
+	srv1.UpdateStatus.CompletedAt = srv2.UpdateStatus.CompletedAt
+	return reflect.DeepEqual(srv1, srv2)
+}
+
+func compareTasks(task1 *swarm.Task, task2 *swarm.Task) bool {
+	task1.CreatedAt = task2.CreatedAt
+	task1.UpdatedAt = task2.UpdatedAt
+	task1.Status.Timestamp = task2.Status.Timestamp
+	return reflect.DeepEqual(task1, task2)
+}
+
+func TestServiceInspect(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/services/"+srv.ID, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceInspect: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var srvInspect swarm.Service
+	err = json.Unmarshal(recorder.Body.Bytes(), &srvInspect)
+	if err != nil {
+		t.Fatalf("ServiceInspect: unable to unmarshal response body: %s", err)
+	}
+	if !compareServices(srv, &srvInspect) {
+		t.Fatalf("ServiceInspect: wrong service. Want\n%#v\nGot\n%#v", srv, &srvInspect)
+	}
+}
+
+func TestServiceInspectByName(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/services/"+srv.Spec.Name, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceInspect: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var srvInspect swarm.Service
+	err = json.Unmarshal(recorder.Body.Bytes(), &srvInspect)
+	if err != nil {
+		t.Fatalf("ServiceInspect: unable to unmarshal response body: %s", err)
+	}
+	if !compareServices(srv, &srvInspect) {
+		t.Fatalf("ServiceInspect: wrong service. Want\n%#v\nGot\n%#v", srv, &srvInspect)
+	}
+}
+
+func TestServiceInspectNotFound(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/services/abcd", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("ServiceInspect: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
+func TestTaskInspect(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	task := server.tasks[0]
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/tasks/"+task.ID, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskInspect: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var taskInspect swarm.Task
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskInspect: unable to unmarshal response body: %s", err)
+	}
+	if !compareTasks(task, &taskInspect) {
+		t.Fatalf("TaskInspect: wrong task. Want\n%#v\nGot\n%#v", task, &taskInspect)
+	}
+}
+
+func TestTaskInspectNotFound(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/tasks/abcd", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("TaskInspect: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
+func TestServiceList(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/services", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var srvInspect []swarm.Service
+	err = json.Unmarshal(recorder.Body.Bytes(), &srvInspect)
+	if err != nil {
+		t.Fatalf("ServiceList: unable to unmarshal response body: %s", err)
+	}
+	if !compareServices(srv, &srvInspect[0]) {
+		t.Fatalf("ServiceList: wrong service. Want\n%#v\nGot\n%#v", srv, &srvInspect)
+	}
+}
+
+func TestServiceListFilterID(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", fmt.Sprintf(`/services?filters={"id":[%q]}`, srv.ID), nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var srvInspect []swarm.Service
+	err = json.Unmarshal(recorder.Body.Bytes(), &srvInspect)
+	if err != nil {
+		t.Fatalf("ServiceList: unable to unmarshal response body: %s", err)
+	}
+	if !compareServices(srv, &srvInspect[0]) {
+		t.Fatalf("ServiceList: wrong service. Want\n%#v\nGot\n%#v", srv, &srvInspect)
+	}
+}
+
+func TestServiceListFilterName(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", fmt.Sprintf(`/services?filters={"name":[%q]}`, srv.Spec.Name), nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var srvInspect []swarm.Service
+	err = json.Unmarshal(recorder.Body.Bytes(), &srvInspect)
+	if err != nil {
+		t.Fatalf("ServiceList: unable to unmarshal response body: %s", err)
+	}
+	if !compareServices(srv, &srvInspect[0]) {
+		t.Fatalf("ServiceList: wrong service. Want\n%#v\nGot\n%#v", srv, &srvInspect)
+	}
+}
+
+func TestServiceListFilterEmpty(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", `/services?filters={"id":["something"]}`, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var srvInspect []swarm.Service
+	err = json.Unmarshal(recorder.Body.Bytes(), &srvInspect)
+	if err != nil {
+		t.Fatalf("ServiceList: unable to unmarshal response body: %s", err)
+	}
+	if len(srvInspect) != 0 {
+		t.Fatalf("ServiceList: expected empty list got %d.", len(srvInspect))
+	}
+}
+
+func TestTaskList(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	task := server.tasks[0]
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", "/tasks", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var taskInspect []swarm.Task
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskList: unable to unmarshal response body: %s", err)
+	}
+	if !compareTasks(task, &taskInspect[0]) {
+		t.Fatalf("TaskList: wrong task. Want\n%#v\nGot\n%#v", task, &taskInspect)
+	}
+}
+
+func TestTaskListFilterID(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	task := server.tasks[0]
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", fmt.Sprintf(`/tasks?filters={"id":[%q]}`, task.ID), nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var taskInspect []swarm.Task
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskList: unable to unmarshal response body: %s", err)
+	}
+	if !compareTasks(task, &taskInspect[0]) {
+		t.Fatalf("TaskList: wrong task. Want\n%#v\nGot\n%#v", task, &taskInspect)
+	}
+}
+
+func TestTaskListFilterServiceID(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	task := server.tasks[0]
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", fmt.Sprintf(`/tasks?filters={"service":[%q]}`, task.ServiceID), nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var taskInspect []swarm.Task
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskList: unable to unmarshal response body: %s", err)
+	}
+	if !compareTasks(task, &taskInspect[0]) {
+		t.Fatalf("TaskList: wrong task. Want\n%#v\nGot\n%#v", task, &taskInspect)
+	}
+}
+
+func TestTaskListFilterServiceName(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	task := server.tasks[0]
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", fmt.Sprintf(`/tasks?filters={"service":[%q]}`, srv.Spec.Name), nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var taskInspect []swarm.Task
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskList: unable to unmarshal response body: %s", err)
+	}
+	if !compareTasks(task, &taskInspect[0]) {
+		t.Fatalf("TaskList: wrong task. Want\n%#v\nGot\n%#v", task, &taskInspect)
+	}
+}
+
+func TestTaskListFilterNotFound(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", `/tasks?filters={"id":["something"]}`, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var taskInspect []swarm.Task
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskList: unable to unmarshal response body: %s", err)
+	}
+	if len(taskInspect) != 0 {
+		t.Fatalf("TaskList: expected empty list got %d.", len(taskInspect))
+	}
+}
+
 func TestNodeList(t *testing.T) {
 	srv1, srv2, err := setUpSwarm()
 	if err != nil {
@@ -434,4 +780,49 @@ func setUpSwarm() (*DockerServer, *DockerServer, error) {
 		return nil, nil, fmt.Errorf("invalid status code %d", recorder.Code)
 	}
 	return server1, server2, nil
+}
+
+func addTestService(server *DockerServer) (*swarm.Service, error) {
+	recorder := httptest.NewRecorder()
+	serviceCreateOpts := docker.CreateServiceOptions{
+		ServiceSpec: swarm.ServiceSpec{
+			Annotations: swarm.Annotations{
+				Name: "test",
+			},
+			TaskTemplate: swarm.TaskSpec{
+				ContainerSpec: swarm.ContainerSpec{
+					Image: "test/test",
+					Args:  []string{"--test"},
+					Env:   []string{"ENV=1"},
+					User:  "test",
+				},
+			},
+			EndpointSpec: &swarm.EndpointSpec{
+				Mode: swarm.ResolutionModeVIP,
+				Ports: []swarm.PortConfig{{
+					Protocol:      swarm.PortConfigProtocolTCP,
+					TargetPort:    uint32(80),
+					PublishedPort: uint32(80),
+				}},
+			},
+		},
+	}
+	buf, err := json.Marshal(serviceCreateOpts)
+	if err != nil {
+		return nil, err
+	}
+	var params io.Reader
+	params = bytes.NewBuffer(buf)
+	request, _ := http.NewRequest("POST", "/services/create", params)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status %d", recorder.Code)
+	}
+	if len(server.services) == 0 {
+		return nil, fmt.Errorf("no service created on server")
+	}
+	if len(server.tasks) == 0 {
+		return nil, fmt.Errorf("no tasks created on server")
+	}
+	return server.services[0], nil
 }
