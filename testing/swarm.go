@@ -156,10 +156,30 @@ func (s *DockerServer) swarmLeave(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
 	var config swarm.ServiceSpec
 	defer r.Body.Close()
-	json.NewDecoder(r.Body).Decode(&config)
+	err := json.NewDecoder(r.Body).Decode(&config)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.cMut.Lock()
+	defer s.cMut.Unlock()
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	if len(s.nodes) == 0 || s.swarm == nil {
+		http.Error(w, "no swarm nodes available", http.StatusNotAcceptable)
+		return
+	}
+	if config.Name == "" {
+		config.Name = s.generateID()
+	}
+	for _, s := range s.services {
+		if s.Spec.Name == config.Name {
+			http.Error(w, "there's already a service with this name", http.StatusConflict)
+			return
+		}
+	}
 	service := swarm.Service{
 		ID:   s.generateID(),
 		Spec: config,
@@ -183,28 +203,44 @@ func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 		Env:          config.TaskTemplate.ContainerSpec.Env,
 		ExposedPorts: exposedPort,
 	}
-	container := docker.Container{
-		ID:         s.generateID(),
-		Name:       config.Name,
-		Image:      config.TaskTemplate.ContainerSpec.Image,
-		Created:    time.Now(),
-		Config:     &dockerConfig,
-		HostConfig: &hostConfig,
-	}
-	s.cMut.Lock()
-	if container.Name != "" {
-		for _, c := range s.containers {
-			if c.Name == container.Name {
-				defer s.cMut.Unlock()
-				http.Error(w, "there's already a container with this name", http.StatusConflict)
-				return
-			}
+	containerCount := 1
+	if service.Spec.Mode.Global != nil {
+		containerCount = len(s.nodes)
+	} else if repl := service.Spec.Mode.Replicated; repl != nil {
+		if repl.Replicas != nil {
+			containerCount = int(*repl.Replicas)
 		}
 	}
-	s.containers = append(s.containers, &container)
-	s.cMut.Unlock()
-	s.notify(&container)
-	w.WriteHeader(http.StatusCreated)
+	for i := 0; i < containerCount; i++ {
+		container := docker.Container{
+			ID:         s.generateID(),
+			Name:       fmt.Sprintf("%s-%d", config.Name, i),
+			Image:      config.TaskTemplate.ContainerSpec.Image,
+			Created:    time.Now(),
+			Config:     &dockerConfig,
+			HostConfig: &hostConfig,
+		}
+		chosenNode := s.nodes[s.nodeRR]
+		s.nodeRR = (s.nodeRR + 1) % len(s.nodes)
+		task := swarm.Task{
+			ID:        s.generateID(),
+			ServiceID: service.ID,
+			NodeID:    chosenNode.ID,
+			Status: swarm.TaskStatus{
+				State: swarm.TaskStateReady,
+				ContainerStatus: swarm.ContainerStatus{
+					ContainerID: container.ID,
+				},
+			},
+			DesiredState: swarm.TaskStateReady,
+			Spec:         config.TaskTemplate,
+		}
+		s.tasks = append(s.tasks, &task)
+		s.containers = append(s.containers, &container)
+		s.notify(&container)
+	}
+	s.services = append(s.services, &service)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(service)
 }
 

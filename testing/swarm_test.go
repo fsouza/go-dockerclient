@@ -221,8 +221,10 @@ func TestSwarmInspectNotInSwarm(t *testing.T) {
 }
 
 func TestServiceCreate(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
-	server.buildMuxer()
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
 	recorder := httptest.NewRecorder()
 	serviceCreateOpts := docker.CreateServiceOptions{
 		ServiceSpec: swarm.ServiceSpec{
@@ -258,12 +260,15 @@ func TestServiceCreate(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("ServiceCreate: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	if len(server.containers) != 1 {
-		t.Fatal("ServiceCreate: service not started")
+	if len(server.services) != 1 || len(server.tasks) != 1 || len(server.containers) != 1 {
+		t.Fatalf("ServiceCreate: wrong item count. Want 1. Got services: %d, tasks: %d, containers: %d.", len(server.services), len(server.tasks), len(server.containers))
 	}
-	expectedContainer := docker.Container{
-		Image: "test/test",
-		Name:  "test",
+	cont := server.containers[0]
+	expectedContainer := &docker.Container{
+		ID:      cont.ID,
+		Created: cont.Created,
+		Image:   "test/test",
+		Name:    "test-0",
 		Config: &docker.Config{
 			Cmd:          []string{"--test"},
 			Env:          []string{"ENV=1"},
@@ -277,24 +282,33 @@ func TestServiceCreate(t *testing.T) {
 			},
 		},
 	}
-	cont := server.containers[0]
-	if cont.Config.Env == nil {
-		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Config.Env, cont.Config.Env)
+	if !reflect.DeepEqual(cont, expectedContainer) {
+		t.Fatalf("ServiceCreate: wrong cont. Want\n%#v\nGot\n%#v", expectedContainer, cont)
 	}
-	if cont.Config.ExposedPorts == nil {
-		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Config.ExposedPorts, cont.Config.ExposedPorts)
+	srv := server.services[0]
+	expectedService := &swarm.Service{
+		ID:   srv.ID,
+		Spec: serviceCreateOpts.ServiceSpec,
 	}
-	if cont.Config.Cmd == nil {
-		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Config.Cmd, cont.Config.Cmd)
+	if !reflect.DeepEqual(srv, expectedService) {
+		t.Fatalf("ServiceCreate: wrong service. Want\n%#v\nGot\n%#v", expectedService, srv)
 	}
-	if cont.Name != expectedContainer.Name {
-		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Name, cont.Name)
+	task := server.tasks[0]
+	expectedTask := &swarm.Task{
+		ID:        task.ID,
+		ServiceID: srv.ID,
+		NodeID:    server.nodes[0].ID,
+		Status: swarm.TaskStatus{
+			State: swarm.TaskStateReady,
+			ContainerStatus: swarm.ContainerStatus{
+				ContainerID: cont.ID,
+			},
+		},
+		DesiredState: swarm.TaskStateReady,
+		Spec:         serviceCreateOpts.ServiceSpec.TaskTemplate,
 	}
-	if cont.Image != expectedContainer.Image {
-		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.Image, cont.Image)
-	}
-	if cont.HostConfig.PortBindings == nil {
-		t.Fatalf("ServiceCreate: wrong conf. Want %#v. Got %#v.", expectedContainer.HostConfig.PortBindings, cont.HostConfig.PortBindings)
+	if !reflect.DeepEqual(task, expectedTask) {
+		t.Fatalf("ServiceCreate: wrong task. Want\n%#v\nGot\n%#v", expectedTask, task)
 	}
 }
 

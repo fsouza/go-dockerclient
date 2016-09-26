@@ -68,6 +68,9 @@ type DockerServer struct {
 	swarmServer    *swarmServer
 	nodes          []swarm.Node
 	nodeID         string
+	tasks          []*swarm.Task
+	services       []*swarm.Service
+	nodeRR         int
 }
 
 type volumeCounter struct {
@@ -194,6 +197,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/volumes/{name:.*}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.removeVolume))
 	s.mux.Path("/info").Methods("GET").HandlerFunc(s.handlerWrapper(s.infoDocker))
 	s.mux.Path("/version").Methods("GET").HandlerFunc(s.handlerWrapper(s.versionDocker))
+	s.mux.Path("/networks/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.networkCreate))
 	s.mux.Path("/swarm/init").Methods("POST").HandlerFunc(s.handlerWrapper(s.swarmInit))
 	s.mux.Path("/swarm").Methods("GET").HandlerFunc(s.handlerWrapper(s.swarmInspect))
 	s.mux.Path("/swarm/join").Methods("POST").HandlerFunc(s.handlerWrapper(s.swarmJoin))
@@ -203,7 +207,6 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/nodes/{id:.+}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.nodeDelete))
 	s.mux.Path("/nodes").Methods("GET").HandlerFunc(s.handlerWrapper(s.nodeList))
 	s.mux.Path("/services/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.serviceCreate))
-	s.mux.Path("/networks/create").Methods("POST").HandlerFunc(s.handlerWrapper(s.networkCreate))
 }
 
 // SetHook changes the hook function used by the server.
