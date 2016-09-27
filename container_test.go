@@ -1003,6 +1003,41 @@ func TestStartContainerNilHostConfig(t *testing.T) {
 	}
 }
 
+func TestStartContainerWithContext(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	defer cancel()
+
+	startError := make(chan error)
+	go func() {
+		startError <- client.StartContainerWithContext(id, &HostConfig{}, ctx)
+	}()
+	select {
+	case err := <-startError:
+		if err != nil {
+			t.Fatal(err)
+		}
+		req := fakeRT.requests[0]
+		if req.Method != "POST" {
+			t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		}
+		expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/start"))
+		if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+			t.Errorf("StartContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+		}
+		expectedContentType := "application/json"
+		if contentType := req.Header.Get("Content-Type"); contentType != expectedContentType {
+			t.Errorf("StartContainer(%q): Wrong content-type in request. Want %q. Got %q.", id, expectedContentType, contentType)
+		}
+	case <-ctx.Done():
+		// Context was canceled unexpectedly. Report the same.
+		t.Fatalf("Context canceled when waiting for start container response: %v", ctx.Err())
+	}
+}
+
 func TestStartContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.StartContainer("a2344", &HostConfig{})
@@ -1036,6 +1071,37 @@ func TestStopContainer(t *testing.T) {
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/stop"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("StopContainer(%q, 10): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+	}
+}
+
+func TestStopContainerWithContext(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	defer cancel()
+
+	stopError := make(chan error)
+	go func() {
+		stopError <- client.StopContainerWithContext(id, 10, ctx)
+	}()
+	select {
+	case err := <-stopError:
+		if err != nil {
+			t.Fatal(err)
+		}
+		req := fakeRT.requests[0]
+		if req.Method != "POST" {
+			t.Errorf("StopContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		}
+		expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/stop"))
+		if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+			t.Errorf("StopContainer(%q, 10): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+		}
+	case <-ctx.Done():
+		// Context was canceled unexpectedly. Report the same.
+		t.Fatalf("Context canceled when waiting for stop container response: %v", ctx.Err())
 	}
 }
 
@@ -2484,6 +2550,34 @@ func TestInspectContainerWhenContextTimesOut(t *testing.T) {
 	defer cancel()
 
 	_, err := client.InspectContainerWithContext("id", ctx)
+	if err != context.DeadlineExceeded {
+		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
+	}
+}
+
+func TestStartContainerWhenContextTimesOut(t *testing.T) {
+	rt := sleepyRoudTripper{sleepDuration: 200 * time.Millisecond}
+
+	client := newTestClient(&rt)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
+	defer cancel()
+
+	err := client.StartContainerWithContext("id", nil, ctx)
+	if err != context.DeadlineExceeded {
+		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
+	}
+}
+
+func TestStopContainerWhenContextTimesOut(t *testing.T) {
+	rt := sleepyRoudTripper{sleepDuration: 200 * time.Millisecond}
+
+	client := newTestClient(&rt)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
+	defer cancel()
+
+	err := client.StopContainerWithContext("id", 10, ctx)
 	if err != context.DeadlineExceeded {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
