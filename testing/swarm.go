@@ -155,6 +155,36 @@ func (s *DockerServer) swarmLeave(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *DockerServer) containerForService(srv *swarm.Service, name string) *docker.Container {
+	portBindings := map[docker.Port][]docker.PortBinding{}
+	exposedPort := map[docker.Port]struct{}{}
+	if srv.Spec.EndpointSpec != nil {
+		for _, p := range srv.Spec.EndpointSpec.Ports {
+			targetPort := fmt.Sprintf("%d/%s", p.TargetPort, p.Protocol)
+			portBindings[docker.Port(targetPort)] = []docker.PortBinding{
+				{HostIP: "0.0.0.0", HostPort: fmt.Sprintf("%d", p.PublishedPort)},
+			}
+			exposedPort[docker.Port(targetPort)] = struct{}{}
+		}
+	}
+	hostConfig := docker.HostConfig{
+		PortBindings: portBindings,
+	}
+	dockerConfig := docker.Config{
+		Cmd:          srv.Spec.TaskTemplate.ContainerSpec.Args,
+		Env:          srv.Spec.TaskTemplate.ContainerSpec.Env,
+		ExposedPorts: exposedPort,
+	}
+	return &docker.Container{
+		ID:         s.generateID(),
+		Name:       name,
+		Image:      srv.Spec.TaskTemplate.ContainerSpec.Image,
+		Created:    time.Now(),
+		Config:     &dockerConfig,
+		HostConfig: &hostConfig,
+	}
+}
+
 func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 	var config swarm.ServiceSpec
 	defer r.Body.Close()
@@ -184,25 +214,6 @@ func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 		ID:   s.generateID(),
 		Spec: config,
 	}
-	portBindings := map[docker.Port][]docker.PortBinding{}
-	exposedPort := map[docker.Port]struct{}{}
-	if config.EndpointSpec != nil {
-		for _, p := range config.EndpointSpec.Ports {
-			targetPort := fmt.Sprintf("%d/%s", p.TargetPort, p.Protocol)
-			portBindings[docker.Port(targetPort)] = []docker.PortBinding{
-				{HostIP: "0.0.0.0", HostPort: fmt.Sprintf("%d", p.PublishedPort)},
-			}
-			exposedPort[docker.Port(targetPort)] = struct{}{}
-		}
-	}
-	hostConfig := docker.HostConfig{
-		PortBindings: portBindings,
-	}
-	dockerConfig := docker.Config{
-		Cmd:          config.TaskTemplate.ContainerSpec.Args,
-		Env:          config.TaskTemplate.ContainerSpec.Env,
-		ExposedPorts: exposedPort,
-	}
 	containerCount := 1
 	if service.Spec.Mode.Global != nil {
 		containerCount = len(s.nodes)
@@ -212,14 +223,7 @@ func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	for i := 0; i < containerCount; i++ {
-		container := docker.Container{
-			ID:         s.generateID(),
-			Name:       fmt.Sprintf("%s-%d", config.Name, i),
-			Image:      config.TaskTemplate.ContainerSpec.Image,
-			Created:    time.Now(),
-			Config:     &dockerConfig,
-			HostConfig: &hostConfig,
-		}
+		container := s.containerForService(&service, fmt.Sprintf("%s-%d", config.Name, i))
 		chosenNode := s.nodes[s.nodeRR]
 		s.nodeRR = (s.nodeRR + 1) % len(s.nodes)
 		task := swarm.Task{
@@ -236,8 +240,8 @@ func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 			Spec:         config.TaskTemplate,
 		}
 		s.tasks = append(s.tasks, &task)
-		s.containers = append(s.containers, &container)
-		s.notify(&container)
+		s.containers = append(s.containers, container)
+		s.notify(container)
 	}
 	s.services = append(s.services, &service)
 	w.WriteHeader(http.StatusOK)
@@ -379,6 +383,64 @@ func (s *DockerServer) serviceDelete(w http.ResponseWriter, r *http.Request) {
 			i--
 		}
 	}
+}
+
+func (s *DockerServer) serviceUpdate(w http.ResponseWriter, r *http.Request) {
+	s.swarmMut.Lock()
+	defer s.swarmMut.Unlock()
+	s.cMut.Lock()
+	defer s.cMut.Unlock()
+	if s.swarm == nil {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	id := mux.Vars(r)["id"]
+	var toUpdate *swarm.Service
+	for i := range s.services {
+		if s.services[i].ID == id || s.services[i].Spec.Name == id {
+			toUpdate = s.services[i]
+			break
+		}
+	}
+	if toUpdate == nil {
+		http.Error(w, "service not found", http.StatusNotFound)
+		return
+	}
+	json.NewDecoder(r.Body).Decode(&toUpdate.Spec)
+	var newTasks []*swarm.Task
+	var newContainers []*docker.Container
+	for i := 0; i < len(s.tasks); i++ {
+		if s.tasks[i].ServiceID != toUpdate.ID {
+			continue
+		}
+		_, contIdx, _ := s.findContainerWithLock(s.tasks[i].Status.ContainerStatus.ContainerID, false)
+		if contIdx != -1 {
+			s.containers = append(s.containers[:contIdx], s.containers[contIdx+1:]...)
+		}
+		container := s.containerForService(toUpdate, fmt.Sprintf("%s-%d-updated", toUpdate.Spec.Name, i))
+		chosenNode := s.nodes[s.nodeRR]
+		s.nodeRR = (s.nodeRR + 1) % len(s.nodes)
+		task := swarm.Task{
+			ID:        s.generateID(),
+			ServiceID: toUpdate.ID,
+			NodeID:    chosenNode.ID,
+			Status: swarm.TaskStatus{
+				State: swarm.TaskStateReady,
+				ContainerStatus: swarm.ContainerStatus{
+					ContainerID: container.ID,
+				},
+			},
+			DesiredState: swarm.TaskStateReady,
+			Spec:         toUpdate.Spec.TaskTemplate,
+		}
+		s.tasks = append(s.tasks[:i], s.tasks[i+1:]...)
+		i--
+		newTasks = append(newTasks, &task)
+		newContainers = append(newContainers, container)
+		s.notify(container)
+	}
+	s.containers = append(s.containers, newContainers...)
+	s.tasks = append(s.tasks, newTasks...)
 }
 
 func (s *DockerServer) nodeUpdate(w http.ResponseWriter, r *http.Request) {

@@ -210,6 +210,7 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/services/{id:.+}").Methods("GET").HandlerFunc(s.handlerWrapper(s.serviceInspect))
 	s.mux.Path("/services").Methods("GET").HandlerFunc(s.handlerWrapper(s.serviceList))
 	s.mux.Path("/services/{id:.+}").Methods("DELETE").HandlerFunc(s.handlerWrapper(s.serviceDelete))
+	s.mux.Path("/services/{id:.+}/update").Methods("POST").HandlerFunc(s.handlerWrapper(s.serviceUpdate))
 	s.mux.Path("/tasks").Methods("GET").HandlerFunc(s.handlerWrapper(s.taskList))
 	s.mux.Path("/tasks/{id:.+}").Methods("GET").HandlerFunc(s.handlerWrapper(s.taskInspect))
 }

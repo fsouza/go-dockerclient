@@ -697,6 +697,136 @@ func TestServiceDeleteNotFound(t *testing.T) {
 	}
 }
 
+func TestServiceUpdate(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	updateOpts := swarm.ServiceSpec{
+		Annotations: swarm.Annotations{
+			Name: "test",
+		},
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: swarm.ContainerSpec{
+				Image: "test/test2",
+				Args:  []string{"--test2"},
+				Env:   []string{"ENV=2"},
+				User:  "test",
+			},
+		},
+		EndpointSpec: &swarm.EndpointSpec{
+			Mode: swarm.ResolutionModeVIP,
+			Ports: []swarm.PortConfig{{
+				Protocol:      swarm.PortConfigProtocolTCP,
+				TargetPort:    uint32(80),
+				PublishedPort: uint32(80),
+			}},
+		},
+	}
+	buf, err := json.Marshal(updateOpts)
+	if err != nil {
+		t.Fatalf("ServiceUpdate error: %s", err.Error())
+	}
+	request, _ := http.NewRequest("POST", fmt.Sprintf("/services/%s/update", srv.ID), bytes.NewReader(buf))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceUpdate: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if len(server.services) != 1 || len(server.tasks) != 1 || len(server.containers) != 1 {
+		t.Fatalf("ServiceUpdate: wrong item count. Want 1. Got services: %d, tasks: %d, containers: %d.", len(server.services), len(server.tasks), len(server.containers))
+	}
+	cont := server.containers[0]
+	expectedContainer := &docker.Container{
+		ID:      cont.ID,
+		Created: cont.Created,
+		Image:   "test/test2",
+		Name:    "test-0-updated",
+		Config: &docker.Config{
+			Cmd:          []string{"--test2"},
+			Env:          []string{"ENV=2"},
+			ExposedPorts: map[docker.Port]struct{}{"80/tcp": {}},
+		},
+		HostConfig: &docker.HostConfig{
+			PortBindings: map[docker.Port][]docker.PortBinding{
+				"80/tcp": {
+					{HostIP: "0.0.0.0", HostPort: "80"},
+				},
+			},
+		},
+	}
+	if !reflect.DeepEqual(cont, expectedContainer) {
+		t.Fatalf("ServiceUpdate: wrong cont. Want\n%#v\nGot\n%#v", expectedContainer, cont)
+	}
+	srv = server.services[0]
+	expectedService := &swarm.Service{
+		ID:   srv.ID,
+		Spec: updateOpts,
+	}
+	if !reflect.DeepEqual(srv, expectedService) {
+		t.Fatalf("ServiceUpdate: wrong service. Want\n%#v\nGot\n%#v", expectedService, srv)
+	}
+	task := server.tasks[0]
+	expectedTask := &swarm.Task{
+		ID:        task.ID,
+		ServiceID: srv.ID,
+		NodeID:    server.nodes[1].ID,
+		Status: swarm.TaskStatus{
+			State: swarm.TaskStateReady,
+			ContainerStatus: swarm.ContainerStatus{
+				ContainerID: cont.ID,
+			},
+		},
+		DesiredState: swarm.TaskStateReady,
+		Spec:         updateOpts.TaskTemplate,
+	}
+	if !reflect.DeepEqual(task, expectedTask) {
+		t.Fatalf("ServiceUpdate: wrong task. Want\n%#v\nGot\n%#v", expectedTask, task)
+	}
+}
+
+func TestServiceUpdateNotFound(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	updateOpts := swarm.ServiceSpec{
+		Annotations: swarm.Annotations{
+			Name: "test",
+		},
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: swarm.ContainerSpec{
+				Image: "test/test2",
+				Args:  []string{"--test2"},
+				Env:   []string{"ENV=2"},
+				User:  "test",
+			},
+		},
+		EndpointSpec: &swarm.EndpointSpec{
+			Mode: swarm.ResolutionModeVIP,
+			Ports: []swarm.PortConfig{{
+				Protocol:      swarm.PortConfigProtocolTCP,
+				TargetPort:    uint32(80),
+				PublishedPort: uint32(80),
+			}},
+		},
+	}
+	buf, err := json.Marshal(updateOpts)
+	if err != nil {
+		t.Fatalf("ServiceUpdate error: %s", err.Error())
+	}
+	request, _ := http.NewRequest("POST", "/services/pale/update", bytes.NewReader(buf))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("ServiceUpdate: wrong status code. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
 func TestNodeList(t *testing.T) {
 	srv1, srv2, err := setUpSwarm()
 	if err != nil {
