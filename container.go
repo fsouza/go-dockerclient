@@ -734,13 +734,31 @@ type NetworkingConfig struct {
 //
 // See https://goo.gl/MrBAJv for more details.
 func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
-	var opts doOptions
+	return c.startContainer(id, hostConfig, doOptions{})
+}
+
+// StartContainerWithContext starts a container, returning an error in case of
+// failure. The context can be used to cancel the outstanding start container
+// request.
+//
+// Passing the HostConfig to this method has been deprecated in Docker API 1.22
+// (Docker Engine 1.10.x) and totally removed in Docker API 1.24 (Docker Engine
+// 1.12.x). The client will ignore the parameter when communicating with Docker
+// API 1.24 or greater.
+//
+// See https://goo.gl/MrBAJv for more details.
+func (c *Client) StartContainerWithContext(id string, hostConfig *HostConfig, ctx context.Context) error {
+	return c.startContainer(id, hostConfig, doOptions{context: ctx})
+}
+
+func (c *Client) startContainer(id string, hostConfig *HostConfig, opts doOptions) error {
 	path := "/containers/" + id + "/start"
 	if c.serverAPIVersion == nil {
 		c.checkAPIVersion()
 	}
 	if c.serverAPIVersion != nil && c.serverAPIVersion.LessThan(apiVersion124) {
-		opts = doOptions{data: hostConfig, forceJSON: true}
+		opts.data = hostConfig
+		opts.forceJSON = true
 	}
 	resp, err := c.do("POST", path, opts)
 	if err != nil {
@@ -761,8 +779,21 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 //
 // See https://goo.gl/USqsFt for more details.
 func (c *Client) StopContainer(id string, timeout uint) error {
+	return c.stopContainer(id, timeout, doOptions{})
+}
+
+// StopContainerWithContext stops a container, killing it after the given
+// timeout (in seconds). The context can be used to cancel the stop
+// container request.
+//
+// See https://goo.gl/USqsFt for more details.
+func (c *Client) StopContainerWithContext(id string, timeout uint, ctx context.Context) error {
+	return c.stopContainer(id, timeout, doOptions{context: ctx})
+}
+
+func (c *Client) stopContainer(id string, timeout uint, opts doOptions) error {
 	path := fmt.Sprintf("/containers/%s/stop?t=%d", id, timeout)
-	resp, err := c.do("POST", path, doOptions{})
+	resp, err := c.do("POST", path, opts)
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id}
