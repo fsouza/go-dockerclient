@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
 	"strings"
@@ -182,6 +183,12 @@ func (s *DockerServer) containerForService(srv *swarm.Service, name string) *doc
 		Created:    time.Now(),
 		Config:     &dockerConfig,
 		HostConfig: &hostConfig,
+		State: docker.State{
+			Running:   true,
+			StartedAt: time.Now(),
+			Pid:       rand.Int() % 50000,
+			ExitCode:  0,
+		},
 	}
 }
 

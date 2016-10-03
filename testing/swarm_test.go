@@ -281,6 +281,12 @@ func TestServiceCreate(t *testing.T) {
 				},
 			},
 		},
+		State: docker.State{
+			Running:   true,
+			StartedAt: cont.State.StartedAt,
+			Pid:       cont.State.Pid,
+			ExitCode:  0,
+		},
 	}
 	if !reflect.DeepEqual(cont, expectedContainer) {
 		t.Fatalf("ServiceCreate: wrong cont. Want\n%#v\nGot\n%#v", expectedContainer, cont)
@@ -809,6 +815,12 @@ func TestServiceUpdate(t *testing.T) {
 					{HostIP: "0.0.0.0", HostPort: "80"},
 				},
 			},
+		},
+		State: docker.State{
+			Running:   true,
+			StartedAt: cont.State.StartedAt,
+			Pid:       cont.State.Pid,
+			ExitCode:  0,
 		},
 	}
 	if !reflect.DeepEqual(cont, expectedContainer) {
