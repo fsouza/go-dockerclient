@@ -658,6 +658,58 @@ func TestTaskListFilterNotFound(t *testing.T) {
 	}
 }
 
+func TestTaskListFilterLabel(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	task := server.tasks[0]
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", `/tasks?filters={"label":["mykey=myvalue"]}`, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var taskInspect []swarm.Task
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskList: unable to unmarshal response body: %s", err)
+	}
+	if !compareTasks(task, &taskInspect[0]) {
+		t.Fatalf("TaskList: wrong task. Want\n%#v\nGot\n%#v", task, &taskInspect)
+	}
+	request, _ = http.NewRequest("GET", `/tasks?filters={"label":["mykey"]}`, nil)
+	recorder = httptest.NewRecorder()
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskList: unable to unmarshal response body: %s", err)
+	}
+	if !compareTasks(task, &taskInspect[0]) {
+		t.Fatalf("TaskList: wrong task. Want\n%#v\nGot\n%#v", task, &taskInspect)
+	}
+	request, _ = http.NewRequest("GET", `/tasks?filters={"label":["otherkey"]}`, nil)
+	recorder = httptest.NewRecorder()
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("TaskList: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	err = json.Unmarshal(recorder.Body.Bytes(), &taskInspect)
+	if err != nil {
+		t.Fatalf("TaskList: unable to unmarshal response body: %s", err)
+	}
+	if len(taskInspect) != 0 {
+		t.Fatalf("TaskList: wrong size. Want 0, Got %d", len(taskInspect))
+	}
+}
+
 func TestServiceDelete(t *testing.T) {
 	server, _, err := setUpSwarm()
 	if err != nil {
@@ -957,6 +1009,9 @@ func addTestService(server *DockerServer) (*swarm.Service, error) {
 		ServiceSpec: swarm.ServiceSpec{
 			Annotations: swarm.Annotations{
 				Name: "test",
+				Labels: map[string]string{
+					"mykey": "myvalue",
+				},
 			},
 			TaskTemplate: swarm.TaskSpec{
 				ContainerSpec: swarm.ContainerSpec{
