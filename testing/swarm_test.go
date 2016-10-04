@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/engine-api/types/swarm"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/fsouza/go-dockerclient"
 )
 
