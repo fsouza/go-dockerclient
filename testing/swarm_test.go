@@ -233,10 +233,11 @@ func TestServiceCreate(t *testing.T) {
 			},
 			TaskTemplate: swarm.TaskSpec{
 				ContainerSpec: swarm.ContainerSpec{
-					Image: "test/test",
-					Args:  []string{"--test"},
-					Env:   []string{"ENV=1"},
-					User:  "test",
+					Image:   "test/test",
+					Command: []string{"sh"},
+					Args:    []string{"--test"},
+					Env:     []string{"ENV=1"},
+					User:    "test",
 				},
 			},
 			EndpointSpec: &swarm.EndpointSpec{
@@ -270,6 +271,7 @@ func TestServiceCreate(t *testing.T) {
 		Image:   "test/test",
 		Name:    "test-0",
 		Config: &docker.Config{
+			Entrypoint:   []string{"sh"},
 			Cmd:          []string{"--test"},
 			Env:          []string{"ENV=1"},
 			ExposedPorts: map[docker.Port]struct{}{"80/tcp": {}},
