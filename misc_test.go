@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -74,7 +75,19 @@ func TestInfo(t *testing.T) {
      "NFd":11,
      "NGoroutines":21,
      "MemoryLimit":true,
-     "SwapLimit":false
+     "SwapLimit":false,
+     "RegistryConfig":{
+       "InsecureRegistryCIDRs":["127.0.0.0/8"],
+       "IndexConfigs":{
+         "docker.io":{
+           "Name":"docker.io",
+           "Mirrors":null,
+           "Secure":true,
+           "Official":true
+         }
+       },
+       "Mirrors":null
+     }
 }`
 	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
 	client := newTestClient(&fakeRT)
@@ -86,6 +99,21 @@ func TestInfo(t *testing.T) {
 		NGoroutines: 21,
 		MemoryLimit: true,
 		SwapLimit:   false,
+		RegistryConfig: &ServiceConfig{
+			InsecureRegistryCIDRs: []*NetIPNet{
+				{
+					Mask: net.CIDRMask(8, 32),
+					IP:   net.ParseIP("127.0.0.0").To4(),
+				},
+			},
+			IndexConfigs: map[string]*IndexInfo{
+				"docker.io": {
+					Name:     "docker.io",
+					Secure:   true,
+					Official: true,
+				},
+			},
+		},
 	}
 	info, err := client.Info()
 	if err != nil {
