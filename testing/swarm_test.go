@@ -855,6 +855,57 @@ func TestServiceUpdate(t *testing.T) {
 	}
 }
 
+func TestServiceUpdateMoreReplicas(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv, err := addTestService(server)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	replicas := uint64(3)
+	updateOpts := swarm.ServiceSpec{
+		Annotations: swarm.Annotations{
+			Name: "test",
+		},
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: swarm.ContainerSpec{
+				Image: "test/test2",
+				Args:  []string{"--test2"},
+				Env:   []string{"ENV=2"},
+				User:  "test",
+			},
+		},
+		EndpointSpec: &swarm.EndpointSpec{
+			Mode: swarm.ResolutionModeVIP,
+			Ports: []swarm.PortConfig{{
+				Protocol:      swarm.PortConfigProtocolTCP,
+				TargetPort:    uint32(80),
+				PublishedPort: uint32(80),
+			}},
+		},
+		Mode: swarm.ServiceMode{
+			Replicated: &swarm.ReplicatedService{
+				Replicas: &replicas,
+			},
+		},
+	}
+	buf, err := json.Marshal(updateOpts)
+	if err != nil {
+		t.Fatalf("ServiceUpdate error: %s", err.Error())
+	}
+	request, _ := http.NewRequest("POST", fmt.Sprintf("/services/%s/update", srv.ID), bytes.NewReader(buf))
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceUpdate: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if len(server.services) != 1 || len(server.tasks) != 3 || len(server.containers) != 3 {
+		t.Fatalf("ServiceUpdate: wrong item count. Want 1 service and 3 replicas. Got services: %d, tasks: %d, containers: %d.", len(server.services), len(server.tasks), len(server.containers))
+	}
+}
+
 func TestServiceUpdateNotFound(t *testing.T) {
 	server, _, err := setUpSwarm()
 	if err != nil {
