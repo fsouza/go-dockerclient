@@ -1115,3 +1115,31 @@ func addTestService(server *DockerServer) (*swarm.Service, error) {
 	}
 	return server.services[0], nil
 }
+
+func TestMutateTask(t *testing.T) {
+	server := DockerServer{failures: make(map[string]string)}
+	server.buildMuxer()
+	server.tasks = append(server.tasks, &swarm.Task{ID: "id123"})
+	newTask := swarm.Task{Status: swarm.TaskStatus{State: swarm.TaskStateFailed}}
+	err := server.MutateTask("id123", newTask)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(server.tasks[0], &newTask) {
+		t.Errorf("Wrong task after mutation.\nWant %#v.\nGot %#v.",
+			newTask, server.tasks[0])
+	}
+}
+
+func TestMutateTaskNotFound(t *testing.T) {
+	server := DockerServer{failures: make(map[string]string)}
+	server.buildMuxer()
+	newTask := swarm.Task{Status: swarm.TaskStatus{State: swarm.TaskStateFailed}}
+	err := server.MutateTask("id123", newTask)
+	if err == nil {
+		t.Error("Unexpected <nil> error")
+	}
+	if err.Error() != "task not found" {
+		t.Errorf("wrong error message. Want %q. Got %q.", "task not found", err)
+	}
+}
