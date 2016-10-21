@@ -27,6 +27,8 @@ services:
   - docker
 matrix:
   fast_finish: true
+  allow_failures:
+    - tip
   exclude:
     - os: osx
       env: GOARCH=amd64 DOCKER_VERSION=1.10.3
