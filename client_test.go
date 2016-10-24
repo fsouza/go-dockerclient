@@ -559,6 +559,118 @@ func TestClientStreamContextCancel(t *testing.T) {
 	}
 }
 
+var mockPullOutput = `{"status":"Pulling from tsuru/static","id":"latest"}
+{"status":"Already exists","progressDetail":{},"id":"a6aa3b66376f"}
+{"status":"Pulling fs layer","progressDetail":{},"id":"106572778bf7"}
+{"status":"Pulling fs layer","progressDetail":{},"id":"bac681833e51"}
+{"status":"Pulling fs layer","progressDetail":{},"id":"7302e23ef08a"}
+{"status":"Downloading","progressDetail":{"current":621,"total":621},"progress":"[==================================================\u003e]    621 B/621 B","id":"bac681833e51"}
+{"status":"Verifying Checksum","progressDetail":{},"id":"bac681833e51"}
+{"status":"Download complete","progressDetail":{},"id":"bac681833e51"}
+{"status":"Downloading","progressDetail":{"current":1854,"total":1854},"progress":"[==================================================\u003e] 1.854 kB/1.854 kB","id":"106572778bf7"}
+{"status":"Verifying Checksum","progressDetail":{},"id":"106572778bf7"}
+{"status":"Download complete","progressDetail":{},"id":"106572778bf7"}
+{"status":"Extracting","progressDetail":{"current":1854,"total":1854},"progress":"[==================================================\u003e] 1.854 kB/1.854 kB","id":"106572778bf7"}
+{"status":"Extracting","progressDetail":{"current":1854,"total":1854},"progress":"[==================================================\u003e] 1.854 kB/1.854 kB","id":"106572778bf7"}
+{"status":"Downloading","progressDetail":{"current":233019,"total":21059403},"progress":"[\u003e                                                  ]   233 kB/21.06 MB","id":"7302e23ef08a"}
+{"status":"Downloading","progressDetail":{"current":462395,"total":21059403},"progress":"[=\u003e                                                 ] 462.4 kB/21.06 MB","id":"7302e23ef08a"}
+{"status":"Downloading","progressDetail":{"current":8490555,"total":21059403},"progress":"[====================\u003e                              ] 8.491 MB/21.06 MB","id":"7302e23ef08a"}
+{"status":"Downloading","progressDetail":{"current":20876859,"total":21059403},"progress":"[=================================================\u003e ] 20.88 MB/21.06 MB","id":"7302e23ef08a"}
+{"status":"Verifying Checksum","progressDetail":{},"id":"7302e23ef08a"}
+{"status":"Download complete","progressDetail":{},"id":"7302e23ef08a"}
+{"status":"Pull complete","progressDetail":{},"id":"106572778bf7"}
+{"status":"Extracting","progressDetail":{"current":621,"total":621},"progress":"[==================================================\u003e]    621 B/621 B","id":"bac681833e51"}
+{"status":"Extracting","progressDetail":{"current":621,"total":621},"progress":"[==================================================\u003e]    621 B/621 B","id":"bac681833e51"}
+{"status":"Pull complete","progressDetail":{},"id":"bac681833e51"}
+{"status":"Extracting","progressDetail":{"current":229376,"total":21059403},"progress":"[\u003e                                                  ] 229.4 kB/21.06 MB","id":"7302e23ef08a"}
+{"status":"Extracting","progressDetail":{"current":458752,"total":21059403},"progress":"[=\u003e                                                 ] 458.8 kB/21.06 MB","id":"7302e23ef08a"}
+{"status":"Extracting","progressDetail":{"current":11239424,"total":21059403},"progress":"[==========================\u003e                        ] 11.24 MB/21.06 MB","id":"7302e23ef08a"}
+{"status":"Extracting","progressDetail":{"current":21059403,"total":21059403},"progress":"[==================================================\u003e] 21.06 MB/21.06 MB","id":"7302e23ef08a"}
+{"status":"Pull complete","progressDetail":{},"id":"7302e23ef08a"}
+{"status":"Digest: sha256:b754472891aa7e33fc0214e3efa988174f2c2289285fcae868b7ec8b6675fc77"}
+{"status":"Status: Downloaded newer image for 192.168.50.4:5000/tsuru/static"}
+`
+
+func TestClientStreamJSONDecode(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mockPullOutput))
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var w bytes.Buffer
+	err = client.stream("POST", "/image/create", streamOptions{
+		stdout:         &w,
+		useJSONDecoder: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := `latest: Pulling from tsuru/static
+a6aa3b66376f: Already exists
+106572778bf7: Pulling fs layer
+bac681833e51: Pulling fs layer
+7302e23ef08a: Pulling fs layer
+bac681833e51: Verifying Checksum
+bac681833e51: Download complete
+106572778bf7: Verifying Checksum
+106572778bf7: Download complete
+7302e23ef08a: Verifying Checksum
+7302e23ef08a: Download complete
+106572778bf7: Pull complete
+bac681833e51: Pull complete
+7302e23ef08a: Pull complete
+Digest: sha256:b754472891aa7e33fc0214e3efa988174f2c2289285fcae868b7ec8b6675fc77
+Status: Downloaded newer image for 192.168.50.4:5000/tsuru/static
+`
+	result := w.String()
+	if result != expected {
+		t.Fatalf("expected stream result %q, got: %q", expected, result)
+	}
+}
+
+type terminalBuffer struct {
+	bytes.Buffer
+}
+
+func (b *terminalBuffer) FD() uintptr {
+	return os.Stdout.Fd()
+}
+
+func (b *terminalBuffer) IsTerminal() bool {
+	return true
+}
+
+func TestClientStreamJSONDecodeWithTerminal(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mockPullOutput))
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var w terminalBuffer
+	err = client.stream("POST", "/image/create", streamOptions{
+		stdout:         &w,
+		useJSONDecoder: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "latest: Pulling from tsuru/static\n" +
+		"\x1b[0B\n" +
+		"\x1b[0A\x1b[2K\ra6aa3b66376f: Already exists \r\x1b[0B\n" +
+		"\x1b[0A\x1b[2K\r106572778bf7: Pulling fs layer \r\x1b[0B\n" +
+		"\x1b[0A\x1b[2K\rbac681833e51: Pulling fs layer \r\x1b[0B\n" +
+		"\x1b[0A\x1b[2K\r7302e23ef08a: Pulling fs layer \r\x1b[0B\x1b[2A\x1b[2K\rbac681833e51: Downloading [==================================================>]    621 B/621 B\r\x1b[2B\x1b[2A\x1b[2K\rbac681833e51: Verifying Checksum \r\x1b[2B\x1b[2A\x1b[2K\rbac681833e51: Download complete \r\x1b[2B\x1b[3A\x1b[2K\r106572778bf7: Downloading [==================================================>] 1.854 kB/1.854 kB\r\x1b[3B\x1b[3A\x1b[2K\r106572778bf7: Verifying Checksum \r\x1b[3B\x1b[3A\x1b[2K\r106572778bf7: Download complete \r\x1b[3B\x1b[3A\x1b[2K\r106572778bf7: Extracting [==================================================>] 1.854 kB/1.854 kB\r\x1b[3B\x1b[3A\x1b[2K\r106572778bf7: Extracting [==================================================>] 1.854 kB/1.854 kB\r\x1b[3B\x1b[1A\x1b[2K\r7302e23ef08a: Downloading [>                                                  ]   233 kB/21.06 MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Downloading [=>                                                 ] 462.4 kB/21.06 MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Downloading [====================>                              ] 8.491 MB/21.06 MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Downloading [=================================================> ] 20.88 MB/21.06 MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Verifying Checksum \r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Download complete \r\x1b[1B\x1b[3A\x1b[2K\r106572778bf7: Pull complete \r\x1b[3B\x1b[2A\x1b[2K\rbac681833e51: Extracting [==================================================>]    621 B/621 B\r\x1b[2B\x1b[2A\x1b[2K\rbac681833e51: Extracting [==================================================>]    621 B/621 B\r\x1b[2B\x1b[2A\x1b[2K\rbac681833e51: Pull complete \r\x1b[2B\x1b[1A\x1b[2K\r7302e23ef08a: Extracting [>                                                  ] 229.4 kB/21.06 MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Extracting [=>                                                 ] 458.8 kB/21.06 MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Extracting [==========================>                        ] 11.24 MB/21.06 MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Extracting [==================================================>] 21.06 MB/21.06 MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Pull complete \r\x1b[1BDigest: sha256:b754472891aa7e33fc0214e3efa988174f2c2289285fcae868b7ec8b6675fc77\n" +
+		"Status: Downloaded newer image for 192.168.50.4:5000/tsuru/static\n"
+	result := w.String()
+	if result != expected {
+		t.Fatalf("expected stream result %q, got: %q", expected, result)
+	}
+}
+
 func TestClientDoContextDeadline(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(500 * time.Millisecond)
