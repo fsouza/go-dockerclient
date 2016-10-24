@@ -122,7 +122,7 @@ type HealthCheck struct {
 	Output   string    `json:"Output,omitempty" yaml:"Output,omitempty"`
 }
 
-// Heath represents the health of a container.
+// Health represents the health of a container.
 type Health struct {
 	Status        string        `json:"Status,omitempty" yaml:"Status,omitempty"`
 	FailingStreak int           `json:"FailingStreak,omitempty" yaml:"FailingStreak,omitempty"`
