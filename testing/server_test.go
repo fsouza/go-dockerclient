@@ -1943,7 +1943,7 @@ func TestCreateNetwork(t *testing.T) {
 	netid := fmt.Sprintf("%x", rand.Int()%10000)
 	netname := fmt.Sprintf("%x", rand.Int()%10000)
 	body := fmt.Sprintf(`{"ID": "%s", "Name": "%s", "Type": "bridge" }`, netid, netname)
-	request, _ := http.NewRequest("POST", "/networks", strings.NewReader(body))
+	request, _ := http.NewRequest("POST", "/networks/create", strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusCreated {
 		t.Errorf("CreateNetwork: wrong status. Want %d. Got %d.", http.StatusCreated, recorder.Code)
@@ -1964,7 +1964,7 @@ func TestCreateNetworkInvalidBody(t *testing.T) {
 	server := DockerServer{}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/networks", strings.NewReader("whaaaaaat---"))
+	request, _ := http.NewRequest("POST", "/networks/create", strings.NewReader("whaaaaaat---"))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
 		t.Errorf("CreateNetwork: wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
@@ -1978,10 +1978,38 @@ func TestCreateNetworkDuplicateName(t *testing.T) {
 	server.networks[0].Name = "mynetwork"
 	recorder := httptest.NewRecorder()
 	body := fmt.Sprintf(`{"ID": "%s", "Name": "mynetwork", "Type": "bridge" }`, fmt.Sprintf("%x", rand.Int()%10000))
-	request, _ := http.NewRequest("POST", "/networks", strings.NewReader(body))
+	request, _ := http.NewRequest("POST", "/networks/create", strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusForbidden {
 		t.Errorf("CreateNetwork: wrong status. Want %d. Got %d.", http.StatusForbidden, recorder.Code)
+	}
+}
+
+func TestRemoveNetwork(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	server.networks = []*docker.Network{
+		{ID: "id1", Name: "name1"},
+		{ID: "id2", Name: "name2"},
+	}
+	request, _ := http.NewRequest("DELETE", "/networks/id1", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("RemoveNetwork: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	expected := []*docker.Network{{ID: "id2", Name: "name2"}}
+	if !reflect.DeepEqual(server.networks, expected) {
+		t.Errorf("RemoveNetwork: expected networks to be %#v, got %#v", expected, server.networks)
+	}
+	request, _ = http.NewRequest("DELETE", "/networks/name2", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("RemoveNetwork: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	expected = []*docker.Network{}
+	if !reflect.DeepEqual(server.networks, expected) {
+		t.Errorf("RemoveNetwork: expected networks to be %#v, got %#v", expected, server.networks)
 	}
 }
 
@@ -2273,21 +2301,5 @@ func TestVersionDocker(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("VersionDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
-	}
-}
-
-func TestNetworkCreate(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
-	server.buildMuxer()
-	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/networks/create", nil)
-	server.ServeHTTP(recorder, request)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("NetworkCreate: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
-	}
-	var resp map[string]string
-	json.Unmarshal(recorder.Body.Bytes(), &resp)
-	if resp["ID"] == "" {
-		t.Fatal("NetworkCreate: network id can't be empty.")
 	}
 }
