@@ -233,6 +233,7 @@ func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	s.setServicePorts(&config)
 	service := swarm.Service{
 		ID:   s.generateID(),
 		Spec: config,
@@ -241,6 +242,19 @@ func (s *DockerServer) serviceCreate(w http.ResponseWriter, r *http.Request) {
 	s.services = append(s.services, &service)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(service)
+}
+
+func (s *DockerServer) setServicePorts(config *swarm.ServiceSpec) {
+	if config.EndpointSpec == nil {
+		return
+	}
+	for i := range config.EndpointSpec.Ports {
+		port := &config.EndpointSpec.Ports[i]
+		if port.PublishedPort == 0 {
+			port.PublishedPort = uint32(30000 + s.servicePorts)
+			s.servicePorts++
+		}
+	}
 }
 
 func (s *DockerServer) addTasks(service *swarm.Service, update bool) {
@@ -456,7 +470,12 @@ func (s *DockerServer) serviceUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var newSpec swarm.ServiceSpec
-	json.NewDecoder(r.Body).Decode(&newSpec)
+	err := json.NewDecoder(r.Body).Decode(&newSpec)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	s.setServicePorts(&newSpec)
 	toUpdate.Spec = newSpec
 	for i := 0; i < len(s.tasks); i++ {
 		if s.tasks[i].ServiceID != toUpdate.ID {

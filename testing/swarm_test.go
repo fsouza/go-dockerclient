@@ -320,6 +320,61 @@ func TestServiceCreate(t *testing.T) {
 	}
 }
 
+func TestServiceCreateDynamicPort(t *testing.T) {
+	server, _, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	serviceCreateOpts := docker.CreateServiceOptions{
+		ServiceSpec: swarm.ServiceSpec{
+			Annotations: swarm.Annotations{
+				Name: "test",
+			},
+			TaskTemplate: swarm.TaskSpec{
+				ContainerSpec: swarm.ContainerSpec{
+					Image:   "test/test",
+					Command: []string{"sh"},
+					Args:    []string{"--test"},
+					Env:     []string{"ENV=1"},
+					User:    "test",
+				},
+			},
+			EndpointSpec: &swarm.EndpointSpec{
+				Mode: swarm.ResolutionModeVIP,
+				Ports: []swarm.PortConfig{{
+					Protocol:      swarm.PortConfigProtocolTCP,
+					TargetPort:    uint32(80),
+					PublishedPort: uint32(0),
+				}},
+			},
+		},
+	}
+	buf, err := json.Marshal(serviceCreateOpts)
+	if err != nil {
+		t.Fatalf("ServiceCreate error: %s", err.Error())
+	}
+	var params io.Reader
+	params = bytes.NewBuffer(buf)
+	request, _ := http.NewRequest("POST", "/services/create", params)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("ServiceCreate: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if len(server.services) != 1 || len(server.tasks) != 1 || len(server.containers) != 1 {
+		t.Fatalf("ServiceCreate: wrong item count. Want 1. Got services: %d, tasks: %d, containers: %d.", len(server.services), len(server.tasks), len(server.containers))
+	}
+	srv := server.services[0]
+	expectedService := &swarm.Service{
+		ID:   srv.ID,
+		Spec: serviceCreateOpts.ServiceSpec,
+	}
+	expectedService.Spec.EndpointSpec.Ports[0].PublishedPort = 30000
+	if !reflect.DeepEqual(srv, expectedService) {
+		t.Fatalf("ServiceCreate: wrong service. Want\n%#v\nGot\n%#v", expectedService, srv)
+	}
+}
+
 func compareServices(srv1 *swarm.Service, srv2 *swarm.Service) bool {
 	srv1.CreatedAt = srv2.CreatedAt
 	srv1.UpdatedAt = srv2.UpdatedAt
