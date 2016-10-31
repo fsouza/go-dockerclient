@@ -271,18 +271,11 @@ func TestServiceCreate(t *testing.T) {
 		Image:   "test/test",
 		Name:    "test-0",
 		Config: &docker.Config{
-			Entrypoint:   []string{"sh"},
-			Cmd:          []string{"--test"},
-			Env:          []string{"ENV=1"},
-			ExposedPorts: map[docker.Port]struct{}{"80/tcp": {}},
+			Entrypoint: []string{"sh"},
+			Cmd:        []string{"--test"},
+			Env:        []string{"ENV=1"},
 		},
-		HostConfig: &docker.HostConfig{
-			PortBindings: map[docker.Port][]docker.PortBinding{
-				"80/tcp": {
-					{HostIP: "0.0.0.0", HostPort: "80"},
-				},
-			},
-		},
+		HostConfig: &docker.HostConfig{},
 		State: docker.State{
 			Running:   true,
 			StartedAt: cont.State.StartedAt,
@@ -297,6 +290,10 @@ func TestServiceCreate(t *testing.T) {
 	expectedService := &swarm.Service{
 		ID:   srv.ID,
 		Spec: serviceCreateOpts.ServiceSpec,
+		Endpoint: swarm.Endpoint{
+			Spec:  *serviceCreateOpts.ServiceSpec.EndpointSpec,
+			Ports: []swarm.PortConfig{{Protocol: "tcp", TargetPort: 80, PublishedPort: 80}},
+		},
 	}
 	if !reflect.DeepEqual(srv, expectedService) {
 		t.Fatalf("ServiceCreate: wrong service. Want\n%#v\nGot\n%#v", expectedService, srv)
@@ -368,8 +365,11 @@ func TestServiceCreateDynamicPort(t *testing.T) {
 	expectedService := &swarm.Service{
 		ID:   srv.ID,
 		Spec: serviceCreateOpts.ServiceSpec,
+		Endpoint: swarm.Endpoint{
+			Spec:  *serviceCreateOpts.ServiceSpec.EndpointSpec,
+			Ports: []swarm.PortConfig{{Protocol: "tcp", TargetPort: 80, PublishedPort: 30000}},
+		},
 	}
-	expectedService.Spec.EndpointSpec.Ports[0].PublishedPort = 30000
 	if !reflect.DeepEqual(srv, expectedService) {
 		t.Fatalf("ServiceCreate: wrong service. Want\n%#v\nGot\n%#v", expectedService, srv)
 	}
@@ -862,17 +862,10 @@ func TestServiceUpdate(t *testing.T) {
 		Image:   "test/test2",
 		Name:    "test-0-updated",
 		Config: &docker.Config{
-			Cmd:          []string{"--test2"},
-			Env:          []string{"ENV=2"},
-			ExposedPorts: map[docker.Port]struct{}{"80/tcp": {}},
+			Cmd: []string{"--test2"},
+			Env: []string{"ENV=2"},
 		},
-		HostConfig: &docker.HostConfig{
-			PortBindings: map[docker.Port][]docker.PortBinding{
-				"80/tcp": {
-					{HostIP: "0.0.0.0", HostPort: "80"},
-				},
-			},
-		},
+		HostConfig: &docker.HostConfig{},
 		State: docker.State{
 			Running:   true,
 			StartedAt: cont.State.StartedAt,
@@ -887,6 +880,10 @@ func TestServiceUpdate(t *testing.T) {
 	expectedService := &swarm.Service{
 		ID:   srv.ID,
 		Spec: updateOpts,
+		Endpoint: swarm.Endpoint{
+			Spec:  *updateOpts.EndpointSpec,
+			Ports: []swarm.PortConfig{{Protocol: "tcp", TargetPort: 80, PublishedPort: 80}},
+		},
 	}
 	if !reflect.DeepEqual(srv, expectedService) {
 		t.Fatalf("ServiceUpdate: wrong service. Want\n%#v\nGot\n%#v", expectedService, srv)
