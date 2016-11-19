@@ -399,12 +399,12 @@ func TestInspectContainerWithContext(t *testing.T) {
 			return
 		}
 		if !reflect.DeepEqual(*container, expected) {
-			inspectError <- fmt.Errorf("InspectContainer(%q): Expected %#v. Got %#v.", id, expected, container)
+			inspectError <- fmt.Errorf("inspectContainer(%q): Expected %#v. Got %#v", id, expected, container)
 			return
 		}
 		expectedURL, _ := url.Parse(client.getURL("/containers/4fa6e0f0c678/json"))
 		if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {
-			inspectError <- fmt.Errorf("InspectContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+			inspectError <- fmt.Errorf("inspectContainer(%q): Wrong path in request. Want %q. Got %q", id, expectedURL.Path, gotPath)
 			return
 		}
 		// No errors to tbe reported. Send 'nil'
