@@ -142,6 +142,64 @@ func TestSwarmJoin(t *testing.T) {
 	}
 }
 
+func TestSwarmJoinWithService(t *testing.T) {
+	server1, _ := NewServer("127.0.0.1:0", nil, nil)
+	server2, _ := NewServer("127.0.0.1:0", nil, nil)
+	data, err := json.Marshal(swarm.InitRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/swarm/init", bytes.NewReader(data))
+	server1.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("SwarmJoin: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	serviceCreateOpts := docker.CreateServiceOptions{
+		ServiceSpec: swarm.ServiceSpec{
+			TaskTemplate: swarm.TaskSpec{
+				ContainerSpec: swarm.ContainerSpec{
+					Image: "test/test",
+				},
+			},
+		},
+	}
+	buf, err := json.Marshal(serviceCreateOpts)
+	if err != nil {
+		t.Fatalf("ServiceCreate error: %s", err.Error())
+	}
+	recorder = httptest.NewRecorder()
+	request, _ = http.NewRequest("POST", "/services/create", bytes.NewBuffer(buf))
+	server1.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("SwarmJoin: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	data, err = json.Marshal(swarm.JoinRequest{
+		RemoteAddrs: []string{server1.SwarmAddress()},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorder = httptest.NewRecorder()
+	request, _ = http.NewRequest("POST", "/swarm/join", bytes.NewReader(data))
+	server2.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("SwarmJoin: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if len(server1.services) != len(server2.services) {
+		t.Fatalf("SwarmJoin: expected len services to be equal in server1 and server2, got:\n%#v\n%#v", len(server1.services), len(server2.services))
+	}
+	if !compareServices(server1.services[0], server2.services[0]) {
+		t.Fatalf("SwarmJoin: expected services to be equal in server1 and server2, got:\n%#v\n%#v", server1.services[0], server2.services[0])
+	}
+	if len(server1.tasks) != len(server2.tasks) {
+		t.Fatalf("SwarmJoin: expected len tasks to be equal in server1 and server2, got:\n%#v\n%#v", len(server1.tasks), len(server2.tasks))
+	}
+	if !compareTasks(server1.tasks[0], server2.tasks[0]) {
+		t.Fatalf("SwarmJoin: expected tasks to be equal in server1 and server2, got:\n%#v\n%#v", server1.tasks[0], server2.tasks[0])
+	}
+}
+
 func TestSwarmJoinAlreadyInSwarm(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
 	server.buildMuxer()
@@ -372,6 +430,32 @@ func TestServiceCreateDynamicPort(t *testing.T) {
 	}
 	if !reflect.DeepEqual(srv, expectedService) {
 		t.Fatalf("ServiceCreate: wrong service. Want\n%#v\nGot\n%#v", expectedService, srv)
+	}
+}
+
+func TestServiceCreateMultipleServers(t *testing.T) {
+	server1, server2, err := setUpSwarm()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = addTestService(server1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(server1.services) != 1 {
+		t.Fatalf("ServiceCreate: expected services to have len 1, got: %d", len(server1.services))
+	}
+	if len(server1.services) != len(server2.services) {
+		t.Fatalf("ServiceCreate: expected len services to be equal in server1 and server2, got:\n%#v\n%#v", len(server1.services), len(server2.services))
+	}
+	if !compareServices(server1.services[0], server2.services[0]) {
+		t.Fatalf("ServiceCreate: expected services to be equal in server1 and server2, got:\n%#v\n%#v", server1.services[0], server2.services[0])
+	}
+	if len(server1.tasks) != len(server2.tasks) {
+		t.Fatalf("ServiceCreate: expected len tasks to be equal in server1 and server2, got:\n%#v\n%#v", len(server1.tasks), len(server2.tasks))
+	}
+	if !compareTasks(server1.tasks[0], server2.tasks[0]) {
+		t.Fatalf("ServiceCreate: expected tasks to be equal in server1 and server2, got:\n%#v\n%#v", server1.tasks[0], server2.tasks[0])
 	}
 }
 
