@@ -2264,10 +2264,7 @@ func TestInfoDocker(t *testing.T) {
 }
 
 func TestInfoDockerWithSwarm(t *testing.T) {
-	srv1, srv2, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv1, srv2 := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/info", nil)
 	srv1.ServeHTTP(recorder, request)
@@ -2275,7 +2272,7 @@ func TestInfoDockerWithSwarm(t *testing.T) {
 		t.Fatalf("InfoDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 	var infoData docker.DockerInfo
-	err = json.Unmarshal(recorder.Body.Bytes(), &infoData)
+	err := json.Unmarshal(recorder.Body.Bytes(), &infoData)
 	if err != nil {
 		t.Fatal(err)
 	}

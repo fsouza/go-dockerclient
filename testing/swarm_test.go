@@ -21,7 +21,10 @@ import (
 )
 
 func TestSwarmInit(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/swarm/init", bytes.NewReader(nil))
@@ -30,7 +33,7 @@ func TestSwarmInit(t *testing.T) {
 		t.Fatalf("SwarmInit: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 	var id string
-	err := json.Unmarshal(recorder.Body.Bytes(), &id)
+	err = json.Unmarshal(recorder.Body.Bytes(), &id)
 	if err != nil {
 		t.Fatalf("SwarmInit: got error. %s", err.Error())
 	}
@@ -52,7 +55,10 @@ func TestSwarmInit(t *testing.T) {
 }
 
 func TestSwarmInitDynamicAdvertiseAddrPort(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	data := `{"ListenAddr": "127.0.0.1:0", "AdvertiseAddr": "localhost"}`
 	recorder := httptest.NewRecorder()
@@ -72,7 +78,10 @@ func TestSwarmInitDynamicAdvertiseAddrPort(t *testing.T) {
 }
 
 func TestSwarmInitAlreadyInSwarm(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	server.swarm = &swarm.Swarm{}
 	recorder := httptest.NewRecorder()
@@ -84,7 +93,10 @@ func TestSwarmInitAlreadyInSwarm(t *testing.T) {
 }
 
 func TestSwarmJoinNoBody(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/swarm/join", bytes.NewReader(nil))
@@ -98,8 +110,14 @@ func TestSwarmJoinNoBody(t *testing.T) {
 }
 
 func TestSwarmJoin(t *testing.T) {
-	server1, _ := NewServer("127.0.0.1:0", nil, nil)
-	server2, _ := NewServer("127.0.0.1:0", nil, nil)
+	server1, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server2, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	data, err := json.Marshal(swarm.InitRequest{})
 	if err != nil {
 		t.Fatal(err)
@@ -143,8 +161,14 @@ func TestSwarmJoin(t *testing.T) {
 }
 
 func TestSwarmJoinWithService(t *testing.T) {
-	server1, _ := NewServer("127.0.0.1:0", nil, nil)
-	server2, _ := NewServer("127.0.0.1:0", nil, nil)
+	server1, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server2, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	data, err := json.Marshal(swarm.InitRequest{})
 	if err != nil {
 		t.Fatal(err)
@@ -201,7 +225,10 @@ func TestSwarmJoinWithService(t *testing.T) {
 }
 
 func TestSwarmJoinAlreadyInSwarm(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	server.swarm = &swarm.Swarm{}
 	recorder := httptest.NewRecorder()
@@ -213,7 +240,10 @@ func TestSwarmJoinAlreadyInSwarm(t *testing.T) {
 }
 
 func TestSwarmLeave(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	server.swarm = &swarm.Swarm{}
 	server.swarmServer, _ = newSwarmServer(server, "127.0.0.1:0")
@@ -229,7 +259,10 @@ func TestSwarmLeave(t *testing.T) {
 }
 
 func TestSwarmLeaveNotInSwarm(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/swarm/leave", nil)
@@ -243,7 +276,10 @@ func TestSwarmLeaveNotInSwarm(t *testing.T) {
 }
 
 func TestSwarmInspect(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	expected := &swarm.Swarm{
 		ClusterInfo: swarm.ClusterInfo{
@@ -258,7 +294,7 @@ func TestSwarmInspect(t *testing.T) {
 		t.Fatalf("SwarmInspect: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 	var swarmInspect *swarm.Swarm
-	err := json.Unmarshal(recorder.Body.Bytes(), &swarmInspect)
+	err = json.Unmarshal(recorder.Body.Bytes(), &swarmInspect)
 	if err != nil {
 		t.Fatalf("SwarmInspect: got error. %s", err.Error())
 	}
@@ -268,7 +304,10 @@ func TestSwarmInspect(t *testing.T) {
 }
 
 func TestSwarmInspectNotInSwarm(t *testing.T) {
-	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	server, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/swarm", nil)
@@ -279,10 +318,7 @@ func TestSwarmInspectNotInSwarm(t *testing.T) {
 }
 
 func TestServiceCreate(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	serviceCreateOpts := docker.CreateServiceOptions{
 		ServiceSpec: swarm.ServiceSpec{
@@ -376,10 +412,7 @@ func TestServiceCreate(t *testing.T) {
 }
 
 func TestServiceCreateDynamicPort(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	serviceCreateOpts := docker.CreateServiceOptions{
 		ServiceSpec: swarm.ServiceSpec{
@@ -434,11 +467,8 @@ func TestServiceCreateDynamicPort(t *testing.T) {
 }
 
 func TestServiceCreateMultipleServers(t *testing.T) {
-	server1, server2, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = addTestService(server1)
+	server1, server2 := setUpSwarm(t)
+	_, err := addTestService(server1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -475,10 +505,7 @@ func compareTasks(task1 *swarm.Task, task2 *swarm.Task) bool {
 }
 
 func TestServiceInspect(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -500,10 +527,7 @@ func TestServiceInspect(t *testing.T) {
 }
 
 func TestServiceInspectByName(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -525,10 +549,7 @@ func TestServiceInspectByName(t *testing.T) {
 }
 
 func TestServiceInspectNotFound(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/services/abcd", nil)
 	server.ServeHTTP(recorder, request)
@@ -538,11 +559,8 @@ func TestServiceInspectNotFound(t *testing.T) {
 }
 
 func TestTaskInspect(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = addTestService(server)
+	server, _ := setUpSwarm(t)
+	_, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -564,10 +582,7 @@ func TestTaskInspect(t *testing.T) {
 }
 
 func TestTaskInspectNotFound(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/tasks/abcd", nil)
 	server.ServeHTTP(recorder, request)
@@ -577,10 +592,7 @@ func TestTaskInspectNotFound(t *testing.T) {
 }
 
 func TestServiceList(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -602,10 +614,7 @@ func TestServiceList(t *testing.T) {
 }
 
 func TestServiceListFilterID(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -627,10 +636,7 @@ func TestServiceListFilterID(t *testing.T) {
 }
 
 func TestServiceListFilterName(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -652,11 +658,8 @@ func TestServiceListFilterName(t *testing.T) {
 }
 
 func TestServiceListFilterEmpty(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = addTestService(server)
+	server, _ := setUpSwarm(t)
+	_, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -677,11 +680,8 @@ func TestServiceListFilterEmpty(t *testing.T) {
 }
 
 func TestTaskList(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = addTestService(server)
+	server, _ := setUpSwarm(t)
+	_, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -703,11 +703,8 @@ func TestTaskList(t *testing.T) {
 }
 
 func TestTaskListFilterID(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = addTestService(server)
+	server, _ := setUpSwarm(t)
+	_, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -729,11 +726,8 @@ func TestTaskListFilterID(t *testing.T) {
 }
 
 func TestTaskListFilterServiceID(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = addTestService(server)
+	server, _ := setUpSwarm(t)
+	_, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -755,10 +749,7 @@ func TestTaskListFilterServiceID(t *testing.T) {
 }
 
 func TestTaskListFilterServiceName(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -781,10 +772,7 @@ func TestTaskListFilterServiceName(t *testing.T) {
 }
 
 func TestTaskListFilterMultipleFields(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -807,10 +795,7 @@ func TestTaskListFilterMultipleFields(t *testing.T) {
 }
 
 func TestTaskListFilterMultipleFieldsNotFound(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -832,11 +817,8 @@ func TestTaskListFilterMultipleFieldsNotFound(t *testing.T) {
 }
 
 func TestTaskListFilterNotFound(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = addTestService(server)
+	server, _ := setUpSwarm(t)
+	_, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -857,11 +839,8 @@ func TestTaskListFilterNotFound(t *testing.T) {
 }
 
 func TestTaskListFilterLabel(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = addTestService(server)
+	server, _ := setUpSwarm(t)
+	_, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -909,10 +888,7 @@ func TestTaskListFilterLabel(t *testing.T) {
 }
 
 func TestServiceDelete(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -935,10 +911,7 @@ func TestServiceDelete(t *testing.T) {
 }
 
 func TestServiceDeleteNotFound(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("DELETE", "/services/blahblah", nil)
 	server.ServeHTTP(recorder, request)
@@ -948,10 +921,7 @@ func TestServiceDeleteNotFound(t *testing.T) {
 }
 
 func TestServiceUpdate(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -1043,10 +1013,7 @@ func TestServiceUpdate(t *testing.T) {
 }
 
 func TestServiceUpdateMoreReplicas(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	srv, err := addTestService(server)
 	if err != nil {
 		t.Fatal(err)
@@ -1094,10 +1061,7 @@ func TestServiceUpdateMoreReplicas(t *testing.T) {
 }
 
 func TestServiceUpdateNotFound(t *testing.T) {
-	server, _, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	server, _ := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	updateOpts := swarm.ServiceSpec{
 		Annotations: swarm.Annotations{
@@ -1132,10 +1096,7 @@ func TestServiceUpdateNotFound(t *testing.T) {
 }
 
 func TestNodeList(t *testing.T) {
-	srv1, srv2, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv1, srv2 := setUpSwarm(t)
 	for _, srv := range []*DockerServer{srv1, srv2} {
 		recorder := httptest.NewRecorder()
 		request, _ := http.NewRequest("GET", "/nodes", nil)
@@ -1144,7 +1105,7 @@ func TestNodeList(t *testing.T) {
 			t.Fatalf("invalid status code: %d", recorder.Code)
 		}
 		var nodes []swarm.Node
-		err = json.NewDecoder(recorder.Body).Decode(&nodes)
+		err := json.NewDecoder(recorder.Body).Decode(&nodes)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1158,10 +1119,7 @@ func TestNodeList(t *testing.T) {
 }
 
 func TestNodeInfo(t *testing.T) {
-	srv1, srv2, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv1, srv2 := setUpSwarm(t)
 	for _, srv := range []*DockerServer{srv1, srv2} {
 		recorder := httptest.NewRecorder()
 		request, _ := http.NewRequest("GET", "/nodes/"+srv.nodes[0].ID, nil)
@@ -1170,7 +1128,7 @@ func TestNodeInfo(t *testing.T) {
 			t.Fatalf("invalid status code: %d", recorder.Code)
 		}
 		var node swarm.Node
-		err = json.NewDecoder(recorder.Body).Decode(&node)
+		err := json.NewDecoder(recorder.Body).Decode(&node)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1184,10 +1142,7 @@ func TestNodeInfo(t *testing.T) {
 }
 
 func TestNodeUpdate(t *testing.T) {
-	srv1, srv2, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv1, srv2 := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	for i, srv := range []*DockerServer{srv1, srv2} {
 		key := fmt.Sprintf("l%d", i)
@@ -1213,10 +1168,7 @@ func TestNodeUpdate(t *testing.T) {
 }
 
 func TestNodeDelete(t *testing.T) {
-	srv1, srv2, err := setUpSwarm()
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv1, srv2 := setUpSwarm(t)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("DELETE", "/nodes/"+srv1.nodes[0].ID, nil)
 	srv1.ServeHTTP(recorder, request)
@@ -1231,28 +1183,34 @@ func TestNodeDelete(t *testing.T) {
 	}
 }
 
-func setUpSwarm() (*DockerServer, *DockerServer, error) {
-	server1, _ := NewServer("127.0.0.1:0", nil, nil)
-	server2, _ := NewServer("127.0.0.1:0", nil, nil)
+func setUpSwarm(t *testing.T) (*DockerServer, *DockerServer) {
+	server1, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server2, err := NewServer("127.0.0.1:0", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/swarm/init", bytes.NewReader(nil))
 	server1.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
-		return nil, nil, fmt.Errorf("invalid status code %d", recorder.Code)
+		t.Fatalf("setUpSwarm: invalid status code swarm init %d", recorder.Code)
 	}
 	data, err := json.Marshal(swarm.JoinRequest{
 		RemoteAddrs: []string{server1.SwarmAddress()},
 	})
 	if err != nil {
-		return nil, nil, err
+		t.Fatal(err)
 	}
 	recorder = httptest.NewRecorder()
 	request, _ = http.NewRequest("POST", "/swarm/join", bytes.NewReader(data))
 	server2.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
-		return nil, nil, fmt.Errorf("invalid status code %d", recorder.Code)
+		t.Fatalf("setUpSwarm: invalid status code swarm join %d", recorder.Code)
 	}
-	return server1, server2, nil
+	return server1, server2
 }
 
 func addTestService(server *DockerServer) (*swarm.Service, error) {
