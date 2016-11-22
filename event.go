@@ -95,7 +95,22 @@ var (
 func (c *Client) AddEventListener(listener chan<- *APIEvents) error {
 	var err error
 	if !c.eventMonitor.isEnabled() {
-		err = c.eventMonitor.enableEventMonitoring(c)
+		err = c.eventMonitor.enableEventMonitoring(c, 0)
+		if err != nil {
+			return err
+		}
+	}
+	return c.eventMonitor.addListener(listener)
+}
+
+// AddEventListenerSince adds a new listener to container events in the Docker API.
+//
+// The parameter is a channel through which events will be sent and a since time.
+// The since time only works if this is the first time enabling event monitoring
+func (c *Client) AddEventListenerSince(listener chan<- *APIEvents, since time.Time) error {
+	var err error
+	if !c.eventMonitor.isEnabled() {
+		err = c.eventMonitor.enableEventMonitoring(c, since.Unix())
 		if err != nil {
 			return err
 		}
@@ -165,12 +180,12 @@ func listenerExists(a chan<- *APIEvents, list *[]chan<- *APIEvents) bool {
 	return false
 }
 
-func (eventState *eventMonitoringState) enableEventMonitoring(c *Client) error {
+func (eventState *eventMonitoringState) enableEventMonitoring(c *Client, since int64) error {
 	eventState.Lock()
 	defer eventState.Unlock()
 	if !eventState.enabled {
 		eventState.enabled = true
-		atomic.StoreInt64(&eventState.lastSeen, 0)
+		atomic.StoreInt64(&eventState.lastSeen, since)
 		eventState.C = make(chan *APIEvents, 100)
 		eventState.errC = make(chan error, 1)
 		go eventState.monitorEvents(c)
