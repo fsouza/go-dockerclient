@@ -134,6 +134,7 @@ func TestSetHook(t *testing.T) {
 func TestCustomHandler(t *testing.T) {
 	var called bool
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
 	addContainers(server, 2)
 	server.CustomHandler("/containers/json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
@@ -153,6 +154,7 @@ func TestCustomHandler(t *testing.T) {
 func TestCustomHandlerRegexp(t *testing.T) {
 	var called bool
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
 	addContainers(server, 2)
 	server.CustomHandler("/containers/.*/json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
@@ -1672,6 +1674,7 @@ func TestInspectExecContainer(t *testing.T) {
 
 func TestStartExecContainer(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
 	addContainers(server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -1725,6 +1728,7 @@ func TestStartExecContainer(t *testing.T) {
 
 func TestStartExecContainerWildcardCallback(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
 	addContainers(server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -1778,6 +1782,7 @@ func TestStartExecContainerWildcardCallback(t *testing.T) {
 
 func TestStartExecContainerNotFound(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
 	addContainers(server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -2242,6 +2247,7 @@ func TestUploadToContainerMissingContainer(t *testing.T) {
 
 func TestInfoDocker(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
 	addContainers(server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -2265,6 +2271,8 @@ func TestInfoDocker(t *testing.T) {
 
 func TestInfoDockerWithSwarm(t *testing.T) {
 	srv1, srv2 := setUpSwarm(t)
+	defer srv1.Stop()
+	defer srv2.Stop()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/info", nil)
 	srv1.ServeHTTP(recorder, request)
@@ -2292,6 +2300,7 @@ func TestInfoDockerWithSwarm(t *testing.T) {
 
 func TestVersionDocker(t *testing.T) {
 	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/version", nil)
