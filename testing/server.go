@@ -1467,11 +1467,12 @@ func (s *DockerServer) SwarmAddress() string {
 }
 
 func (s *DockerServer) initSwarmNode(listenAddr, advertiseAddr string) (swarm.Node, error) {
-	if listenAddr == "" {
-		listenAddr = "127.0.0.1:0"
+	_, portPart, _ := net.SplitHostPort(listenAddr)
+	if portPart == "" {
+		portPart = "0"
 	}
 	var err error
-	s.swarmServer, err = newSwarmServer(s, listenAddr)
+	s.swarmServer, err = newSwarmServer(s, fmt.Sprintf("127.0.0.1:%s", portPart))
 	if err != nil {
 		return swarm.Node{}, err
 	}
