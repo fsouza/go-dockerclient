@@ -159,9 +159,40 @@ func TestNewTLSVersionedClient(t *testing.T) {
 	}
 }
 
+func TestNewTLSVersionedClientNoClientCert(t *testing.T) {
+	certPath := "testing/data/cert_doesnotexist.pem"
+	keyPath := "testing/data/key_doesnotexist.pem"
+	caPath := "testing/data/ca.pem"
+	endpoint := "https://localhost:4243"
+	client, err := NewVersionedTLSClient(endpoint, certPath, keyPath, caPath, "1.14")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.endpoint != endpoint {
+		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+	}
+	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.14" {
+		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.14", reqVersion)
+	}
+	if client.SkipServerVersionCheck {
+		t.Error("Expected SkipServerVersionCheck to be false, got true")
+	}
+}
+
 func TestNewTLSVersionedClientInvalidCA(t *testing.T) {
 	certPath := "testing/data/cert.pem"
 	keyPath := "testing/data/key.pem"
+	caPath := "testing/data/key.pem"
+	endpoint := "https://localhost:4243"
+	_, err := NewVersionedTLSClient(endpoint, certPath, keyPath, caPath, "1.14")
+	if err == nil {
+		t.Errorf("Expected invalid ca at %s", caPath)
+	}
+}
+
+func TestNewTLSVersionedClientInvalidCANoClientCert(t *testing.T) {
+	certPath := "testing/data/cert_doesnotexist.pem"
+	keyPath := "testing/data/key_doesnotexist.pem"
 	caPath := "testing/data/key.pem"
 	endpoint := "https://localhost:4243"
 	_, err := NewVersionedTLSClient(endpoint, certPath, keyPath, caPath, "1.14")
