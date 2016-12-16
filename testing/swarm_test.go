@@ -511,8 +511,10 @@ func TestServiceCreateMultipleServers(t *testing.T) {
 func compareServices(srv1 *swarm.Service, srv2 *swarm.Service) bool {
 	srv1.CreatedAt = srv2.CreatedAt
 	srv1.UpdatedAt = srv2.UpdatedAt
-	srv1.UpdateStatus.StartedAt = srv2.UpdateStatus.StartedAt
-	srv1.UpdateStatus.CompletedAt = srv2.UpdateStatus.CompletedAt
+	if srv1.UpdateStatus != nil {
+		srv1.UpdateStatus.StartedAt = srv2.UpdateStatus.StartedAt
+		srv1.UpdateStatus.CompletedAt = srv2.UpdateStatus.CompletedAt
+	}
 	return reflect.DeepEqual(srv1, srv2)
 }
 
