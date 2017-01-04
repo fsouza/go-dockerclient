@@ -1403,7 +1403,8 @@ type LogsOptions struct {
 	RawTerminal bool `qs:"-"`
 }
 
-// Logs gets stdout and stderr logs from the specified container.
+// Logs gets stdout and stderr logs from the specified container. You can use
+// https://github.com/ahmetalpbalkan/dlog to parse the raw streams.
 //
 // See https://goo.gl/krK0ZH for more details.
 func (c *Client) Logs(opts LogsOptions) error {
