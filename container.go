@@ -1405,6 +1405,14 @@ type LogsOptions struct {
 
 // Logs gets stdout and stderr logs from the specified container.
 //
+// When LogsOptions.RawTerminal is set to false, go-dockerclient will multiplex
+// the streams and send the containers stdout to LogsOptions.OutputStream, and
+// stderr to LogsOptions.ErrorStream.
+//
+// When LogsOptions.RawTerminal is true, callers will get the raw stream on
+// LogOptions.OutputStream. The caller can use libraries such as dlog
+// (github.com/ahmetalpbalkan/dlog).
+//
 // See https://goo.gl/krK0ZH for more details.
 func (c *Client) Logs(opts LogsOptions) error {
 	if opts.Container == "" {
