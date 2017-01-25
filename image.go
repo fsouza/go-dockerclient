@@ -460,6 +460,7 @@ type BuildImageOptions struct {
 	ContextDir          string             `qs:"-"`
 	Ulimits             []ULimit           `qs:"-"`
 	BuildArgs           []BuildArg         `qs:"-"`
+	Labels 		    map[string]string  `qs:"-"`
 	InactivityTimeout   time.Duration      `qs:"-"`
 	Context             context.Context
 }
@@ -522,6 +523,18 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		if b, err := json.Marshal(v); err == nil {
 			item := url.Values(map[string][]string{})
 			item.Add("buildargs", string(b))
+			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+		}
+	}
+
+	if len(opts.Labels) > 0 {
+		label := make(map[string]string)
+		for k, v := range opts.Labels {
+			label[k] = v
+		}
+		if b, err := json.Marshal(label); err == nil {
+			item := url.Values(map[string][]string{})
+			item.Add("labels", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
 		}
 	}
