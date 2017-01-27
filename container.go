@@ -1,4 +1,4 @@
-// Copyright 2013 go-dockerclient authors. All rights reserved.
+// Copyright 2017 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -781,10 +781,10 @@ func (c *Client) startContainer(id string, hostConfig *HostConfig, opts doOption
 		}
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotModified {
 		return &ContainerAlreadyRunning{ID: id}
 	}
-	resp.Body.Close()
 	return nil
 }
 
@@ -814,10 +814,10 @@ func (c *Client) stopContainer(id string, timeout uint, opts doOptions) error {
 		}
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotModified {
 		return &ContainerNotRunning{ID: id}
 	}
-	resp.Body.Close()
 	return nil
 }
 
