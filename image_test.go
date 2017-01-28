@@ -703,6 +703,7 @@ func TestBuildImageParameters(t *testing.T) {
 		InputStream:         &buf,
 		OutputStream:        &buf,
 		Labels:              map[string]string{"k": "v"},
+		NetworkMode:         "host",
 	}
 	err := client.BuildImage(opts)
 	if err != nil && !strings.Contains(err.Error(), "build image fail") {
@@ -710,21 +711,22 @@ func TestBuildImageParameters(t *testing.T) {
 	}
 	req := fakeRT.requests[0]
 	expected := map[string][]string{
-		"t":          {opts.Name},
-		"nocache":    {"1"},
-		"q":          {"1"},
-		"pull":       {"1"},
-		"rm":         {"1"},
-		"forcerm":    {"1"},
-		"memory":     {"1024"},
-		"memswap":    {"2048"},
-		"cpushares":  {"10"},
-		"cpuquota":   {"7500"},
-		"cpuperiod":  {"100000"},
-		"cpusetcpus": {"0-3"},
-		"labels":     {`{"k":"v"}`},
-		"ulimits":    {`[{"Name":"nofile","Soft":100,"Hard":200}]`},
-		"buildargs":  {`{"SOME_VAR":"some_value"}`},
+		"t":           {opts.Name},
+		"nocache":     {"1"},
+		"q":           {"1"},
+		"pull":        {"1"},
+		"rm":          {"1"},
+		"forcerm":     {"1"},
+		"memory":      {"1024"},
+		"memswap":     {"2048"},
+		"cpushares":   {"10"},
+		"cpuquota":    {"7500"},
+		"cpuperiod":   {"100000"},
+		"cpusetcpus":  {"0-3"},
+		"labels":      {`{"k":"v"}`},
+		"ulimits":     {`[{"Name":"nofile","Soft":100,"Hard":200}]`},
+		"buildargs":   {`{"SOME_VAR":"some_value"}`},
+		"networkmode": {"host"},
 	}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {

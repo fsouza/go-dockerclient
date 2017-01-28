@@ -460,6 +460,7 @@ type BuildImageOptions struct {
 	ContextDir          string             `qs:"-"`
 	Ulimits             []ULimit           `qs:"-"`
 	BuildArgs           []BuildArg         `qs:"-"`
+	NetworkMode         string             `qs:"networkmode"`
 	InactivityTimeout   time.Duration      `qs:"-"`
 	Context             context.Context
 }
