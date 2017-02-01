@@ -962,6 +962,32 @@ func (r *HijackableResponseRecorder) HijackBuffer() string {
 	return string(<-r.readCh)
 }
 
+func TestLogContainer(t *testing.T) {
+	server := DockerServer{}
+	addContainers(&server, 1)
+	server.containers[0].State.Running = true
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/containers/%s/logs", server.containers[0].ID)
+	request, _ := http.NewRequest("GET", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("LogContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}
+
+func TestLogContainerNotFound(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	path := "/containers/abc123/logs"
+	request, _ := http.NewRequest("GET", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNotFound {
+		t.Errorf("LogContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
+	}
+}
+
 func TestAttachContainer(t *testing.T) {
 	server := DockerServer{}
 	addContainers(&server, 1)
