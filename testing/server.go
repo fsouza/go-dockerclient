@@ -346,7 +346,7 @@ func (s *DockerServer) DefaultHandler() http.Handler {
 	return s.mux
 }
 
-func (s *DockerServer) handlerWrapper(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func (s *DockerServer) handlerWrapper(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		for errorID, urlRegexp := range s.failures {
 			matched, err := regexp.MatchString(urlRegexp, r.URL.Path)
