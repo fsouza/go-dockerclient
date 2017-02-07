@@ -386,7 +386,7 @@ func (c *Client) Ping() error {
 	return c.PingWithContext(nil)
 }
 
-// Ping pings the docker server
+// PingWithContext pings the docker server
 // The context object can be used to cancel the ping request.
 //
 // See https://goo.gl/wYfgY1 for more details.
