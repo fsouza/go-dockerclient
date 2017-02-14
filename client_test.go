@@ -794,97 +794,100 @@ func TestClientDoConcurrentStress(t *testing.T) {
 		nativeSrvs = append(nativeSrvs, srv)
 	}
 	var tests = []struct {
+		testCase      string
 		srv           *httptest.Server
 		scheme        string
 		withTimeout   bool
 		withTLSServer bool
 		withTLSClient bool
 	}{
-		{srv: httptest.NewUnstartedServer(handler), scheme: "http"},
-		{srv: nativeSrvs[0], scheme: nativeProtocol},
-		{srv: httptest.NewUnstartedServer(handler), scheme: "http", withTimeout: true},
-		{srv: nativeSrvs[1], scheme: nativeProtocol, withTimeout: true},
-		{srv: httptest.NewUnstartedServer(handler), scheme: "https", withTLSServer: true, withTLSClient: true},
-		{srv: nativeSrvs[2], scheme: nativeProtocol, withTLSServer: false, withTLSClient: nativeProtocol == unixProtocol}, // TLS client only works with unix protocol
+		{testCase: "http server", srv: httptest.NewUnstartedServer(handler), scheme: "http"},
+		{testCase: "native server", srv: nativeSrvs[0], scheme: nativeProtocol},
+		{testCase: "http with timeout", srv: httptest.NewUnstartedServer(handler), scheme: "http", withTimeout: true},
+		{testCase: "native with timeout", srv: nativeSrvs[1], scheme: nativeProtocol, withTimeout: true},
+		{testCase: "http with tls", srv: httptest.NewUnstartedServer(handler), scheme: "https", withTLSServer: true, withTLSClient: true},
+		{testCase: "native with client-only tls", srv: nativeSrvs[2], scheme: nativeProtocol, withTLSServer: false, withTLSClient: nativeProtocol == unixProtocol}, // TLS client only works with unix protocol
 	}
 	for _, tt := range tests {
-		reqs = nil
-		var client *Client
-		var err error
-		endpoint := tt.scheme + "://" + tt.srv.Listener.Addr().String()
-		if tt.withTLSServer {
-			tt.srv.StartTLS()
-		} else {
-			tt.srv.Start()
-		}
-		if tt.withTLSClient {
-			certPEMBlock, certErr := ioutil.ReadFile("testing/data/cert.pem")
-			if certErr != nil {
-				t.Fatal(certErr)
+		t.Run(tt.testCase, func(t *testing.T) {
+			reqs = nil
+			var client *Client
+			var err error
+			endpoint := tt.scheme + "://" + tt.srv.Listener.Addr().String()
+			if tt.withTLSServer {
+				tt.srv.StartTLS()
+			} else {
+				tt.srv.Start()
 			}
-			keyPEMBlock, certErr := ioutil.ReadFile("testing/data/key.pem")
-			if certErr != nil {
-				t.Fatal(certErr)
+			defer tt.srv.Close()
+			if tt.withTLSClient {
+				certPEMBlock, certErr := ioutil.ReadFile("testing/data/cert.pem")
+				if certErr != nil {
+					t.Fatal(certErr)
+				}
+				keyPEMBlock, certErr := ioutil.ReadFile("testing/data/key.pem")
+				if certErr != nil {
+					t.Fatal(certErr)
+				}
+				client, err = NewTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, nil)
+			} else {
+				client, err = NewClient(endpoint)
 			}
-			client, err = NewTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, nil)
-		} else {
-			client, err = NewClient(endpoint)
-		}
-		if err != nil {
-			t.Fatal(err)
-		}
-		if tt.withTimeout {
-			client.SetTimeout(time.Minute)
-		}
-		n := 50
-		wg := sync.WaitGroup{}
-		var paths []string
-		errsCh := make(chan error, 3*n)
-		waiters := make(chan CloseWaiter, n)
-		for i := 0; i < n; i++ {
-			path := fmt.Sprintf("/%05d", i)
-			paths = append(paths, "GET"+path)
-			paths = append(paths, "POST"+path)
-			paths = append(paths, "HEAD"+path)
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				_, clientErr := client.do("GET", path, doOptions{})
-				if clientErr != nil {
-					errsCh <- clientErr
-				}
-				clientErr = client.stream("POST", path, streamOptions{})
-				if clientErr != nil {
-					errsCh <- clientErr
-				}
-				cw, clientErr := client.hijack("HEAD", path, hijackOptions{})
-				if clientErr != nil {
-					errsCh <- clientErr
-				} else {
-					waiters <- cw
-				}
-			}()
-		}
-		wg.Wait()
-		close(errsCh)
-		close(waiters)
-		for cw := range waiters {
-			cw.Wait()
-			cw.Close()
-		}
-		for err = range errsCh {
-			t.Error(err)
-		}
-		var reqPaths []string
-		for _, r := range reqs {
-			reqPaths = append(reqPaths, r.Method+r.URL.Path)
-		}
-		sort.Strings(paths)
-		sort.Strings(reqPaths)
-		if !reflect.DeepEqual(reqPaths, paths) {
-			t.Fatalf("expected server request paths to equal %v, got: %v", paths, reqPaths)
-		}
-		tt.srv.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.withTimeout {
+				client.SetTimeout(time.Minute)
+			}
+			n := 50
+			wg := sync.WaitGroup{}
+			var paths []string
+			errsCh := make(chan error, 3*n)
+			waiters := make(chan CloseWaiter, n)
+			for i := 0; i < n; i++ {
+				path := fmt.Sprintf("/%05d", i)
+				paths = append(paths, "GET"+path)
+				paths = append(paths, "POST"+path)
+				paths = append(paths, "HEAD"+path)
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					_, clientErr := client.do("GET", path, doOptions{})
+					if clientErr != nil {
+						errsCh <- clientErr
+					}
+					clientErr = client.stream("POST", path, streamOptions{})
+					if clientErr != nil {
+						errsCh <- clientErr
+					}
+					cw, clientErr := client.hijack("HEAD", path, hijackOptions{})
+					if clientErr != nil {
+						errsCh <- clientErr
+					} else {
+						waiters <- cw
+					}
+				}()
+			}
+			wg.Wait()
+			close(errsCh)
+			close(waiters)
+			for cw := range waiters {
+				cw.Wait()
+				cw.Close()
+			}
+			for err = range errsCh {
+				t.Error(err)
+			}
+			var reqPaths []string
+			for _, r := range reqs {
+				reqPaths = append(reqPaths, r.Method+r.URL.Path)
+			}
+			sort.Strings(paths)
+			sort.Strings(reqPaths)
+			if !reflect.DeepEqual(reqPaths, paths) {
+				t.Fatalf("expected server request paths to equal %v, got: %v", paths, reqPaths)
+			}
+		})
 	}
 }
 
