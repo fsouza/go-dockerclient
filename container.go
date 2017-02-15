@@ -673,7 +673,7 @@ type BlockWeight struct {
 // inside of a container
 type BlockLimit struct {
 	Path string `json:"Path,omitempty"`
-	Rate string `json:"Rate,omitempty"`
+	Rate int64  `json:"Rate,omitempty"`
 }
 
 // HostConfig contains the container options related to starting a container on
