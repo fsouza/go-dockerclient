@@ -357,6 +357,18 @@ func TestInspectContainerWithContext(t *testing.T) {
              "Volumes": {},
              "HostConfig": {
                "Binds": null,
+               "BlkioDeviceReadIOps": [
+                   {
+                       "Path": "/dev/sdb",
+                       "Rate": 100
+                   }
+               ],
+               "BlkioDeviceWriteBps": [
+                   {
+                       "Path": "/dev/sdb",
+                       "Rate": 5000
+                   }
+               ],
                "ContainerIDFile": "",
                "LxcConf": [],
                "Privileged": false,
