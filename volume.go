@@ -25,7 +25,7 @@ var (
 // See https://goo.gl/FZA4BK for more details.
 type Volume struct {
 	Name       string            `json:"Name" yaml:"Name" toml:"Name"`
-	Driver     string            `json:"Driver,omitempty" yaml:"Driver,omitempty" toml:Driver,omitempty"`
+	Driver     string            `json:"Driver,omitempty" yaml:"Driver,omitempty" toml:"Driver,omitempty"`
 	Mountpoint string            `json:"Mountpoint,omitempty" yaml:"Mountpoint,omitempty" toml:"Mountpoint,omitempty"`
 	Labels     map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty" toml:"Labels,omitempty"`
 }
