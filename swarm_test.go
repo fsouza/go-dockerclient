@@ -41,6 +41,11 @@ func TestInitSwarmAlreadyInSwarm(t *testing.T) {
 	if err != ErrNodeAlreadyInSwarm {
 		t.Errorf("InitSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeAlreadyInSwarm, err)
 	}
+	client = newTestClient(&FakeRoundTripper{message: "", status: http.StatusServiceUnavailable})
+	_, err = client.InitSwarm(InitSwarmOptions{})
+	if err != ErrNodeAlreadyInSwarm {
+		t.Errorf("InitSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeAlreadyInSwarm, err)
+	}
 }
 
 func TestJoinSwarm(t *testing.T) {
@@ -64,6 +69,11 @@ func TestJoinSwarm(t *testing.T) {
 func TestJoinSwarmAlreadyInSwarm(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusNotAcceptable})
 	err := client.JoinSwarm(JoinSwarmOptions{})
+	if err != ErrNodeAlreadyInSwarm {
+		t.Errorf("JoinSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeAlreadyInSwarm, err)
+	}
+	client = newTestClient(&FakeRoundTripper{message: "", status: http.StatusServiceUnavailable})
+	err = client.JoinSwarm(JoinSwarmOptions{})
 	if err != ErrNodeAlreadyInSwarm {
 		t.Errorf("JoinSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeAlreadyInSwarm, err)
 	}
@@ -99,6 +109,11 @@ func TestLeaveSwarm(t *testing.T) {
 func TestLeaveSwarmNotInSwarm(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusNotAcceptable})
 	err := client.LeaveSwarm(LeaveSwarmOptions{})
+	if err != ErrNodeNotInSwarm {
+		t.Errorf("LeaveSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
+	}
+	client = newTestClient(&FakeRoundTripper{message: "", status: http.StatusServiceUnavailable})
+	err = client.LeaveSwarm(LeaveSwarmOptions{})
 	if err != ErrNodeNotInSwarm {
 		t.Errorf("LeaveSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
 	}
@@ -142,6 +157,11 @@ func TestUpdateSwarmNotInSwarm(t *testing.T) {
 	if err != ErrNodeNotInSwarm {
 		t.Errorf("UpdateSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
 	}
+	client = newTestClient(&FakeRoundTripper{message: "", status: http.StatusServiceUnavailable})
+	err = client.UpdateSwarm(UpdateSwarmOptions{})
+	if err != ErrNodeNotInSwarm {
+		t.Errorf("UpdateSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
+	}
 }
 
 func TestInspectSwarm(t *testing.T) {
@@ -163,5 +183,18 @@ func TestInspectSwarm(t *testing.T) {
 	expected := swarm.Swarm{ClusterInfo: swarm.ClusterInfo{ID: "123"}}
 	if !reflect.DeepEqual(expected, response) {
 		t.Errorf("InspectSwarm: Wrong response. Want %#v. Got %#v.", expected, response)
+	}
+}
+
+func TestInspectSwarmNotInSwarm(t *testing.T) {
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusNotAcceptable})
+	_, err := client.InspectSwarm(nil)
+	if err != ErrNodeNotInSwarm {
+		t.Errorf("InspectSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
+	}
+	client = newTestClient(&FakeRoundTripper{message: "", status: http.StatusServiceUnavailable})
+	_, err = client.InspectSwarm(nil)
+	if err != ErrNodeNotInSwarm {
+		t.Errorf("InspectSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
 	}
 }
