@@ -227,6 +227,7 @@ func TestListRunningContainers(t *testing.T) {
 func TestCreateContainer(t *testing.T) {
 	server := DockerServer{}
 	server.imgIDs = map[string]string{"base": "a1234"}
+	server.uploadedFiles = map[string]string{"a1234": "/abcd"}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Hostname":"", "User":"ubuntu", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
@@ -260,6 +261,11 @@ func TestCreateContainer(t *testing.T) {
 	expectedBind := []string{"/var/run/docker.sock:/var/run/docker.sock:rw"}
 	if !reflect.DeepEqual(stored.HostConfig.Binds, expectedBind) {
 		t.Errorf("CreateContainer: wrong host config. Expected: %v. Returned %v.", expectedBind, stored.HostConfig.Binds)
+	}
+	if val, ok := server.uploadedFiles[stored.ID]; !ok {
+		t.Error("CreateContainer: uploadedFiles should exist.")
+	} else if val != "/abcd" {
+		t.Errorf("CreateContainer: wrong uploadedFile. Want '/abcd', got %s.", val)
 	}
 }
 
@@ -408,6 +414,7 @@ func TestRenameContainerNotFound(t *testing.T) {
 func TestCommitContainer(t *testing.T) {
 	server := DockerServer{}
 	addContainers(&server, 2)
+	server.uploadedFiles = map[string]string{server.containers[0].ID: "/abcd"}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/commit?container="+server.containers[0].ID, nil)
@@ -421,6 +428,11 @@ func TestCommitContainer(t *testing.T) {
 	}
 	if server.images[0].Config == nil {
 		t.Error("CommitContainer: image Config should not be nil.")
+	}
+	if val, ok := server.uploadedFiles[server.images[0].ID]; !ok {
+		t.Error("CommitContainer: uploadedFiles should exist.")
+	} else if val != "/abcd" {
+		t.Errorf("CommitContainer: wrong uploadedFile. Want '/abcd', got %s.", val)
 	}
 }
 
