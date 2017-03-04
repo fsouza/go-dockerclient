@@ -39,9 +39,14 @@ type CreateServiceOptions struct {
 // or an error in case of failure.
 //
 // See https://goo.gl/KrVjHz for more details.
-func (c *Client) CreateService(opts CreateServiceOptions) (*swarm.Service, error) {
+func (c *Client) CreateService(opts CreateServiceOptions, auth AuthConfiguration) (*swarm.Service, error) {
+	headers, err := headersWithAuth(auth)
+	if err != nil {
+		return nil, err
+	}
 	path := "/services/create?" + queryString(opts)
 	resp, err := c.do("POST", path, doOptions{
+		headers:   headers,
 		data:      opts.ServiceSpec,
 		forceJSON: true,
 		context:   opts.Context,
