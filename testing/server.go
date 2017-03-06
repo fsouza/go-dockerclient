@@ -19,6 +19,7 @@ import (
 	mathrand "math/rand"
 	"net"
 	"net/http"
+	libpath "path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -604,6 +605,12 @@ func (s *DockerServer) uploadToContainer(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	path := r.URL.Query().Get("path")
+	if r.Body != nil {
+		tr := tar.NewReader(r.Body)
+		if hdr, _ := tr.Next(); hdr != nil {
+			path = libpath.Join(path, hdr.Name)
+		}
+	}
 	s.uploadedFiles[id] = path
 	w.WriteHeader(http.StatusOK)
 }

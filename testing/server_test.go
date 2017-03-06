@@ -5,6 +5,7 @@
 package testing
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
 	"encoding/json"
@@ -2270,6 +2271,73 @@ func TestUploadToContainer(t *testing.T) {
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("UploadToContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if val, ok := server.uploadedFiles[cont.ID]; !ok {
+		t.Errorf("UploadToContainer: uploadedFiles should exist.")
+	} else if val != "abcd" {
+		t.Errorf("UploadToContainer: wrong uploadedFiles. Want 'abcd'. Got %s.", val)
+	}
+}
+
+func TestUploadToContainerWithBodyTarFile(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	cont := &docker.Container{
+		ID: "id123",
+		State: docker.State{
+			Running:  true,
+			ExitCode: 0,
+		},
+	}
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+	defer tw.Close()
+	hdr := &tar.Header{
+		Name: "test.tar.gz",
+		Mode: 0600,
+		Size: int64(buf.Len()),
+	}
+	tw.WriteHeader(hdr)
+	tw.Write([]byte("something"))
+	tw.Close()
+	server.containers = append(server.containers, cont)
+	server.uploadedFiles = make(map[string]string)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("PUT", fmt.Sprintf("/containers/%s/archive?path=abcd", cont.ID), buf)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("UploadToContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if val, ok := server.uploadedFiles[cont.ID]; !ok {
+		t.Errorf("UploadToContainer: uploadedFiles should exist.")
+	} else if val != "abcd/test.tar.gz" {
+		t.Errorf("UploadToContainer: wrong uploadedFiles. Want 'abcd/test.tar.gz'. Got %s.", val)
+	}
+}
+
+func TestUploadToContainerBodyNotTarFile(t *testing.T) {
+	server := DockerServer{}
+	server.buildMuxer()
+	cont := &docker.Container{
+		ID: "id123",
+		State: docker.State{
+			Running:  true,
+			ExitCode: 0,
+		},
+	}
+	buf := bytes.NewBufferString("something")
+	server.containers = append(server.containers, cont)
+	server.uploadedFiles = make(map[string]string)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("PUT", fmt.Sprintf("/containers/%s/archive?path=abcd", cont.ID), buf)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("UploadToContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if val, ok := server.uploadedFiles[cont.ID]; !ok {
+		t.Errorf("UploadToContainer: uploadedFiles should exist.")
+	} else if val != "abcd" {
+		t.Errorf("UploadToContainer: wrong uploadedFiles. Want 'abcd'. Got %s.", val)
 	}
 }
 
