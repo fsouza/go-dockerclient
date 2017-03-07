@@ -11,7 +11,9 @@ import (
 	"reflect"
 	"testing"
 
+	"encoding/base64"
 	"github.com/docker/docker/api/types/swarm"
+	"strings"
 )
 
 func TestCreateService(t *testing.T) {
@@ -40,12 +42,75 @@ func TestCreateService(t *testing.T) {
 	}
 	expectedURL, _ := url.Parse(client.getURL("/services/create"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
-		t.Errorf("CreateServices: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
+		t.Errorf("CreateService: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
 	}
 	var gotBody Config
 	err = json.NewDecoder(req.Body).Decode(&gotBody)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
+	if err != nil {
+		t.Errorf("CreateService: caught error decoding auth. %#v", err.Error())
+	}
+	if strings.TrimSpace(string(auth)) != "{}" {
+		t.Errorf("CreateService: wrong body. Want %q. Got %q.",
+			base64.URLEncoding.EncodeToString([]byte("{}")), req.Header.Get("X-Registry-Auth"))
+	}
+}
+
+func TestCreateServiceWithAuthentication(t *testing.T) {
+	result := `{
+  "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+}`
+	var expected swarm.Service
+	err := json.Unmarshal([]byte(result), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fakeRT := &FakeRoundTripper{message: result, status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := CreateServiceOptions{}
+	opts.Auth = AuthConfiguration{
+		Username: "gopher",
+		Password: "gopher123",
+		Email:    "gopher@tsuru.io",
+	}
+	service, err := client.CreateService(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+	if service.ID != id {
+		t.Errorf("CreateServce: wrong ID. Want %q. Got %q.", id, service.ID)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("CreateService: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	}
+	expectedURL, _ := url.Parse(client.getURL("/services/create"))
+	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+		t.Errorf("CreateService: Wrong path in request. Want %q. Got %q.", expectedURL.Path, gotPath)
+	}
+	var gotBody Config
+	err = json.NewDecoder(req.Body).Decode(&gotBody)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var gotAuth AuthConfiguration
+
+	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
+	if err != nil {
+		t.Errorf("CreateService: caught error decoding auth. %#v", err.Error())
+	}
+
+	err = json.Unmarshal(auth, &gotAuth)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(gotAuth, opts.Auth) {
+		t.Errorf("CreateService: wrong auth configuration. Want %#v. Got %#v.", opts.Auth, gotAuth)
 	}
 }
 
