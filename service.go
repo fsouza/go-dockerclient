@@ -31,6 +31,7 @@ func (err *NoSuchService) Error() string {
 //
 // See https://goo.gl/KrVjHz for more details.
 type CreateServiceOptions struct {
+	Auth AuthConfiguration `qs:"-"`
 	swarm.ServiceSpec
 	Context context.Context
 }
@@ -39,8 +40,8 @@ type CreateServiceOptions struct {
 // or an error in case of failure.
 //
 // See https://goo.gl/KrVjHz for more details.
-func (c *Client) CreateService(opts CreateServiceOptions, auth AuthConfiguration) (*swarm.Service, error) {
-	headers, err := headersWithAuth(auth)
+func (c *Client) CreateService(opts CreateServiceOptions) (*swarm.Service, error) {
+	headers, err := headersWithAuth(opts.Auth)
 	if err != nil {
 		return nil, err
 	}

@@ -28,7 +28,7 @@ func TestCreateService(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: result, status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	opts := CreateServiceOptions{}
-	service, err := client.CreateService(opts, AuthConfiguration{})
+	service, err := client.CreateService(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,12 +72,12 @@ func TestCreateServiceWithAuthentication(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: result, status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	opts := CreateServiceOptions{}
-	inputAuth := AuthConfiguration{
+	opts.Auth = AuthConfiguration{
 		Username: "gopher",
 		Password: "gopher123",
 		Email:    "gopher@tsuru.io",
 	}
-	service, err := client.CreateService(opts, inputAuth)
+	service, err := client.CreateService(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,8 +109,8 @@ func TestCreateServiceWithAuthentication(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(gotAuth, inputAuth) {
-		t.Errorf("CreateService: wrong auth configuration. Want %#v. Got %#v.", inputAuth, gotAuth)
+	if !reflect.DeepEqual(gotAuth, opts.Auth) {
+		t.Errorf("CreateService: wrong auth configuration. Want %#v. Got %#v.", opts.Auth, gotAuth)
 	}
 }
 
