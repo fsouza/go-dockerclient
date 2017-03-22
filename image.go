@@ -666,3 +666,36 @@ func (c *Client) SearchImagesEx(term string, auth AuthConfiguration) ([]APIImage
 
 	return searchResult, nil
 }
+
+// PruneImagesOptions specify parameters to the PruneImages function.
+//
+// See https://goo.gl/qfZlbZ for more details.
+type PruneImagesOptions struct {
+	Filters map[string][]string
+	Context context.Context
+}
+
+// PruneImagesResults specify results from the PruneImages function.
+//
+// See https://goo.gl/qfZlbZ for more details.
+type PruneImagesResults struct {
+	ImagesDeleted  []struct{ Untagged, Deleted string }
+	SpaceReclaimed int64
+}
+
+// PruneImages deletes images which are unused.
+//
+// See https://goo.gl/qfZlbZ for more details.
+func (c *Client) PruneImages(opts PruneImagesOptions) (*PruneImagesResults, error) {
+	path := "/images/prune?" + queryString(opts)
+	resp, err := c.do("POST", path, doOptions{context: opts.Context})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var results PruneImagesResults
+	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+		return nil, err
+	}
+	return &results, nil
+}
