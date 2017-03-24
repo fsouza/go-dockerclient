@@ -688,6 +688,7 @@ func TestBuildImageParameters(t *testing.T) {
 	opts := BuildImageOptions{
 		Name:                "testImage",
 		NoCache:             true,
+		CacheFrom:           []string{"test1", "test2"},
 		SuppressOutput:      true,
 		Pull:                true,
 		RmTmpContainer:      true,
