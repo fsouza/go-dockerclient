@@ -537,7 +537,6 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		}
 	}
 
-	fmt.Println(qs)
 	return c.stream("POST", fmt.Sprintf("/build?%s", qs), streamOptions{
 		setRawTerminal:    true,
 		rawJSONStream:     opts.RawJSONStream,
