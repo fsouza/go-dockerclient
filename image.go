@@ -440,7 +440,7 @@ type BuildImageOptions struct {
 	Name                string             `qs:"t"`
 	Dockerfile          string             `qs:"dockerfile"`
 	NoCache             bool               `qs:"nocache"`
-	CacheFrom           []string           `qs:"cachefrom"`
+	CacheFrom           []string           `qs:"-"`
 	SuppressOutput      bool               `qs:"q"`
 	Pull                bool               `qs:"pull"`
 	RmTmpContainer      bool               `qs:"rm"`
@@ -507,12 +507,10 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 			return err
 		}
 	}
-	cacheFrom := opts.CacheFrom
-	opts.CacheFrom = nil
 	qs := queryString(&opts)
 
-	if c.serverAPIVersion.GreaterThanOrEqualTo(apiVersion125) && len(cacheFrom) > 0 {
-		if b, err := json.Marshal(cacheFrom); err == nil {
+	if c.serverAPIVersion.GreaterThanOrEqualTo(apiVersion125) && len(opts.CacheFrom) > 0 {
+		if b, err := json.Marshal(opts.CacheFrom); err == nil {
 			item := url.Values(map[string][]string{})
 			item.Add("cachefrom", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
