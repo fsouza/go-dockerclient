@@ -1136,8 +1136,8 @@ func (s *DockerServer) createExecContainer(w http.ResponseWriter, r *http.Reques
 	container.ExecIDs = append(container.ExecIDs, execID)
 
 	exec := docker.ExecInspect{
-		ID:        execID,
-		Container: *container,
+		ID:          execID,
+		ContainerID: container.ID,
 	}
 
 	var params docker.CreateExecOptions
