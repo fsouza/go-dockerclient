@@ -24,6 +24,7 @@ func TestBuildImageMultipleContextsError(t *testing.T) {
 	opts := BuildImageOptions{
 		Name:                "testImage",
 		NoCache:             true,
+		CacheFrom:           []string{"a", "b", "c"},
 		SuppressOutput:      true,
 		RmTmpContainer:      true,
 		ForceRmTmpContainer: true,
@@ -55,6 +56,7 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 	opts := BuildImageOptions{
 		Name:                "testImage",
 		NoCache:             true,
+		CacheFrom:           []string{"a", "b", "c"},
 		SuppressOutput:      true,
 		RmTmpContainer:      true,
 		ForceRmTmpContainer: true,
