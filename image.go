@@ -333,8 +333,9 @@ func (c *Client) createImage(qs string, headers map[string]string, in io.Reader,
 //
 // See https://goo.gl/rEsBV3 for more details.
 type LoadImageOptions struct {
-	InputStream io.Reader
-	Context     context.Context
+	InputStream  io.Reader
+	OutputStream io.Writer
+	Context      context.Context
 }
 
 // LoadImage imports a tarball docker image
@@ -344,6 +345,7 @@ func (c *Client) LoadImage(opts LoadImageOptions) error {
 	return c.stream("POST", "/images/load", streamOptions{
 		setRawTerminal: true,
 		in:             opts.InputStream,
+		stdout:         opts.OutputStream,
 		context:        opts.Context,
 	})
 }
