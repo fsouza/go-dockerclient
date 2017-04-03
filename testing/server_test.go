@@ -2398,8 +2398,6 @@ func TestInfoDockerWithSwarm(t *testing.T) {
 			{NodeID: srv2.nodeID, Addr: srv2.SwarmAddress()},
 		},
 	}
-	infoData.Swarm.Cluster.CreatedAt = time.Time{}
-	infoData.Swarm.Cluster.UpdatedAt = time.Time{}
 	if !reflect.DeepEqual(infoData.Swarm, expectedSwarm) {
 		t.Fatalf("InfoDocker: wrong swarm info. Want:\n%#v\nGot:\n%#v", expectedSwarm, infoData.Swarm)
 	}
