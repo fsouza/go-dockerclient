@@ -242,3 +242,25 @@ func TestNetworkDisconnectNotFound(t *testing.T) {
 		t.Errorf("DisconnectNetwork: wrong error type: %s.", serr)
 	}
 }
+
+func TestPruneNetworks(t *testing.T) {
+	results := `{
+		"NetworksDeleted": [
+			"a", "b", "c"
+		]
+	}`
+
+	expected := &PruneNetworksResults{}
+	err := json.Unmarshal([]byte(results), expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: results, status: http.StatusOK})
+	got, err := client.PruneNetworks(PruneNetworksOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("PruneNetworks: Expected %#v. Got %#v.", expected, got)
+	}
+}

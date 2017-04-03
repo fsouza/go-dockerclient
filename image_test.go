@@ -1039,3 +1039,28 @@ func TestSearchImagesEx(t *testing.T) {
 		t.Errorf("SearchImages: Wrong return value. Want %#v. Got %#v.", expected, result)
 	}
 }
+
+func TestPruneImages(t *testing.T) {
+	results := `{
+		"ImagesDeleted": [
+			{"Deleted": "a"},
+			{"Deleted": "b"},
+			{"Deleted": "c"}
+		],
+		"SpaceReclaimed": 123
+	}`
+
+	expected := &PruneImagesResults{}
+	err := json.Unmarshal([]byte(results), expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: results, status: http.StatusOK})
+	got, err := client.PruneImages(PruneImagesOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("PruneImages: Expected %#v. Got %#v.", expected, got)
+	}
+}
