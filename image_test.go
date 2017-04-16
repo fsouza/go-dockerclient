@@ -51,42 +51,6 @@ func (m stdinMock) Close() error {
 }
 
 func TestListImages(t *testing.T) {
-	body := `[
-     {
-             "Repository":"base",
-             "Tag":"ubuntu-12.10",
-             "Id":"b750fe79269d",
-             "Created":1364102658
-     },
-     {
-             "Repository":"base",
-             "Tag":"ubuntu-quantal",
-             "Id":"b750fe79269d",
-             "Created":1364102658
-     },
-     {
-             "RepoTag": [
-             "ubuntu:12.04",
-             "ubuntu:precise",
-             "ubuntu:latest"
-             ],
-             "Id": "8dbd9e392a964c",
-             "Created": 1365714795,
-             "Size": 131506275,
-             "VirtualSize": 131506275
-      },
-      {
-             "RepoTag": [
-             "ubuntu:12.10",
-             "ubuntu:quantal"
-             ],
-             "ParentId": "27cf784147099545",
-             "Id": "b750fe79269d2e",
-             "Created": 1364102658,
-             "Size": 24653,
-             "VirtualSize": 180116135
-      }
-]`
 	var expected []APIImages
 	err := json.Unmarshal([]byte(body), &expected)
 	if err != nil {
