@@ -560,6 +560,16 @@ func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) interface{
 	return authConfigs
 }
 
+// GetImage returns a streaming tarball of an image.
+func (c *Client) GetImage(name string, w io.Writer) (error) {
+	return c.stream("GET", "/images/"+name+"/get", nil, nil, w)
+}
+
+// LoadImage loads an image tarball into the local Docker registry.
+func (c *Client) LoadImage(r io.Reader) (error) {
+	return c.stream("POST", "/images/load", nil, r, nil)
+}
+
 // TagImageOptions present the set of options to tag an image.
 //
 // See https://goo.gl/prHrvo for more details.
