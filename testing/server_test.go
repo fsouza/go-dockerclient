@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types/swarm"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/moby/moby/api/types/swarm"
 )
 
 func TestNewServer(t *testing.T) {
