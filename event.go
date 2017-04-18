@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -170,7 +169,7 @@ func (eventState *eventMonitoringState) enableEventMonitoring(c *Client) error {
 	defer eventState.Unlock()
 	if !eventState.enabled {
 		eventState.enabled = true
-		atomic.StoreInt64(&eventState.lastSeen, 0)
+		eventState.lastSeen = 0
 		eventState.C = make(chan *APIEvents, 100)
 		eventState.errC = make(chan error, 1)
 		go eventState.monitorEvents(c)
@@ -237,7 +236,10 @@ func (eventState *eventMonitoringState) connectWithRetry(c *Client) error {
 	eventChan := eventState.C
 	errChan := eventState.errC
 	eventState.RUnlock()
-	err := c.eventHijack(atomic.LoadInt64(&eventState.lastSeen), eventChan, errChan)
+	eventState.Lock()
+	lastSeen := eventState.lastSeen
+	eventState.Unlock()
+	err := c.eventHijack(lastSeen, eventChan, errChan)
 	for ; err != nil && retries < maxMonitorConnRetries; retries++ {
 		waitTime := int64(retryInitialWaitTime * math.Pow(2, float64(retries)))
 		time.Sleep(time.Duration(waitTime) * time.Millisecond)
@@ -245,7 +247,10 @@ func (eventState *eventMonitoringState) connectWithRetry(c *Client) error {
 		eventChan = eventState.C
 		errChan = eventState.errC
 		eventState.RUnlock()
-		err = c.eventHijack(atomic.LoadInt64(&eventState.lastSeen), eventChan, errChan)
+		eventState.Lock()
+		lastSeen = eventState.lastSeen
+		eventState.Unlock()
+		err = c.eventHijack(lastSeen, eventChan, errChan)
 	}
 	return err
 }
@@ -282,8 +287,8 @@ func (eventState *eventMonitoringState) sendEvent(event *APIEvents) {
 func (eventState *eventMonitoringState) updateLastSeen(e *APIEvents) {
 	eventState.Lock()
 	defer eventState.Unlock()
-	if atomic.LoadInt64(&eventState.lastSeen) < e.Time {
-		atomic.StoreInt64(&eventState.lastSeen, e.Time)
+	if eventState.lastSeen < e.Time {
+		eventState.lastSeen = e.Time
 	}
 }
 
