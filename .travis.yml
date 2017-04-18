@@ -9,8 +9,6 @@ os:
   - osx
 env:
   matrix:
-    - GOARCH=amd64 DOCKER_VERSION=1.11.2
-    - GOARCH=386   DOCKER_VERSION=1.11.2
     - GOARCH=amd64 DOCKER_VERSION=1.12.6
     - GOARCH=386   DOCKER_VERSION=1.12.6
     - GOARCH=amd64 DOCKER_VERSION=1.13.1
@@ -28,10 +26,6 @@ services:
 matrix:
   fast_finish: true
   exclude:
-    - os: osx
-      env: GOARCH=amd64 DOCKER_VERSION=1.11.2
-    - os: osx
-      env: GOARCH=386   DOCKER_VERSION=1.11.2
     - os: osx
       env: GOARCH=amd64 DOCKER_VERSION=1.12.6
     - os: osx
