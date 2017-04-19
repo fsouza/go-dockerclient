@@ -454,6 +454,74 @@ func TestPullImage(t *testing.T) {
 	}
 }
 
+func TestPullImageWithDigest(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	err := client.PullImage(PullImageOptions{
+		Repository:   "tsuru/bs:latest@sha256:504a2f04aa5d07768e4f7467ddd2618b07dd6013cfabca7dc527a3d9fa786580",
+		OutputStream: &buf,
+	}, AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "Pulling 1/100"
+	if buf.String() != expected {
+		t.Errorf("PullImage: Wrong output. Want %q. Got %q.", expected, buf.String())
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("PullImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/images/create"))
+	if req.URL.Path != u.Path {
+		t.Errorf("PullImage: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+	expectedQuery := url.Values{
+		"fromImage": {"tsuru/bs:latest"},
+		"tag":       {"sha256:504a2f04aa5d07768e4f7467ddd2618b07dd6013cfabca7dc527a3d9fa786580"},
+	}
+	if !reflect.DeepEqual(req.URL.Query(), expectedQuery) {
+		t.Errorf("PullImage: Wrong query string\nWant %#v\nGot  %#v", expectedQuery, req.URL.Query())
+	}
+}
+
+func TestPullImageWithDigestAndTag(t *testing.T) {
+	// This is probably a wrong use of the Docker API, but let's let users
+	// send the request to the API. And also changing this behavior would
+	// be a breaking change on go-dockerclient.
+	fakeRT := &FakeRoundTripper{message: "Pulling 1/100", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	err := client.PullImage(PullImageOptions{
+		Repository:   "tsuru/bs:latest@sha256:504a2f04aa5d07768e4f7467ddd2618b07dd6013cfabca7dc527a3d9fa786580",
+		Tag:          "latest",
+		OutputStream: &buf,
+	}, AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "Pulling 1/100"
+	if buf.String() != expected {
+		t.Errorf("PullImage: Wrong output. Want %q. Got %q.", expected, buf.String())
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("PullImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/images/create"))
+	if req.URL.Path != u.Path {
+		t.Errorf("PullImage: Wrong request path. Want %q. Got %q.", u.Path, req.URL.Path)
+	}
+	expectedQuery := url.Values{
+		"fromImage": {"tsuru/bs:latest@sha256:504a2f04aa5d07768e4f7467ddd2618b07dd6013cfabca7dc527a3d9fa786580"},
+		"tag":       {"latest"},
+	}
+	if !reflect.DeepEqual(req.URL.Query(), expectedQuery) {
+		t.Errorf("PullImage: Wrong query string\nWant %#vGot  %#v", expectedQuery, req.URL.Query())
+	}
+}
+
 func TestPullImageWithRawJSON(t *testing.T) {
 	body := `
 	{"status":"Pulling..."}

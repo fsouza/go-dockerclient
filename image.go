@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -312,6 +313,11 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 	headers, err := headersWithAuth(auth)
 	if err != nil {
 		return err
+	}
+	if opts.Tag == "" && strings.Contains(opts.Repository, "@") {
+		parts := strings.SplitN(opts.Repository, "@", 2)
+		opts.Repository = parts[0]
+		opts.Tag = parts[1]
 	}
 	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
 }
