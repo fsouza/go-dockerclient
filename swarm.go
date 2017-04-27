@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/moby/moby/api/types/swarm"
+	"github.com/docker/docker/api/types/swarm"
 	"golang.org/x/net/context"
 )
 

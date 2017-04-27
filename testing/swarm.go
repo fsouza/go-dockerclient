@@ -17,9 +17,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
-	"github.com/moby/moby/api/types/swarm"
 )
 
 type swarmServer struct {

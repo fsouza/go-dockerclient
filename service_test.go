@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"encoding/base64"
-	"github.com/moby/moby/api/types/swarm"
+	"github.com/docker/docker/api/types/swarm"
 	"strings"
 )
 

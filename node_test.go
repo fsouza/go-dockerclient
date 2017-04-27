@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/moby/moby/api/types/swarm"
+	"github.com/docker/docker/api/types/swarm"
 )
 
 func TestListNodes(t *testing.T) {
