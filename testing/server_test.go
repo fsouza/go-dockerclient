@@ -1225,6 +1225,23 @@ func TestPullImageWithTag(t *testing.T) {
 	}
 }
 
+func TestPullImageWithShaTag(t *testing.T) {
+	server := DockerServer{imgIDs: make(map[string]string)}
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("POST", "/images/create?fromImage=base&tag=sha256:deadc0de", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("PullImage: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	if len(server.images) != 1 {
+		t.Errorf("PullImage: Want 1 image. Got %d.", len(server.images))
+	}
+	if _, ok := server.imgIDs["base@sha256:deadc0de"]; !ok {
+		t.Error("PullImage: Repository should not be empty.")
+	}
+}
+
 func TestPushImage(t *testing.T) {
 	server := DockerServer{imgIDs: map[string]string{"tsuru/python": "a123"}}
 	server.buildMuxer()
