@@ -57,7 +57,7 @@ func TestFilteredListNetworks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantQuery := "filters={\"name\":{\"blah\":true}}\n"
+	wantQuery := "filters={\"name\":{\"blah\":true}}"
 	fakeRT := &FakeRoundTripper{message: jsonNetworks, status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	opts := NetworkFilterOpts{
@@ -72,7 +72,7 @@ func TestFilteredListNetworks(t *testing.T) {
 	}
 	query := fakeRT.requests[0].URL.RawQuery
 	if query != wantQuery {
-		t.Errorf("FilteredListNetworks: Expected query: %q, got: %q", wantQuery, query)
+		t.Errorf("FilteredListNetworks: wrong query\nWant %q\nGot  %q", wantQuery, query)
 	}
 }
 
@@ -240,5 +240,27 @@ func TestNetworkDisconnectNotFound(t *testing.T) {
 	err := client.DisconnectNetwork("8dfafdbc3a40", opts)
 	if serr, ok := err.(*NoSuchNetworkOrContainer); !ok {
 		t.Errorf("DisconnectNetwork: wrong error type: %s.", serr)
+	}
+}
+
+func TestPruneNetworks(t *testing.T) {
+	results := `{
+		"NetworksDeleted": [
+			"a", "b", "c"
+		]
+	}`
+
+	expected := &PruneNetworksResults{}
+	err := json.Unmarshal([]byte(results), expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: results, status: http.StatusOK})
+	got, err := client.PruneNetworks(PruneNetworksOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("PruneNetworks: Expected %#v. Got %#v.", expected, got)
 	}
 }

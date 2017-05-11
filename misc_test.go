@@ -1,10 +1,11 @@
-// Copyright 2014 go-dockerclient authors. All rights reserved.
+// Copyright 2013 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package docker
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -74,7 +75,19 @@ func TestInfo(t *testing.T) {
      "NFd":11,
      "NGoroutines":21,
      "MemoryLimit":true,
-     "SwapLimit":false
+     "SwapLimit":false,
+     "RegistryConfig":{
+       "InsecureRegistryCIDRs":["127.0.0.0/8"],
+       "IndexConfigs":{
+         "docker.io":{
+           "Name":"docker.io",
+           "Mirrors":null,
+           "Secure":true,
+           "Official":true
+         }
+       },
+       "Mirrors":null
+     }
 }`
 	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
 	client := newTestClient(&fakeRT)
@@ -86,6 +99,21 @@ func TestInfo(t *testing.T) {
 		NGoroutines: 21,
 		MemoryLimit: true,
 		SwapLimit:   false,
+		RegistryConfig: &ServiceConfig{
+			InsecureRegistryCIDRs: []*NetIPNet{
+				{
+					Mask: net.CIDRMask(8, 32),
+					IP:   net.ParseIP("127.0.0.0").To4(),
+				},
+			},
+			IndexConfigs: map[string]*IndexInfo{
+				"docker.io": {
+					Name:     "docker.io",
+					Secure:   true,
+					Official: true,
+				},
+			},
+		},
 	}
 	info, err := client.Info()
 	if err != nil {
@@ -141,6 +169,16 @@ func TestParseRepositoryTag(t *testing.T) {
 			"tsuru/python:2.7",
 			"tsuru/python",
 			"2.7",
+		},
+		{
+			"busybox@sha256:4a731fb46adc5cefe3ae374a8b6020fc1b6ad667a279647766e9a3cd89f6fa92",
+			"busybox",
+			"",
+		},
+		{
+			"localhost.localdomain:5000/samalba/hipache:v1@sha256:4a731fb46adc5cefe3ae374a8b6020fc1b6ad667a279647766e9a3cd89f6fa92",
+			"localhost.localdomain:5000/samalba/hipache",
+			"v1",
 		},
 	}
 	for _, tt := range tests {

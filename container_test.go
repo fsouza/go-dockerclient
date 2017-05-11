@@ -1,4 +1,4 @@
-// Copyright 2015 go-dockerclient authors. All rights reserved.
+// Copyright 2013 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,20 +9,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-cleanhttp"
+	"golang.org/x/net/context"
 )
 
 func TestStateString(t *testing.T) {
@@ -286,6 +286,151 @@ func TestInspectContainer(t *testing.T) {
 	expectedURL, _ := url.Parse(client.getURL("/containers/4fa6e0f0c678/json"))
 	if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("InspectContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+	}
+}
+
+func TestInspectContainerWithContext(t *testing.T) {
+	jsonContainer := `{
+             "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2",
+             "AppArmorProfile": "Profile",
+             "Created": "2013-05-07T14:51:42.087658+02:00",
+             "Path": "date",
+             "Args": [],
+             "Config": {
+                     "Hostname": "4fa6e0f0c678",
+                     "User": "",
+                     "Memory": 17179869184,
+                     "MemorySwap": 34359738368,
+                     "AttachStdin": false,
+                     "AttachStdout": true,
+                     "AttachStderr": true,
+                     "PortSpecs": null,
+                     "Tty": false,
+                     "OpenStdin": false,
+                     "StdinOnce": false,
+                     "Env": null,
+                     "Cmd": [
+                             "date"
+                     ],
+                     "Image": "base",
+                     "Volumes": {},
+                     "VolumesFrom": "",
+                     "SecurityOpt": [
+                         "label:user:USER"
+                      ],
+                      "Ulimits": [
+                          { "Name": "nofile", "Soft": 1024, "Hard": 2048 }
+                      ]
+             },
+             "State": {
+                     "Running": false,
+                     "Pid": 0,
+                     "ExitCode": 0,
+                     "StartedAt": "2013-05-07T14:51:42.087658+02:00",
+                     "Ghost": false
+             },
+             "Node": {
+                  "ID": "4I4E:QR4I:Z733:QEZK:5X44:Q4T7:W2DD:JRDY:KB2O:PODO:Z5SR:XRB6",
+                  "IP": "192.168.99.105",
+                  "Addra": "192.168.99.105:2376",
+                  "Name": "node-01",
+                  "Cpus": 4,
+                  "Memory": 1048436736,
+                  "Labels": {
+                      "executiondriver": "native-0.2",
+                      "kernelversion": "3.18.5-tinycore64",
+                      "operatingsystem": "Boot2Docker 1.5.0 (TCL 5.4); master : a66bce5 - Tue Feb 10 23:31:27 UTC 2015",
+                      "provider": "virtualbox",
+                      "storagedriver": "aufs"
+                  }
+              },
+             "Image": "b750fe79269d2ec9a3c593ef05b4332b1d1a02a62b4accb2c21d589ff2f5f2dc",
+             "NetworkSettings": {
+                     "IpAddress": "",
+                     "IpPrefixLen": 0,
+                     "Gateway": "",
+                     "Bridge": "",
+                     "PortMapping": null
+             },
+             "SysInitPath": "/home/kitty/go/src/github.com/dotcloud/docker/bin/docker",
+             "ResolvConfPath": "/etc/resolv.conf",
+             "Volumes": {},
+             "HostConfig": {
+               "Binds": null,
+               "BlkioDeviceReadIOps": [
+                   {
+                       "Path": "/dev/sdb",
+                       "Rate": 100
+                   }
+               ],
+               "BlkioDeviceWriteBps": [
+                   {
+                       "Path": "/dev/sdb",
+                       "Rate": 5000
+                   }
+               ],
+               "ContainerIDFile": "",
+               "LxcConf": [],
+               "Privileged": false,
+               "PortBindings": {
+                 "80/tcp": [
+                   {
+                     "HostIp": "0.0.0.0",
+                     "HostPort": "49153"
+                   }
+                 ]
+               },
+               "Links": null,
+               "PublishAllPorts": false,
+               "CgroupParent": "/mesos",
+               "Memory": 17179869184,
+               "MemorySwap": 34359738368,
+               "GroupAdd": ["fake", "12345"],
+               "OomScoreAdj": 642
+             }
+}`
+	var expected Container
+	err := json.Unmarshal([]byte(jsonContainer), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fakeRT := &FakeRoundTripper{message: jsonContainer, status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	id := "4fa6e0f0c678"
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	defer cancel()
+
+	inspectError := make(chan error)
+	// Invoke InspectContainer in a goroutine. The response is sent to the 'inspectError'
+	// channel.
+	go func() {
+		container, err := client.InspectContainer(id)
+		if err != nil {
+			inspectError <- err
+			return
+		}
+		if !reflect.DeepEqual(*container, expected) {
+			inspectError <- fmt.Errorf("inspectContainer(%q): Expected %#v. Got %#v", id, expected, container)
+			return
+		}
+		expectedURL, _ := url.Parse(client.getURL("/containers/4fa6e0f0c678/json"))
+		if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {
+			inspectError <- fmt.Errorf("inspectContainer(%q): Wrong path in request. Want %q. Got %q", id, expectedURL.Path, gotPath)
+			return
+		}
+		// No errors to tbe reported. Send 'nil'
+		inspectError <- nil
+	}()
+	// Wait for either the inspect response or for the context.
+	select {
+	case err := <-inspectError:
+		if err != nil {
+			t.Fatalf("Error inspecting container with context: %v", err)
+		}
+	case <-ctx.Done():
+		// Context was canceled unexpectedly. Report the same.
+		t.Fatalf("Context canceled when waiting for inspect container response: %v", ctx.Err())
 	}
 }
 
@@ -870,6 +1015,41 @@ func TestStartContainerNilHostConfig(t *testing.T) {
 	}
 }
 
+func TestStartContainerWithContext(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	defer cancel()
+
+	startError := make(chan error)
+	go func() {
+		startError <- client.StartContainerWithContext(id, &HostConfig{}, ctx)
+	}()
+	select {
+	case err := <-startError:
+		if err != nil {
+			t.Fatal(err)
+		}
+		req := fakeRT.requests[0]
+		if req.Method != "POST" {
+			t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		}
+		expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/start"))
+		if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+			t.Errorf("StartContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+		}
+		expectedContentType := "application/json"
+		if contentType := req.Header.Get("Content-Type"); contentType != expectedContentType {
+			t.Errorf("StartContainer(%q): Wrong content-type in request. Want %q. Got %q.", id, expectedContentType, contentType)
+		}
+	case <-ctx.Done():
+		// Context was canceled unexpectedly. Report the same.
+		t.Fatalf("Context canceled when waiting for start container response: %v", ctx.Err())
+	}
+}
+
 func TestStartContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.StartContainer("a2344", &HostConfig{})
@@ -903,6 +1083,37 @@ func TestStopContainer(t *testing.T) {
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/stop"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("StopContainer(%q, 10): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+	}
+}
+
+func TestStopContainerWithContext(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	defer cancel()
+
+	stopError := make(chan error)
+	go func() {
+		stopError <- client.StopContainerWithContext(id, 10, ctx)
+	}()
+	select {
+	case err := <-stopError:
+		if err != nil {
+			t.Fatal(err)
+		}
+		req := fakeRT.requests[0]
+		if req.Method != "POST" {
+			t.Errorf("StopContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		}
+		expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/stop"))
+		if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+			t.Errorf("StopContainer(%q, 10): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+		}
+	case <-ctx.Done():
+		// Context was canceled unexpectedly. Report the same.
+		t.Fatalf("Context canceled when waiting for stop container response: %v", ctx.Err())
 	}
 }
 
@@ -1141,6 +1352,43 @@ func TestWaitContainer(t *testing.T) {
 	}
 }
 
+func TestWaitContainerWithContext(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: `{"StatusCode": 56}`, status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second)
+	defer cancel()
+
+	var status int
+	waitError := make(chan error)
+	go func() {
+		var err error
+		status, err = client.WaitContainerWithContext(id, ctx)
+		waitError <- err
+	}()
+	select {
+	case err := <-waitError:
+		if err != nil {
+			t.Fatal(err)
+		}
+		if status != 56 {
+			t.Errorf("WaitContainer(%q): wrong return. Want 56. Got %d.", id, status)
+		}
+		req := fakeRT.requests[0]
+		if req.Method != "POST" {
+			t.Errorf("WaitContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		}
+		expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/wait"))
+		if gotPath := req.URL.Path; gotPath != expectedURL.Path {
+			t.Errorf("WaitContainer(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
+		}
+	case <-ctx.Done():
+		// Context was canceled unexpectedly. Report the same.
+		t.Fatalf("Context canceled when waiting for wait container response: %v", ctx.Err())
+	}
+}
+
 func TestWaitContainerNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	_, err := client.WaitContainer("a2334")
@@ -1203,7 +1451,7 @@ func TestCommitContainerParams(t *testing.T) {
 		}
 		if tt.body != nil {
 			if requestBody, err := ioutil.ReadAll(fakeRT.requests[0].Body); err == nil {
-				if bytes.Compare(requestBody, tt.body) != 0 {
+				if !bytes.Equal(requestBody, tt.body) {
 					t.Errorf("Expected body %#v, got %#v", tt.body, requestBody)
 				}
 			} else {
@@ -1464,9 +1712,9 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		conn.Write([]byte("hello"))
 		conn.Write([]byte{2, 0, 0, 0, 0, 0, 0, 6})
 		conn.Write([]byte("hello!"))
+		time.Sleep(10 * time.Millisecond)
 		conn.Close()
 	}))
-	defer server.Close()
 	client, _ := NewClient(server.URL)
 	client.SkipServerVersionCheck = true
 	var stdout, stderr bytes.Buffer
@@ -1489,6 +1737,7 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		"stream": {"1"},
 	}
 	got := map[string][]string(req.URL.Query())
+	server.Close()
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("AttachToContainer: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
@@ -1717,37 +1966,6 @@ func TestExportContainer(t *testing.T) {
 	}
 }
 
-func TestExportContainerViaUnixSocket(t *testing.T) {
-	content := "exported container tar content"
-	var buf []byte
-	out := bytes.NewBuffer(buf)
-	tempSocket := tempfile("export_socket")
-	defer os.Remove(tempSocket)
-	endpoint := "unix://" + tempSocket
-	u, _ := parseEndpoint(endpoint, false)
-	client := Client{
-		HTTPClient:             cleanhttp.DefaultClient(),
-		Dialer:                 &net.Dialer{},
-		endpoint:               endpoint,
-		endpointURL:            u,
-		SkipServerVersionCheck: true,
-	}
-	listening := make(chan string)
-	done := make(chan int)
-	containerID := "4fa6e0f0c678"
-	go runStreamConnServer(t, "unix", tempSocket, listening, done, containerID)
-	<-listening // wait for server to start
-	opts := ExportContainerOptions{ID: containerID, OutputStream: out}
-	err := client.ExportContainer(opts)
-	<-done // make sure server stopped
-	if err != nil {
-		t.Errorf("ExportContainer: caugh error %#v while exporting container, expected nil", err.Error())
-	}
-	if out.String() != content {
-		t.Errorf("ExportContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
-	}
-}
-
 func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- string, done chan<- int, containerID string) {
 	defer close(done)
 	l, err := net.Listen(network, laddr)
@@ -1766,6 +1984,9 @@ func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- s
 	defer c.Close()
 	breader := bufio.NewReader(c)
 	req, err := http.ReadRequest(breader)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if path := "/containers/" + containerID + "/export"; req.URL.Path != path {
 		t.Errorf("wrong path. Want %q. Got %q", path, req.URL.Path)
 		return
@@ -2013,63 +2234,6 @@ func TestTopContainerWithPsArgs(t *testing.T) {
 	expectedURI := "/containers/abef348/top?ps_args=aux"
 	if !strings.HasSuffix(fakeRT.requests[0].URL.String(), expectedURI) {
 		t.Errorf("TopContainer: Expected URI to have %q. Got %q.", expectedURI, fakeRT.requests[0].URL.String())
-	}
-}
-
-func TestStatsTimeout(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "socket")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
-	socketPath := filepath.Join(tmpdir, "docker_test.sock")
-	t.Logf("socketPath=%s", socketPath)
-	l, err := net.Listen("unix", socketPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	received := make(chan bool)
-	defer l.Close()
-	go func() {
-		conn, err := l.Accept()
-		if err != nil {
-			t.Logf("Failed to accept connection: %s", err)
-			return
-		}
-		breader := bufio.NewReader(conn)
-		req, err := http.ReadRequest(breader)
-		if err != nil {
-			t.Logf("Failed to read request: %s", err)
-			return
-		}
-		if req.URL.Path != "/containers/c/stats" {
-			t.Logf("Wrong URL path for stats: %q", req.URL.Path)
-			return
-		}
-		received <- true
-		time.Sleep(2 * time.Second)
-	}()
-	client, _ := NewClient("unix://" + socketPath)
-	client.SkipServerVersionCheck = true
-	errC := make(chan error, 1)
-	statsC := make(chan *Stats)
-	done := make(chan bool)
-	defer close(done)
-	go func() {
-		errC <- client.Stats(StatsOptions{ID: "c", Stats: statsC, Stream: true, Done: done, Timeout: time.Millisecond})
-		close(errC)
-	}()
-	err = <-errC
-	e, ok := err.(net.Error)
-	if !ok || !e.Timeout() {
-		t.Errorf("Failed to receive timeout error, got %#v", err)
-	}
-	recvTimeout := 2 * time.Second
-	select {
-	case <-received:
-		return
-	case <-time.After(recvTimeout):
-		t.Fatalf("Timeout waiting to receive message after %v", recvTimeout)
 	}
 }
 
@@ -2412,5 +2576,95 @@ func TestRenameContainer(t *testing.T) {
 	actualValues := req.URL.Query()["name"]
 	if len(actualValues) != 1 || expectedValues[0] != actualValues[0] {
 		t.Errorf("RenameContainer: Wrong params in request. Want %q. Got %q.", expectedValues, actualValues)
+	}
+}
+
+// sleepyRoundTripper implements the http.RoundTripper interface. It sleeps
+// for the 'sleep' duration and then returns an error for RoundTrip method.
+type sleepyRoudTripper struct {
+	sleepDuration time.Duration
+}
+
+func (rt *sleepyRoudTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	time.Sleep(rt.sleepDuration)
+	return nil, fmt.Errorf("Can't complete roung trip")
+}
+
+func TestInspectContainerWhenContextTimesOut(t *testing.T) {
+	rt := sleepyRoudTripper{sleepDuration: 200 * time.Millisecond}
+
+	client := newTestClient(&rt)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
+	defer cancel()
+
+	_, err := client.InspectContainerWithContext("id", ctx)
+	if err != context.DeadlineExceeded {
+		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
+	}
+}
+
+func TestStartContainerWhenContextTimesOut(t *testing.T) {
+	rt := sleepyRoudTripper{sleepDuration: 200 * time.Millisecond}
+
+	client := newTestClient(&rt)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
+	defer cancel()
+
+	err := client.StartContainerWithContext("id", nil, ctx)
+	if err != context.DeadlineExceeded {
+		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
+	}
+}
+
+func TestStopContainerWhenContextTimesOut(t *testing.T) {
+	rt := sleepyRoudTripper{sleepDuration: 200 * time.Millisecond}
+
+	client := newTestClient(&rt)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
+	defer cancel()
+
+	err := client.StopContainerWithContext("id", 10, ctx)
+	if err != context.DeadlineExceeded {
+		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
+	}
+}
+
+func TestWaitContainerWhenContextTimesOut(t *testing.T) {
+	rt := sleepyRoudTripper{sleepDuration: 200 * time.Millisecond}
+
+	client := newTestClient(&rt)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
+	defer cancel()
+
+	_, err := client.WaitContainerWithContext("id", ctx)
+	if err != context.DeadlineExceeded {
+		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
+	}
+}
+
+func TestPruneContainers(t *testing.T) {
+	results := `{
+		"ContainersDeleted": [
+			"a", "b", "c"
+		],
+		"SpaceReclaimed": 123
+	}`
+
+	expected := &PruneContainersResults{}
+	err := json.Unmarshal([]byte(results), expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: results, status: http.StatusOK})
+	got, err := client.PruneContainers(PruneContainersOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("PruneContainers: Expected %#v. Got %#v.", expected, got)
 	}
 }

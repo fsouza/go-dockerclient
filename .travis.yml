@@ -1,20 +1,18 @@
 language: go
 sudo: required
 go:
-  - 1.6.3
-  - 1.7
+  - 1.7.x
+  - 1.8.x
   - tip
 os:
   - linux
   - osx
 env:
   matrix:
-    - GOARCH=amd64 DOCKER_VERSION=1.10.3
-    - GOARCH=386   DOCKER_VERSION=1.10.3
-    - GOARCH=amd64 DOCKER_VERSION=1.11.2
-    - GOARCH=386   DOCKER_VERSION=1.11.2
-    - GOARCH=amd64 DOCKER_VERSION=1.12.1
-    - GOARCH=386   DOCKER_VERSION=1.12.1
+    - GOARCH=amd64 DOCKER_VERSION=1.12.6
+    - GOARCH=386   DOCKER_VERSION=1.12.6
+    - GOARCH=amd64 DOCKER_VERSION=1.13.1
+    - GOARCH=386   DOCKER_VERSION=1.13.1
   global:
     - GO_TEST_FLAGS=-race
     - DOCKER_HOST=tcp://127.0.0.1:2375
@@ -29,10 +27,6 @@ matrix:
   fast_finish: true
   exclude:
     - os: osx
-      env: GOARCH=amd64 DOCKER_VERSION=1.10.3
+      env: GOARCH=amd64 DOCKER_VERSION=1.12.6
     - os: osx
-      env: GOARCH=386   DOCKER_VERSION=1.10.3
-    - os: osx
-      env: GOARCH=amd64 DOCKER_VERSION=1.11.2
-    - os: osx
-      env: GOARCH=386   DOCKER_VERSION=1.11.2
+      env: GOARCH=386   DOCKER_VERSION=1.12.6

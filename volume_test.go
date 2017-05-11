@@ -140,3 +140,26 @@ func TestRemoveVolumeInUse(t *testing.T) {
 		t.Errorf("RemoveVolume: wrong error. Want %#v. Got %#v.", ErrVolumeInUse, err)
 	}
 }
+
+func TestPruneVolumes(t *testing.T) {
+	results := `{
+		"VolumesDeleted": [
+			"a", "b", "c"
+		],
+		"SpaceReclaimed": 123
+	}`
+
+	expected := &PruneVolumesResults{}
+	err := json.Unmarshal([]byte(results), expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: results, status: http.StatusOK})
+	got, err := client.PruneVolumes(PruneVolumesOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("PruneContainers: Expected %#v. Got %#v.", expected, got)
+	}
+}

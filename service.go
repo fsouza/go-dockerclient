@@ -7,8 +7,10 @@ package docker
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"strconv"
 
-	"github.com/docker/engine-api/types/swarm"
+	"github.com/docker/docker/api/types/swarm"
 	"golang.org/x/net/context"
 )
 
@@ -29,6 +31,7 @@ func (err *NoSuchService) Error() string {
 //
 // See https://goo.gl/KrVjHz for more details.
 type CreateServiceOptions struct {
+	Auth AuthConfiguration `qs:"-"`
 	swarm.ServiceSpec
 	Context context.Context
 }
@@ -38,8 +41,13 @@ type CreateServiceOptions struct {
 //
 // See https://goo.gl/KrVjHz for more details.
 func (c *Client) CreateService(opts CreateServiceOptions) (*swarm.Service, error) {
+	headers, err := headersWithAuth(opts.Auth)
+	if err != nil {
+		return nil, err
+	}
 	path := "/services/create?" + queryString(opts)
 	resp, err := c.do("POST", path, doOptions{
+		headers:   headers,
 		data:      opts.ServiceSpec,
 		forceJSON: true,
 		context:   opts.Context,
@@ -83,15 +91,24 @@ func (c *Client) RemoveService(opts RemoveServiceOptions) error {
 //
 // See https://goo.gl/wu3MmS for more details.
 type UpdateServiceOptions struct {
+	Auth AuthConfiguration `qs:"-"`
 	swarm.ServiceSpec
 	Context context.Context
+	Version uint64
 }
 
 // UpdateService updates the service at ID with the options
 //
 // See https://goo.gl/wu3MmS for more details.
 func (c *Client) UpdateService(id string, opts UpdateServiceOptions) error {
-	resp, err := c.do("POST", "/services/"+id+"/update", doOptions{
+	headers, err := headersWithAuth(opts.Auth)
+	if err != nil {
+		return err
+	}
+	params := make(url.Values)
+	params.Set("version", strconv.FormatUint(opts.Version, 10))
+	resp, err := c.do("POST", "/services/"+id+"/update?"+params.Encode(), doOptions{
+		headers:   headers,
 		data:      opts.ServiceSpec,
 		forceJSON: true,
 		context:   opts.Context,

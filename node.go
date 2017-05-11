@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/docker/engine-api/types/swarm"
+	"github.com/docker/docker/api/types/swarm"
 	"golang.org/x/net/context"
 )
 
@@ -76,7 +76,7 @@ func (c *Client) InspectNode(id string) (*swarm.Node, error) {
 // See http://goo.gl/VPBFgA for more details.
 type UpdateNodeOptions struct {
 	swarm.NodeSpec
-	Version int
+	Version uint64
 	Context context.Context
 }
 
@@ -85,9 +85,9 @@ type UpdateNodeOptions struct {
 // See http://goo.gl/VPBFgA for more details.
 func (c *Client) UpdateNode(id string, opts UpdateNodeOptions) error {
 	params := make(url.Values)
-	params.Set("version", strconv.Itoa(opts.Version))
+	params.Set("version", strconv.FormatUint(opts.Version, 10))
 	path := "/nodes/" + id + "/update?" + params.Encode()
-	_, err := c.do("POST", path, doOptions{
+	resp, err := c.do("POST", path, doOptions{
 		context:   opts.Context,
 		forceJSON: true,
 		data:      opts.NodeSpec,
@@ -98,6 +98,7 @@ func (c *Client) UpdateNode(id string, opts UpdateNodeOptions) error {
 		}
 		return err
 	}
+	resp.Body.Close()
 	return nil
 }
 
@@ -117,12 +118,13 @@ func (c *Client) RemoveNode(opts RemoveNodeOptions) error {
 	params := make(url.Values)
 	params.Set("force", strconv.FormatBool(opts.Force))
 	path := "/nodes/" + opts.ID + "?" + params.Encode()
-	_, err := c.do("DELETE", path, doOptions{context: opts.Context})
+	resp, err := c.do("DELETE", path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return &NoSuchNode{ID: opts.ID}
 		}
 		return err
 	}
+	resp.Body.Close()
 	return nil
 }
