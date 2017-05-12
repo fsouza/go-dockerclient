@@ -1293,7 +1293,8 @@ type CommitContainerOptions struct {
 	Tag        string
 	Message    string `qs:"comment"`
 	Author     string
-	Run        *Config `qs:"-"`
+	Changes    []string `qs:"changes"`
+	Run        *Config  `qs:"-"`
 	Context    context.Context
 }
 
