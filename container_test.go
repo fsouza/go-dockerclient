@@ -629,8 +629,8 @@ func TestInspectContainerNetwork(t *testing.T) {
 	id := "81e1bbe20b55"
 	expIP := "10.0.0.3"
 	expNetworkID := "7ea29fc1412292a2d7bba362f9253545fecdfa8ce9a6e37dd10ba8bee7129812"
-	expAlias0 = "testalias"
-	expAlias1 = "81e1bbe20b55"
+	expAlias0 := "testalias"
+	expAlias1 := "81e1bbe20b55"
 
 	container, err := client.InspectContainer(id)
 	if err != nil {
