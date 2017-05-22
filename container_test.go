@@ -606,6 +606,10 @@ func TestInspectContainerNetwork(t *testing.T) {
                 "MacAddress": "",
                 "Networks": {
                     "swl-net": {
+						"Aliases": [
+							"testalias",
+							"81e1bbe20b55"
+						],
                         "NetworkID": "7ea29fc1412292a2d7bba362f9253545fecdfa8ce9a6e37dd10ba8bee7129812",
                         "EndpointID": "683e3092275782a53c3b0968cc7e3a10f23264022ded9cb20490902f96fc5981",
                         "Gateway": "",
@@ -625,6 +629,7 @@ func TestInspectContainerNetwork(t *testing.T) {
 	id := "81e1bbe20b55"
 	expIP := "10.0.0.3"
 	expNetworkID := "7ea29fc1412292a2d7bba362f9253545fecdfa8ce9a6e37dd10ba8bee7129812"
+	expectedAliases := []string{"testalias", "81e1bbe20b55"}
 
 	container, err := client.InspectContainer(id)
 	if err != nil {
@@ -652,6 +657,17 @@ func TestInspectContainerNetwork(t *testing.T) {
 				t.Logf("%s %v", net, networkID)
 			}
 		}
+
+		var aliases []string
+		for _, net := range networks.MapKeys() {
+			if net.Interface().(string) == container.HostConfig.NetworkMode {
+				aliases = networks.MapIndex(net).FieldByName("Aliases").Interface().([]string)
+			}
+		}
+		if !reflect.DeepEqual(aliases, expectedAliases) {
+			t.Errorf("InspectContainerNetworks(%q): Expected Aliases %#v. Got %#v.", id, expectedAliases, aliases)
+		}
+
 		if networkID != expNetworkID {
 			t.Errorf("InspectContainerNetworks(%q): Expected %#v. Got %#v.", id, expNetworkID, networkID)
 		}
