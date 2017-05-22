@@ -26,6 +26,7 @@ type AuthConfiguration struct {
 	Username      string `json:"username,omitempty"`
 	Password      string `json:"password,omitempty"`
 	Email         string `json:"email,omitempty"`
+	RegistryToken string `json:"registrytoken,omitempty"`
 	ServerAddress string `json:"serveraddress,omitempty"`
 }
 
