@@ -1409,7 +1409,8 @@ type LogsOptions struct {
 	RawTerminal bool `qs:"-"`
 }
 
-// Logs gets stdout and stderr logs from the specified container.
+// Logs gets stdout and stderr logs from the specified container. You can use
+// https://github.com/ahmetalpbalkan/dlog to parse the raw streams.
 //
 // When LogsOptions.RawTerminal is set to false, go-dockerclient will multiplex
 // the streams and send the containers stdout to LogsOptions.OutputStream, and
