@@ -629,8 +629,7 @@ func TestInspectContainerNetwork(t *testing.T) {
 	id := "81e1bbe20b55"
 	expIP := "10.0.0.3"
 	expNetworkID := "7ea29fc1412292a2d7bba362f9253545fecdfa8ce9a6e37dd10ba8bee7129812"
-	expAlias0 := "testalias"
-	expAlias1 := "81e1bbe20b55"
+	expectedAliases := []string{"testalias", "81e1bbe20b55"}
 
 	container, err := client.InspectContainer(id)
 	if err != nil {
@@ -665,8 +664,8 @@ func TestInspectContainerNetwork(t *testing.T) {
 				aliases = networks.MapIndex(net).FieldByName("Aliases").Interface().([]string)
 			}
 		}
-		if aliases[0] != expAlias0 || aliases[1] != expAlias1 {
-			t.Errorf("InspectContainerNetworks(%q): Expected Alias0 %s. Got %s, Alias1 %s. Got %s", id, expAlias0, aliases[0], expAlias1, aliases[1])
+		if !reflect.DeepEqual(aliases, expectedAliases) {
+			t.Errorf("InspectContainerNetworks(%q): Expected Aliases %#v. Got %#v.", id, expectedAliases, aliases)
 		}
 
 		if networkID != expNetworkID {
