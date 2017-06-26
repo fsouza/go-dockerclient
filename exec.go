@@ -29,6 +29,7 @@ type CreateExecOptions struct {
 	AttachStdout bool            `json:"AttachStdout,omitempty" yaml:"AttachStdout,omitempty" toml:"AttachStdout,omitempty"`
 	AttachStderr bool            `json:"AttachStderr,omitempty" yaml:"AttachStderr,omitempty" toml:"AttachStderr,omitempty"`
 	Tty          bool            `json:"Tty,omitempty" yaml:"Tty,omitempty" toml:"Tty,omitempty"`
+	Env          []string        `json:"Env,omitempty" yaml:"Env,omitempty" toml:"Env,omitempty"`
 	Cmd          []string        `json:"Cmd,omitempty" yaml:"Cmd,omitempty" toml:"Cmd,omitempty"`
 	Container    string          `json:"Container,omitempty" yaml:"Container,omitempty" toml:"Container,omitempty"`
 	User         string          `json:"User,omitempty" yaml:"User,omitempty" toml:"User,omitempty"`
