@@ -3,7 +3,7 @@ sudo: required
 go:
   - 1.7.x
   - 1.8.x
-  - 1.9beta1
+  - 1.9beta2
   - tip
 os:
   - linux
