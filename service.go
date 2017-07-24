@@ -170,10 +170,8 @@ func (c *Client) ListServices(opts ListServicesOptions) ([]swarm.Service, error)
 	return services, nil
 }
 
-// LogsOptions represents the set of options used when getting logs from a
-// container.
-//
-// See https://goo.gl/krK0ZH for more details.
+// LogsServiceOptions represents the set of options used when getting logs from a
+// service.
 type LogsServiceOptions struct {
 	Context           context.Context
 	Service           string        `qs:"-"`
@@ -192,17 +190,14 @@ type LogsServiceOptions struct {
 	Details     bool
 }
 
-// Logs gets stdout and stderr logs from the specified service.
+// LogsService gets stdout and stderr logs from the specified service.
 //
-// When LogsOptions.RawTerminal is set to false, go-dockerclient will multiplex
-// the streams and send the containers stdout to LogsOptions.OutputStream, and
-// stderr to LogsOptions.ErrorStream.
+// When LogsServiceOptions.RawTerminal is set to false, go-dockerclient will multiplex
+// the streams and send the containers stdout to LogsServiceOptions.OutputStream, and
+// stderr to LogsServiceOptions.ErrorStream.
 //
-// When LogsOptions.RawTerminal is true, callers will get the raw stream on
-// LogOptions.OutputStream. The caller can use libraries such as dlog
-// (github.com/ahmetalpbalkan/dlog).
-//
-// See https://goo.gl/krK0ZH for more details.
+// When LogsServiceOptions.RawTerminal is true, callers will get the raw stream on
+// LogsServiceOptions.OutputStream.
 func (c *Client) LogsService(opts LogsServiceOptions) error {
 	if opts.Service == "" {
 		return &NoSuchService{ID: opts.Service}
