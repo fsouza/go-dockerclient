@@ -6,9 +6,11 @@ package docker
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/docker/docker/api/types/swarm"
 	"golang.org/x/net/context"
@@ -166,4 +168,54 @@ func (c *Client) ListServices(opts ListServicesOptions) ([]swarm.Service, error)
 		return nil, err
 	}
 	return services, nil
+}
+
+// LogsOptions represents the set of options used when getting logs from a
+// container.
+//
+// See https://goo.gl/krK0ZH for more details.
+type LogsServiceOptions struct {
+	Context           context.Context
+	Service           string        `qs:"-"`
+	OutputStream      io.Writer     `qs:"-"`
+	ErrorStream       io.Writer     `qs:"-"`
+	InactivityTimeout time.Duration `qs:"-"`
+	Tail              string
+
+	// Use raw terminal? Usually true when the container contains a TTY.
+	RawTerminal bool `qs:"-"`
+	Since       int64
+	Follow      bool
+	Stdout      bool
+	Stderr      bool
+	Timestamps  bool
+	Details     bool
+}
+
+// Logs gets stdout and stderr logs from the specified service.
+//
+// When LogsOptions.RawTerminal is set to false, go-dockerclient will multiplex
+// the streams and send the containers stdout to LogsOptions.OutputStream, and
+// stderr to LogsOptions.ErrorStream.
+//
+// When LogsOptions.RawTerminal is true, callers will get the raw stream on
+// LogOptions.OutputStream. The caller can use libraries such as dlog
+// (github.com/ahmetalpbalkan/dlog).
+//
+// See https://goo.gl/krK0ZH for more details.
+func (c *Client) LogsService(opts LogsServiceOptions) error {
+	if opts.Service == "" {
+		return &NoSuchService{ID: opts.Service}
+	}
+	if opts.Tail == "" {
+		opts.Tail = "all"
+	}
+	path := "/services/" + opts.Service + "/logs?" + queryString(opts)
+	return c.stream("GET", path, streamOptions{
+		setRawTerminal:    opts.RawTerminal,
+		stdout:            opts.OutputStream,
+		stderr:            opts.ErrorStream,
+		inactivityTimeout: opts.InactivityTimeout,
+		context:           opts.Context,
+	})
 }
