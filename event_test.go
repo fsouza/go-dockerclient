@@ -51,6 +51,7 @@ func TestTLSEventListeners(t *testing.T) {
 }
 
 func testEventListeners(testName string, t *testing.T, buildServer func(http.Handler) *httptest.Server, buildClient func(string) (*Client, error)) {
+	t.Parallel()
 	response := `{"action":"pull","type":"image","actor":{"id":"busybox:latest","attributes":{}},"time":1442421700,"timeNano":1442421700598988358}
 {"action":"create","type":"container","actor":{"id":"5745704abe9caa5","attributes":{"image":"busybox"}},"time":1442421716,"timeNano":1442421716853979870}
 {"action":"attach","type":"container","actor":{"id":"5745704abe9caa5","attributes":{"image":"busybox"}},"time":1442421716,"timeNano":1442421716894759198}
@@ -258,6 +259,7 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 }
 
 func TestEventListenerReAdding(t *testing.T) {
+	t.Parallel()
 	endChan := make(chan bool)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		<-endChan

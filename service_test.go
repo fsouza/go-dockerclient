@@ -17,6 +17,7 @@ import (
 )
 
 func TestCreateService(t *testing.T) {
+	t.Parallel()
 	result := `{
   "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 }`
@@ -61,6 +62,7 @@ func TestCreateService(t *testing.T) {
 }
 
 func TestCreateServiceWithAuthentication(t *testing.T) {
+	t.Parallel()
 	result := `{
   "Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 }`
@@ -115,6 +117,7 @@ func TestCreateServiceWithAuthentication(t *testing.T) {
 }
 
 func TestRemoveService(t *testing.T) {
+	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
@@ -134,6 +137,7 @@ func TestRemoveService(t *testing.T) {
 }
 
 func TestRemoveServiceNotFound(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such service", status: http.StatusNotFound})
 	err := client.RemoveService(RemoveServiceOptions{ID: "a2334"})
 	expected := &NoSuchService{ID: "a2334"}
@@ -143,6 +147,7 @@ func TestRemoveServiceNotFound(t *testing.T) {
 }
 
 func TestUpdateService(t *testing.T) {
+	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
@@ -174,6 +179,7 @@ func TestUpdateService(t *testing.T) {
 }
 
 func TestUpdateServiceWithAuthentication(t *testing.T) {
+	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
@@ -222,6 +228,7 @@ func TestUpdateServiceWithAuthentication(t *testing.T) {
 }
 
 func TestUpdateServiceNotFound(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such service", status: http.StatusNotFound})
 	update := UpdateServiceOptions{}
 	err := client.UpdateService("notfound", update)
@@ -232,6 +239,7 @@ func TestUpdateServiceNotFound(t *testing.T) {
 }
 
 func TestInspectServiceNotFound(t *testing.T) {
+	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such service", status: http.StatusNotFound})
 	service, err := client.InspectService("notfound")
 	if service != nil {
@@ -244,6 +252,7 @@ func TestInspectServiceNotFound(t *testing.T) {
 }
 
 func TestInspectService(t *testing.T) {
+	t.Parallel()
 	jsonService := `{
   "ID": "ak7w3gjqoa3kuz8xcpnyy0pvl",
   "Version": {
@@ -324,6 +333,7 @@ func TestInspectService(t *testing.T) {
 }
 
 func TestListServices(t *testing.T) {
+	t.Parallel()
 	jsonServices := `[
   {
     "ID": "9mnpnzenvg8p8tdbtq4wvbkcz",
