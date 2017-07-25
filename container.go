@@ -914,12 +914,14 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 //
 // See https://goo.gl/Dk3Xio for more details.
 type Stats struct {
-	Read      time.Time `json:"read,omitempty" yaml:"read,omitempty" toml:"read,omitempty"`
+	Read     time.Time `json:"read,omitempty" yaml:"read,omitempty" toml:"read,omitempty"`
+	PreRead  time.Time `json:"preread,omitempty" yaml:"preread,omitempty" toml:"preread,omitempty"`
+	NumProcs uint32 `json:"num_procs" yaml:"num_procs" toml:"num_procs"`
 	PidsStats struct {
 		Current uint64 `json:"current,omitempty" yaml:"current,omitempty"`
 	} `json:"pids_stats,omitempty" yaml:"pids_stats,omitempty" toml:"pids_stats,omitempty"`
-	Network     NetworkStats            `json:"network,omitempty" yaml:"network,omitempty" toml:"network,omitempty"`
-	Networks    map[string]NetworkStats `json:"networks,omitempty" yaml:"networks,omitempty" toml:"networks,omitempty"`
+	Network  NetworkStats            `json:"network,omitempty" yaml:"network,omitempty" toml:"network,omitempty"`
+	Networks map[string]NetworkStats `json:"networks,omitempty" yaml:"networks,omitempty" toml:"networks,omitempty"`
 	MemoryStats struct {
 		Stats struct {
 			TotalPgmafault          uint64 `json:"total_pgmafault,omitempty" yaml:"total_pgmafault,omitempty" toml:"total_pgmafault,omitempty"`
@@ -954,10 +956,13 @@ type Stats struct {
 			HierarchicalMemswLimit  uint64 `json:"hierarchical_memsw_limit,omitempty" yaml:"hierarchical_memsw_limit,omitempty" toml:"hierarchical_memsw_limit,omitempty"`
 			Swap                    uint64 `json:"swap,omitempty" yaml:"swap,omitempty" toml:"swap,omitempty"`
 		} `json:"stats,omitempty" yaml:"stats,omitempty" toml:"stats,omitempty"`
-		MaxUsage uint64 `json:"max_usage,omitempty" yaml:"max_usage,omitempty" toml:"max_usage,omitempty"`
-		Usage    uint64 `json:"usage,omitempty" yaml:"usage,omitempty" toml:"usage,omitempty"`
-		Failcnt  uint64 `json:"failcnt,omitempty" yaml:"failcnt,omitempty" toml:"failcnt,omitempty"`
-		Limit    uint64 `json:"limit,omitempty" yaml:"limit,omitempty" toml:"limit,omitempty"`
+		MaxUsage          uint64 `json:"max_usage,omitempty" yaml:"max_usage,omitempty" toml:"max_usage,omitempty"`
+		Usage             uint64 `json:"usage,omitempty" yaml:"usage,omitempty" toml:"usage,omitempty"`
+		Failcnt           uint64 `json:"failcnt,omitempty" yaml:"failcnt,omitempty" toml:"failcnt,omitempty"`
+		Limit             uint64 `json:"limit,omitempty" yaml:"limit,omitempty" toml:"limit,omitempty"`
+		Commit            uint64 `json:"commitbytes,omitempty" yaml:"commitbytes,omitempty" toml:"privateworkingset,omitempty"`
+		CommitPeak        uint64 `json:"commitpeakbytes,omitempty" yaml:"commitpeakbytes,omitempty" toml:"commitpeakbytes,omitempty"`
+		PrivateWorkingSet uint64 `json:"privateworkingset,omitempty" yaml:"privateworkingset,omitempty" toml:"privateworkingset,omitempty"`
 	} `json:"memory_stats,omitempty" yaml:"memory_stats,omitempty" toml:"memory_stats,omitempty"`
 	BlkioStats struct {
 		IOServiceBytesRecursive []BlkioStatsEntry `json:"io_service_bytes_recursive,omitempty" yaml:"io_service_bytes_recursive,omitempty" toml:"io_service_bytes_recursive,omitempty"`
@@ -971,6 +976,12 @@ type Stats struct {
 	} `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty" toml:"blkio_stats,omitempty"`
 	CPUStats    CPUStats `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty" toml:"cpu_stats,omitempty"`
 	PreCPUStats CPUStats `json:"precpu_stats,omitempty"`
+	StorageStats struct {
+		ReadCountNormalized  uint64 `json:"read_count_normalized,omitempty" yaml:"read_count_normalized,omitempty" toml:"read_count_normalized,omitempty"`
+		ReadSizeBytes        uint64 `json:"read_size_bytes,omitempty" yaml:"read_size_bytes,omitempty" toml:"read_size_bytes,omitempty"`
+		WriteCountNormalized uint64 `json:"write_count_normalized,omitempty" yaml:"write_count_normalized,omitempty" toml:"write_count_normalized,omitempty"`
+		WriteSizeBytes       uint64 `json:"write_size_bytes,omitempty" yaml:"write_size_bytes,omitempty" toml:"write_size_bytes,omitempty"`
+	} `json:"storage_stats,omitempty" yaml:"storage_stats,omitempty" toml:"storage_stats,omitempty"`
 }
 
 // NetworkStats is a stats entry for network stats
