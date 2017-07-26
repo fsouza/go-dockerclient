@@ -190,7 +190,7 @@ type LogsServiceOptions struct {
 	Details     bool
 }
 
-// LogsService gets stdout and stderr logs from the specified service.
+// GetServiceLogs gets stdout and stderr logs from the specified service.
 //
 // When LogsServiceOptions.RawTerminal is set to false, go-dockerclient will multiplex
 // the streams and send the containers stdout to LogsServiceOptions.OutputStream, and
@@ -198,7 +198,7 @@ type LogsServiceOptions struct {
 //
 // When LogsServiceOptions.RawTerminal is true, callers will get the raw stream on
 // LogsServiceOptions.OutputStream.
-func (c *Client) LogsService(opts LogsServiceOptions) error {
+func (c *Client) GetServiceLogs(opts LogsServiceOptions) error {
 	if opts.Service == "" {
 		return &NoSuchService{ID: opts.Service}
 	}
