@@ -248,12 +248,14 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 	timeout := time.After(1 * time.Second)
 	events := make([]APIEvents, 0, len(wantedEvents))
 
+loop:
 	for i := range wantedEvents {
 		select {
 		case msg, ok := <-listener:
-			if ok {
-				events = append(events, *msg)
+			if !ok {
+				break loop
 			}
+			events = append(events, *msg)
 		case <-timeout:
 			t.Fatalf("%s: timed out waiting on events after %d events", testName, i)
 		}
