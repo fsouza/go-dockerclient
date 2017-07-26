@@ -216,7 +216,7 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client) {
 				return
 			}
 			eventState.updateLastSeen(ev)
-			go eventState.sendEvent(ev)
+			eventState.sendEvent(ev)
 		case err = <-eventState.errC:
 			if err == ErrNoListeners {
 				eventState.disableEventMonitoring()
@@ -274,7 +274,10 @@ func (eventState *eventMonitoringState) sendEvent(event *APIEvents) {
 		}
 
 		for _, listener := range eventState.listeners {
-			listener <- event
+			select {
+			case listener <- event:
+			default:
+			}
 		}
 	}
 }
