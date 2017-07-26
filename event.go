@@ -342,11 +342,12 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 			if event.Time == 0 {
 				continue
 			}
-			if !c.eventMonitor.isEnabled() || c.eventMonitor.C != eventChan {
-				return
-			}
 			transformEvent(&event)
-			eventChan <- &event
+			c.eventMonitor.RLock()
+			if c.eventMonitor.enabled && c.eventMonitor.C == eventChan {
+				eventChan <- &event
+			}
+			c.eventMonitor.RUnlock()
 		}
 	}(res, conn)
 	return nil
