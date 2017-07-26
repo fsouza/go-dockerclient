@@ -1056,6 +1056,7 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 		}
 	}()
 
+	reqSent := make(chan struct{})
 	go func() {
 		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats?stream=%v", opts.ID, opts.Stream), streamOptions{
 			rawJSONStream:     true,
@@ -1064,6 +1065,7 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 			timeout:           opts.Timeout,
 			inactivityTimeout: opts.InactivityTimeout,
 			context:           opts.Context,
+			reqSent:           reqSent,
 		})
 		if err != nil {
 			dockerError, ok := err.(*Error)
@@ -1094,6 +1096,7 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 
 	decoder := json.NewDecoder(readCloser)
 	stats := new(Stats)
+	<-reqSent
 	for err := decoder.Decode(stats); err != io.EOF; err = decoder.Decode(stats) {
 		if err != nil {
 			return err
