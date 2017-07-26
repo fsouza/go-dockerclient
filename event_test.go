@@ -245,7 +245,7 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 		t.Errorf("Failed to add event listener: %s", err)
 	}
 
-	timeout := time.After(1 * time.Second)
+	timeout := time.After(5 * time.Second)
 	events := make([]APIEvents, 0, len(wantedEvents))
 
 loop:
