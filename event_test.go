@@ -233,7 +233,7 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 	}
 	client.SkipServerVersionCheck = true
 
-	listener := make(chan *APIEvents, 10)
+	listener := make(chan *APIEvents, len(wantedEvents)+1)
 	defer func() {
 		if err = client.RemoveEventListener(listener); err != nil {
 			t.Error(err)
@@ -248,14 +248,14 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 	timeout := time.After(1 * time.Second)
 	events := make([]APIEvents, 0, len(wantedEvents))
 
-	for range wantedEvents {
+	for i := range wantedEvents {
 		select {
 		case msg, ok := <-listener:
 			if ok {
 				events = append(events, *msg)
 			}
 		case <-timeout:
-			t.Fatalf("%s timed out waiting on events", testName)
+			t.Fatalf("%s: timed out waiting on events after %d events", testName, i)
 		}
 	}
 	cmpr := cmp.Comparer(func(e1, e2 APIEvents) bool {
