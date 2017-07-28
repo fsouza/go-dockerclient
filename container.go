@@ -914,14 +914,14 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 //
 // See https://goo.gl/Dk3Xio for more details.
 type Stats struct {
-	Read     time.Time `json:"read,omitempty" yaml:"read,omitempty" toml:"read,omitempty"`
-	PreRead  time.Time `json:"preread,omitempty" yaml:"preread,omitempty" toml:"preread,omitempty"`
-	NumProcs uint32 `json:"num_procs" yaml:"num_procs" toml:"num_procs"`
+	Read      time.Time `json:"read,omitempty" yaml:"read,omitempty" toml:"read,omitempty"`
+	PreRead   time.Time `json:"preread,omitempty" yaml:"preread,omitempty" toml:"preread,omitempty"`
+	NumProcs  uint32    `json:"num_procs" yaml:"num_procs" toml:"num_procs"`
 	PidsStats struct {
 		Current uint64 `json:"current,omitempty" yaml:"current,omitempty"`
 	} `json:"pids_stats,omitempty" yaml:"pids_stats,omitempty" toml:"pids_stats,omitempty"`
-	Network  NetworkStats            `json:"network,omitempty" yaml:"network,omitempty" toml:"network,omitempty"`
-	Networks map[string]NetworkStats `json:"networks,omitempty" yaml:"networks,omitempty" toml:"networks,omitempty"`
+	Network     NetworkStats            `json:"network,omitempty" yaml:"network,omitempty" toml:"network,omitempty"`
+	Networks    map[string]NetworkStats `json:"networks,omitempty" yaml:"networks,omitempty" toml:"networks,omitempty"`
 	MemoryStats struct {
 		Stats struct {
 			TotalPgmafault          uint64 `json:"total_pgmafault,omitempty" yaml:"total_pgmafault,omitempty" toml:"total_pgmafault,omitempty"`
@@ -974,8 +974,8 @@ type Stats struct {
 		IOTimeRecursive         []BlkioStatsEntry `json:"io_time_recursive,omitempty" yaml:"io_time_recursive,omitempty" toml:"io_time_recursive,omitempty"`
 		SectorsRecursive        []BlkioStatsEntry `json:"sectors_recursive,omitempty" yaml:"sectors_recursive,omitempty" toml:"sectors_recursive,omitempty"`
 	} `json:"blkio_stats,omitempty" yaml:"blkio_stats,omitempty" toml:"blkio_stats,omitempty"`
-	CPUStats    CPUStats `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty" toml:"cpu_stats,omitempty"`
-	PreCPUStats CPUStats `json:"precpu_stats,omitempty"`
+	CPUStats     CPUStats `json:"cpu_stats,omitempty" yaml:"cpu_stats,omitempty" toml:"cpu_stats,omitempty"`
+	PreCPUStats  CPUStats `json:"precpu_stats,omitempty"`
 	StorageStats struct {
 		ReadCountNormalized  uint64 `json:"read_count_normalized,omitempty" yaml:"read_count_normalized,omitempty" toml:"read_count_normalized,omitempty"`
 		ReadSizeBytes        uint64 `json:"read_size_bytes,omitempty" yaml:"read_size_bytes,omitempty" toml:"read_size_bytes,omitempty"`
