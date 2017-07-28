@@ -1882,6 +1882,7 @@ func TestStatsContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	got.Read = time.Time{}
+	got.PreRead = time.Time{}
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("StatsContainer: wrong value. Want %#v. Got %#v.", expected, got)
 	}
@@ -1934,6 +1935,7 @@ func TestStatsContainerStream(t *testing.T) {
 		t.Fatal(err)
 	}
 	got.Read = time.Time{}
+	got.PreRead = time.Time{}
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("StatsContainer: wrong value. Want %#v. Got %#v.", expected, got)
 	}
