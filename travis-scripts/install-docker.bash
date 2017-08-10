@@ -13,6 +13,6 @@ if [[ $TRAVIS_OS_NAME == "linux" ]]; then
 	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 	sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) edge"
 	sudo apt-get update
-	sudo apt-get install docker-ce=${DOCKER_VERSION}-0~ubuntu-$(lsb_release -cs) -y --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+	sudo apt-get install docker-ce=${DOCKER_PKG_VERSION} -y --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 	sudo start docker || true
 fi
