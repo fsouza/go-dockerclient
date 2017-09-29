@@ -26,5 +26,5 @@ func (c *Client) initializeNativeClient() {
 	tr.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 		return c.Dialer.Dial(unixProtocol, socketPath)
 	}
-	c.nativeHTTPClient = &http.Client{Transport: tr}
+	c.NativeHTTPClient = &http.Client{Transport: tr}
 }

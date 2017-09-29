@@ -151,7 +151,7 @@ type Client struct {
 	requestedAPIVersion APIVersion
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
-	nativeHTTPClient    *http.Client
+	NativeHTTPClient    *http.Client
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -345,14 +345,14 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 }
 
 // SetTimeout takes a timeout and applies it to both the HTTPClient and
-// nativeHTTPClient. It should not be called concurrently with any other Client
+// NativeHTTPClient. It should not be called concurrently with any other Client
 // methods.
 func (c *Client) SetTimeout(t time.Duration) {
 	if c.HTTPClient != nil {
 		c.HTTPClient.Timeout = t
 	}
-	if c.nativeHTTPClient != nil {
-		c.nativeHTTPClient.Timeout = t
+	if c.NativeHTTPClient != nil {
+		c.NativeHTTPClient.Timeout = t
 	}
 }
 
@@ -450,7 +450,7 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 	var u string
 	switch protocol {
 	case unixProtocol, namedPipeProtocol:
-		httpClient = c.nativeHTTPClient
+		httpClient = c.NativeHTTPClient
 		u = c.getFakeNativeURL(path)
 	default:
 		u = c.getURL(path)

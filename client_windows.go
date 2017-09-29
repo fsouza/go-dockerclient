@@ -41,5 +41,5 @@ func (c *Client) initializeNativeClient() {
 		return dialFunc(network, addr)
 	}
 	c.Dialer = &pipeDialer{dialFunc}
-	c.nativeHTTPClient = &http.Client{Transport: tr}
+	c.NativeHTTPClient = &http.Client{Transport: tr}
 }
