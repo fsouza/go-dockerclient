@@ -26,10 +26,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
+	"github.com/moby/moby/api/types/swarm"
+	"github.com/moby/moby/pkg/stdcopy"
 )
 
 var nameRegexp = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)

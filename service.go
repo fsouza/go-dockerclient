@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/docker/docker/api/types/swarm"
+	"github.com/moby/moby/api/types/swarm"
 	"golang.org/x/net/context"
 )
 

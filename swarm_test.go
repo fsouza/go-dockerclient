@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/docker/docker/api/types/swarm"
+	"github.com/moby/moby/api/types/swarm"
 )
 
 func TestInitSwarm(t *testing.T) {
