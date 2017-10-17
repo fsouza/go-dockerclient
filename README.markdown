@@ -120,6 +120,6 @@ The instructions below can be used to get a version of go-dockerclient that comp
 
 ```
 % git clone -b docker-1.9/go-1.4 https://github.com/fsouza/go-dockerclient.git $GOPATH/src/github.com/fsouza/go-dockerclient
-% git clone -b v1.9.1 https://github.com/docker/docker.git $GOPATH/src/github.com/docker/docker
+% git clone -b v1.9.1 https://github.com/moby/moby.git $GOPATH/src/github.com/moby/moby
 % go get github.com/fsouza/go-dockerclient
 ```

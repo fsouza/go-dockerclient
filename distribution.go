@@ -7,7 +7,7 @@ package docker
 import (
 	"encoding/json"
 
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/registry"
 )
 
 // InspectDistribution returns image digest and platform information by contacting the registry

@@ -16,7 +16,7 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/docker/docker/api/types/swarm"
+	"github.com/moby/moby/api/types/swarm"
 )
 
 func TestCreateService(t *testing.T) {
