@@ -1,0 +1,24 @@
+
+[[constraint]]
+  name = "github.com/Microsoft/go-winio"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/docker/docker"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/docker/go-units"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/google/go-cmp"
+  branch = "master"
+
+[[constraint]]
+  name = "github.com/gorilla/mux"
+  branch = "master"
+
+[[constraint]]
+  name = "golang.org/x/net"
+  branch = "master"
