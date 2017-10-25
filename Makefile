@@ -16,7 +16,7 @@ lint:
 	[ -z "$$(golint . | grep -v 'type name will be used as docker.DockerInfo' | grep -v 'context.Context should be the first' | tee /dev/stderr)" ]
 
 vet:
-	go vet ./...
+	go vet $(go list ./... | grep -v vendor)
 
 fmt:
 	gofmt -s -w .
@@ -30,7 +30,9 @@ testdeps:
 pretest: testdeps lint vet fmtcheck
 
 gotest:
-	go test $(GO_TEST_FLAGS) ./...
+	go get -u github.com/golang/dep/cmd/dep
+	dep ensure -v
+	go test -race $(go list ./... | grep -v vendor)
 
 test: pretest gotest
 
