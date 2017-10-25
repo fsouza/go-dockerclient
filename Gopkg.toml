@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/Microsoft/go-winio"
-  branch = "master"
+  version = "v0.4.5"
 
 [[constraint]]
   name = "github.com/docker/docker"
