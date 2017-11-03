@@ -189,7 +189,7 @@ func TestInspectSecretNotFound(t *testing.T) {
 func TestInspectSecret(t *testing.T) {
 	t.Parallel()
 	jsonSecret := `{
-		"ID": "ktnbjxoalbkvbvedmg1urrz8h",
+		"ID": "ak7w3gjqoa3kuz8xcpnyy0pvl",
 		"Version": {
 			"Index": 11
 		},
