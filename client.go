@@ -138,7 +138,7 @@ func (version APIVersion) compare(other APIVersion) int {
 }
 
 // Client is the basic type of this package. It provides methods for
-// interaction with the API.
+// interaction with the API with an optional Jump Host.
 type Client struct {
 	SkipServerVersionCheck bool
 	HTTPClient             *http.Client
@@ -151,6 +151,13 @@ type Client struct {
 	requestedAPIVersion APIVersion
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
+
+	Agent         bool // TODO remove?
+	AgentIdentity string
+	jHAddr        string
+	jHUser        string
+	jHPrivateKey  string
+	jHPassword    string
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -164,7 +171,7 @@ type Dialer interface {
 // server endpoint. It will use the latest remote API version available in the
 // server.
 func NewClient(endpoint string) (*Client, error) {
-	client, err := NewVersionedClient(endpoint, "")
+	client, err := internalNewVersionedClient(endpoint, "", "", "", "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +183,19 @@ func NewClient(endpoint string) (*Client, error) {
 // server endpoint, key and certificates . It will use the latest remote API version
 // available in the server.
 func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
-	client, err := NewVersionedTLSClient(endpoint, cert, key, ca, "")
+	return internalNewTLSClient(endpoint, cert, key, ca, "", "", "", "")
+}
+
+// NewTLSClientViaJumpHost returns a Client instance ready for TLS communications with the given
+// server endpoint, key and certificates via a Jump Host . It will use the latest remote API version
+// available in the server.
+func NewTLSClientViaJumpHost(endpoint string, cert, key, ca string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+	return internalNewTLSClient(endpoint, cert, key, ca, jHAddr, jHUser, jHPrivateKey, jHPassword)
+}
+
+// InternalNewTLSClient for internal usage
+func internalNewTLSClient(endpoint string, cert, key, ca string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+	client, err := internalNewVersionedTLSClient(endpoint, cert, key, ca, "", jHAddr, jHUser, jHPrivateKey, jHPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +207,7 @@ func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file). It will use the latest remote API version available in the server.
 func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte) (*Client, error) {
-	client, err := NewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "")
+	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", "", "", "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -199,6 +218,16 @@ func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert
 // NewVersionedClient returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version.
 func NewVersionedClient(endpoint string, apiVersionString string) (*Client, error) {
+	return internalNewVersionedClient(endpoint, apiVersionString, "", "", "", "")
+}
+
+// NewVersionedClientViaJumpHost returns a Client instance ready for communication with
+// the given server endpoint, using a specific remote API version.
+func NewVersionedClientViaJumpHost(endpoint string, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+	return internalNewVersionedClient(endpoint, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+}
+
+func internalNewVersionedClient(endpoint string, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
 	u, err := parseEndpoint(endpoint, false)
 	if err != nil {
 		return nil, err
@@ -230,6 +259,16 @@ func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString str
 // NewVersionedTLSClient returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates, using a specific remote API version.
 func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
+	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, "", "", "", "")
+}
+
+// NewVersionedTLSClientViaJumpHost returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates, using a specific remote API version.
+func NewVersionedTLSClientViaJumpHost(endpoint string, cert, key, ca, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+}
+
+func internalNewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
 	var certPEMBlock []byte
 	var keyPEMBlock []byte
 	var caPEMCert []byte
@@ -251,7 +290,7 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 			return nil, err
 		}
 	}
-	return NewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString)
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
 }
 
 // NewClientFromEnv returns a Client instance ready for communication created from
@@ -260,7 +299,20 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewClientFromEnv() (*Client, error) {
-	client, err := NewVersionedClientFromEnv("")
+	return internalNewClientFromEnv("", "", "", "")
+}
+
+// NewClientFromEnvViaJumpHost returns a Client instance ready for communication created from
+// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH.
+//
+// See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
+// See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
+func NewClientFromEnvViaJumpHost(jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+	return internalNewClientFromEnv(jHAddr, jHUser, jHPrivateKey, jHPassword)
+}
+
+func internalNewClientFromEnv(jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+	client, err := internalNewVersionedClientFromEnv("", jHAddr, jHUser, jHPrivateKey, jHPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -275,6 +327,20 @@ func NewClientFromEnv() (*Client, error) {
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
+	return internalNewVersionedClientFromEnv(apiVersionString, "", "", "", "")
+}
+
+// NewVersionedClientFromEnvViaJumpHost returns a Client instance ready for TLS communications created from
+// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH,
+// and using a specific remote API version.
+//
+// See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
+// See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
+func NewVersionedClientFromEnvViaJumpHost(apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+	return internalNewVersionedClientFromEnv(apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+}
+
+func internalNewVersionedClientFromEnv(apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
 	dockerEnv, err := getDockerEnv()
 	if err != nil {
 		return nil, err
@@ -290,13 +356,24 @@ func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
 		ca := filepath.Join(dockerEnv.dockerCertPath, "ca.pem")
 		return NewVersionedTLSClient(dockerEnv.dockerHost, cert, key, ca, apiVersionString)
 	}
-	return NewVersionedClient(dockerEnv.dockerHost, apiVersionString)
+	return internalNewVersionedClient(dockerEnv.dockerHost, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
 }
 
 // NewVersionedTLSClientFromBytes returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file), using a specific remote API version.
 func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string) (*Client, error) {
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, "", "", "", "")
+}
+
+// NewVersionedTLSClientFromBytesViaJumpHost returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates (passed inline to the function as opposed to being
+// read from a local file), using a specific remote API version.
+func NewVersionedTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) { // TODO
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+}
+
+func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) { // TODO
 	u, err := parseEndpoint(endpoint, true)
 	if err != nil {
 		return nil, err
