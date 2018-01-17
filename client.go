@@ -152,7 +152,7 @@ type Client struct {
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
 
-	jumpHostConfig JumpHostConfig
+	tunnel *Tunnel
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -243,6 +243,9 @@ func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfi
 			return nil, err
 		}
 	}
+
+	// TODO build tunnel if configuredg
+
 	c := &Client{
 		HTTPClient:          defaultClient(),
 		Dialer:              &net.Dialer{},
@@ -250,7 +253,7 @@ func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfi
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
-		jumpHostConfig:      jumpHostConfig,
+		tunnel:              nil,
 	}
 	c.initializeNativeClient()
 	return c, nil
@@ -413,6 +416,17 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 		return nil, err
 	}
 
+	// TODO build tunnel if configured
+	var tunnel *Tunnel
+	if jumpHostConfig.Address != "" { // TODO make this *
+		tunnel = NewTunnel(
+			&SSHConfig{"endhost:22", "user", "/Users/xx/.ssh/id_rsa_endhost"},
+			&SSHConfig{"jumphost:22", "user", "/Users/xx/.ssh/id_rsa_jump"},
+			"localhost:2376",
+			"localhost:2376",
+		)
+	}
+
 	c := &Client{
 		HTTPClient:          &http.Client{Transport: tr},
 		TLSConfig:           tlsConfig,
@@ -421,7 +435,7 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
-		jumpHostConfig:      jumpHostConfig,
+		tunnel:              tunnel,
 	}
 	c.initializeNativeClient()
 	return c, nil
@@ -510,6 +524,8 @@ type doOptions struct {
 }
 
 func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, error) {
+	defer c.tunnel.Stop() // Got all of them?
+
 	var params io.Reader
 	if doOptions.data != nil || doOptions.forceJSON {
 		buf, err := json.Marshal(doOptions.data)
