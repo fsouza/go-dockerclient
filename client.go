@@ -152,12 +152,7 @@ type Client struct {
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
 
-	Agent         bool // TODO remove?
-	AgentIdentity string
-	jHAddr        string
-	jHUser        string
-	jHPrivateKey  string
-	jHPassword    string
+	jumpHostConfig JumpHostConfig
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -167,11 +162,20 @@ type Dialer interface {
 	Dial(network, address string) (net.Conn, error)
 }
 
+// JumpHostConfig wraps the configuration for an
+// optional jump host
+type JumpHostConfig struct {
+	Address    string
+	User       string
+	PrivateKey string
+	Password   string
+}
+
 // NewClient returns a Client instance ready for communication with the given
 // server endpoint. It will use the latest remote API version available in the
 // server.
 func NewClient(endpoint string) (*Client, error) {
-	client, err := internalNewVersionedClient(endpoint, "", "", "", "", "")
+	client, err := internalNewVersionedClient(endpoint, "", JumpHostConfig{})
 	if err != nil {
 		return nil, err
 	}
@@ -183,19 +187,19 @@ func NewClient(endpoint string) (*Client, error) {
 // server endpoint, key and certificates . It will use the latest remote API version
 // available in the server.
 func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
-	return internalNewTLSClient(endpoint, cert, key, ca, "", "", "", "")
+	return internalNewTLSClient(endpoint, cert, key, ca, JumpHostConfig{})
 }
 
 // NewTLSClientViaJumpHost returns a Client instance ready for TLS communications with the given
 // server endpoint, key and certificates via a Jump Host . It will use the latest remote API version
 // available in the server.
-func NewTLSClientViaJumpHost(endpoint string, cert, key, ca string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
-	return internalNewTLSClient(endpoint, cert, key, ca, jHAddr, jHUser, jHPrivateKey, jHPassword)
+func NewTLSClientViaJumpHost(endpoint, cert, key, ca string, jumpHostConfig JumpHostConfig) (*Client, error) {
+	return internalNewTLSClient(endpoint, cert, key, ca, jumpHostConfig)
 }
 
 // InternalNewTLSClient for internal usage
-func internalNewTLSClient(endpoint string, cert, key, ca string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
-	client, err := internalNewVersionedTLSClient(endpoint, cert, key, ca, "", jHAddr, jHUser, jHPrivateKey, jHPassword)
+func internalNewTLSClient(endpoint, cert, key, ca string, jumpHostConfig JumpHostConfig) (*Client, error) {
+	client, err := internalNewVersionedTLSClient(endpoint, cert, key, ca, "", jumpHostConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +211,7 @@ func internalNewTLSClient(endpoint string, cert, key, ca string, jHAddr string, 
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file). It will use the latest remote API version available in the server.
 func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte) (*Client, error) {
-	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", "", "", "", "")
+	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", JumpHostConfig{})
 	if err != nil {
 		return nil, err
 	}
@@ -218,16 +222,16 @@ func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert
 // NewVersionedClient returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version.
 func NewVersionedClient(endpoint string, apiVersionString string) (*Client, error) {
-	return internalNewVersionedClient(endpoint, apiVersionString, "", "", "", "")
+	return internalNewVersionedClient(endpoint, apiVersionString, JumpHostConfig{})
 }
 
 // NewVersionedClientViaJumpHost returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version.
-func NewVersionedClientViaJumpHost(endpoint string, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
-	return internalNewVersionedClient(endpoint, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+func NewVersionedClientViaJumpHost(endpoint, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+	return internalNewVersionedClient(endpoint, apiVersionString, jumpHostConfig)
 }
 
-func internalNewVersionedClient(endpoint string, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
 	u, err := parseEndpoint(endpoint, false)
 	if err != nil {
 		return nil, err
@@ -246,29 +250,30 @@ func internalNewVersionedClient(endpoint string, apiVersionString string, jHAddr
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
+		jumpHostConfig:      jumpHostConfig,
 	}
 	c.initializeNativeClient()
 	return c, nil
 }
 
 // NewVersionnedTLSClient has been DEPRECATED, please use NewVersionedTLSClient.
-func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
+func NewVersionnedTLSClient(endpoint, cert, key, ca, apiVersionString string) (*Client, error) {
 	return NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString)
 }
 
 // NewVersionedTLSClient returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates, using a specific remote API version.
-func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
-	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, "", "", "", "")
+func NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string) (*Client, error) {
+	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, JumpHostConfig{})
 }
 
 // NewVersionedTLSClientViaJumpHost returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates, using a specific remote API version.
-func NewVersionedTLSClientViaJumpHost(endpoint string, cert, key, ca, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
-	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+func NewVersionedTLSClientViaJumpHost(endpoint, cert, key, ca, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, jumpHostConfig)
 }
 
-func internalNewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+func internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
 	var certPEMBlock []byte
 	var keyPEMBlock []byte
 	var caPEMCert []byte
@@ -290,7 +295,7 @@ func internalNewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionStr
 			return nil, err
 		}
 	}
-	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jumpHostConfig)
 }
 
 // NewClientFromEnv returns a Client instance ready for communication created from
@@ -299,7 +304,7 @@ func internalNewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionStr
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewClientFromEnv() (*Client, error) {
-	return internalNewClientFromEnv("", "", "", "")
+	return internalNewClientFromEnv(JumpHostConfig{})
 }
 
 // NewClientFromEnvViaJumpHost returns a Client instance ready for communication created from
@@ -307,12 +312,12 @@ func NewClientFromEnv() (*Client, error) {
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
-func NewClientFromEnvViaJumpHost(jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
-	return internalNewClientFromEnv(jHAddr, jHUser, jHPrivateKey, jHPassword)
+func NewClientFromEnvViaJumpHost(jumpHostConfig JumpHostConfig) (*Client, error) {
+	return internalNewClientFromEnv(jumpHostConfig)
 }
 
-func internalNewClientFromEnv(jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
-	client, err := internalNewVersionedClientFromEnv("", jHAddr, jHUser, jHPrivateKey, jHPassword)
+func internalNewClientFromEnv(jumpHostConfig JumpHostConfig) (*Client, error) {
+	client, err := internalNewVersionedClientFromEnv("", jumpHostConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +332,7 @@ func internalNewClientFromEnv(jHAddr string, jHUser string, jHPrivateKey string,
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
-	return internalNewVersionedClientFromEnv(apiVersionString, "", "", "", "")
+	return internalNewVersionedClientFromEnv(apiVersionString, JumpHostConfig{})
 }
 
 // NewVersionedClientFromEnvViaJumpHost returns a Client instance ready for TLS communications created from
@@ -336,11 +341,11 @@ func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
-func NewVersionedClientFromEnvViaJumpHost(apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
-	return internalNewVersionedClientFromEnv(apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+func NewVersionedClientFromEnvViaJumpHost(apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+	return internalNewVersionedClientFromEnv(apiVersionString, jumpHostConfig)
 }
 
-func internalNewVersionedClientFromEnv(apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) {
+func internalNewVersionedClientFromEnv(apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
 	dockerEnv, err := getDockerEnv()
 	if err != nil {
 		return nil, err
@@ -356,24 +361,24 @@ func internalNewVersionedClientFromEnv(apiVersionString string, jHAddr string, j
 		ca := filepath.Join(dockerEnv.dockerCertPath, "ca.pem")
 		return NewVersionedTLSClient(dockerEnv.dockerHost, cert, key, ca, apiVersionString)
 	}
-	return internalNewVersionedClient(dockerEnv.dockerHost, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+	return internalNewVersionedClient(dockerEnv.dockerHost, apiVersionString, jumpHostConfig)
 }
 
 // NewVersionedTLSClientFromBytes returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file), using a specific remote API version.
 func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string) (*Client, error) {
-	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, "", "", "", "")
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, JumpHostConfig{})
 }
 
 // NewVersionedTLSClientFromBytesViaJumpHost returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file), using a specific remote API version.
-func NewVersionedTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) { // TODO
-	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jHAddr, jHUser, jHPrivateKey, jHPassword)
+func NewVersionedTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jumpHostConfig)
 }
 
-func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jHAddr string, jHUser string, jHPrivateKey string, jHPassword string) (*Client, error) { // TODO
+func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
 	u, err := parseEndpoint(endpoint, true)
 	if err != nil {
 		return nil, err
@@ -407,6 +412,7 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 	if err != nil {
 		return nil, err
 	}
+
 	c := &Client{
 		HTTPClient:          &http.Client{Transport: tr},
 		TLSConfig:           tlsConfig,
@@ -415,6 +421,7 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
+		jumpHostConfig:      jumpHostConfig,
 	}
 	c.initializeNativeClient()
 	return c, nil
