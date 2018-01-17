@@ -2,3 +2,4 @@
 testing/data/symlink
 Gopkg.lock
 vendor/
+.idea
