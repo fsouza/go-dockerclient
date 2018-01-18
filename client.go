@@ -152,7 +152,7 @@ type Client struct {
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
 
-	tunnel *Tunnel
+	forward *Forward
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -160,15 +160,6 @@ type Client struct {
 // winio.DialPipe)
 type Dialer interface {
 	Dial(network, address string) (net.Conn, error)
-}
-
-// JumpHostConfig wraps the configuration for an
-// optional jump host
-type JumpHostConfig struct {
-	Address    string
-	User       string
-	PrivateKey string
-	Password   string
 }
 
 // NewClient returns a Client instance ready for communication with the given
@@ -193,12 +184,12 @@ func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
 // NewTLSClientViaJumpHost returns a Client instance ready for TLS communications with the given
 // server endpoint, key and certificates via a jump host . It will use the latest remote API version
 // available in the server.
-func NewTLSClientViaJumpHost(endpoint, cert, key, ca string, jumpHostConfig *JumpHostConfig) (*Client, error) {
-	return internalNewTLSClient(endpoint, cert, key, ca, jumpHostConfig)
+func NewTLSClientViaJumpHost(endpoint, cert, key, ca string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewTLSClient(endpoint, cert, key, ca, forwardConfig)
 }
 
-func internalNewTLSClient(endpoint, cert, key, ca string, jumpHostConfig *JumpHostConfig) (*Client, error) {
-	client, err := internalNewVersionedTLSClient(endpoint, cert, key, ca, "", jumpHostConfig)
+func internalNewTLSClient(endpoint, cert, key, ca string, forwardConfig *ForwardConfig) (*Client, error) {
+	client, err := internalNewVersionedTLSClient(endpoint, cert, key, ca, "", forwardConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -221,8 +212,8 @@ func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert
 // NewTLSClientFromBytesViaJumpHost returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file) and uses a jump host. It will use the latest remote API version available in the server.
-func NewTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, jumpHostConfig *JumpHostConfig) (*Client, error) {
-	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", jumpHostConfig)
+func NewTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, forwardConfig *ForwardConfig) (*Client, error) {
+	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", forwardConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -238,11 +229,11 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 
 // NewVersionedClientViaJumpHost returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version and a jump host.
-func NewVersionedClientViaJumpHost(endpoint, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
-	return internalNewVersionedClient(endpoint, apiVersionString, jumpHostConfig)
+func NewVersionedClientViaJumpHost(endpoint, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewVersionedClient(endpoint, apiVersionString, forwardConfig)
 }
 
-func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
+func internalNewVersionedClient(endpoint, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	u, err := parseEndpoint(endpoint, false)
 	if err != nil {
 		return nil, err
@@ -255,7 +246,14 @@ func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfi
 		}
 	}
 
-	// TODO build tunnel if configured
+	var forward *Forward
+	if forwardConfig != nil {
+		forward, err = NewForward(forwardConfig)
+		if err != nil {
+			return nil, err
+		}
+		<-forward.bootstrap
+	}
 
 	c := &Client{
 		HTTPClient:          defaultClient(),
@@ -264,7 +262,7 @@ func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfi
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
-		tunnel:              nil,
+		forward:             forward,
 	}
 	c.initializeNativeClient()
 	return c, nil
@@ -283,11 +281,11 @@ func NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string) (*C
 
 // NewVersionedTLSClientViaJumpHost returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates, using a specific remote API version and a jump host.
-func NewVersionedTLSClientViaJumpHost(endpoint, cert, key, ca, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
-	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, jumpHostConfig)
+func NewVersionedTLSClientViaJumpHost(endpoint, cert, key, ca, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, forwardConfig)
 }
 
-func internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
+func internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	var certPEMBlock []byte
 	var keyPEMBlock []byte
 	var caPEMCert []byte
@@ -309,7 +307,7 @@ func internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString str
 			return nil, err
 		}
 	}
-	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jumpHostConfig)
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, forwardConfig)
 }
 
 // NewClientFromEnv returns a Client instance ready for communication created from
@@ -327,12 +325,12 @@ func NewClientFromEnv() (*Client, error) {
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
-func NewClientFromEnvViaJumpHost(jumpHostConfig *JumpHostConfig) (*Client, error) {
-	return internalNewClientFromEnv(jumpHostConfig)
+func NewClientFromEnvViaJumpHost(forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewClientFromEnv(forwardConfig)
 }
 
-func internalNewClientFromEnv(jumpHostConfig *JumpHostConfig) (*Client, error) {
-	client, err := internalNewVersionedClientFromEnv("", jumpHostConfig)
+func internalNewClientFromEnv(forwardConfig *ForwardConfig) (*Client, error) {
+	client, err := internalNewVersionedClientFromEnv("", forwardConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -356,11 +354,11 @@ func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
-func NewVersionedClientFromEnvViaJumpHost(apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
-	return internalNewVersionedClientFromEnv(apiVersionString, jumpHostConfig)
+func NewVersionedClientFromEnvViaJumpHost(apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewVersionedClientFromEnv(apiVersionString, forwardConfig)
 }
 
-func internalNewVersionedClientFromEnv(apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
+func internalNewVersionedClientFromEnv(apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	dockerEnv, err := getDockerEnv()
 	if err != nil {
 		return nil, err
@@ -376,7 +374,7 @@ func internalNewVersionedClientFromEnv(apiVersionString string, jumpHostConfig *
 		ca := filepath.Join(dockerEnv.dockerCertPath, "ca.pem")
 		return NewVersionedTLSClient(dockerEnv.dockerHost, cert, key, ca, apiVersionString)
 	}
-	return internalNewVersionedClient(dockerEnv.dockerHost, apiVersionString, jumpHostConfig)
+	return internalNewVersionedClient(dockerEnv.dockerHost, apiVersionString, forwardConfig)
 }
 
 // NewVersionedTLSClientFromBytes returns a Client instance ready for TLS communications with the givens
@@ -389,11 +387,11 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 // NewVersionedTLSClientFromBytesViaJumpHost returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file), using a specific remote API version and a jump host.
-func NewVersionedTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
-	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jumpHostConfig)
+func NewVersionedTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, forwardConfig)
 }
 
-func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
+func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	u, err := parseEndpoint(endpoint, true)
 	if err != nil {
 		return nil, err
@@ -428,15 +426,13 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 		return nil, err
 	}
 
-	// TODO build tunnel if configured
-	var tunnel *Tunnel
-	if jumpHostConfig != nil && jumpHostConfig.Address != "" {
-		tunnel = NewTunnel(
-			&SSHConfig{endpoint + ":22", "user", "/Users/xx/.ssh/id_rsa_endhost"},
-			&SSHConfig{jumpHostConfig.Address, jumpHostConfig.User, jumpHostConfig.PrivateKey},
-			"localhost:2376",
-			"localhost:2376",
-		)
+	var forward *Forward
+	if forwardConfig != nil {
+		forward, err = NewForward(forwardConfig)
+		if err != nil {
+			return nil, err
+		}
+		<-forward.bootstrap
 	}
 
 	c := &Client{
@@ -447,10 +443,18 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
-		tunnel:              tunnel,
+		forward:             forward,
 	}
 	c.initializeNativeClient()
 	return c, nil
+}
+
+// CloseForward closes the ssh tunnel which was
+// used to forward the docker daemon
+func (c *Client) CloseForward() {
+	if c.forward != nil {
+		c.forward.Stop()
+	}
 }
 
 // SetTimeout takes a timeout and applies it to the HTTPClient. It should not
@@ -497,6 +501,7 @@ func (c *Client) Ping() error {
 //
 // See https://goo.gl/wYfgY1 for more details.
 func (c *Client) PingWithContext(ctx context.Context) error {
+
 	path := "/_ping"
 	resp, err := c.do("GET", path, doOptions{context: ctx})
 	if err != nil {
@@ -536,8 +541,6 @@ type doOptions struct {
 }
 
 func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, error) {
-	defer c.tunnel.Stop() // Got all of them?
-
 	var params io.Reader
 	if doOptions.data != nil || doOptions.forceJSON {
 		buf, err := json.Marshal(doOptions.data)
