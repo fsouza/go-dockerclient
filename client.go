@@ -175,7 +175,7 @@ type JumpHostConfig struct {
 // server endpoint. It will use the latest remote API version available in the
 // server.
 func NewClient(endpoint string) (*Client, error) {
-	client, err := internalNewVersionedClient(endpoint, "", JumpHostConfig{})
+	client, err := internalNewVersionedClient(endpoint, "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -187,18 +187,17 @@ func NewClient(endpoint string) (*Client, error) {
 // server endpoint, key and certificates . It will use the latest remote API version
 // available in the server.
 func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
-	return internalNewTLSClient(endpoint, cert, key, ca, JumpHostConfig{})
+	return internalNewTLSClient(endpoint, cert, key, ca, nil)
 }
 
 // NewTLSClientViaJumpHost returns a Client instance ready for TLS communications with the given
-// server endpoint, key and certificates via a Jump Host . It will use the latest remote API version
+// server endpoint, key and certificates via a jump host . It will use the latest remote API version
 // available in the server.
-func NewTLSClientViaJumpHost(endpoint, cert, key, ca string, jumpHostConfig JumpHostConfig) (*Client, error) {
+func NewTLSClientViaJumpHost(endpoint, cert, key, ca string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	return internalNewTLSClient(endpoint, cert, key, ca, jumpHostConfig)
 }
 
-// InternalNewTLSClient for internal usage
-func internalNewTLSClient(endpoint, cert, key, ca string, jumpHostConfig JumpHostConfig) (*Client, error) {
+func internalNewTLSClient(endpoint, cert, key, ca string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	client, err := internalNewVersionedTLSClient(endpoint, cert, key, ca, "", jumpHostConfig)
 	if err != nil {
 		return nil, err
@@ -211,7 +210,19 @@ func internalNewTLSClient(endpoint, cert, key, ca string, jumpHostConfig JumpHos
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file). It will use the latest remote API version available in the server.
 func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte) (*Client, error) {
-	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", JumpHostConfig{})
+	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", nil)
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
+}
+
+// NewTLSClientFromBytesViaJumpHost returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates (passed inline to the function as opposed to being
+// read from a local file) and uses a jump host. It will use the latest remote API version available in the server.
+func NewTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, jumpHostConfig *JumpHostConfig) (*Client, error) {
+	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", jumpHostConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -222,16 +233,16 @@ func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert
 // NewVersionedClient returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version.
 func NewVersionedClient(endpoint string, apiVersionString string) (*Client, error) {
-	return internalNewVersionedClient(endpoint, apiVersionString, JumpHostConfig{})
+	return internalNewVersionedClient(endpoint, apiVersionString, nil)
 }
 
 // NewVersionedClientViaJumpHost returns a Client instance ready for communication with
-// the given server endpoint, using a specific remote API version.
-func NewVersionedClientViaJumpHost(endpoint, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+// the given server endpoint, using a specific remote API version and a jump host.
+func NewVersionedClientViaJumpHost(endpoint, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	return internalNewVersionedClient(endpoint, apiVersionString, jumpHostConfig)
 }
 
-func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	u, err := parseEndpoint(endpoint, false)
 	if err != nil {
 		return nil, err
@@ -244,7 +255,7 @@ func internalNewVersionedClient(endpoint, apiVersionString string, jumpHostConfi
 		}
 	}
 
-	// TODO build tunnel if configuredg
+	// TODO build tunnel if configured
 
 	c := &Client{
 		HTTPClient:          defaultClient(),
@@ -267,16 +278,16 @@ func NewVersionnedTLSClient(endpoint, cert, key, ca, apiVersionString string) (*
 // NewVersionedTLSClient returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates, using a specific remote API version.
 func NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string) (*Client, error) {
-	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, JumpHostConfig{})
+	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, nil)
 }
 
 // NewVersionedTLSClientViaJumpHost returns a Client instance ready for TLS communications with the givens
-// server endpoint, key and certificates, using a specific remote API version.
-func NewVersionedTLSClientViaJumpHost(endpoint, cert, key, ca, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+// server endpoint, key and certificates, using a specific remote API version and a jump host.
+func NewVersionedTLSClientViaJumpHost(endpoint, cert, key, ca, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, jumpHostConfig)
 }
 
-func internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+func internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	var certPEMBlock []byte
 	var keyPEMBlock []byte
 	var caPEMCert []byte
@@ -307,19 +318,20 @@ func internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString str
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewClientFromEnv() (*Client, error) {
-	return internalNewClientFromEnv(JumpHostConfig{})
+	return internalNewClientFromEnv(nil)
 }
 
 // NewClientFromEnvViaJumpHost returns a Client instance ready for communication created from
-// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH.
+// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH
+// and a jump host.
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
-func NewClientFromEnvViaJumpHost(jumpHostConfig JumpHostConfig) (*Client, error) {
+func NewClientFromEnvViaJumpHost(jumpHostConfig *JumpHostConfig) (*Client, error) {
 	return internalNewClientFromEnv(jumpHostConfig)
 }
 
-func internalNewClientFromEnv(jumpHostConfig JumpHostConfig) (*Client, error) {
+func internalNewClientFromEnv(jumpHostConfig *JumpHostConfig) (*Client, error) {
 	client, err := internalNewVersionedClientFromEnv("", jumpHostConfig)
 	if err != nil {
 		return nil, err
@@ -335,20 +347,20 @@ func internalNewClientFromEnv(jumpHostConfig JumpHostConfig) (*Client, error) {
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
-	return internalNewVersionedClientFromEnv(apiVersionString, JumpHostConfig{})
+	return internalNewVersionedClientFromEnv(apiVersionString, nil)
 }
 
 // NewVersionedClientFromEnvViaJumpHost returns a Client instance ready for TLS communications created from
 // Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH,
-// and using a specific remote API version.
+// and using a specific remote API version and a jump host.
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
-func NewVersionedClientFromEnvViaJumpHost(apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+func NewVersionedClientFromEnvViaJumpHost(apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	return internalNewVersionedClientFromEnv(apiVersionString, jumpHostConfig)
 }
 
-func internalNewVersionedClientFromEnv(apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+func internalNewVersionedClientFromEnv(apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	dockerEnv, err := getDockerEnv()
 	if err != nil {
 		return nil, err
@@ -371,17 +383,17 @@ func internalNewVersionedClientFromEnv(apiVersionString string, jumpHostConfig J
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file), using a specific remote API version.
 func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string) (*Client, error) {
-	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, JumpHostConfig{})
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, nil)
 }
 
 // NewVersionedTLSClientFromBytesViaJumpHost returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
-// read from a local file), using a specific remote API version.
-func NewVersionedTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+// read from a local file), using a specific remote API version and a jump host.
+func NewVersionedTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, jumpHostConfig)
 }
 
-func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jumpHostConfig JumpHostConfig) (*Client, error) {
+func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, jumpHostConfig *JumpHostConfig) (*Client, error) {
 	u, err := parseEndpoint(endpoint, true)
 	if err != nil {
 		return nil, err
@@ -418,10 +430,10 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 
 	// TODO build tunnel if configured
 	var tunnel *Tunnel
-	if jumpHostConfig.Address != "" { // TODO make this *
+	if jumpHostConfig != nil && jumpHostConfig.Address != "" {
 		tunnel = NewTunnel(
-			&SSHConfig{"endhost:22", "user", "/Users/xx/.ssh/id_rsa_endhost"},
-			&SSHConfig{"jumphost:22", "user", "/Users/xx/.ssh/id_rsa_jump"},
+			&SSHConfig{endpoint + ":22", "user", "/Users/xx/.ssh/id_rsa_endhost"},
+			&SSHConfig{jumpHostConfig.Address, jumpHostConfig.User, jumpHostConfig.PrivateKey},
 			"localhost:2376",
 			"localhost:2376",
 		)
