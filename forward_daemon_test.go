@@ -11,7 +11,7 @@ import (
 
 func TestForwardConfigNotSet(t *testing.T) {
 	t.Parallel()
-	_, err := NewForward(nil)
+	_, _, err := NewForward(nil)
 	if err == nil {
 		t.Errorf("Expected an error for a nil ForwardConfig but got none")
 	}
@@ -44,7 +44,7 @@ func TestForwardConfigTooManyJumpHosts(t *testing.T) {
 		RemoteAddress: "localhost:2376",
 	}
 
-	_, err := NewForward(forwardConfig)
+	_, _, err := NewForward(forwardConfig)
 	if err == nil {
 		t.Errorf("Expected an error for a too many jump hosts in ForwardConfig but got none")
 	}
@@ -54,23 +54,23 @@ func TestForwardConfigInvalidJumpHostSSHConfig(t *testing.T) {
 	t.Parallel()
 
 	forwardConfig := createForwardConfig("10.0.0.1:22", "", "/Users/abc/.ssh/id_rsa_jump_host1", "")
-	_, err := NewForward(forwardConfig)
+	_, _, err := NewForward(forwardConfig)
 	checkErrorContains(t, err, "User cannot be empty")
 
 	forwardConfig = createForwardConfig("", "jumpuser", "/Users/abc/.ssh/id_rsa_jump_host1", "")
-	_, err = NewForward(forwardConfig)
+	_, _, err = NewForward(forwardConfig)
 	checkErrorContains(t, err, "Address cannot be empty")
 
 	forwardConfig = createForwardConfig("10.0.0.1:22", "jumpuser", "", "")
-	_, err = NewForward(forwardConfig)
+	_, _, err = NewForward(forwardConfig)
 	checkErrorContains(t, err, "Either PrivateKeyFile or Password")
 
 	forwardConfig = createForwardConfigWithAddresses("10.0.0.1:22", "jumpuser", "/Users/abc/.ssh/id_rsa_jump_host1", "", "localhost:2376", "")
-	_, err = NewForward(forwardConfig)
+	_, _, err = NewForward(forwardConfig)
 	checkErrorContains(t, err, "LocalAddress and RemoteAddress have to be set")
 
 	forwardConfig = createForwardConfigWithAddresses("10.0.0.1:22", "jumpuser", "", "mypwd", "", "localhost:2376")
-	_, err = NewForward(forwardConfig)
+	_, _, err = NewForward(forwardConfig)
 	checkErrorContains(t, err, "LocalAddress and RemoteAddress have to be set")
 }
 
