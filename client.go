@@ -182,10 +182,10 @@ func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
 	return internalNewTLSClient(endpoint, cert, key, ca, nil)
 }
 
-// NewTLSClientViaJumpHost returns a Client instance ready for TLS communications with the given
-// server endpoint, key and certificates via a jump host . It will use the latest remote API version
+// NewTLSClientWithForward returns a Client instance ready for TLS communications with the given
+// server endpoint, key and certificates via a forward config with optional jump hosts . It will use the latest remote API version
 // available in the server.
-func NewTLSClientViaJumpHost(endpoint, cert, key, ca string, forwardConfig *ForwardConfig) (*Client, error) {
+func NewTLSClientWithForward(endpoint, cert, key, ca string, forwardConfig *ForwardConfig) (*Client, error) {
 	return internalNewTLSClient(endpoint, cert, key, ca, forwardConfig)
 }
 
@@ -210,10 +210,10 @@ func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert
 	return client, nil
 }
 
-// NewTLSClientFromBytesViaJumpHost returns a Client instance ready for TLS communications with the givens
+// NewTLSClientFromBytesWithForward returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
-// read from a local file) and uses a jump host. It will use the latest remote API version available in the server.
-func NewTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, forwardConfig *ForwardConfig) (*Client, error) {
+// read from a local file) and uses a forward config with optional jump hosts. It will use the latest remote API version available in the server.
+func NewTLSClientFromBytesWithForward(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, forwardConfig *ForwardConfig) (*Client, error) {
 	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", forwardConfig)
 	if err != nil {
 		return nil, err
@@ -228,9 +228,9 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	return internalNewVersionedClient(endpoint, apiVersionString, nil)
 }
 
-// NewVersionedClientViaJumpHost returns a Client instance ready for communication with
-// the given server endpoint, using a specific remote API version and a jump host.
-func NewVersionedClientViaJumpHost(endpoint, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+// NewVersionedClientWithForward returns a Client instance ready for communication with
+// the given server endpoint, using a specific remote API version and a forward config with optional jump hosts.
+func NewVersionedClientWithForward(endpoint, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	return internalNewVersionedClient(endpoint, apiVersionString, forwardConfig)
 }
 
@@ -282,9 +282,9 @@ func NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string) (*C
 	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, nil)
 }
 
-// NewVersionedTLSClientViaJumpHost returns a Client instance ready for TLS communications with the givens
-// server endpoint, key and certificates, using a specific remote API version and a jump host.
-func NewVersionedTLSClientViaJumpHost(endpoint, cert, key, ca, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+// NewVersionedTLSClientWithForward returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates, using a specific remote API version and a forward config with optional jump hosts.
+func NewVersionedTLSClientWithForward(endpoint, cert, key, ca, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, forwardConfig)
 }
 
@@ -322,13 +322,13 @@ func NewClientFromEnv() (*Client, error) {
 	return internalNewClientFromEnv(nil)
 }
 
-// NewClientFromEnvViaJumpHost returns a Client instance ready for communication created from
+// NewClientFromEnvWithForward returns a Client instance ready for communication created from
 // Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH
-// and a jump host.
+// and a forward config with optional jump hosts.
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
-func NewClientFromEnvViaJumpHost(forwardConfig *ForwardConfig) (*Client, error) {
+func NewClientFromEnvWithForward(forwardConfig *ForwardConfig) (*Client, error) {
 	return internalNewClientFromEnv(forwardConfig)
 }
 
@@ -351,13 +351,13 @@ func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
 	return internalNewVersionedClientFromEnv(apiVersionString, nil)
 }
 
-// NewVersionedClientFromEnvViaJumpHost returns a Client instance ready for TLS communications created from
+// NewVersionedClientFromEnvWithForward returns a Client instance ready for TLS communications created from
 // Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH,
-// and using a specific remote API version and a jump host.
+// and using a specific remote API version and a forward config with optional jump hosts.
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
-func NewVersionedClientFromEnvViaJumpHost(apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+func NewVersionedClientFromEnvWithForward(apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	return internalNewVersionedClientFromEnv(apiVersionString, forwardConfig)
 }
 
@@ -387,10 +387,10 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, nil)
 }
 
-// NewVersionedTLSClientFromBytesViaJumpHost returns a Client instance ready for TLS communications with the givens
+// NewVersionedTLSClientFromBytesWithForward returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
-// read from a local file), using a specific remote API version and a jump host.
-func NewVersionedTLSClientFromBytesViaJumpHost(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+// read from a local file), using a specific remote API version and a forward config with optional jump hosts.
+func NewVersionedTLSClientFromBytesWithForward(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, forwardConfig)
 }
 
