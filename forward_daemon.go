@@ -35,25 +35,31 @@ type ForwardConfig struct {
 
 // Forward wraps the forward
 type Forward struct {
-	quit   chan bool
-	config *ForwardConfig
+	quit          chan bool
+	config        *ForwardConfig
+	forwardErrors chan error
 }
 
 // NewForward creates new forward
-func NewForward(config *ForwardConfig) (*Forward, error) {
+func NewForward(config *ForwardConfig) (*Forward, chan error, error) {
+	/// == bootstrap
 	if err := checkConfig(config); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	forwardErrors := make(chan error)
 	t := &Forward{
-		quit:   make(chan bool),
-		config: config,
+		quit:          make(chan bool),
+		config:        config,
+		forwardErrors: forwardErrors,
 	}
 	sshClient, localListener, err := t.bootstrap()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	/// == run the forward
 	go t.run(sshClient, localListener)
-	return t, nil
+	return t, forwardErrors, nil
 }
 
 // checkConfig checks the config if it is feasible
@@ -130,7 +136,7 @@ func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 		}
 		log.Println("[DEBUG] local -> jump dialed")
 
-		jumpHostConn, err := dialNextJump(jumpHostClient, t.config.EndHostConfig.Address)
+		jumpHostConn, err := t.dialNextJump(jumpHostClient, t.config.EndHostConfig.Address)
 		if err != nil {
 			return nil, fmt.Errorf("ssh.Dial from jump to jump host failed: %s", err)
 		}
@@ -155,7 +161,7 @@ func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 	return endHostClient, nil
 }
 
-func dialNextJump(jumpHostClient *ssh.Client, nextJumpAddress string) (net.Conn, error) {
+func (t *Forward) dialNextJump(jumpHostClient *ssh.Client, nextJumpAddress string) (net.Conn, error) {
 	// TODO no timeout param in ssh.Dial: https://github.com/golang/go/issues/20288
 	// implement it by hand
 	var jumpHostConn net.Conn
@@ -163,7 +169,8 @@ func dialNextJump(jumpHostClient *ssh.Client, nextJumpAddress string) (net.Conn,
 	go func() {
 		jumpHostConn, err := jumpHostClient.Dial("tcp", nextJumpAddress)
 		if err != nil {
-			// return nil, fmt.Errorf("ssh.Dial from jump host to end server failed: %s", err) TODO
+			t.forwardErrors <- fmt.Errorf("ssh.Dial from jump host to end server failed: %s", err)
+			return
 		}
 		connChan <- jumpHostConn
 		log.Println("[DEBUG] jump -> next jump dialed")
@@ -202,34 +209,34 @@ func (t *Forward) bootstrap() (*ssh.Client, net.Listener, error) {
 	return sshClient, localListener, nil
 }
 
-func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) error {
-	////////// === bootstrap
+func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) {
 	defer func() {
 		localListener.Close()
 		sshClient.Close()
 		log.Println("x-> local listener CLOSED")
 	}()
 
-	////////// === establish connection
-	count := 1
+	jumpCount := 1
 	for {
-		log.Printf("-> before built/accepted SSH remote connection: %d", count)
-		endHostConn, err := sshClient.Dial("tcp", t.config.RemoteAddress)
+		log.Printf("-> before built/accepted SSH remote connection: %d", jumpCount)
+		endHostConn, err := sshClient.Dial("tcp", t.config.RemoteAddress) // TODO timeout here?
 		if err != nil {
-			return fmt.Errorf("Failed to connect on end host to '%s': %s", t.config.RemoteAddress, err)
+			t.forwardErrors <- fmt.Errorf("Failed to connect on end host to docker daemon at '%s': %s", t.config.RemoteAddress, err)
+			return
 		}
 		endHostConn.SetReadDeadline(time.Now().Add(time.Duration(readDeadline) * time.Second))
 		endHostConn.SetWriteDeadline(time.Now().Add(time.Duration(writeDeadline) * time.Second))
-		log.Printf("-> after accepted SSH remote connection: %d", count)
+		log.Printf("-> after accepted SSH remote connection: %d", jumpCount)
 		defer func() {
 			endHostConn.Close()
 			log.Println("x-> remote connection CLOSED")
 		}()
 
-		log.Printf("-> before built/accepted local connection: %d", count)
+		log.Printf("-> before built/accepted local connection: %d", jumpCount)
 		localConn, err := t.buildLocalConnection(localListener)
 		if err != nil {
-			return fmt.Errorf("Error building local connection: %s", err)
+			t.forwardErrors <- fmt.Errorf("Error building local connection: %s", err)
+			return
 		}
 		localConn.SetReadDeadline(time.Now().Add(time.Duration(readDeadline) * time.Second))
 		localConn.SetWriteDeadline(time.Now().Add(time.Duration(writeDeadline) * time.Second))
@@ -244,7 +251,7 @@ func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) error {
 			select {
 			case <-t.quit:
 				log.Println("-> quitting")
-				return nil
+				return
 			default:
 				log.Println("-> continueing")
 				continue
@@ -252,7 +259,7 @@ func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) error {
 		} // if
 
 		t.handleForward(localConn, endHostConn)
-		count++
+		jumpCount++
 	} // for
 }
 
@@ -279,6 +286,7 @@ func (t *Forward) handleForward(localConn, sshConn net.Conn) {
 // Stop stops the forward
 func (t *Forward) Stop() {
 	close(t.quit)
+	close(t.forwardErrors)
 }
 
 // publicKeyFile helper to read the key files

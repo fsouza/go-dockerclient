@@ -152,7 +152,8 @@ type Client struct {
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
 
-	forward *Forward
+	forward       *Forward
+	ForwardErrors chan error
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -247,10 +248,12 @@ func internalNewVersionedClient(endpoint, apiVersionString string, forwardConfig
 	}
 
 	var forward *Forward
+	var bootstrapError error
+	var forwardErrors chan error
 	if forwardConfig != nil {
-		forward, err = NewForward(forwardConfig)
-		if err != nil {
-			return nil, err
+		forward, forwardErrors, bootstrapError = NewForward(forwardConfig)
+		if bootstrapError != nil {
+			return nil, bootstrapError
 		}
 	}
 
@@ -262,6 +265,7 @@ func internalNewVersionedClient(endpoint, apiVersionString string, forwardConfig
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
 		forward:             forward,
+		ForwardErrors:       forwardErrors,
 	}
 	c.initializeNativeClient()
 	return c, nil
@@ -426,10 +430,12 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 	}
 
 	var forward *Forward
+	var bootstrapError error
+	var forwardErrors chan error
 	if forwardConfig != nil {
-		forward, err = NewForward(forwardConfig)
-		if err != nil {
-			return nil, err
+		forward, forwardErrors, bootstrapError = NewForward(forwardConfig)
+		if bootstrapError != nil {
+			return nil, bootstrapError
 		}
 	}
 
@@ -442,6 +448,7 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
 		forward:             forward,
+		ForwardErrors:       forwardErrors,
 	}
 	c.initializeNativeClient()
 	return c, nil
