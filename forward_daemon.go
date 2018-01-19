@@ -213,7 +213,7 @@ func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) {
 	defer func() {
 		localListener.Close()
 		sshClient.Close()
-		log.Println("x-> local listener CLOSED")
+		log.Println("x-> local listener and sshClient CLOSED")
 	}()
 
 	jumpCount := 1
@@ -247,7 +247,7 @@ func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) {
 		}()
 
 		if err != nil {
-			log.Fatalf("listen.Accept failed: %v", err)
+			log.Printf("listen.Accept failed: %v", err)
 			select {
 			case <-t.quit:
 				log.Println("-> quitting")
