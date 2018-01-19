@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	readDeadline  = 30
-	writeDeadline = 30
+	readDeadline      = 30
+	writeDeadline     = 30
+	connectionTimeout = 8 * time.Second
 )
 
 // ForwardSSHConfig for a cleaner version
@@ -34,9 +35,8 @@ type ForwardConfig struct {
 
 // Forward wraps the forward
 type Forward struct {
-	quit      chan bool
-	bootstrap chan bool
-	config    *ForwardConfig
+	quit   chan bool
+	config *ForwardConfig
 }
 
 // NewForward creates new forward
@@ -45,11 +45,14 @@ func NewForward(config *ForwardConfig) (*Forward, error) {
 		return nil, err
 	}
 	t := &Forward{
-		quit:      make(chan bool),
-		bootstrap: make(chan bool),
-		config:    config,
+		quit:   make(chan bool),
+		config: config,
 	}
-	go t.run()
+	sshClient, localListener, err := t.bootstrap()
+	if err != nil {
+		return nil, err
+	}
+	go t.run(sshClient, localListener)
 	return t, nil
 }
 
@@ -101,7 +104,7 @@ func convertToSSHConfig(toConvert *ForwardSSHConfig) *ssh.ClientConfig {
 	config := &ssh.ClientConfig{
 		User:            toConvert.User,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         5 * time.Second,
+		Timeout:         connectionTimeout,
 	}
 
 	if toConvert.PrivateKeyFile != "" {
@@ -123,16 +126,14 @@ func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 		log.Println("[DEBUG] local -> jump before dial")
 		jumpHostClient, err := ssh.Dial("tcp", t.config.JumpHostConfigs[0].Address, jumpHostConfig)
 		if err != nil {
-			log.Printf("[DEBUG] in ssh.Dial to jump host error: %s", err)
 			return nil, fmt.Errorf("ssh.Dial to jump host failed: %s", err)
 		}
 		log.Println("[DEBUG] local -> jump dialed")
 
-		jumpHostConn, err := jumpHostClient.Dial("tcp", t.config.EndHostConfig.Address)
+		jumpHostConn, err := dialNextJump(jumpHostClient, t.config.EndHostConfig.Address)
 		if err != nil {
-			return nil, fmt.Errorf("ssh.Dial from jump host to end server failed: %s", err)
+			return nil, fmt.Errorf("ssh.Dial from jump to jump host failed: %s", err)
 		}
-		log.Println("[DEBUG] jump -> endhost dialed")
 
 		ncc, chans, reqs, err := ssh.NewClientConn(jumpHostConn, t.config.EndHostConfig.Address, endHostConfig)
 		if err != nil {
@@ -154,6 +155,29 @@ func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 	return endHostClient, nil
 }
 
+func dialNextJump(jumpHostClient *ssh.Client, nextJumpAddress string) (net.Conn, error) {
+	// TODO no timeout param in ssh.Dial: https://github.com/golang/go/issues/20288
+	// implement it by hand
+	var jumpHostConn net.Conn
+	connChan := make(chan net.Conn)
+	go func() {
+		jumpHostConn, err := jumpHostClient.Dial("tcp", nextJumpAddress)
+		if err != nil {
+			// return nil, fmt.Errorf("ssh.Dial from jump host to end server failed: %s", err) TODO
+		}
+		connChan <- jumpHostConn
+		log.Println("[DEBUG] jump -> next jump dialed")
+	}()
+	select {
+	case jumpHostConnSel := <-connChan:
+		jumpHostConn = jumpHostConnSel
+	case <-time.After(connectionTimeout):
+		return nil, fmt.Errorf("ssh.Dial from jump host to next jump failed after timeout")
+	}
+
+	return jumpHostConn, nil
+}
+
 func (t *Forward) buildLocalConnection(localListener net.Listener) (net.Conn, error) {
 	localConn, err := localListener.Accept()
 	if err != nil {
@@ -163,24 +187,28 @@ func (t *Forward) buildLocalConnection(localListener net.Listener) (net.Conn, er
 	return localConn, nil
 }
 
-func (t *Forward) run() error {
-	////////// === bootstrap
+func (t *Forward) bootstrap() (*ssh.Client, net.Listener, error) {
 	sshClient, err := t.buildSSHClient()
 	if err != nil {
-		return fmt.Errorf("Error building SSH client: %s", err)
+		return nil, nil, fmt.Errorf("Error building SSH client: %s", err)
 	}
 
 	localListener, err := net.Listen("tcp", t.config.LocalAddress)
 	if err != nil {
-		return fmt.Errorf("net.Listen failed: %v", err)
+		return nil, nil, fmt.Errorf("net.Listen failed: %v", err)
 	}
 	log.Println("-> build local listener")
+
+	return sshClient, localListener, nil
+}
+
+func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) error {
+	////////// === bootstrap
 	defer func() {
 		localListener.Close()
+		sshClient.Close()
 		log.Println("x-> local listener CLOSED")
 	}()
-
-	t.bootstrap <- true
 
 	////////// === establish connection
 	count := 1
