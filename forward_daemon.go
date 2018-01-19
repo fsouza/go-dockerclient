@@ -68,7 +68,7 @@ func checkConfig(config *ForwardConfig) error {
 		return fmt.Errorf("ForwardConfig cannot be nil")
 	}
 
-	if len(config.JumpHostConfigs) > 1 {
+	if len(config.JumpHostConfigs) > 1 { //TODO atm only one jump host is supported
 		return fmt.Errorf("Only 1 jump host is supported atm")
 	}
 	for _, jumpConfig := range config.JumpHostConfigs {
@@ -125,16 +125,12 @@ func convertToSSHConfig(toConvert *ForwardSSHConfig) *ssh.ClientConfig {
 // host to the end host. ATM only one jump host is supported
 func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 	endHostConfig := convertToSSHConfig(t.config.EndHostConfig)
-	if len(t.config.JumpHostConfigs) > 0 { //TODO ATM
+	if len(t.config.JumpHostConfigs) > 0 { //TODO atm only one jump host is supported
 		jumpHostConfig := convertToSSHConfig(t.config.JumpHostConfigs[0])
-		log.Printf("[DEBUG] sshconf %+v", jumpHostConfig)
-
-		log.Println("[DEBUG] local -> jump before dial")
 		jumpHostClient, err := ssh.Dial("tcp", t.config.JumpHostConfigs[0].Address, jumpHostConfig)
 		if err != nil {
 			return nil, fmt.Errorf("ssh.Dial to jump host failed: %s", err)
 		}
-		log.Println("[DEBUG] local -> jump dialed")
 
 		jumpHostConn, err := t.dialNextJump(jumpHostClient, t.config.EndHostConfig.Address)
 		if err != nil {
@@ -146,11 +142,8 @@ func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 			jumpHostConn.Close()
 			return nil, fmt.Errorf("Failed to create ssh client to end host: %s", err)
 		}
-		log.Println("[DEBUG] jump -> endhost new client conn")
-		finalClient := ssh.NewClient(ncc, chans, reqs)
-		log.Println("[DEBUG] final client creation")
 
-		return finalClient, nil
+		return ssh.NewClient(ncc, chans, reqs), nil
 	}
 
 	endHostClient, err := ssh.Dial("tcp", t.config.EndHostConfig.Address, endHostConfig)
@@ -162,7 +155,7 @@ func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 }
 
 func (t *Forward) dialNextJump(jumpHostClient *ssh.Client, nextJumpAddress string) (net.Conn, error) {
-	// TODO no timeout param in ssh.Dial: https://github.com/golang/go/issues/20288
+	// NOTE: no timeout param in ssh.Dial: https://github.com/golang/go/issues/20288
 	// implement it by hand
 	var jumpHostConn net.Conn
 	connChan := make(chan net.Conn)
@@ -173,7 +166,6 @@ func (t *Forward) dialNextJump(jumpHostClient *ssh.Client, nextJumpAddress strin
 			return
 		}
 		connChan <- jumpHostConn
-		log.Println("[DEBUG] jump -> next jump dialed")
 	}()
 	select {
 	case jumpHostConnSel := <-connChan:
@@ -188,7 +180,7 @@ func (t *Forward) dialNextJump(jumpHostClient *ssh.Client, nextJumpAddress strin
 func (t *Forward) buildLocalConnection(localListener net.Listener) (net.Conn, error) {
 	localConn, err := localListener.Accept()
 	if err != nil {
-		return nil, fmt.Errorf("localListener.Accept failed: %v", err)
+		return nil, fmt.Errorf("Listen to local address failed: %v", err)
 	}
 
 	return localConn, nil
@@ -204,7 +196,6 @@ func (t *Forward) bootstrap() (*ssh.Client, net.Listener, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("net.Listen failed: %v", err)
 	}
-	log.Println("-> build local listener")
 
 	return sshClient, localListener, nil
 }
@@ -213,12 +204,10 @@ func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) {
 	defer func() {
 		localListener.Close()
 		sshClient.Close()
-		log.Println("x-> local listener and sshClient CLOSED")
 	}()
 
 	jumpCount := 1
 	for {
-		log.Printf("-> before built/accepted SSH remote connection: %d", jumpCount)
 		endHostConn, err := sshClient.Dial("tcp", t.config.RemoteAddress) // TODO timeout here?
 		if err != nil {
 			t.forwardErrors <- fmt.Errorf("Failed to connect on end host to docker daemon at '%s': %s", t.config.RemoteAddress, err)
@@ -226,13 +215,8 @@ func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) {
 		}
 		endHostConn.SetReadDeadline(time.Now().Add(time.Duration(readDeadline) * time.Second))
 		endHostConn.SetWriteDeadline(time.Now().Add(time.Duration(writeDeadline) * time.Second))
-		log.Printf("-> after accepted SSH remote connection: %d", jumpCount)
-		defer func() {
-			endHostConn.Close()
-			log.Println("x-> remote connection CLOSED")
-		}()
+		defer endHostConn.Close()
 
-		log.Printf("-> before built/accepted local connection: %d", jumpCount)
 		localConn, err := t.buildLocalConnection(localListener)
 		if err != nil {
 			t.forwardErrors <- fmt.Errorf("Error building local connection: %s", err)
@@ -240,46 +224,35 @@ func (t *Forward) run(sshClient *ssh.Client, localListener net.Listener) {
 		}
 		localConn.SetReadDeadline(time.Now().Add(time.Duration(readDeadline) * time.Second))
 		localConn.SetWriteDeadline(time.Now().Add(time.Duration(writeDeadline) * time.Second))
-		log.Println("-> accepted local connection")
-		defer func() {
-			localConn.Close()
-			log.Println("x-> local connection CLOSED")
-		}()
+		defer localConn.Close()
 
 		if err != nil {
-			log.Printf("listen.Accept failed: %v", err)
 			select {
 			case <-t.quit:
-				log.Println("-> quitting")
 				return
 			default:
-				log.Println("-> continueing")
 				continue
 			}
-		} // if
+		}
 
 		t.handleForward(localConn, endHostConn)
 		jumpCount++
-	} // for
+	}
 }
 
 func (t *Forward) handleForward(localConn, sshConn net.Conn) {
-	log.Println("-> start handle forward")
-
 	go func() {
-		writtenToSSH, err := io.Copy(sshConn, localConn) // ssh <- local
+		_, err := io.Copy(sshConn, localConn) // ssh <- local
 		if err != nil {
-			log.Fatalf("io.Copy 1 (written to SSH) failed: %v", err)
+			log.Fatalf("io.Copy from localAddress -> remoteAddress failed: %v", err)
 		}
-		log.Printf("-+> written to SSH: %d", writtenToSSH)
 	}()
 
 	go func() {
-		writtenToLocal, err := io.Copy(localConn, sshConn) // local <- ssh
+		_, err := io.Copy(localConn, sshConn) // local <- ssh
 		if err != nil {
-			log.Fatalf("io.Copy 2 (written to local) failed: %v", err)
+			log.Fatalf("io.Copy from remoteAddress -> localAddress failed: %v", err)
 		}
-		log.Printf("-+> written to local: %d", writtenToLocal)
 	}()
 }
 
