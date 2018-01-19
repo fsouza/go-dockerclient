@@ -74,6 +74,20 @@ func TestForwardConfigInvalidJumpHostSSHConfig(t *testing.T) {
 	checkErrorContains(t, err, "LocalAddress and RemoteAddress have to be set")
 }
 
+func TestForwardUnreachableJumpHost(t *testing.T) {
+	forwardConfig := createForwardConfig("10.0.0.1:22", "jumpuser", "", "jumpuserpassword")
+	_, _, err := NewForward(forwardConfig)
+	checkErrorContains(t, err, "Error building SSH client")
+	checkErrorContains(t, err, "ssh.Dial to jump host failed")
+}
+
+func TestForwardUnreachableEndHostWithoutJump(t *testing.T) {
+	forwardConfig := createForwardWithoutJump("localhost:2376", "localhost:2376")
+	_, _, err := NewForward(forwardConfig)
+	checkErrorContains(t, err, "Error building SSH client")
+	checkErrorContains(t, err, "ssh.Dial directly to end host failed")
+}
+
 //////////////
 // Helpers
 //////////////
@@ -106,6 +120,20 @@ func createForwardConfigBase(jumpHostAddress, jumpHostUser, jumpHostPrivateKeyFi
 			User:           "endhostuser",
 			PrivateKeyFile: "/Users/abc/.ssh/id_rsa_end_host",
 			Password:       "",
+		},
+		LocalAddress:  localAddress,
+		RemoteAddress: remoteAddress,
+	}
+}
+
+func createForwardWithoutJump(localAddress, remoteAddress string) *ForwardConfig {
+	return &ForwardConfig{
+		JumpHostConfigs: []*ForwardSSHConfig{},
+		EndHostConfig: &ForwardSSHConfig{
+			Address:        "20.0.0.1:22",
+			User:           "endhostuser",
+			PrivateKeyFile: "",
+			Password:       "endhostuserpass",
 		},
 		LocalAddress:  localAddress,
 		RemoteAddress: remoteAddress,

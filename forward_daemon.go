@@ -155,7 +155,7 @@ func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 
 	endHostClient, err := ssh.Dial("tcp", t.config.EndHostConfig.Address, endHostConfig)
 	if err != nil {
-		return nil, fmt.Errorf("ssh.Dial to jump host failed: %s", err)
+		return nil, fmt.Errorf("ssh.Dial directly to end host failed: %s", err)
 	}
 
 	return endHostClient, nil
