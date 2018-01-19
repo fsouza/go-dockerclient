@@ -41,6 +41,9 @@ type Forward struct {
 }
 
 // NewForward creates new forward
+// 1: it build the SSH tunnel via the optional jump hosts
+// 2: if this was successful a forward from the 'LocalAddress' to the 'RemoteAddress'
+//    will be established
 func NewForward(config *ForwardConfig) (*Forward, chan error, error) {
 	/// == bootstrap
 	if err := checkConfig(config); err != nil {
