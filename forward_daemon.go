@@ -101,6 +101,7 @@ func convertToSSHConfig(toConvert *ForwardSSHConfig) *ssh.ClientConfig {
 	config := &ssh.ClientConfig{
 		User:            toConvert.User,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         5 * time.Second,
 	}
 
 	if toConvert.PrivateKeyFile != "" {
@@ -117,24 +118,32 @@ func (t *Forward) buildSSHClient() (*ssh.Client, error) {
 	endHostConfig := convertToSSHConfig(t.config.EndHostConfig)
 	if len(t.config.JumpHostConfigs) > 0 { //TODO ATM
 		jumpHostConfig := convertToSSHConfig(t.config.JumpHostConfigs[0])
+		log.Printf("[DEBUG] sshconf %+v", jumpHostConfig)
 
+		log.Println("[DEBUG] local -> jump before dial")
 		jumpHostClient, err := ssh.Dial("tcp", t.config.JumpHostConfigs[0].Address, jumpHostConfig)
 		if err != nil {
+			log.Printf("[DEBUG] in ssh.Dial to jump host error: %s", err)
 			return nil, fmt.Errorf("ssh.Dial to jump host failed: %s", err)
 		}
+		log.Println("[DEBUG] local -> jump dialed")
 
 		jumpHostConn, err := jumpHostClient.Dial("tcp", t.config.EndHostConfig.Address)
 		if err != nil {
 			return nil, fmt.Errorf("ssh.Dial from jump host to end server failed: %s", err)
 		}
+		log.Println("[DEBUG] jump -> endhost dialed")
 
 		ncc, chans, reqs, err := ssh.NewClientConn(jumpHostConn, t.config.EndHostConfig.Address, endHostConfig)
 		if err != nil {
 			jumpHostConn.Close()
 			return nil, fmt.Errorf("Failed to create ssh client to end host: %s", err)
 		}
+		log.Println("[DEBUG] jump -> endhost new client conn")
+		finalClient := ssh.NewClient(ncc, chans, reqs)
+		log.Println("[DEBUG] final client creation")
 
-		return ssh.NewClient(ncc, chans, reqs), nil
+		return finalClient, nil
 	}
 
 	endHostClient, err := ssh.Dial("tcp", t.config.EndHostConfig.Address, endHostConfig)
