@@ -252,7 +252,6 @@ func internalNewVersionedClient(endpoint, apiVersionString string, forwardConfig
 		if err != nil {
 			return nil, err
 		}
-		<-forward.bootstrap
 	}
 
 	c := &Client{
@@ -432,7 +431,6 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 		if err != nil {
 			return nil, err
 		}
-		<-forward.bootstrap
 	}
 
 	c := &Client{
@@ -452,7 +450,7 @@ func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPE
 // CloseForward closes the ssh tunnel which was
 // used to forward the docker daemon
 func (c *Client) CloseForward() {
-	if c.forward != nil {
+	if c != nil && c.forward != nil {
 		c.forward.Stop()
 	}
 }
