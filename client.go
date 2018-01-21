@@ -222,6 +222,8 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	return c, nil
 }
 
+// WithTransport replaces underlying HTTP client of Docker Client by accepting
+// a function that returns pointer to a transport object.
 func (c *Client) WithTransport(trFunc func () *http.Transport) {
 	c.initializeNativeClient(trFunc)
 }
