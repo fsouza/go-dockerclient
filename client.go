@@ -218,12 +218,12 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
 	}
-	initializeNativeClient(c, defaultTransport)
+	c.initializeNativeClient(defaultTransport)
 	return c, nil
 }
 
 func (c *Client) WithTransport(trFunc func () *http.Transport) {
-	initializeNativeClient(c, trFunc)
+	c.initializeNativeClient(trFunc)
 }
 
 // NewVersionnedTLSClient has been DEPRECATED, please use NewVersionedTLSClient.
@@ -343,7 +343,7 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
 	}
-	initializeNativeClient(c, defaultTransport)
+	c.initializeNativeClient(defaultTransport)
 	return c, nil
 }
 
