@@ -222,6 +222,11 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 	return c, nil
 }
 
+func (c *Client) WithTransport(tr *http.Transport) {
+	c.initializeNativeClientTransport(tr)
+	c.HTTPClient = &http.Client{Transport: tr}
+}
+
 // NewVersionnedTLSClient has been DEPRECATED, please use NewVersionedTLSClient.
 func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
 	return NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString)
