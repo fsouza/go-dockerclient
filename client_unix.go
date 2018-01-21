@@ -19,10 +19,10 @@ func (c *Client) initializeNativeClient() {
 		return
 	}
 	tr := defaultTransport()
-	c.initializeNativeClientTransport(tr)
+	initializeNativeClientTransport(c, tr)
 }
 
-func (c *Client) initializeNativeClientTransport(tr *http.Transport) {
+func initializeNativeClientTransport(c *Client, tr *http.Transport) {
 	sockPath := c.endpointURL.Path
 	tr.Dial = func(network, addr string) (net.Conn, error) {
 		return c.Dialer.Dial(unixProtocol, sockPath)
