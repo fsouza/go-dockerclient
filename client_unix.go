@@ -14,16 +14,14 @@ import (
 
 // initializeNativeClient initializes the native Unix domain socket client on
 // Unix-style operating systems
-func (c *Client) initializeNativeClient() {
+func initializeNativeClient(c *Client, trFunc func () *http.Transport) {
 	if c.endpointURL.Scheme != unixProtocol {
 		return
 	}
-	tr := defaultTransport()
-	initializeNativeClientTransport(c, tr)
-}
-
-func initializeNativeClientTransport(c *Client, tr *http.Transport) {
 	sockPath := c.endpointURL.Path
+
+	tr := trFunc()
+
 	tr.Dial = func(network, addr string) (net.Conn, error) {
 		return c.Dialer.Dial(unixProtocol, sockPath)
 	}
