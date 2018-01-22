@@ -175,6 +175,18 @@ func NewClient(endpoint string) (*Client, error) {
 	return client, nil
 }
 
+// NewClientWithForward returns a Client instance ready for communication with the given
+// server endpoint via a forward config with optional jump hosts. It will use the latest remote API version available in the
+// server.
+func NewClientWithForward(endpoint string, forwardConfig *ForwardConfig) (*Client, error) {
+	client, err := internalNewVersionedClient(endpoint, "", forwardConfig)
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
+}
+
 // NewTLSClient returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates . It will use the latest remote API version
 // available in the server.
