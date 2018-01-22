@@ -24,20 +24,20 @@ func TestForwardConfigTooManyJumpHosts(t *testing.T) {
 			&ForwardSSHConfig{
 				Address:        "10.0.0.1:22",
 				User:           "jumpuser1",
-				PrivateKeyFile: "/Users/abc/.ssh/id_rsa_jump_host1",
+				PrivateKeyFile: "./testing/rsa_keys/id_rsa_jump_host1",
 				Password:       "",
 			},
 			&ForwardSSHConfig{
 				Address:        "10.0.0.2:22",
 				User:           "jumpuser2",
-				PrivateKeyFile: "/Users/abc/.ssh/id_rsa_jump_host2",
+				PrivateKeyFile: "./testing/rsa_keys/id_rsa_jump_host2",
 				Password:       "",
 			},
 		},
 		EndHostConfig: &ForwardSSHConfig{
 			Address:        "20.0.0.1:22",
 			User:           "endhostuser",
-			PrivateKeyFile: "/Users/abc/.ssh/id_rsa_end_host",
+			PrivateKeyFile: "./testing/rsa_keys/id_rsa_end_host",
 			Password:       "",
 		},
 		LocalAddress:  "localhost:2376",
@@ -58,7 +58,7 @@ func TestForwardConfigEmptyJumpHosts(t *testing.T) {
 		EndHostConfig: &ForwardSSHConfig{
 			Address:        "20.0.0.1:22",
 			User:           "endhostuser",
-			PrivateKeyFile: "/Users/abc/.ssh/id_rsa_end_host",
+			PrivateKeyFile: "./testing/rsa_keys/id_rsa_end_host",
 			Password:       "",
 		},
 		LocalAddress:  "localhost:2376",
@@ -78,7 +78,7 @@ func TestForwardConfigNoJumpHostsSet(t *testing.T) {
 		EndHostConfig: &ForwardSSHConfig{
 			Address:        "20.0.0.1:22",
 			User:           "endhostuser",
-			PrivateKeyFile: "/Users/abc/.ssh/id_rsa_end_host",
+			PrivateKeyFile: "./testing/rsa_keys/id_rsa_end_host",
 			Password:       "",
 		},
 		LocalAddress:  "localhost:2376",
@@ -94,11 +94,11 @@ func TestForwardConfigNoJumpHostsSet(t *testing.T) {
 func TestForwardConfigInvalidJumpHostSSHConfig(t *testing.T) {
 	t.Parallel()
 
-	forwardConfig := createForwardConfig("10.0.0.1:22", "", "/Users/abc/.ssh/id_rsa_jump_host1", "")
+	forwardConfig := createForwardConfig("10.0.0.1:22", "", "./testing/rsa_keys/id_rsa_jump_host1", "")
 	_, _, err := NewForward(forwardConfig)
 	checkErrorContains(t, err, "User cannot be empty")
 
-	forwardConfig = createForwardConfig("", "jumpuser", "/Users/abc/.ssh/id_rsa_jump_host1", "")
+	forwardConfig = createForwardConfig("", "jumpuser", "./testing/rsa_keys/id_rsa_jump_host1", "")
 	_, _, err = NewForward(forwardConfig)
 	checkErrorContains(t, err, "Address cannot be empty")
 
@@ -106,7 +106,11 @@ func TestForwardConfigInvalidJumpHostSSHConfig(t *testing.T) {
 	_, _, err = NewForward(forwardConfig)
 	checkErrorContains(t, err, "Either PrivateKeyFile or Password")
 
-	forwardConfig = createForwardConfigWithAddresses("10.0.0.1:22", "jumpuser", "/Users/abc/.ssh/id_rsa_jump_host1", "", "localhost:2376", "")
+	forwardConfig = createForwardConfig("10.0.0.1:22", "jumpuser", "./testing/rsa_keys/does_not_exist", "")
+	_, _, err = NewForward(forwardConfig)
+	checkErrorContains(t, err, "Failed to parse jump host config")
+
+	forwardConfig = createForwardConfigWithAddresses("10.0.0.1:22", "jumpuser", "./testing/rsa_keys/id_rsa_jump_host1", "", "localhost:2376", "")
 	_, _, err = NewForward(forwardConfig)
 	checkErrorContains(t, err, "LocalAddress and RemoteAddress have to be set")
 
@@ -159,7 +163,7 @@ func createForwardConfigBase(jumpHostAddress, jumpHostUser, jumpHostPrivateKeyFi
 		EndHostConfig: &ForwardSSHConfig{
 			Address:        "20.0.0.1:22",
 			User:           "endhostuser",
-			PrivateKeyFile: "/Users/abc/.ssh/id_rsa_end_host",
+			PrivateKeyFile: "./testing/rsa_keys/id_rsa_end_host",
 			Password:       "",
 		},
 		LocalAddress:  localAddress,

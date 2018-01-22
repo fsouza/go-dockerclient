@@ -109,7 +109,7 @@ func checkSSHConfig(sshConfig *ForwardSSHConfig) error {
 
 // convertToSSHConfig converts the given ssh config into
 // and *ssh.ClienConfig while preferrring privateKeyFiles
-func convertToSSHConfig(toConvert *ForwardSSHConfig) *ssh.ClientConfig {
+func convertToSSHConfig(toConvert *ForwardSSHConfig) (*ssh.ClientConfig, error) {
 	config := &ssh.ClientConfig{
 		User:            toConvert.User,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
@@ -117,19 +117,30 @@ func convertToSSHConfig(toConvert *ForwardSSHConfig) *ssh.ClientConfig {
 	}
 
 	if toConvert.PrivateKeyFile != "" {
-		config.Auth = []ssh.AuthMethod{publicKeyFile(toConvert.PrivateKeyFile)}
+		publicKey, err := publicKeyFile(toConvert.PrivateKeyFile)
+		if err != nil {
+			return nil, err
+		}
+		config.Auth = []ssh.AuthMethod{publicKey}
 	} else {
 		config.Auth = []ssh.AuthMethod{ssh.Password(toConvert.Password)}
 	}
-	return config
+	return config, nil
 }
 
 // buildSSSClient builds the *ssh.Client connection via the jump
 // host to the end host. ATM only one jump host is supported
 func (f *Forward) buildSSHClient() (*ssh.Client, error) {
-	endHostConfig := convertToSSHConfig(f.config.EndHostConfig)
+	endHostConfig, err := convertToSSHConfig(f.config.EndHostConfig)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse end host config: %s", err)
+	}
+
 	if len(f.config.JumpHostConfigs) > 0 { //TODO atm only one jump host is supported
-		jumpHostConfig := convertToSSHConfig(f.config.JumpHostConfigs[0])
+		jumpHostConfig, err := convertToSSHConfig(f.config.JumpHostConfigs[0])
+		if err != nil {
+			return nil, fmt.Errorf("Failed to parse jump host config: %s", err)
+		}
 		jumpHostClient, err := ssh.Dial("tcp", f.config.JumpHostConfigs[0].Address, jumpHostConfig)
 		if err != nil {
 			return nil, fmt.Errorf("ssh.Dial to jump host failed: %s", err)
@@ -266,15 +277,15 @@ func (f *Forward) Stop() {
 }
 
 // publicKeyFile helper to read the key files
-func publicKeyFile(file string) ssh.AuthMethod {
+func publicKeyFile(file string) (ssh.AuthMethod, error) {
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return ssh.PublicKeys(key)
+	return ssh.PublicKeys(key), nil
 }
