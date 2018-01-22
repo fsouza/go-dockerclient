@@ -50,6 +50,47 @@ func TestForwardConfigTooManyJumpHosts(t *testing.T) {
 	}
 	checkErrorContains(t, err, "Only 1 jump host")
 }
+func TestForwardConfigEmptyJumpHosts(t *testing.T) {
+	t.Parallel()
+	var emptyJumpHosts []*ForwardSSHConfig
+	forwardConfig := &ForwardConfig{
+		JumpHostConfigs: emptyJumpHosts,
+		EndHostConfig: &ForwardSSHConfig{
+			Address:        "20.0.0.1:22",
+			User:           "endhostuser",
+			PrivateKeyFile: "/Users/abc/.ssh/id_rsa_end_host",
+			Password:       "",
+		},
+		LocalAddress:  "localhost:2376",
+		RemoteAddress: "localhost:2376",
+	}
+
+	_, _, err := NewForward(forwardConfig)
+	if err == nil {
+		t.Errorf("Expected an error for a end host not reachable with no jump host but got none")
+	}
+	checkErrorContains(t, err, "ssh.Dial directly to end host failed")
+}
+
+func TestForwardConfigNoJumpHostsSet(t *testing.T) {
+	t.Parallel()
+	forwardConfig := &ForwardConfig{
+		EndHostConfig: &ForwardSSHConfig{
+			Address:        "20.0.0.1:22",
+			User:           "endhostuser",
+			PrivateKeyFile: "/Users/abc/.ssh/id_rsa_end_host",
+			Password:       "",
+		},
+		LocalAddress:  "localhost:2376",
+		RemoteAddress: "localhost:2376",
+	}
+
+	_, _, err := NewForward(forwardConfig)
+	if err == nil {
+		t.Errorf("Expected an error for a end host not reachable with no jump host but got none")
+	}
+	checkErrorContains(t, err, "ssh.Dial directly to end host failed")
+}
 func TestForwardConfigInvalidJumpHostSSHConfig(t *testing.T) {
 	t.Parallel()
 
