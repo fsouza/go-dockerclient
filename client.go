@@ -138,7 +138,7 @@ func (version APIVersion) compare(other APIVersion) int {
 }
 
 // Client is the basic type of this package. It provides methods for
-// interaction with the API.
+// interaction with the API with an optional Jump Host.
 type Client struct {
 	SkipServerVersionCheck bool
 	HTTPClient             *http.Client
@@ -151,6 +151,9 @@ type Client struct {
 	requestedAPIVersion APIVersion
 	serverAPIVersion    APIVersion
 	expectedAPIVersion  APIVersion
+
+	forward       *Forward
+	ForwardErrors chan error
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -164,7 +167,19 @@ type Dialer interface {
 // server endpoint. It will use the latest remote API version available in the
 // server.
 func NewClient(endpoint string) (*Client, error) {
-	client, err := NewVersionedClient(endpoint, "")
+	client, err := internalNewVersionedClient(endpoint, "", nil)
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
+}
+
+// NewClientWithForward returns a Client instance ready for communication with the given
+// server endpoint via a forward config with optional jump hosts. It will use the latest remote API version available in the
+// server.
+func NewClientWithForward(endpoint string, forwardConfig *ForwardConfig) (*Client, error) {
+	client, err := internalNewVersionedClient(endpoint, "", forwardConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +191,18 @@ func NewClient(endpoint string) (*Client, error) {
 // server endpoint, key and certificates . It will use the latest remote API version
 // available in the server.
 func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
-	client, err := NewVersionedTLSClient(endpoint, cert, key, ca, "")
+	return internalNewTLSClient(endpoint, cert, key, ca, nil)
+}
+
+// NewTLSClientWithForward returns a Client instance ready for TLS communications with the given
+// server endpoint, key and certificates via a forward config with optional jump hosts . It will use the latest remote API version
+// available in the server.
+func NewTLSClientWithForward(endpoint, cert, key, ca string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewTLSClient(endpoint, cert, key, ca, forwardConfig)
+}
+
+func internalNewTLSClient(endpoint, cert, key, ca string, forwardConfig *ForwardConfig) (*Client, error) {
+	client, err := internalNewVersionedTLSClient(endpoint, cert, key, ca, "", forwardConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +214,19 @@ func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file). It will use the latest remote API version available in the server.
 func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte) (*Client, error) {
-	client, err := NewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "")
+	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", nil)
+	if err != nil {
+		return nil, err
+	}
+	client.SkipServerVersionCheck = true
+	return client, nil
+}
+
+// NewTLSClientFromBytesWithForward returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates (passed inline to the function as opposed to being
+// read from a local file) and uses a forward config with optional jump hosts. It will use the latest remote API version available in the server.
+func NewTLSClientFromBytesWithForward(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, forwardConfig *ForwardConfig) (*Client, error) {
+	client, err := internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, "", forwardConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -199,6 +237,16 @@ func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert
 // NewVersionedClient returns a Client instance ready for communication with
 // the given server endpoint, using a specific remote API version.
 func NewVersionedClient(endpoint string, apiVersionString string) (*Client, error) {
+	return internalNewVersionedClient(endpoint, apiVersionString, nil)
+}
+
+// NewVersionedClientWithForward returns a Client instance ready for communication with
+// the given server endpoint, using a specific remote API version and a forward config with optional jump hosts.
+func NewVersionedClientWithForward(endpoint, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewVersionedClient(endpoint, apiVersionString, forwardConfig)
+}
+
+func internalNewVersionedClient(endpoint, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	u, err := parseEndpoint(endpoint, false)
 	if err != nil {
 		return nil, err
@@ -210,6 +258,17 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 			return nil, err
 		}
 	}
+
+	var forward *Forward
+	var bootstrapError error
+	var forwardErrors chan error
+	if forwardConfig != nil {
+		forward, forwardErrors, bootstrapError = NewForward(forwardConfig)
+		if bootstrapError != nil {
+			return nil, bootstrapError
+		}
+	}
+
 	c := &Client{
 		HTTPClient:          defaultClient(),
 		Dialer:              &net.Dialer{},
@@ -217,6 +276,8 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
+		forward:             forward,
+		ForwardErrors:       forwardErrors,
 	}
 	c.initializeNativeClient(defaultTransport)
 	return c, nil
@@ -229,13 +290,23 @@ func (c *Client) WithTransport(trFunc func () *http.Transport) {
 }
 
 // NewVersionnedTLSClient has been DEPRECATED, please use NewVersionedTLSClient.
-func NewVersionnedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
+func NewVersionnedTLSClient(endpoint, cert, key, ca, apiVersionString string) (*Client, error) {
 	return NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString)
 }
 
 // NewVersionedTLSClient returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates, using a specific remote API version.
-func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString string) (*Client, error) {
+func NewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string) (*Client, error) {
+	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, nil)
+}
+
+// NewVersionedTLSClientWithForward returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates, using a specific remote API version and a forward config with optional jump hosts.
+func NewVersionedTLSClientWithForward(endpoint, cert, key, ca, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString, forwardConfig)
+}
+
+func internalNewVersionedTLSClient(endpoint, cert, key, ca, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	var certPEMBlock []byte
 	var keyPEMBlock []byte
 	var caPEMCert []byte
@@ -257,7 +328,7 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 			return nil, err
 		}
 	}
-	return NewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString)
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, forwardConfig)
 }
 
 // NewClientFromEnv returns a Client instance ready for communication created from
@@ -266,7 +337,21 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewClientFromEnv() (*Client, error) {
-	client, err := NewVersionedClientFromEnv("")
+	return internalNewClientFromEnv(nil)
+}
+
+// NewClientFromEnvWithForward returns a Client instance ready for communication created from
+// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH
+// and a forward config with optional jump hosts.
+//
+// See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
+// See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
+func NewClientFromEnvWithForward(forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewClientFromEnv(forwardConfig)
+}
+
+func internalNewClientFromEnv(forwardConfig *ForwardConfig) (*Client, error) {
+	client, err := internalNewVersionedClientFromEnv("", forwardConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -281,6 +366,20 @@ func NewClientFromEnv() (*Client, error) {
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
+	return internalNewVersionedClientFromEnv(apiVersionString, nil)
+}
+
+// NewVersionedClientFromEnvWithForward returns a Client instance ready for TLS communications created from
+// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH,
+// and using a specific remote API version and a forward config with optional jump hosts.
+//
+// See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
+// See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
+func NewVersionedClientFromEnvWithForward(apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewVersionedClientFromEnv(apiVersionString, forwardConfig)
+}
+
+func internalNewVersionedClientFromEnv(apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	dockerEnv, err := getDockerEnv()
 	if err != nil {
 		return nil, err
@@ -296,13 +395,24 @@ func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
 		ca := filepath.Join(dockerEnv.dockerCertPath, "ca.pem")
 		return NewVersionedTLSClient(dockerEnv.dockerHost, cert, key, ca, apiVersionString)
 	}
-	return NewVersionedClient(dockerEnv.dockerHost, apiVersionString)
+	return internalNewVersionedClient(dockerEnv.dockerHost, apiVersionString, forwardConfig)
 }
 
 // NewVersionedTLSClientFromBytes returns a Client instance ready for TLS communications with the givens
 // server endpoint, key and certificates (passed inline to the function as opposed to being
 // read from a local file), using a specific remote API version.
 func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string) (*Client, error) {
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, nil)
+}
+
+// NewVersionedTLSClientFromBytesWithForward returns a Client instance ready for TLS communications with the givens
+// server endpoint, key and certificates (passed inline to the function as opposed to being
+// read from a local file), using a specific remote API version and a forward config with optional jump hosts.
+func NewVersionedTLSClientFromBytesWithForward(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
+	return internalNewVersionedTLSClientFromBytes(endpoint, certPEMBlock, keyPEMBlock, caPEMCert, apiVersionString, forwardConfig)
+}
+
+func internalNewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert []byte, apiVersionString string, forwardConfig *ForwardConfig) (*Client, error) {
 	u, err := parseEndpoint(endpoint, true)
 	if err != nil {
 		return nil, err
@@ -336,6 +446,17 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 	if err != nil {
 		return nil, err
 	}
+
+	var forward *Forward
+	var bootstrapError error
+	var forwardErrors chan error
+	if forwardConfig != nil {
+		forward, forwardErrors, bootstrapError = NewForward(forwardConfig)
+		if bootstrapError != nil {
+			return nil, bootstrapError
+		}
+	}
+
 	c := &Client{
 		HTTPClient:          &http.Client{Transport: tr},
 		TLSConfig:           tlsConfig,
@@ -344,9 +465,19 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 		endpointURL:         u,
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
+		forward:             forward,
+		ForwardErrors:       forwardErrors,
 	}
 	c.initializeNativeClient(defaultTransport)
 	return c, nil
+}
+
+// CloseForward closes the ssh tunnel which was
+// used to forward the docker daemon
+func (c *Client) CloseForward() {
+	if c != nil && c.forward != nil {
+		c.forward.Stop()
+	}
 }
 
 // SetTimeout takes a timeout and applies it to the HTTPClient. It should not
@@ -393,6 +524,7 @@ func (c *Client) Ping() error {
 //
 // See https://goo.gl/wYfgY1 for more details.
 func (c *Client) PingWithContext(ctx context.Context) error {
+
 	path := "/_ping"
 	resp, err := c.do("GET", path, doOptions{context: ctx})
 	if err != nil {
