@@ -218,8 +218,14 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
 	}
-	c.initializeNativeClient()
+	c.initializeNativeClient(defaultTransport)
 	return c, nil
+}
+
+// WithTransport replaces underlying HTTP client of Docker Client by accepting
+// a function that returns pointer to a transport object.
+func (c *Client) WithTransport(trFunc func () *http.Transport) {
+	c.initializeNativeClient(trFunc)
 }
 
 // NewVersionnedTLSClient has been DEPRECATED, please use NewVersionedTLSClient.
@@ -339,7 +345,7 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 		eventMonitor:        new(eventMonitoringState),
 		requestedAPIVersion: requestedAPIVersion,
 	}
-	c.initializeNativeClient()
+	c.initializeNativeClient(defaultTransport)
 	return c, nil
 }
 
