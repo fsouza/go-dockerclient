@@ -1329,6 +1329,18 @@ func TestKillContainerNotFound(t *testing.T) {
 	}
 }
 
+func TestKillContainerNotRunning(t *testing.T) {
+	t.Parallel()
+	id := "abcd1234567890"
+	msg := fmt.Sprintf("Cannot kill container: %[1]s: Container %[1]s is not running", id)
+	client := newTestClient(&FakeRoundTripper{message: msg, status: http.StatusConflict})
+	err := client.KillContainer(KillContainerOptions{ID: id})
+	expected := &ContainerNotRunning{ID: id}
+	if !reflect.DeepEqual(err, expected) {
+		t.Errorf("KillContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
+	}
+}
+
 func TestRemoveContainer(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
