@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/go-units"
+	units "github.com/docker/go-units"
 	"golang.org/x/net/context"
 )
 
@@ -547,7 +547,7 @@ func (c *Client) InspectContainer(id string) (*Container, error) {
 // The context object can be used to cancel the inspect request.
 //
 // See https://goo.gl/FaI5JT for more details.
-func (c *Client) InspectContainerWithContext(id string, ctx context.Context) (*Container, error) {
+func (c *Client) InspectContainerWithContext(ctx context.Context, id string) (*Container, error) {
 	return c.inspectContainer(id, doOptions{context: ctx})
 }
 
@@ -817,7 +817,7 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 // API 1.24 or greater.
 //
 // See https://goo.gl/fbOSZy for more details.
-func (c *Client) StartContainerWithContext(id string, hostConfig *HostConfig, ctx context.Context) error {
+func (c *Client) StartContainerWithContext(ctx context.Context, id string, hostConfig *HostConfig) error {
 	return c.startContainer(id, hostConfig, doOptions{context: ctx})
 }
 
@@ -857,7 +857,7 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 // container request.
 //
 // See https://goo.gl/R9dZcV for more details.
-func (c *Client) StopContainerWithContext(id string, timeout uint, ctx context.Context) error {
+func (c *Client) StopContainerWithContext(ctx context.Context, id string, timeout uint) error {
 	return c.stopContainer(id, timeout, doOptions{context: ctx})
 }
 
@@ -1052,6 +1052,7 @@ type CPUStats struct {
 		UsageInKernelmode uint64   `json:"usage_in_kernelmode,omitempty" yaml:"usage_in_kernelmode,omitempty" toml:"usage_in_kernelmode,omitempty"`
 	} `json:"cpu_usage,omitempty" yaml:"cpu_usage,omitempty" toml:"cpu_usage,omitempty"`
 	SystemCPUUsage uint64 `json:"system_cpu_usage,omitempty" yaml:"system_cpu_usage,omitempty" toml:"system_cpu_usage,omitempty"`
+	OnlineCPUs     uint64 `json:"online_cpus,omitempty" yaml:"online_cpus,omitempty" toml:"online_cpus,omitempty"`
 	ThrottlingData struct {
 		Periods          uint64 `json:"periods,omitempty"`
 		ThrottledPeriods uint64 `json:"throttled_periods,omitempty"`

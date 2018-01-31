@@ -1079,7 +1079,7 @@ func TestStartContainerWithContext(t *testing.T) {
 
 	startError := make(chan error)
 	go func() {
-		startError <- client.StartContainerWithContext(id, &HostConfig{}, ctx)
+		startError <- client.StartContainerWithContext(ctx, id, &HostConfig{})
 	}()
 	select {
 	case err := <-startError:
@@ -1154,7 +1154,7 @@ func TestStopContainerWithContext(t *testing.T) {
 
 	stopError := make(chan error)
 	go func() {
-		stopError <- client.StopContainerWithContext(id, 10, ctx)
+		stopError <- client.StopContainerWithContext(ctx, id, 10)
 	}()
 	select {
 	case err := <-stopError:
@@ -2473,7 +2473,8 @@ func TestStats(t *testing.T) {
              "total_usage" : 36488948,
              "usage_in_kernelmode" : 20000000
           },
-          "system_cpu_usage" : 20091722000000000
+          "system_cpu_usage" : 20091722000000000,
+		  "online_cpus": 4
        },
        "precpu_stats" : {
           "cpu_usage" : {
@@ -2487,7 +2488,8 @@ func TestStats(t *testing.T) {
              "total_usage" : 36488948,
              "usage_in_kernelmode" : 20000000
           },
-          "system_cpu_usage" : 20091722000000000
+          "system_cpu_usage" : 20091722000000000,
+		  "online_cpus": 4
        }
     }`
 	// 1 second later, cache is 100
@@ -2591,7 +2593,8 @@ func TestStats(t *testing.T) {
              "total_usage" : 36488948,
              "usage_in_kernelmode" : 20000000
           },
-          "system_cpu_usage" : 20091722000000000
+          "system_cpu_usage" : 20091722000000000,
+		  "online_cpus": 4
        },
        "precpu_stats" : {
           "cpu_usage" : {
@@ -2605,7 +2608,8 @@ func TestStats(t *testing.T) {
              "total_usage" : 36488948,
              "usage_in_kernelmode" : 20000000
           },
-          "system_cpu_usage" : 20091722000000000
+          "system_cpu_usage" : 20091722000000000,
+		  "online_cpus": 4
        }
     }`
 	var expected1 Stats
@@ -2725,7 +2729,7 @@ func TestInspectContainerWhenContextTimesOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
 	defer cancel()
 
-	_, err := client.InspectContainerWithContext("id", ctx)
+	_, err := client.InspectContainerWithContext(ctx, "id")
 	if err != context.DeadlineExceeded {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
@@ -2740,7 +2744,7 @@ func TestStartContainerWhenContextTimesOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
 	defer cancel()
 
-	err := client.StartContainerWithContext("id", nil, ctx)
+	err := client.StartContainerWithContext(ctx, "id", nil)
 	if err != context.DeadlineExceeded {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
@@ -2755,7 +2759,7 @@ func TestStopContainerWhenContextTimesOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 50*time.Millisecond)
 	defer cancel()
 
-	err := client.StopContainerWithContext("id", 10, ctx)
+	err := client.StopContainerWithContext(ctx, "id", 10)
 	if err != context.DeadlineExceeded {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
