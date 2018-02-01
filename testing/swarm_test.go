@@ -414,7 +414,7 @@ func TestServiceCreate(t *testing.T) {
 		NodeID:    server.nodes[0].ID,
 		Status: swarm.TaskStatus{
 			State: swarm.TaskStateReady,
-			ContainerStatus: swarm.ContainerStatus{
+			ContainerStatus: &swarm.ContainerStatus{
 				ContainerID: cont.ID,
 			},
 		},
@@ -1094,7 +1094,7 @@ func TestServiceUpdate(t *testing.T) {
 		NodeID:    server.nodes[1].ID,
 		Status: swarm.TaskStatus{
 			State: swarm.TaskStateReady,
-			ContainerStatus: swarm.ContainerStatus{
+			ContainerStatus: &swarm.ContainerStatus{
 				ContainerID: cont.ID,
 			},
 		},
