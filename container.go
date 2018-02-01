@@ -547,7 +547,7 @@ func (c *Client) InspectContainer(id string) (*Container, error) {
 // The context object can be used to cancel the inspect request.
 //
 // See https://goo.gl/FaI5JT for more details.
-func (c *Client) InspectContainerWithContext(ctx context.Context, id string) (*Container, error) {
+func (c *Client) InspectContainerWithContext(id string, ctx context.Context) (*Container, error) {
 	return c.inspectContainer(id, doOptions{context: ctx})
 }
 
@@ -817,7 +817,7 @@ func (c *Client) StartContainer(id string, hostConfig *HostConfig) error {
 // API 1.24 or greater.
 //
 // See https://goo.gl/fbOSZy for more details.
-func (c *Client) StartContainerWithContext(ctx context.Context, id string, hostConfig *HostConfig) error {
+func (c *Client) StartContainerWithContext(id string, hostConfig *HostConfig, ctx context.Context) error {
 	return c.startContainer(id, hostConfig, doOptions{context: ctx})
 }
 
@@ -857,7 +857,7 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 // container request.
 //
 // See https://goo.gl/R9dZcV for more details.
-func (c *Client) StopContainerWithContext(ctx context.Context, id string, timeout uint) error {
+func (c *Client) StopContainerWithContext(id string, timeout uint, ctx context.Context) error {
 	return c.stopContainer(id, timeout, doOptions{context: ctx})
 }
 

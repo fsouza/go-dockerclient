@@ -1079,7 +1079,7 @@ func TestStartContainerWithContext(t *testing.T) {
 
 	startError := make(chan error)
 	go func() {
-		startError <- client.StartContainerWithContext(ctx, id, &HostConfig{})
+		startError <- client.StartContainerWithContext(id, &HostConfig{}, ctx)
 	}()
 	select {
 	case err := <-startError:
@@ -1154,7 +1154,7 @@ func TestStopContainerWithContext(t *testing.T) {
 
 	stopError := make(chan error)
 	go func() {
-		stopError <- client.StopContainerWithContext(ctx, id, 10)
+		stopError <- client.StopContainerWithContext(id, 10, ctx)
 	}()
 	select {
 	case err := <-stopError:
@@ -2729,7 +2729,7 @@ func TestInspectContainerWhenContextTimesOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
 	defer cancel()
 
-	_, err := client.InspectContainerWithContext(ctx, "id")
+	_, err := client.InspectContainerWithContext("id", ctx)
 	if err != context.DeadlineExceeded {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
@@ -2744,7 +2744,7 @@ func TestStartContainerWhenContextTimesOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Millisecond)
 	defer cancel()
 
-	err := client.StartContainerWithContext(ctx, "id", nil)
+	err := client.StartContainerWithContext("id", nil, ctx)
 	if err != context.DeadlineExceeded {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
@@ -2759,7 +2759,7 @@ func TestStopContainerWhenContextTimesOut(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 50*time.Millisecond)
 	defer cancel()
 
-	err := client.StopContainerWithContext(ctx, "id", 10)
+	err := client.StopContainerWithContext("id", 10, ctx)
 	if err != context.DeadlineExceeded {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
