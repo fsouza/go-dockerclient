@@ -2473,7 +2473,8 @@ func TestStats(t *testing.T) {
              "total_usage" : 36488948,
              "usage_in_kernelmode" : 20000000
           },
-          "system_cpu_usage" : 20091722000000000
+          "system_cpu_usage" : 20091722000000000,
+		  "online_cpus": 4
        },
        "precpu_stats" : {
           "cpu_usage" : {
@@ -2487,7 +2488,8 @@ func TestStats(t *testing.T) {
              "total_usage" : 36488948,
              "usage_in_kernelmode" : 20000000
           },
-          "system_cpu_usage" : 20091722000000000
+          "system_cpu_usage" : 20091722000000000,
+		  "online_cpus": 4
        }
     }`
 	// 1 second later, cache is 100
@@ -2591,7 +2593,8 @@ func TestStats(t *testing.T) {
              "total_usage" : 36488948,
              "usage_in_kernelmode" : 20000000
           },
-          "system_cpu_usage" : 20091722000000000
+          "system_cpu_usage" : 20091722000000000,
+		  "online_cpus": 4
        },
        "precpu_stats" : {
           "cpu_usage" : {
@@ -2605,7 +2608,8 @@ func TestStats(t *testing.T) {
              "total_usage" : 36488948,
              "usage_in_kernelmode" : 20000000
           },
-          "system_cpu_usage" : 20091722000000000
+          "system_cpu_usage" : 20091722000000000,
+		  "online_cpus": 4
        }
     }`
 	var expected1 Stats
