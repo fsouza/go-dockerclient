@@ -52,63 +52,57 @@ type PluginSetting struct {
 	Devices []string  `json:"Devices,omitempty" yaml:"Devices,omitempty" toml:"Devices,omitempty"`
 }
 
-type PluginInterfaceType struct {
-	Preifx string
-	Capability string
-	Version string
-}
-
 type PluginInterface struct {
-	Types []PluginInterfaceType
-	Socket string
+	Types []string  `json:"Types,omitempty" yaml:"Types,omitempty" toml:"Types,omitempty"`
+	Socket string `json:"Socket,omitempty" yaml:"Socket,omitempty" toml:"Socket,omitempty"`
 }
 
 type PluginNetwork struct {
-	Type string
+	Type string  `json:"Type,omitempty" yaml:"Type,omitempty" toml:"Type,omitempty"`
 }
 type PluginLinux struct {
-	Capabilities []string
-	AllowAllDevices bool
-	Devices []PluginLinuxDevices
+	Capabilities []string `json:"Capabilities,omitempty" yaml:"Capabilities,omitempty" toml:"Capabilities,omitempty"`
+	AllowAllDevices bool `json:"AllowAllDevices,omitempty" yaml:"AllowAllDevices,omitempty" toml:"AllowAllDevices,omitempty"`
+	Devices []PluginLinuxDevices `json:"Devices,omitempty" yaml:"Devices,omitempty" toml:"Devices,omitempty"`
 }
 
 type PluginLinuxDevices struct {
-	Name string
-	Description string
-	Settable []string
-	Path string
+	Name string  `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
+	Description string `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
+	Settable []string  `json:"Settable,omitempty" yaml:"Settable,omitempty" toml:"Settable,omitempty"`
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty" toml:"Path,omitempty"`
 }
 type PluginEnv struct {
-	Name string
-	Description string
-	Settable []string
-	Value string
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
+	Description string `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
+	Settable []string `json:"Settable,omitempty" yaml:"Settable,omitempty" toml:"Settable,omitempty"`
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
 type PluginArgs struct {
-	Name string
-	Description string
-	Settable []string
-	Value []string
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
+	Description string `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
+	Settable []string `json:"Settable,omitempty" yaml:"Settable,omitempty" toml:"Settable,omitempty"`
+	Value []string   `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
 
 type PluginUser struct {
-	UID int32
-	GID int32
+	UID int32 `json:"UID,omitempty" yaml:"UID,omitempty" toml:"UID,omitempty"`
+	GID int32 `json:"GID,omitempty" yaml:"GID,omitempty" toml:"GID,omitempty"`
 }
 
 type PluginConfig struct {
 	Description string `json:"Description,omitempty" yaml:"Description,omitempty" toml:"Description,omitempty"`
-	Documentation string `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
-	Interface PluginInterface
-	Entrypoint []string
-	WorkDir string
-	User PluginUser
-	Network PluginNetwork
-	Linux PluginLinux
-	PropagatedMount string
-	Mounts []Mount
-	Env []PluginEnv
-	Args PluginArgs
+	Documentation string
+	Interface PluginInterface `json:"Interface,omitempty" yaml:"Interface,omitempty" toml:"Interface,omitempty"`
+	Entrypoint []string  `json:"Entrypoint,omitempty" yaml:"Entrypoint,omitempty" toml:"Entrypoint,omitempty"`
+	WorkDir string `json:"WorkDir,omitempty" yaml:"WorkDir,omitempty" toml:"WorkDir,omitempty"`
+	User PluginUser `json:"User,omitempty" yaml:"User,omitempty" toml:"User,omitempty"`
+	Network PluginNetwork `json:"Network,omitempty" yaml:"Network,omitempty" toml:"Network,omitempty"`
+	Linux PluginLinux `json:"Linux,omitempty" yaml:"Linux,omitempty" toml:"Linux,omitempty"`
+	PropagatedMount string `json:"Interface,omitempty" yaml:"Interface,omitempty" toml:"Interface,omitempty"`
+	Mounts []Mount `json:"Mounts,omitempty" yaml:"Mounts,omitempty" toml:"Mounts,omitempty"`
+	Env []PluginEnv `json:"Env,omitempty" yaml:"Env,omitempty" toml:"Env,omitempty"`
+	Args PluginArgs `json:"Args,omitempty" yaml:"Args,omitempty" toml:"Args,omitempty"`
 }
 
 type PluginDetail struct {
