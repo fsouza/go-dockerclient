@@ -20,6 +20,9 @@ type PluginPrivilege struct {
 	Value []string `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
 
+// InstallPluginOptions This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type InstallPluginOptions struct {
 	Remote string
 	Name string
@@ -27,7 +30,7 @@ type InstallPluginOptions struct {
 	Context context.Context
 }
 
-// ListContainers returns a slice of containers matching the given criteria.
+// InstallPlugins returns a slice of containers matching the given criteria.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) InstallPlugins(opts InstallPluginOptions, auth AuthConfiguration) (error) {
@@ -46,38 +49,62 @@ func (c *Client) InstallPlugins(opts InstallPluginOptions, auth AuthConfiguratio
 	return  nil
 }
 
+// PluginSetting This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginSetting struct {
 	Env []string `json:"Env,omitempty" yaml:"Env,omitempty" toml:"Env,omitempty"`
 	Args []string  `json:"Args,omitempty" yaml:"Args,omitempty" toml:"Args,omitempty"`
 	Devices []string  `json:"Devices,omitempty" yaml:"Devices,omitempty" toml:"Devices,omitempty"`
 }
 
+// PluginInterface This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginInterface struct {
 	Types []string  `json:"Types,omitempty" yaml:"Types,omitempty" toml:"Types,omitempty"`
 	Socket string `json:"Socket,omitempty" yaml:"Socket,omitempty" toml:"Socket,omitempty"`
 }
 
+// PluginNetwork This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginNetwork struct {
 	Type string  `json:"Type,omitempty" yaml:"Type,omitempty" toml:"Type,omitempty"`
 }
+
+// PluginLinux This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginLinux struct {
 	Capabilities []string `json:"Capabilities,omitempty" yaml:"Capabilities,omitempty" toml:"Capabilities,omitempty"`
 	AllowAllDevices bool `json:"AllowAllDevices,omitempty" yaml:"AllowAllDevices,omitempty" toml:"AllowAllDevices,omitempty"`
 	Devices []PluginLinuxDevices `json:"Devices,omitempty" yaml:"Devices,omitempty" toml:"Devices,omitempty"`
 }
 
+// PluginLinuxDevices This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginLinuxDevices struct {
 	Name string  `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
 	Description string `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
 	Settable []string  `json:"Settable,omitempty" yaml:"Settable,omitempty" toml:"Settable,omitempty"`
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty" toml:"Path,omitempty"`
 }
+
+// PluginEnv This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginEnv struct {
 	Name string `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
 	Description string `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
 	Settable []string `json:"Settable,omitempty" yaml:"Settable,omitempty" toml:"Settable,omitempty"`
 	Value string `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
+
+// PluginArgs This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginArgs struct {
 	Name string `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
 	Description string `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
@@ -85,11 +112,17 @@ type PluginArgs struct {
 	Value []string   `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
 
+// PluginUser This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginUser struct {
 	UID int32 `json:"UID,omitempty" yaml:"UID,omitempty" toml:"UID,omitempty"`
 	GID int32 `json:"GID,omitempty" yaml:"GID,omitempty" toml:"GID,omitempty"`
 }
 
+// PluginConfig This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginConfig struct {
 	Description string `json:"Description,omitempty" yaml:"Description,omitempty" toml:"Description,omitempty"`
 	Documentation string
@@ -99,14 +132,17 @@ type PluginConfig struct {
 	User PluginUser `json:"User,omitempty" yaml:"User,omitempty" toml:"User,omitempty"`
 	Network PluginNetwork `json:"Network,omitempty" yaml:"Network,omitempty" toml:"Network,omitempty"`
 	Linux PluginLinux `json:"Linux,omitempty" yaml:"Linux,omitempty" toml:"Linux,omitempty"`
-	PropagatedMount string `json:"Interface,omitempty" yaml:"Interface,omitempty" toml:"Interface,omitempty"`
+	PropagatedMount string `json:"PropagatedMount,omitempty" yaml:"PropagatedMount,omitempty" toml:"PropagatedMount,omitempty"`
 	Mounts []Mount `json:"Mounts,omitempty" yaml:"Mounts,omitempty" toml:"Mounts,omitempty"`
 	Env []PluginEnv `json:"Env,omitempty" yaml:"Env,omitempty" toml:"Env,omitempty"`
 	Args PluginArgs `json:"Args,omitempty" yaml:"Args,omitempty" toml:"Args,omitempty"`
 }
 
+// PluginDetail This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PluginDetail struct {
-	Id string `json:"Id,omitempty" yaml:"Id,omitempty" toml:"Id,omitempty"`
+	ID string `json:"Id,omitempty" yaml:"Id,omitempty" toml:"Id,omitempty"`
 	Name        string `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
 	Tag        string `json:"Tag,omitempty" yaml:"Tag,omitempty" toml:"Tag,omitempty"`
 	Active     bool `json:"Active,omitempty" yaml:"Active,omitempty" toml:"Active,omitempty"`
@@ -114,6 +150,9 @@ type PluginDetail struct {
 	Config Config  `json:"Config,omitempty" yaml:"Config,omitempty" toml:"Config,omitempty"`
 }
 
+// ListPlugins This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 func (c *Client) ListPlugins()([]PluginDetail, error) {
 	resp, err := c.do("GET", "/plugins",doOptions{})
 	if err != nil {
@@ -127,7 +166,9 @@ func (c *Client) ListPlugins()([]PluginDetail, error) {
 	return pluginDetails, nil
 }
 
-
+// GetPluginPrivileges This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 func (c *Client) GetPluginPrivileges(name string)([]PluginPrivilege, error) {
 	resp, err := c.do("GET", "/plugins/privileges?"+name,doOptions{})
 	if err != nil {
@@ -141,6 +182,9 @@ func (c *Client) GetPluginPrivileges(name string)([]PluginPrivilege, error) {
 	return pluginPrivileges, nil
 }
 
+// RemovePluginOptions This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type RemovePluginOptions struct {
 	// The ID of the container.
 	Name string `qs:"-"`
@@ -151,6 +195,9 @@ type RemovePluginOptions struct {
 	Context context.Context
 }
 
+// RemovePlugin This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 func (c *Client) RemovePlugin(opts RemovePluginOptions)(*PluginDetail, error) {
 	path := "/plugins/"+opts.Name+"?"+queryString(opts)
 	resp, err := c.do("DELETE", path, doOptions{context: opts.Context})
@@ -172,7 +219,9 @@ func (c *Client) RemovePlugin(opts RemovePluginOptions)(*PluginDetail, error) {
 	return &pluginDetail, nil
 }
 
-
+// EnablePluginOptions This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type EnablePluginOptions struct {
 	// The ID of the container.
 	Name string `qs:"-"`
@@ -181,6 +230,9 @@ type EnablePluginOptions struct {
 	Context context.Context
 }
 
+// EnablePlugin This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 func (c *Client) EnablePlugin(opts EnablePluginOptions)(error) {
 	path := "/plugins/"+opts.Name+"/enable?"+queryString(opts)
 	resp, err := c.do("POST", path, doOptions{context: opts.Context})
@@ -192,6 +244,9 @@ func (c *Client) EnablePlugin(opts EnablePluginOptions)(error) {
 	return nil
 }
 
+// DisablePluginOptions This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type DisablePluginOptions struct {
 	// The ID of the container.
 	Name string `qs:"-"`
@@ -199,6 +254,9 @@ type DisablePluginOptions struct {
 	Context context.Context
 }
 
+// DisablePlugin This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 func (c *Client) DisablePlugin(opts DisablePluginOptions)(error) {
 	path := "/plugins/"+opts.Name+"/disable"
 	resp, err := c.do("POST", path, doOptions{context: opts.Context})
@@ -210,6 +268,9 @@ func (c *Client) DisablePlugin(opts DisablePluginOptions)(error) {
 	return nil
 }
 
+// CreatePluginOptions This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type CreatePluginOptions struct {
 	// The Name of the container.
 	Name string `qs:"name"`
@@ -219,6 +280,9 @@ type CreatePluginOptions struct {
 	Context context.Context
 }
 
+// CreatePlugin This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 func (c *Client) CreatePlugin(opts CreatePluginOptions)(string,error) {
 	path := "/plugins/create?"+queryString(opts.Name)
 	resp, err := c.do("POST", path, doOptions{
@@ -235,6 +299,9 @@ func (c *Client) CreatePlugin(opts CreatePluginOptions)(string,error) {
 	return string(containerNameBytes),nil
 }
 
+// PushPluginOptions This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type PushPluginOptions struct {
 	// The Name of the container.
 	Name string
@@ -242,6 +309,9 @@ type PushPluginOptions struct {
 	Context context.Context
 }
 
+// PushPlugin This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 func (c *Client) PushPlugin(opts PushPluginOptions)(error) {
 	path := "/plugins/"+opts.Name+"/push"
 	resp, err := c.do("POST", path, doOptions{context: opts.Context})
@@ -252,6 +322,9 @@ func (c *Client) PushPlugin(opts PushPluginOptions)(error) {
 	return nil
 }
 
+// ConfigurePluginOptions This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 type ConfigurePluginOptions struct {
 	// The Name of the container.
 	Name string `qs:"name"`
@@ -260,6 +333,9 @@ type ConfigurePluginOptions struct {
 	Context context.Context
 }
 
+// ConfigurePlugin This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
 func (c *Client) ConfigurePlugin(opts ConfigurePluginOptions)(error) {
 	path := "/plugins/"+opts.Name+"/set"
 	resp, err := c.do("POST", path, doOptions{
