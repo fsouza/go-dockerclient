@@ -20,7 +20,7 @@ type PluginPrivilege struct {
 	Value       []string `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
 
-// InstallPluginOptions This is a TBD Comments.
+// InstallPluginOptions .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type InstallPluginOptions struct {
@@ -51,7 +51,7 @@ func (c *Client) InstallPlugins(opts InstallPluginOptions, auth AuthConfiguratio
 	return nil
 }
 
-// PluginSetting This is a TBD Comments.
+// PluginSetting .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginSetting struct {
@@ -60,7 +60,7 @@ type PluginSetting struct {
 	Devices []string `json:"Devices,omitempty" yaml:"Devices,omitempty" toml:"Devices,omitempty"`
 }
 
-// PluginInterface This is a TBD Comments.
+// PluginInterface .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginInterface struct {
@@ -68,14 +68,14 @@ type PluginInterface struct {
 	Socket string   `json:"Socket,omitempty" yaml:"Socket,omitempty" toml:"Socket,omitempty"`
 }
 
-// PluginNetwork This is a TBD Comments.
+// PluginNetwork .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginNetwork struct {
 	Type string `json:"Type,omitempty" yaml:"Type,omitempty" toml:"Type,omitempty"`
 }
 
-// PluginLinux This is a TBD Comments.
+// PluginLinux .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginLinux struct {
@@ -84,7 +84,7 @@ type PluginLinux struct {
 	Devices         []PluginLinuxDevices `json:"Devices,omitempty" yaml:"Devices,omitempty" toml:"Devices,omitempty"`
 }
 
-// PluginLinuxDevices This is a TBD Comments.
+// PluginLinuxDevices .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginLinuxDevices struct {
@@ -94,27 +94,27 @@ type PluginLinuxDevices struct {
 	Path        string   `json:"Path,omitempty" yaml:"Path,omitempty" toml:"Path,omitempty"`
 }
 
-// PluginEnv This is a TBD Comments.
+// PluginEnv .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginEnv struct {
 	Name        string   `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
-	Description string   `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
+	Description string   `json:"Description,omitempty" yaml:"Description,omitempty" toml:"Description,omitempty"`
 	Settable    []string `json:"Settable,omitempty" yaml:"Settable,omitempty" toml:"Settable,omitempty"`
 	Value       string   `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
 
-// PluginArgs This is a TBD Comments.
+// PluginArgs .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginArgs struct {
 	Name        string   `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
-	Description string   `json:"Documentation,omitempty" yaml:"Documentation,omitempty" toml:"Documentation,omitempty"`
+	Description string   `json:"Description,omitempty" yaml:"Description,omitempty" toml:"Description,omitempty"`
 	Settable    []string `json:"Settable,omitempty" yaml:"Settable,omitempty" toml:"Settable,omitempty"`
 	Value       []string `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
 
-// PluginUser This is a TBD Comments.
+// PluginUser .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginUser struct {
@@ -122,7 +122,7 @@ type PluginUser struct {
 	GID int32 `json:"GID,omitempty" yaml:"GID,omitempty" toml:"GID,omitempty"`
 }
 
-// PluginConfig This is a TBD Comments.
+// PluginConfig .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginConfig struct {
@@ -140,7 +140,7 @@ type PluginConfig struct {
 	Args            PluginArgs      `json:"Args,omitempty" yaml:"Args,omitempty" toml:"Args,omitempty"`
 }
 
-// PluginDetail This is a TBD Comments.
+// PluginDetail .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PluginDetail struct {
@@ -152,7 +152,7 @@ type PluginDetail struct {
 	Config   PluginConfig  `json:"Config,omitempty" yaml:"Config,omitempty" toml:"Config,omitempty"`
 }
 
-// ListPlugins This is a TBD Comments.
+// ListPlugins .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) ListPlugins() ([]PluginDetail, error) {
@@ -168,7 +168,7 @@ func (c *Client) ListPlugins() ([]PluginDetail, error) {
 	return pluginDetails, nil
 }
 
-// GetPluginPrivileges This is a TBD Comments.
+// GetPluginPrivileges .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) GetPluginPrivileges(name string) ([]PluginPrivilege, error) {
@@ -177,14 +177,37 @@ func (c *Client) GetPluginPrivileges(name string) ([]PluginPrivilege, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	pluginPrivileges := make([]PluginPrivilege, 0)
+	var pluginPrivileges []PluginPrivilege
 	if err := json.NewDecoder(resp.Body).Decode(&pluginPrivileges); err != nil {
 		return nil, err
 	}
 	return pluginPrivileges, nil
 }
 
-// RemovePluginOptions This is a TBD Comments.
+// InspectPlugins .This is a TBD Comments.
+//
+// See https://goo.gl/kaOHGw for more details.
+func (c *Client) InspectPlugins(name string) (*PluginDetail, error) {
+	resp, err := c.do("GET", "/plugins/"+name+"/json", doOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if err != nil {
+		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+			return nil, &NoSuchPlugin{ID: name}
+		}
+		return nil, err
+	}
+	resp.Body.Close()
+	var pluginDetail PluginDetail
+	if err := json.NewDecoder(resp.Body).Decode(&pluginDetail); err != nil {
+		return nil, err
+	}
+	return &pluginDetail, nil
+}
+
+// RemovePluginOptions .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type RemovePluginOptions struct {
@@ -197,7 +220,7 @@ type RemovePluginOptions struct {
 	Context context.Context
 }
 
-// RemovePlugin This is a TBD Comments.
+// RemovePlugin .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) RemovePlugin(opts RemovePluginOptions) (*PluginDetail, error) {
@@ -221,7 +244,7 @@ func (c *Client) RemovePlugin(opts RemovePluginOptions) (*PluginDetail, error) {
 	return &pluginDetail, nil
 }
 
-// EnablePluginOptions This is a TBD Comments.
+// EnablePluginOptions .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type EnablePluginOptions struct {
@@ -232,7 +255,7 @@ type EnablePluginOptions struct {
 	Context context.Context
 }
 
-// EnablePlugin This is a TBD Comments.
+// EnablePlugin .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) EnablePlugin(opts EnablePluginOptions) error {
@@ -246,7 +269,7 @@ func (c *Client) EnablePlugin(opts EnablePluginOptions) error {
 	return nil
 }
 
-// DisablePluginOptions This is a TBD Comments.
+// DisablePluginOptions .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type DisablePluginOptions struct {
@@ -256,7 +279,7 @@ type DisablePluginOptions struct {
 	Context context.Context
 }
 
-// DisablePlugin This is a TBD Comments.
+// DisablePlugin .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) DisablePlugin(opts DisablePluginOptions) error {
@@ -270,7 +293,7 @@ func (c *Client) DisablePlugin(opts DisablePluginOptions) error {
 	return nil
 }
 
-// CreatePluginOptions This is a TBD Comments.
+// CreatePluginOptions .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type CreatePluginOptions struct {
@@ -282,7 +305,7 @@ type CreatePluginOptions struct {
 	Context context.Context
 }
 
-// CreatePlugin This is a TBD Comments.
+// CreatePlugin .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) CreatePlugin(opts CreatePluginOptions) (string, error) {
@@ -301,7 +324,7 @@ func (c *Client) CreatePlugin(opts CreatePluginOptions) (string, error) {
 	return string(containerNameBytes), nil
 }
 
-// PushPluginOptions This is a TBD Comments.
+// PushPluginOptions .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type PushPluginOptions struct {
@@ -311,7 +334,7 @@ type PushPluginOptions struct {
 	Context context.Context
 }
 
-// PushPlugin This is a TBD Comments.
+// PushPlugin .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) PushPlugin(opts PushPluginOptions) error {
@@ -324,7 +347,7 @@ func (c *Client) PushPlugin(opts PushPluginOptions) error {
 	return nil
 }
 
-// ConfigurePluginOptions This is a TBD Comments.
+// ConfigurePluginOptions .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 type ConfigurePluginOptions struct {
@@ -335,7 +358,7 @@ type ConfigurePluginOptions struct {
 	Context context.Context
 }
 
-// ConfigurePlugin This is a TBD Comments.
+// ConfigurePlugin .This is a TBD Comments.
 //
 // See https://goo.gl/kaOHGw for more details.
 func (c *Client) ConfigurePlugin(opts ConfigurePluginOptions) error {

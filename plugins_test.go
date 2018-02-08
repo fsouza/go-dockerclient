@@ -10,6 +10,108 @@ import (
 	"testing"
 )
 
+var (
+	expectPluginDetail = PluginDetail{
+		ID:     "5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078",
+		Name:   "tiborvass/sample-volume-plugin",
+		Tag:    "latest",
+		Active: true,
+		Settings: PluginSetting{
+			Env:     []string{"DEBUG=0"},
+			Args:    nil,
+			Devices: nil,
+		},
+		Config: PluginConfig{
+			Description:   "A sample volume plugin for Docker",
+			Documentation: "https://docs.docker.com/engine/extend/plugins/",
+			Interface: PluginInterface{
+				Types:  []string{"docker.volumedriver/1.0"},
+				Socket: "plugins.sock",
+			},
+			Entrypoint: []string{
+				"/usr/bin/sample-volume-plugin",
+				"/data",
+			},
+			WorkDir:         "",
+			User:            PluginUser{},
+			Network:         PluginNetwork{Type: ""},
+			Linux:           PluginLinux{Capabilities: nil, AllowAllDevices: false, Devices: nil},
+			Mounts:          nil,
+			PropagatedMount: "/data",
+			Env: []PluginEnv{
+				{
+					Name:        "DEBUG",
+					Description: "If set, prints debug messages",
+					Settable:    nil,
+					Value:       "0",
+				},
+			},
+			Args: PluginArgs{
+				Name:        "args",
+				Description: "command line arguments",
+				Settable:    nil,
+				Value:       []string{},
+			},
+		},
+	}
+)
+
+const (
+	jsonPluginDetail = `{
+    "Id": "5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078",
+    "Name": "tiborvass/sample-volume-plugin",
+    "Tag": "latest",
+    "Active": true,
+    "Settings": {
+      "Env": [
+        "DEBUG=0"
+      ],
+      "Args": null,
+      "Devices": null
+    },
+    "Config": {
+      "Description": "A sample volume plugin for Docker",
+      "Documentation": "https://docs.docker.com/engine/extend/plugins/",
+      "Interface": {
+        "Types": [
+          "docker.volumedriver/1.0"
+        ],
+        "Socket": "plugins.sock"
+      },
+      "Entrypoint": [
+        "/usr/bin/sample-volume-plugin",
+        "/data"
+      ],
+      "WorkDir": "",
+      "User": {},
+      "Network": {
+        "Type": ""
+      },
+      "Linux": {
+        "Capabilities": null,
+        "AllowAllDevices": false,
+        "Devices": null
+      },
+      "Mounts": null,
+      "PropagatedMount": "/data",
+      "Env": [
+        {
+          "Name": "DEBUG",
+          "Description": "If set, prints debug messages",
+          "Settable": null,
+          "Value": "0"
+        }
+      ],
+      "Args": {
+        "Name": "args",
+        "Description": "command line arguments",
+        "Settable": null,
+        "Value": []
+      }
+    }
+  }`
+)
+
 func TestListPlugins(t *testing.T) {
 	t.Parallel()
 	jsonPlugins := `[
@@ -85,9 +187,15 @@ func TestListPlugins(t *testing.T) {
 func TestGetPluginPrivileges(t *testing.T) {
 	t.Parallel()
 	name := "test_plugin"
-	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	jsonPluginPrivileges := `[ { "Name": "network", "Description": "", "Value": [ "host" ] }]`
+	fakeRT := &FakeRoundTripper{message: jsonPluginPrivileges, status: http.StatusNoContent}
 	client := newTestClient(fakeRT)
-	var expected []PluginPrivilege
+	expected := []PluginPrivilege{
+		{
+			Name:        "network",
+			Description: "",
+			Value:       []string{"host"},
+		}}
 	pluginPrivileges, err := client.GetPluginPrivileges(name)
 	if err != nil {
 		t.Fatal(err)
@@ -115,5 +223,97 @@ func TestInstallPlugins(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
 
+func TestInspectPlugin(t *testing.T) {
+	name := "test_plugin"
+	fakeRT := &FakeRoundTripper{message: jsonPluginDetail, status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	pluginPrivileges, err := client.InspectPlugins(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(pluginPrivileges, &expectPluginDetail) {
+		t.Errorf("InspectPlugins: Expected %#v. Got %#v.", &expectPluginDetail, pluginPrivileges)
+	}
+}
+
+func TestRemovePlugin(t *testing.T) {
+	opts := RemovePluginOptions{
+		Name:    "test_plugin",
+		Force:   false,
+		Context: context.Background(),
+	}
+	fakeRT := &FakeRoundTripper{message: jsonPluginDetail, status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	pluginPrivileges, err := client.RemovePlugin(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(pluginPrivileges, &expectPluginDetail) {
+		t.Errorf("RemovePlugin: Expected %#v. Got %#v.", &expectPluginDetail, pluginPrivileges)
+	}
+}
+
+func TestEnablePlugin(t *testing.T) {
+	opts := EnablePluginOptions{
+		Name:    "test",
+		Timeout: 5,
+		Context: context.Background(),
+	}
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	err := client.EnablePlugin(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDisablePlugin(t *testing.T) {
+	opts := DisablePluginOptions{
+		Name:    "test",
+		Context: context.Background(),
+	}
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	err := client.DisablePlugin(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCreatePlugin(t *testing.T) {
+	opts := CreatePluginOptions{
+		Name:    "test",
+		Path:    "",
+		Context: context.Background(),
+	}
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	_, err := client.CreatePlugin(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPushPlugin(t *testing.T) {
+	opts := PushPluginOptions{
+		Name:    "test",
+		Context: context.Background(),
+	}
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	err := client.PushPlugin(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestConfigurePlugin(t *testing.T) {
+	opts := ConfigurePluginOptions{
+		Name:    "test",
+		Envs:    []string{},
+		Context: context.Background(),
+	}
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	err := client.ConfigurePlugin(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
