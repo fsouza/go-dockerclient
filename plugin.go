@@ -20,7 +20,7 @@ type PluginPrivilege struct {
 	Value       []string `json:"Value,omitempty" yaml:"Value,omitempty" toml:"Value,omitempty"`
 }
 
-// InstallPluginOptions 
+// InstallPluginOptions specify parameters to the InstallPlugins function.
 //
 // See https://goo.gl/C4t7Tz for more details.
 type InstallPluginOptions struct {
@@ -54,7 +54,7 @@ func (c *Client) InstallPlugins(opts InstallPluginOptions) error {
 	return nil
 }
 
-// PluginSetting stores plugin settings.
+// PluginSettings stores plugin settings.
 //
 // See https://goo.gl/C4t7Tz for more details.
 type PluginSettings struct {
