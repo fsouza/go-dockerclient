@@ -16,7 +16,7 @@ var (
 		Name:   "tiborvass/sample-volume-plugin",
 		Tag:    "latest",
 		Active: true,
-		Settings: PluginSetting{
+		Settings: PluginSettings{
 			Env:     []string{"DEBUG=0"},
 			Args:    nil,
 			Devices: nil,
@@ -175,7 +175,7 @@ func TestListPlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := newTestClient(&FakeRoundTripper{message: jsonPlugins, status: http.StatusOK})
-	pluginDetails, err := client.ListPlugins()
+	pluginDetails, err := client.ListPlugins(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestGetPluginPrivileges(t *testing.T) {
 			Description: "",
 			Value:       []string{"host"},
 		}}
-	pluginPrivileges, err := client.GetPluginPrivileges(name)
+	pluginPrivileges, err := client.GetPluginPrivileges(name,context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,10 +216,11 @@ func TestInstallPlugins(t *testing.T) {
 			},
 		},
 		Context: context.Background(),
+		Auth: AuthConfiguration{},
 	}
-	auth := AuthConfiguration{}
+
 	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
-	err := client.InstallPlugins(opts, auth)
+	err := client.InstallPlugins(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +230,7 @@ func TestInspectPlugin(t *testing.T) {
 	name := "test_plugin"
 	fakeRT := &FakeRoundTripper{message: jsonPluginDetail, status: http.StatusNoContent}
 	client := newTestClient(fakeRT)
-	pluginPrivileges, err := client.InspectPlugins(name)
+	pluginPrivileges, err := client.InspectPlugins(name,context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
