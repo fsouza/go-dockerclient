@@ -1,4 +1,4 @@
-// Copyright 2013 go-dockerclient authors. All rights reserved.
+// Copyright 2018 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -147,12 +147,12 @@ type PluginConfig struct {
 //
 // See https://goo.gl/C4t7Tz for more details.
 type PluginDetail struct {
-	ID       string        `json:"Id,omitempty" yaml:"Id,omitempty" toml:"Id,omitempty"`
-	Name     string        `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
-	Tag      string        `json:"Tag,omitempty" yaml:"Tag,omitempty" toml:"Tag,omitempty"`
-	Active   bool          `json:"Active,omitempty" yaml:"Active,omitempty" toml:"Active,omitempty"`
+	ID       string         `json:"Id,omitempty" yaml:"Id,omitempty" toml:"Id,omitempty"`
+	Name     string         `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
+	Tag      string         `json:"Tag,omitempty" yaml:"Tag,omitempty" toml:"Tag,omitempty"`
+	Active   bool           `json:"Active,omitempty" yaml:"Active,omitempty" toml:"Active,omitempty"`
 	Settings PluginSettings `json:"Settings,omitempty" yaml:"Settings,omitempty" toml:"Settings,omitempty"`
-	Config   PluginConfig  `json:"Config,omitempty" yaml:"Config,omitempty" toml:"Config,omitempty"`
+	Config   PluginConfig   `json:"Config,omitempty" yaml:"Config,omitempty" toml:"Config,omitempty"`
 }
 
 // ListPlugins returns pluginDetails or an error.
@@ -160,8 +160,7 @@ type PluginDetail struct {
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) ListPlugins(ctx context.Context) ([]PluginDetail, error) {
 	resp, err := c.do("GET", "/plugins", doOptions{
-		context:ctx,
-
+		context: ctx,
 	})
 	if err != nil {
 		return nil, err
@@ -177,9 +176,9 @@ func (c *Client) ListPlugins(ctx context.Context) ([]PluginDetail, error) {
 // GetPluginPrivileges returns pulginPrivileges or an error.
 //
 // See https://goo.gl/C4t7Tz for more details.
-func (c *Client) GetPluginPrivileges(name string,ctx context.Context) ([]PluginPrivilege, error) {
+func (c *Client) GetPluginPrivileges(name string, ctx context.Context) ([]PluginPrivilege, error) {
 	resp, err := c.do("GET", "/plugins/privileges?remote="+name, doOptions{
-		context:ctx,
+		context: ctx,
 	})
 	if err != nil {
 		return nil, err
@@ -197,7 +196,7 @@ func (c *Client) GetPluginPrivileges(name string,ctx context.Context) ([]PluginP
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) InspectPlugins(name string, ctx context.Context) (*PluginDetail, error) {
 	resp, err := c.do("GET", "/plugins/"+name+"/json", doOptions{
-		context:ctx,
+		context: ctx,
 	})
 	if err != nil {
 		return nil, err

@@ -1,3 +1,7 @@
+// Copyright 2018 go-dockerclient authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -196,7 +200,7 @@ func TestGetPluginPrivileges(t *testing.T) {
 			Description: "",
 			Value:       []string{"host"},
 		}}
-	pluginPrivileges, err := client.GetPluginPrivileges(name,context.Background())
+	pluginPrivileges, err := client.GetPluginPrivileges(name, context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +220,7 @@ func TestInstallPlugins(t *testing.T) {
 			},
 		},
 		Context: context.Background(),
-		Auth: AuthConfiguration{},
+		Auth:    AuthConfiguration{},
 	}
 
 	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
@@ -230,7 +234,7 @@ func TestInspectPlugin(t *testing.T) {
 	name := "test_plugin"
 	fakeRT := &FakeRoundTripper{message: jsonPluginDetail, status: http.StatusNoContent}
 	client := newTestClient(fakeRT)
-	pluginPrivileges, err := client.InspectPlugins(name,context.Background())
+	pluginPrivileges, err := client.InspectPlugins(name, context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
