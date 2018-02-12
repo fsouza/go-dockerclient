@@ -6,9 +6,8 @@ package docker
 
 import (
 	"encoding/json"
-	ioutil "io/ioutil"
+	"io/ioutil"
 	"net/http"
-	"net/url"
 
 	"golang.org/x/net/context"
 )
@@ -37,12 +36,7 @@ type InstallPluginOptions struct {
 //
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) InstallPlugins(opts InstallPluginOptions) error {
-	params := make(url.Values)
-	params.Set("remote", opts.Remote)
-	if opts.Name != "" {
-		params.Set("name", opts.Name)
-	}
-	path := "/plugins/pull?" + queryString(params)
+	path := "/plugins/pull?" + queryString(opts)
 	resp, err := c.do("POST", path, doOptions{
 		data:    opts.Plugins,
 		context: opts.Context,
