@@ -914,6 +914,10 @@ func addQueryStringValue(items url.Values, key string, v reflect.Value) {
 		if v.Int() > 0 {
 			items.Add(key, strconv.FormatInt(v.Int(), 10))
 		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if v.Uint() > 0 {
+			items.Add(key, strconv.FormatUint(v.Uint(), 10))
+		}
 	case reflect.Float32, reflect.Float64:
 		if v.Float() > 0 {
 			items.Add(key, strconv.FormatFloat(v.Float(), 'f', -1, 64))
