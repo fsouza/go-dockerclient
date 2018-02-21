@@ -5,11 +5,10 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
-
-	"golang.org/x/net/context"
 )
 
 var (

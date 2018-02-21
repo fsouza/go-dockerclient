@@ -18,10 +18,6 @@
   name = "github.com/gorilla/mux"
   version = "v1.5.0"
 
-[[constraint]]
-  name = "golang.org/x/net"
-  branch = "master"
-
 [[override]]
   name = "github.com/Nvveen/Gotty"
   source = "https://github.com/ijc25/Gotty.git"
