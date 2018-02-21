@@ -22,7 +22,7 @@ fmt:
 	gofmt -s -w $$(go list ./... | grep -v vendor)
 
 fmtcheck:
-	[ -z "$$(gofmt -s -d $$(go list ./... | grep -v vendor) | tee /dev/stderr)" ]
+	[ -z "$$(gofmt -s -d *.go ./testing | tee /dev/stderr)" ]
 
 testdeps:
 	go get -u github.com/golang/dep/cmd/dep
