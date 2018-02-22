@@ -12,7 +12,7 @@
 all: test
 
 lint:
-	@ go get -v github.com/golang/lint/golint
+	@ go get -v golang.org/x/lint/golint
 	[ -z "$$(golint . | grep -v 'type name will be used as docker.DockerInfo' | grep -v 'context.Context should be the first' | tee /dev/stderr)" ]
 
 vet:
