@@ -21,7 +21,7 @@ var (
 
 // Volume represents a volume.
 //
-// See https://goo.gl/FZA4BK for more details.
+// See https://goo.gl/3wgTsd for more details.
 type Volume struct {
 	Name       string            `json:"Name" yaml:"Name" toml:"Name"`
 	Driver     string            `json:"Driver,omitempty" yaml:"Driver,omitempty" toml:"Driver,omitempty"`
@@ -31,7 +31,7 @@ type Volume struct {
 
 // ListVolumesOptions specify parameters to the ListVolumes function.
 //
-// See https://goo.gl/FZA4BK for more details.
+// See https://goo.gl/3wgTsd for more details.
 type ListVolumesOptions struct {
 	Filters map[string][]string
 	Context context.Context
@@ -39,7 +39,7 @@ type ListVolumesOptions struct {
 
 // ListVolumes returns a list of available volumes in the server.
 //
-// See https://goo.gl/FZA4BK for more details.
+// See https://goo.gl/3wgTsd for more details.
 func (c *Client) ListVolumes(opts ListVolumesOptions) ([]Volume, error) {
 	resp, err := c.do("GET", "/volumes?"+queryString(opts), doOptions{
 		context: opts.Context,
@@ -69,7 +69,7 @@ func (c *Client) ListVolumes(opts ListVolumesOptions) ([]Volume, error) {
 
 // CreateVolumeOptions specify parameters to the CreateVolume function.
 //
-// See https://goo.gl/pBUbZ9 for more details.
+// See https://goo.gl/qEhmEC for more details.
 type CreateVolumeOptions struct {
 	Name       string
 	Driver     string
@@ -80,7 +80,7 @@ type CreateVolumeOptions struct {
 
 // CreateVolume creates a volume on the server.
 //
-// See https://goo.gl/pBUbZ9 for more details.
+// See https://goo.gl/qEhmEC for more details.
 func (c *Client) CreateVolume(opts CreateVolumeOptions) (*Volume, error) {
 	resp, err := c.do("POST", "/volumes/create", doOptions{
 		data:    opts,
@@ -99,7 +99,7 @@ func (c *Client) CreateVolume(opts CreateVolumeOptions) (*Volume, error) {
 
 // InspectVolume returns a volume by its name.
 //
-// See https://goo.gl/0g9A6i for more details.
+// See https://goo.gl/GMjsMc for more details.
 func (c *Client) InspectVolume(name string) (*Volume, error) {
 	resp, err := c.do("GET", "/volumes/"+name, doOptions{})
 	if err != nil {
@@ -157,7 +157,7 @@ func (c *Client) RemoveVolumeWithOptions(opts RemoveVolumeOptions) error {
 
 // PruneVolumesOptions specify parameters to the PruneVolumes function.
 //
-// See https://goo.gl/pFN1Hj for more details.
+// See https://goo.gl/f9XDem for more details.
 type PruneVolumesOptions struct {
 	Filters map[string][]string
 	Context context.Context
@@ -165,7 +165,7 @@ type PruneVolumesOptions struct {
 
 // PruneVolumesResults specify results from the PruneVolumes function.
 //
-// See https://goo.gl/pFN1Hj for more details.
+// See https://goo.gl/f9XDem for more details.
 type PruneVolumesResults struct {
 	VolumesDeleted []string
 	SpaceReclaimed int64
@@ -173,7 +173,7 @@ type PruneVolumesResults struct {
 
 // PruneVolumes deletes volumes which are unused.
 //
-// See https://goo.gl/pFN1Hj for more details.
+// See https://goo.gl/f9XDem for more details.
 func (c *Client) PruneVolumes(opts PruneVolumesOptions) (*PruneVolumesResults, error) {
 	path := "/volumes/prune?" + queryString(opts)
 	resp, err := c.do("POST", path, doOptions{context: opts.Context})
