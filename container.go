@@ -1287,9 +1287,10 @@ func (c *Client) DownloadFromContainer(id string, opts DownloadFromContainerOpti
 	})
 }
 
-// CopyFromContainerOptions has been DEPRECATED, please use DownloadFromContainerOptions along with DownloadFromContainer.
+// CopyFromContainerOptions contains the set of options used for copying
+// files from a container.
 //
-// See https://goo.gl/nWk2YQ for more details.
+// Deprecated: Use DownloadFromContainerOptions and DownloadFromContainer instead.
 type CopyFromContainerOptions struct {
 	OutputStream io.Writer `json:"-"`
 	Container    string    `json:"-"`
@@ -1297,9 +1298,9 @@ type CopyFromContainerOptions struct {
 	Context      context.Context `json:"-"`
 }
 
-// CopyFromContainer has been DEPRECATED, please use DownloadFromContainerOptions along with DownloadFromContainer.
+// CopyFromContainer copies files from a container.
 //
-// See https://goo.gl/nWk2YQ for more details.
+// Deprecated: Use DownloadFromContainer and DownloadFromContainer instead.
 func (c *Client) CopyFromContainer(opts CopyFromContainerOptions) error {
 	if opts.Container == "" {
 		return &NoSuchContainer{ID: opts.Container}
