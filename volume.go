@@ -118,9 +118,28 @@ func (c *Client) InspectVolume(name string) (*Volume, error) {
 
 // RemoveVolume removes a volume by its name.
 //
-// See https://goo.gl/79GNQz for more details.
+// Deprecated: Use RemoveVolumeWithOptions instead.
 func (c *Client) RemoveVolume(name string) error {
-	resp, err := c.do("DELETE", "/volumes/"+name, doOptions{})
+	return c.RemoveVolumeWithOptions(RemoveVolumeOptions{Name: name})
+}
+
+// RemoveVolumeOptions specify parameters to the RemoveVolumeWithOptions
+// function.
+//
+// See https://goo.gl/nvd6qj for more details.
+type RemoveVolumeOptions struct {
+	Context context.Context
+	Name    string `qs:"-"`
+	Force   bool
+}
+
+// RemoveVolumeWithOptions removes a volume by its name and takes extra
+// parameters.
+//
+// See https://goo.gl/nvd6qj for more details.
+func (c *Client) RemoveVolumeWithOptions(opts RemoveVolumeOptions) error {
+	path := "/volumes/" + opts.Name
+	resp, err := c.do("DELETE", path+"?"+queryString(opts), doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok {
 			if e.Status == http.StatusNotFound {
