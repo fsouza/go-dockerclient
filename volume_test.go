@@ -85,7 +85,10 @@ func TestInspectVolume(t *testing.T) {
 	body := `{
 		"Name": "tardis",
 		"Driver": "local",
-		"Mountpoint": "/var/lib/docker/volumes/tardis"
+		"Mountpoint": "/var/lib/docker/volumes/tardis",
+		"Options": {
+			"foo": "bar"
+		}
 	}`
 	var expected Volume
 	if err := json.Unmarshal([]byte(body), &expected); err != nil {
