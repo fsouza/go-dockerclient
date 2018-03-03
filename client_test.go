@@ -547,7 +547,7 @@ func TestClientStreamContextDeadline(t *testing.T) {
 		if f, ok := w.(http.Flusher); ok {
 			f.Flush()
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(time.Second)
 		fmt.Fprint(w, "def\n")
 		if f, ok := w.(http.Flusher); ok {
 			f.Flush()
@@ -558,7 +558,7 @@ func TestClientStreamContextDeadline(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w bytes.Buffer
-	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 400*time.Millisecond)
 	defer cancel()
 	err = client.stream("POST", "/image/create", streamOptions{
 		setRawTerminal: true,
