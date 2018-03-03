@@ -12,7 +12,7 @@
 
 [[constraint]]
   name = "github.com/google/go-cmp"
-  branch = "master"
+  version = "v0.2.0"
 
 [[constraint]]
   name = "github.com/gorilla/mux"
