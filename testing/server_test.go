@@ -237,6 +237,51 @@ func TestListRunningContainers(t *testing.T) {
 	}
 }
 
+func TestListContainersFilterLabels(t *testing.T) {
+	t.Parallel()
+	server := DockerServer{}
+	addContainers(&server, 3)
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest("GET", `/containers/json?all=1&filters={"label": ["key=val-1"]}`, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("TestListContainersFilterLabels: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	var got []docker.APIContainers
+	err := json.NewDecoder(recorder.Body).Decode(&got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Errorf("TestListContainersFilterLabels: Want 1. Got %d.", len(got))
+	}
+	request, _ = http.NewRequest("GET", `/containers/json?all=1&filters={"label": ["key="]}`, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("TestListContainersFilterLabels: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	err = json.NewDecoder(recorder.Body).Decode(&got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Errorf("TestListContainersFilterLabels: Want 0. Got %d.", len(got))
+	}
+	request, _ = http.NewRequest("GET", `/containers/json?all=1&filters={"label": ["key"]}`, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Errorf("TestListContainersFilterLabels: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+	err = json.NewDecoder(recorder.Body).Decode(&got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Errorf("TestListContainersFilterLabels: Want 3. Got %d.", len(got))
+	}
+}
+
 func TestCreateContainer(t *testing.T) {
 	t.Parallel()
 	server := DockerServer{}
@@ -1516,6 +1561,7 @@ func addContainers(server *DockerServer, n int) {
 				Env:          []string{"ME=you", fmt.Sprintf("NUMBER=%d", i)},
 				Cmd:          []string{"ls", "-la", ".."},
 				Image:        "base",
+				Labels:       map[string]string{"key": fmt.Sprintf("val-%d", i)},
 			},
 			State: docker.State{
 				Running:   false,

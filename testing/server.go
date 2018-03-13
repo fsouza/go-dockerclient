@@ -382,13 +382,35 @@ func (s *DockerServer) handlerWrapper(f http.HandlerFunc) http.HandlerFunc {
 
 func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 	all := r.URL.Query().Get("all")
+	filtersRaw := r.FormValue("filters")
+	filters := make(map[string][]string)
+	json.Unmarshal([]byte(filtersRaw), &filters)
+	labelFilters := make(map[string]*string)
+	for _, f := range filters["label"] {
+		parts := strings.Split(f, "=")
+		if len(parts) == 2 {
+			labelFilters[parts[0]] = &parts[1]
+			continue
+		}
+		labelFilters[parts[0]] = nil
+	}
 	s.cMut.RLock()
 	result := make([]docker.APIContainers, 0, len(s.containers))
+loop:
 	for _, container := range s.containers {
 		if all == "1" || container.State.Running {
 			var ports []docker.APIPort
 			if container.NetworkSettings != nil {
 				ports = container.NetworkSettings.PortMappingAPI()
+			}
+			for l, fv := range labelFilters {
+				lv, ok := container.Config.Labels[l]
+				if !ok {
+					continue loop
+				}
+				if fv != nil && lv != *fv {
+					continue loop
+				}
 			}
 			result = append(result, docker.APIContainers{
 				ID:      container.ID,
