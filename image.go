@@ -473,6 +473,7 @@ type BuildImageOptions struct {
 	InactivityTimeout   time.Duration      `qs:"-"`
 	CgroupParent        string             `qs:"cgroupparent"`
 	SecurityOpt         []string           `qs:"securityopt"`
+	Target              string             `gs:"target"`
 	Context             context.Context
 }
 
