@@ -166,6 +166,33 @@ func (c *Client) ListPlugins(ctx context.Context) ([]PluginDetail, error) {
 	return pluginDetails, nil
 }
 
+// ListFilteredPluginsOptions specify parameters to the ListFilteredPlugins function.
+//
+// See https://goo.gl/C4t7Tz for more details.
+type ListFilteredPluginsOptions struct {
+	Filters map[string][]string
+	Context context.Context
+}
+
+// ListFilteredPlugins returns pluginDetails or an error.
+//
+// See https://goo.gl/rmdmWg for more details.
+func (c *Client) ListFilteredPlugins(opts ListFilteredPluginsOptions) ([]PluginDetail, error) {
+	path := "/plugins/json?" + queryString(opts)
+	resp, err := c.do("GET", path, doOptions{
+		context: opts.Context,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	pluginDetails := make([]PluginDetail, 0)
+	if err := json.NewDecoder(resp.Body).Decode(&pluginDetails); err != nil {
+		return nil, err
+	}
+	return pluginDetails, nil
+}
+
 // GetPluginPrivileges returns pulginPrivileges or an error.
 //
 // See https://goo.gl/C4t7Tz for more details.

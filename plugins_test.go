@@ -7,6 +7,7 @@ package docker
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"reflect"
@@ -118,61 +119,7 @@ const (
 
 func TestListPlugins(t *testing.T) {
 	t.Parallel()
-	jsonPlugins := `[
-  {
-    "Id": "5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078",
-    "Name": "tiborvass/sample-volume-plugin",
-    "Tag": "latest",
-    "Active": true,
-    "Settings": {
-      "Env": [
-        "DEBUG=0"
-      ],
-      "Args": null,
-      "Devices": null
-    },
-    "Config": {
-      "Description": "A sample volume plugin for Docker",
-      "Documentation": "https://docs.docker.com/engine/extend/plugins/",
-      "Interface": {
-        "Types": [
-          "docker.volumedriver/1.0"
-        ],
-        "Socket": "plugins.sock"
-      },
-      "Entrypoint": [
-        "/usr/bin/sample-volume-plugin",
-        "/data"
-      ],
-      "WorkDir": "",
-      "User": {},
-      "Network": {
-        "Type": ""
-      },
-      "Linux": {
-        "Capabilities": null,
-        "AllowAllDevices": false,
-        "Devices": null
-      },
-      "Mounts": null,
-      "PropagatedMount": "/data",
-      "Env": [
-        {
-          "Name": "DEBUG",
-          "Description": "If set, prints debug messages",
-          "Settable": null,
-          "Value": "0"
-        }
-      ],
-      "Args": {
-        "Name": "args",
-        "Description": "command line arguments",
-        "Settable": null,
-        "Value": []
-      }
-    }
-  }
-]`
+	jsonPlugins := fmt.Sprintf("[%s]", jsonPluginDetail)
 	var expected []PluginDetail
 	err := json.Unmarshal([]byte(jsonPlugins), &expected)
 	if err != nil {
@@ -185,6 +132,53 @@ func TestListPlugins(t *testing.T) {
 	}
 	if !reflect.DeepEqual(pluginDetails, expected) {
 		t.Errorf("ListPlugins: Expected %#v. Got %#v.", expected, pluginDetails)
+	}
+}
+
+func TestListFilteredPlugins(t *testing.T) {
+	t.Parallel()
+	jsonPlugins := fmt.Sprintf("[%s]", jsonPluginDetail)
+	var expected []PluginDetail
+	err := json.Unmarshal([]byte(jsonPlugins), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: jsonPlugins, status: http.StatusOK})
+
+	pluginDetails, err := client.ListFilteredPlugins(
+		ListFilteredPluginsOptions{
+			Filters: map[string][]string{
+				"capability": {"volumedriver"},
+				"enabled":    {"true"},
+			},
+			Context: context.Background()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(pluginDetails, expected) {
+		t.Errorf("ListPlugins: Expected %#v. Got %#v.", expected, pluginDetails)
+	}
+}
+
+func TestListFilteredPluginsFailure(t *testing.T) {
+	t.Parallel()
+	var tests = []struct {
+		status  int
+		message string
+	}{
+		{400, "bad parameter"},
+		{500, "internal server error"},
+	}
+	for _, tt := range tests {
+		client := newTestClient(&FakeRoundTripper{message: tt.message, status: tt.status})
+		expected := Error{Status: tt.status, Message: tt.message}
+		pluginDetails, err := client.ListFilteredPlugins(ListFilteredPluginsOptions{})
+		if !reflect.DeepEqual(expected, *err.(*Error)) {
+			t.Errorf("Wrong error in ListFilteredPlugins. Want %#v. Got %#v.", expected, err)
+		}
+		if len(pluginDetails) > 0 {
+			t.Errorf("ListFilteredPlugins failure. Expected empty list. Got %#v.", pluginDetails)
+		}
 	}
 }
 
