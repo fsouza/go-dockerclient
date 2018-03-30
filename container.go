@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	units "github.com/docker/go-units"
+	"github.com/docker/go-units"
 )
 
 // ErrContainerAlreadyExists is the error returned by CreateContainer when the
