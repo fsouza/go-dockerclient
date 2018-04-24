@@ -5,6 +5,7 @@ clone_folder: c:\gopath\src\github.com\fsouza\go-dockerclient
 environment:
   GOPATH: c:\gopath
   matrix:
+    - GOVERSION: 1.9.5
     - GOVERSION: 1.10.1
 install:
   - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
