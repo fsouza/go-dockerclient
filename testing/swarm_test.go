@@ -373,7 +373,7 @@ func TestServiceCreate(t *testing.T) {
 	if len(server.services) != 1 || len(server.tasks) != 1 || len(server.containers) != 1 {
 		t.Fatalf("ServiceCreate: wrong item count. Want 1. Got services: %d, tasks: %d, containers: %d.", len(server.services), len(server.tasks), len(server.containers))
 	}
-	cont := server.containers[0]
+	cont := getContainer(server)
 	expectedContainer := &docker.Container{
 		ID:      cont.ID,
 		Created: cont.Created,
@@ -1049,7 +1049,7 @@ func TestServiceUpdate(t *testing.T) {
 	if len(server.services) != 1 || len(server.tasks) != 1 || len(server.containers) != 1 {
 		t.Fatalf("ServiceUpdate: wrong item count. Want 1. Got services: %d, tasks: %d, containers: %d.", len(server.services), len(server.tasks), len(server.containers))
 	}
-	cont := server.containers[0]
+	cont := getContainer(server)
 	expectedContainer := &docker.Container{
 		ID:      cont.ID,
 		Created: cont.Created,

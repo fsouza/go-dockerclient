@@ -88,7 +88,7 @@ func TestServerStop(t *testing.T) {
 
 func TestServerStopNoListener(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.Stop()
 }
 
@@ -107,7 +107,7 @@ func TestServerURL(t *testing.T) {
 
 func TestServerURLNoListener(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	url := server.URL()
 	if url != "" {
 		t.Errorf("DockerServer.URL(): Expected empty URL on handler mode, got %q.", url)
@@ -185,8 +185,8 @@ func TestCustomHandlerRegexp(t *testing.T) {
 
 func TestListContainers(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
-	addContainers(&server, 2)
+	server := baseDockerServer()
+	containers := addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/containers/json?all=1", nil)
@@ -195,7 +195,7 @@ func TestListContainers(t *testing.T) {
 		t.Errorf("ListContainers: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 	expected := make([]docker.APIContainers, 2)
-	for i, container := range server.containers {
+	for i, container := range containers {
 		expected[i] = docker.APIContainers{
 			ID:      container.ID,
 			Image:   container.Image,
@@ -207,11 +207,17 @@ func TestListContainers(t *testing.T) {
 			State:   container.State.StateString(),
 		}
 	}
+	sort.Slice(expected, func(i, j int) bool {
+		return expected[i].ID < expected[j].ID
+	})
 	var got []docker.APIContainers
 	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
 		t.Fatal(err)
 	}
+	sort.Slice(got, func(i, j int) bool {
+		return got[i].ID < got[j].ID
+	})
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ListContainers. Want %#v. Got %#v.", expected, got)
 	}
@@ -219,7 +225,7 @@ func TestListContainers(t *testing.T) {
 
 func TestListRunningContainers(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -240,7 +246,7 @@ func TestListRunningContainers(t *testing.T) {
 
 func TestListContainersFilterLabels(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 3)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -285,7 +291,7 @@ func TestListContainersFilterLabels(t *testing.T) {
 
 func TestCreateContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.imgIDs = map[string]string{"base": "a1234"}
 	server.uploadedFiles = map[string]string{"a1234": "/abcd"}
 	server.buildMuxer()
@@ -302,7 +308,7 @@ func TestCreateContainer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stored := server.containers[0]
+	stored := getContainer(&server)
 	if returned.ID != stored.ID {
 		t.Errorf("CreateContainer: ID mismatch. Stored: %q. Returned: %q.", stored.ID, returned.ID)
 	}
@@ -329,10 +335,17 @@ func TestCreateContainer(t *testing.T) {
 	}
 }
 
+func getContainer(server *DockerServer) *docker.Container {
+	var cont *docker.Container
+	for _, cont = range server.containers {
+	}
+	return cont
+}
+
 func TestCreateContainerWithNotifyChannel(t *testing.T) {
 	t.Parallel()
 	ch := make(chan *docker.Container, 1)
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.imgIDs = map[string]string{"base": "a1234"}
 	server.cChan = ch
 	server.buildMuxer()
@@ -344,14 +357,14 @@ func TestCreateContainerWithNotifyChannel(t *testing.T) {
 	if recorder.Code != http.StatusCreated {
 		t.Errorf("CreateContainer: wrong status. Want %d. Got %d.", http.StatusCreated, recorder.Code)
 	}
-	if notified := <-ch; notified != server.containers[0] {
-		t.Errorf("CreateContainer: did not notify the proper container. Want %q. Got %q.", server.containers[0].ID, notified.ID)
+	if notified := <-ch; notified != getContainer(&server) {
+		t.Errorf("CreateContainer: did not notify the proper container. Want %q. Got %q.", getContainer(&server).ID, notified.ID)
 	}
 }
 
 func TestCreateContainerInvalidBody(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/containers/create", strings.NewReader("whaaaaaat---"))
@@ -363,11 +376,12 @@ func TestCreateContainerInvalidBody(t *testing.T) {
 
 func TestCreateContainerDuplicateName(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	server.imgIDs = map[string]string{"base": "a1234"}
-	addContainers(&server, 1)
-	server.containers[0].Name = "mycontainer"
+	containers := addContainers(&server, 1)
+	containers[0].Name = "mycontainer"
+	server.contNameToID[containers[0].Name] = containers[0].ID
 	recorder := httptest.NewRecorder()
 	body := `{"Hostname":"", "User":"ubuntu", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
 "PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"], "Image":"base", "Volumes":{}, "VolumesFrom":"","HostConfig":{"Binds":["/var/run/docker.sock:/var/run/docker.sock:rw"]}}`
@@ -380,11 +394,11 @@ func TestCreateContainerDuplicateName(t *testing.T) {
 
 func TestCreateMultipleContainersEmptyName(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	server.imgIDs = map[string]string{"base": "a1234"}
 	addContainers(&server, 1)
-	server.containers[0].Name = ""
+	getContainer(&server).Name = ""
 	recorder := httptest.NewRecorder()
 	body := `{"Hostname":"", "User":"ubuntu", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
 "PortSpecs":null, "Tty":false, "OpenStdin":false, "StdinOnce":false, "Env":null, "Cmd":["date"], "Image":"base", "Volumes":{}, "VolumesFrom":"","HostConfig":{"Binds":["/var/run/docker.sock:/var/run/docker.sock:rw"]}}`
@@ -398,7 +412,10 @@ func TestCreateMultipleContainersEmptyName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stored := server.containers[1]
+	stored, err := server.findContainer(returned.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if returned.ID != stored.ID {
 		t.Errorf("CreateContainer: ID mismatch. Stored: %q. Returned: %q.", stored.ID, returned.ID)
 	}
@@ -416,7 +433,7 @@ func TestCreateMultipleContainersEmptyName(t *testing.T) {
 
 func TestCreateContainerInvalidName(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Hostname":"", "User":"", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
@@ -435,7 +452,7 @@ func TestCreateContainerInvalidName(t *testing.T) {
 
 func TestCreateContainerImageNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Hostname":"", "User":"", "Memory":0, "MemorySwap":0, "AttachStdin":false, "AttachStdout":true, "AttachStderr":true,
@@ -450,18 +467,18 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 
 func TestRenameContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
-	addContainers(&server, 2)
+	server := baseDockerServer()
+	containers := addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	newName := server.containers[0].Name + "abc"
-	path := fmt.Sprintf("/containers/%s/rename?name=%s", server.containers[0].ID, newName)
+	newName := containers[0].Name + "abc"
+	path := fmt.Sprintf("/containers/%s/rename?name=%s", containers[0].ID, newName)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
 		t.Errorf("RenameContainer: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
 	}
-	container := server.containers[0]
+	container := containers[0]
 	if container.Name != newName {
 		t.Errorf("RenameContainer: did not rename the container. Want %q. Got %q.", newName, container.Name)
 	}
@@ -469,7 +486,7 @@ func TestRenameContainer(t *testing.T) {
 
 func TestRenameContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/containers/blabla/rename?name=something", nil)
@@ -481,14 +498,12 @@ func TestRenameContainerNotFound(t *testing.T) {
 
 func TestCommitContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		images: make(map[string]docker.Image),
-	}
-	addContainers(&server, 2)
-	server.uploadedFiles = map[string]string{server.containers[0].ID: "/abcd"}
+	server := baseDockerServer()
+	containers := addContainers(&server, 2)
+	server.uploadedFiles = map[string]string{containers[0].ID: "/abcd"}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/commit?container="+server.containers[0].ID, nil)
+	request, _ := http.NewRequest("POST", "/commit?container="+containers[0].ID, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("CommitContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
@@ -496,7 +511,7 @@ func TestCommitContainer(t *testing.T) {
 	if len(server.images) != 1 {
 		t.Errorf("CommitContainer: wrong images len in server. Want 1. Got %q.", len(server.images))
 	}
-	imgID := fmt.Sprintf("img-%s", server.containers[0].ID)
+	imgID := fmt.Sprintf("img-%s", containers[0].ID)
 	expected := fmt.Sprintf(`{"ID":"%s"}`, imgID)
 	if got := recorder.Body.String(); got != expected {
 		t.Errorf("CommitContainer: wrong response body. Want %q. Got %q.", expected, got)
@@ -513,24 +528,21 @@ func TestCommitContainer(t *testing.T) {
 
 func TestCommitContainerComplete(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		images: make(map[string]docker.Image),
-	}
-	server.imgIDs = make(map[string]string)
-	addContainers(&server, 2)
+	server := baseDockerServer()
+	containers := addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	queryString := "container=" + server.containers[0].ID + "&repo=tsuru/python&m=saving&author=developers"
+	queryString := "container=" + containers[0].ID + "&repo=tsuru/python&m=saving&author=developers"
 	queryString += `&run={"Cmd": ["cat", "/world"],"PortSpecs":["22"]}`
 	request, _ := http.NewRequest("POST", "/commit?"+queryString, nil)
 	server.ServeHTTP(recorder, request)
-	imgID := fmt.Sprintf("img-%s", server.containers[0].ID)
+	imgID := fmt.Sprintf("img-%s", containers[0].ID)
 	image := server.images[imgID]
-	if image.Parent != server.containers[0].Image {
-		t.Errorf("CommitContainer: wrong parent image. Want %q. Got %q.", server.containers[0].Image, image.Parent)
+	if image.Parent != containers[0].Image {
+		t.Errorf("CommitContainer: wrong parent image. Want %q. Got %q.", containers[0].Image, image.Parent)
 	}
-	if image.Container != server.containers[0].ID {
-		t.Errorf("CommitContainer: wrong container. Want %q. Got %q.", server.containers[0].ID, image.Container)
+	if image.Container != containers[0].ID {
+		t.Errorf("CommitContainer: wrong container. Want %q. Got %q.", containers[0].ID, image.Container)
 	}
 	message := "saving"
 	if image.Comment != message {
@@ -555,23 +567,20 @@ func TestCommitContainerComplete(t *testing.T) {
 
 func TestCommitContainerWithTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		images: make(map[string]docker.Image),
-	}
-	server.imgIDs = make(map[string]string)
-	addContainers(&server, 2)
+	server := baseDockerServer()
+	containers := addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	queryString := "container=" + server.containers[0].ID + "&repo=tsuru/python&tag=v1"
+	queryString := "container=" + containers[0].ID + "&repo=tsuru/python&tag=v1"
 	request, _ := http.NewRequest("POST", "/commit?"+queryString, nil)
 	server.ServeHTTP(recorder, request)
-	imgID := fmt.Sprintf("img-%s", server.containers[0].ID)
+	imgID := fmt.Sprintf("img-%s", containers[0].ID)
 	image := server.images[imgID]
-	if image.Parent != server.containers[0].Image {
-		t.Errorf("CommitContainer: wrong parent image. Want %q. Got %q.", server.containers[0].Image, image.Parent)
+	if image.Parent != containers[0].Image {
+		t.Errorf("CommitContainer: wrong parent image. Want %q. Got %q.", containers[0].Image, image.Parent)
 	}
-	if image.Container != server.containers[0].ID {
-		t.Errorf("CommitContainer: wrong container. Want %q. Got %q.", server.containers[0].ID, image.Container)
+	if image.Container != containers[0].ID {
+		t.Errorf("CommitContainer: wrong container. Want %q. Got %q.", containers[0].ID, image.Container)
 	}
 	if id := server.imgIDs["tsuru/python:v1"]; id != image.ID {
 		t.Errorf("CommitContainer: wrong ID saved for repository. Want %q. Got %q.", image.ID, id)
@@ -580,11 +589,11 @@ func TestCommitContainerWithTag(t *testing.T) {
 
 func TestCommitContainerInvalidRun(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest("POST", "/commit?container="+server.containers[0].ID+"&run=abc---", nil)
+	request, _ := http.NewRequest("POST", "/commit?container="+getContainer(&server).ID+"&run=abc---", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
 		t.Errorf("CommitContainer. Wrong status. Want %d. Got %d.", http.StatusBadRequest, recorder.Code)
@@ -593,7 +602,7 @@ func TestCommitContainerInvalidRun(t *testing.T) {
 
 func TestCommitContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/commit?container=abc123", nil)
@@ -605,17 +614,17 @@ func TestCommitContainerNotFound(t *testing.T) {
 
 func TestInspectContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
-	addContainers(&server, 2)
+	server := baseDockerServer()
+	containers := addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/json", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/json", containers[0].ID)
 	request, _ := http.NewRequest("GET", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("InspectContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	expected := server.containers[0]
+	expected := containers[0]
 	var got docker.Container
 	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
@@ -639,7 +648,7 @@ func TestInspectContainer(t *testing.T) {
 
 func TestInspectContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/containers/abc123/json", nil)
@@ -651,12 +660,12 @@ func TestInspectContainerNotFound(t *testing.T) {
 
 func TestTopContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/top", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/top", getContainer(&server).ID)
 	request, _ := http.NewRequest("GET", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -680,7 +689,7 @@ func TestTopContainer(t *testing.T) {
 
 func TestTopContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/containers/xyz/top", nil)
@@ -692,11 +701,11 @@ func TestTopContainerNotFound(t *testing.T) {
 
 func TestTopContainerStopped(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/top", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/top", getContainer(&server).ID)
 	request, _ := http.NewRequest("GET", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusInternalServerError {
@@ -706,7 +715,7 @@ func TestTopContainerStopped(t *testing.T) {
 
 func TestStartContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	memory := int64(536870912)
@@ -716,49 +725,49 @@ func TestStartContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/start", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, bytes.NewBuffer(configBytes))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	if !server.containers[0].State.Running {
+	if !getContainer(&server).State.Running {
 		t.Error("StartContainer: did not set the container to running state")
 	}
-	if server.containers[0].State.StartedAt.IsZero() {
+	if getContainer(&server).State.StartedAt.IsZero() {
 		t.Error("StartContainer: did not set the startedAt container state")
 	}
-	if gotMemory := server.containers[0].HostConfig.Memory; gotMemory != memory {
+	if gotMemory := getContainer(&server).HostConfig.Memory; gotMemory != memory {
 		t.Errorf("StartContainer: wrong HostConfig. Wants %d of memory. Got %d", memory, gotMemory)
 	}
 }
 
 func TestStartContainerNoHostConfig(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	memory := int64(536870912)
 	hostConfig := docker.HostConfig{Memory: memory}
-	server.containers[0].HostConfig = &hostConfig
+	getContainer(&server).HostConfig = &hostConfig
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/start", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, strings.NewReader(""))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	if !server.containers[0].State.Running {
+	if !getContainer(&server).State.Running {
 		t.Error("StartContainer: did not set the container to running state")
 	}
-	if gotMemory := server.containers[0].HostConfig.Memory; gotMemory != memory {
+	if gotMemory := getContainer(&server).HostConfig.Memory; gotMemory != memory {
 		t.Errorf("StartContainer: wrong HostConfig. Wants %d of memory. Got %d", memory, gotMemory)
 	}
 }
 
 func TestStartContainerChangeNetwork(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	hostConfig := docker.HostConfig{
@@ -771,16 +780,16 @@ func TestStartContainerChangeNetwork(t *testing.T) {
 		t.Fatal(err)
 	}
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/start", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, bytes.NewBuffer(configBytes))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	if !server.containers[0].State.Running {
+	if !getContainer(&server).State.Running {
 		t.Error("StartContainer: did not set the container to running state")
 	}
-	portMapping := server.containers[0].NetworkSettings.Ports["8888/tcp"]
+	portMapping := getContainer(&server).NetworkSettings.Ports["8888/tcp"]
 	expected := []docker.PortBinding{{HostIP: "0.0.0.0", HostPort: "12345"}}
 	if !reflect.DeepEqual(portMapping, expected) {
 		t.Errorf("StartContainer: network not updated. Wants %#v ports. Got %#v", expected, portMapping)
@@ -790,26 +799,25 @@ func TestStartContainerChangeNetwork(t *testing.T) {
 func TestStartContainerWithNotifyChannel(t *testing.T) {
 	t.Parallel()
 	ch := make(chan *docker.Container, 1)
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.cChan = ch
-	addContainers(&server, 1)
-	addContainers(&server, 1)
+	containers := addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/start", server.containers[1].ID)
+	path := fmt.Sprintf("/containers/%s/start", containers[1].ID)
 	request, _ := http.NewRequest("POST", path, bytes.NewBuffer([]byte("{}")))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
 		t.Errorf("StartContainer: wrong status code. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	if notified := <-ch; notified != server.containers[1] {
-		t.Errorf("StartContainer: did not notify the proper container. Want %q. Got %q.", server.containers[1].ID, notified.ID)
+	if notified := <-ch; notified != containers[1] {
+		t.Errorf("StartContainer: did not notify the proper container. Want %q. Got %q.", containers[1].ID, notified.ID)
 	}
 }
 
 func TestStartContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := "/containers/abc123/start"
@@ -822,12 +830,12 @@ func TestStartContainerNotFound(t *testing.T) {
 
 func TestStartContainerAlreadyRunning(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/start", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/start", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, bytes.NewBuffer([]byte("null")))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotModified {
@@ -837,36 +845,36 @@ func TestStartContainerAlreadyRunning(t *testing.T) {
 
 func TestStopContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/stop", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/stop", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
 		t.Errorf("StopContainer: wrong status code. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
 	}
-	if server.containers[0].State.Running {
+	if getContainer(&server).State.Running {
 		t.Error("StopContainer: did not stop the container")
 	}
 }
 
 func TestKillContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/kill", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/kill", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
 		t.Errorf("KillContainer: wrong status code. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
 	}
-	if server.containers[0].State.Running {
+	if getContainer(&server).State.Running {
 		t.Error("KillContainer: did not stop the container")
 	}
 }
@@ -874,27 +882,26 @@ func TestKillContainer(t *testing.T) {
 func TestStopContainerWithNotifyChannel(t *testing.T) {
 	t.Parallel()
 	ch := make(chan *docker.Container, 1)
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.cChan = ch
-	addContainers(&server, 1)
-	addContainers(&server, 1)
-	server.containers[1].State.Running = true
+	containers := addContainers(&server, 2)
+	containers[1].State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/stop", server.containers[1].ID)
+	path := fmt.Sprintf("/containers/%s/stop", containers[1].ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
 		t.Errorf("StopContainer: wrong status code. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
 	}
-	if notified := <-ch; notified != server.containers[1] {
-		t.Errorf("StopContainer: did not notify the proper container. Want %q. Got %q.", server.containers[1].ID, notified.ID)
+	if notified := <-ch; notified != containers[1] {
+		t.Errorf("StopContainer: did not notify the proper container. Want %q. Got %q.", containers[1].ID, notified.ID)
 	}
 }
 
 func TestStopContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := "/containers/abc123/stop"
@@ -907,11 +914,11 @@ func TestStopContainerNotFound(t *testing.T) {
 
 func TestStopContainerNotRunning(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/stop", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/stop", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
@@ -921,29 +928,29 @@ func TestStopContainerNotRunning(t *testing.T) {
 
 func TestPauseContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/pause", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/pause", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
 		t.Errorf("PauseContainer: wrong status code. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
 	}
-	if !server.containers[0].State.Paused {
+	if !getContainer(&server).State.Paused {
 		t.Error("PauseContainer: did not pause the container")
 	}
 }
 
 func TestPauseContainerAlreadyPaused(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Paused = true
+	getContainer(&server).State.Paused = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/pause", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/pause", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
@@ -953,7 +960,7 @@ func TestPauseContainerAlreadyPaused(t *testing.T) {
 
 func TestPauseContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := "/containers/abc123/pause"
@@ -966,29 +973,29 @@ func TestPauseContainerNotFound(t *testing.T) {
 
 func TestUnpauseContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Paused = true
+	getContainer(&server).State.Paused = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/unpause", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/unpause", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
 		t.Errorf("UnpauseContainer: wrong status code. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
 	}
-	if server.containers[0].State.Paused {
+	if getContainer(&server).State.Paused {
 		t.Error("UnpauseContainer: did not unpause the container")
 	}
 }
 
 func TestUnpauseContainerNotPaused(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/unpause", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/unpause", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusBadRequest {
@@ -998,7 +1005,7 @@ func TestUnpauseContainerNotPaused(t *testing.T) {
 
 func TestUnpauseContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := "/containers/abc123/unpause"
@@ -1011,16 +1018,16 @@ func TestUnpauseContainerNotFound(t *testing.T) {
 
 func TestWaitContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/wait", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/wait", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	go func() {
 		server.cMut.Lock()
-		server.containers[0].State.Running = false
+		getContainer(&server).State.Running = false
 		server.cMut.Unlock()
 	}()
 	server.ServeHTTP(recorder, request)
@@ -1035,12 +1042,12 @@ func TestWaitContainer(t *testing.T) {
 
 func TestWaitContainerStatus(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
-	server.containers[0].State.ExitCode = 63
+	getContainer(&server).State.ExitCode = 63
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/wait", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/wait", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -1054,7 +1061,7 @@ func TestWaitContainerStatus(t *testing.T) {
 
 func TestWaitContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := "/containers/abc123/wait"
@@ -1086,12 +1093,12 @@ func (r *HijackableResponseRecorder) HijackBuffer() string {
 
 func TestLogContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/logs", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/logs", getContainer(&server).ID)
 	request, _ := http.NewRequest("GET", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -1101,7 +1108,7 @@ func TestLogContainer(t *testing.T) {
 
 func TestLogContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := "/containers/abc123/logs"
@@ -1114,12 +1121,12 @@ func TestLogContainerNotFound(t *testing.T) {
 
 func TestAttachContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := &HijackableResponseRecorder{}
-	path := fmt.Sprintf("/containers/%s/attach?logs=1", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/attach?logs=1", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	server.ServeHTTP(recorder, request)
 	lines := []string{
@@ -1135,7 +1142,7 @@ func TestAttachContainer(t *testing.T) {
 
 func TestAttachContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := &HijackableResponseRecorder{}
 	path := "/containers/abc123/attach?logs=1"
@@ -1148,11 +1155,11 @@ func TestAttachContainerNotFound(t *testing.T) {
 
 func TestAttachContainerWithStreamBlocks(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
-	path := fmt.Sprintf("/containers/%s/attach?logs=1&stdout=1&stream=1", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/attach?logs=1&stdout=1&stream=1", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	done := make(chan string)
 	go func() {
@@ -1166,7 +1173,7 @@ func TestAttachContainerWithStreamBlocks(t *testing.T) {
 	case <-time.After(500 * time.Millisecond):
 	}
 	server.cMut.Lock()
-	server.containers[0].State.Running = false
+	getContainer(&server).State.Running = false
 	server.cMut.Unlock()
 	var body string
 	select {
@@ -1187,12 +1194,12 @@ func TestAttachContainerWithStreamBlocks(t *testing.T) {
 
 func TestAttachContainerWithStreamBlocksOnCreatedContainers(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = false
-	server.containers[0].State.StartedAt = time.Time{}
+	getContainer(&server).State.Running = false
+	getContainer(&server).State.StartedAt = time.Time{}
 	server.buildMuxer()
-	path := fmt.Sprintf("/containers/%s/attach?logs=1&stdout=1&stream=1", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/attach?logs=1&stdout=1&stream=1", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, nil)
 	done := make(chan string)
 	go func() {
@@ -1206,7 +1213,7 @@ func TestAttachContainerWithStreamBlocksOnCreatedContainers(t *testing.T) {
 	case <-time.After(500 * time.Millisecond):
 	}
 	server.cMut.Lock()
-	server.containers[0].State.StartedAt = time.Now()
+	getContainer(&server).State.StartedAt = time.Now()
 	server.cMut.Unlock()
 	var body string
 	select {
@@ -1227,11 +1234,11 @@ func TestAttachContainerWithStreamBlocksOnCreatedContainers(t *testing.T) {
 
 func TestRemoveContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s", getContainer(&server).ID)
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
@@ -1244,11 +1251,11 @@ func TestRemoveContainer(t *testing.T) {
 
 func TestRemoveContainerByName(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s", server.containers[0].Name)
+	path := fmt.Sprintf("/containers/%s", getContainer(&server).Name)
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
@@ -1261,7 +1268,7 @@ func TestRemoveContainerByName(t *testing.T) {
 
 func TestRemoveContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	path := fmt.Sprintf("/containers/abc123")
@@ -1274,12 +1281,12 @@ func TestRemoveContainerNotFound(t *testing.T) {
 
 func TestRemoveContainerRunning(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s", getContainer(&server).ID)
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusInternalServerError {
@@ -1292,12 +1299,12 @@ func TestRemoveContainerRunning(t *testing.T) {
 
 func TestRemoveContainerRunningForce(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
-	server.containers[0].State.Running = true
+	getContainer(&server).State.Running = true
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s?%s", server.containers[0].ID, "force=1")
+	path := fmt.Sprintf("/containers/%s?%s", getContainer(&server).ID, "force=1")
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
@@ -1310,10 +1317,7 @@ func TestRemoveContainerRunningForce(t *testing.T) {
 
 func TestPullImage(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		imgIDs: make(map[string]string),
-		images: make(map[string]docker.Image),
-	}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/create?fromImage=base", nil)
@@ -1337,10 +1341,7 @@ func TestPullImage(t *testing.T) {
 
 func TestPullImageWithTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		imgIDs: make(map[string]string),
-		images: make(map[string]docker.Image),
-	}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/create?fromImage=base&tag=tag", nil)
@@ -1358,10 +1359,7 @@ func TestPullImageWithTag(t *testing.T) {
 
 func TestPullImageWithShaTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		imgIDs: make(map[string]string),
-		images: make(map[string]docker.Image),
-	}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/create?fromImage=base&tag=sha256:deadc0de", nil)
@@ -1379,10 +1377,7 @@ func TestPullImageWithShaTag(t *testing.T) {
 
 func TestPullImageExisting(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		imgIDs: make(map[string]string),
-		images: make(map[string]docker.Image),
-	}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/create?fromImage=base", nil)
@@ -1417,7 +1412,8 @@ func TestPullImageExisting(t *testing.T) {
 
 func TestPushImage(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: map[string]string{"tsuru/python": "a123"}}
+	server := baseDockerServer()
+	server.imgIDs = map[string]string{"tsuru/python": "a123"}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/tsuru/python/push", nil)
@@ -1429,7 +1425,8 @@ func TestPushImage(t *testing.T) {
 
 func TestPushImageWithTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: map[string]string{"tsuru/python:v1": "a123"}}
+	server := baseDockerServer()
+	server.imgIDs = map[string]string{"tsuru/python:v1": "a123"}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/tsuru/python/push?tag=v1", nil)
@@ -1441,7 +1438,7 @@ func TestPushImageWithTag(t *testing.T) {
 
 func TestPushImageNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/tsuru/python/push", nil)
@@ -1453,7 +1450,8 @@ func TestPushImageNotFound(t *testing.T) {
 
 func TestTagImage(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: map[string]string{"tsuru/python": "a123"}}
+	server := baseDockerServer()
+	server.imgIDs = map[string]string{"tsuru/python": "a123"}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/tsuru/python/tag?repo=tsuru/new-python", nil)
@@ -1468,7 +1466,8 @@ func TestTagImage(t *testing.T) {
 
 func TestTagImageWithRepoAndTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: map[string]string{"tsuru/python": "a123"}}
+	server := baseDockerServer()
+	server.imgIDs = map[string]string{"tsuru/python": "a123"}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/tsuru/python/tag?repo=tsuru/new-python&tag=v1", nil)
@@ -1483,10 +1482,8 @@ func TestTagImageWithRepoAndTag(t *testing.T) {
 
 func TestTagImageWithID(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		images: map[string]docker.Image{"myimgid": {ID: "myimgid"}},
-		imgIDs: make(map[string]string),
-	}
+	server := baseDockerServer()
+	server.images = map[string]docker.Image{"myimgid": {ID: "myimgid"}}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/myimgid/tag?repo=tsuru/new-python", nil)
@@ -1501,7 +1498,7 @@ func TestTagImageWithID(t *testing.T) {
 
 func TestTagImageNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/tsuru/python/tag", nil)
@@ -1513,10 +1510,9 @@ func TestTagImageNotFound(t *testing.T) {
 
 func TestInspectImage(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		imgIDs: map[string]string{"tsuru/python": "a123"},
-		images: map[string]docker.Image{"a123": {ID: "a123", Author: "me"}},
-	}
+	server := baseDockerServer()
+	server.imgIDs = map[string]string{"tsuru/python": "a123"}
+	server.images = map[string]docker.Image{"a123": {ID: "a123", Author: "me"}}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/images/tsuru/python/json", nil)
@@ -1540,10 +1536,8 @@ func TestInspectImage(t *testing.T) {
 
 func TestInspectImageWithID(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		images: map[string]docker.Image{"myimgid": {ID: "myimgid", Author: "me"}},
-		imgIDs: make(map[string]string),
-	}
+	server := baseDockerServer()
+	server.images = map[string]docker.Image{"myimgid": {ID: "myimgid", Author: "me"}}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/images/myimgid/json", nil)
@@ -1567,7 +1561,7 @@ func TestInspectImageWithID(t *testing.T) {
 
 func TestInspectImageNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/images/tsuru/python/json", nil)
@@ -1577,9 +1571,10 @@ func TestInspectImageNotFound(t *testing.T) {
 	}
 }
 
-func addContainers(server *DockerServer, n int) {
+func addContainers(server *DockerServer, n int) []*docker.Container {
 	server.cMut.Lock()
 	defer server.cMut.Unlock()
+	var addedContainers []*docker.Container
 	for i := 0; i < n; i++ {
 		date := time.Now().Add(time.Duration((rand.Int() % (i + 1))) * time.Hour)
 		container := docker.Container{
@@ -1620,8 +1615,10 @@ func addContainers(server *DockerServer, n int) {
 			},
 			ResolvConfPath: "/etc/resolv.conf",
 		}
-		server.containers = append(server.containers, &container)
+		server.addContainer(&container)
+		addedContainers = append(addedContainers, &container)
 	}
+	return addedContainers
 }
 
 func addImages(server *DockerServer, n int, repo bool) []docker.Image {
@@ -1652,7 +1649,7 @@ func addImages(server *DockerServer, n int, repo bool) []docker.Image {
 
 func TestListImages(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addImages(&server, 2, true)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -1689,7 +1686,7 @@ func TestListImages(t *testing.T) {
 
 func TestRemoveImage(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	images := addImages(&server, 1, false)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -1706,7 +1703,7 @@ func TestRemoveImage(t *testing.T) {
 
 func TestRemoveImageByName(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	images := addImages(&server, 1, true)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -1728,7 +1725,7 @@ func TestRemoveImageByName(t *testing.T) {
 
 func TestRemoveImageWithMultipleTags(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	images := addImages(&server, 1, true)
 	server.buildMuxer()
 	imgID := images[0].ID
@@ -1759,7 +1756,7 @@ func TestRemoveImageWithMultipleTags(t *testing.T) {
 
 func TestRemoveImageByIDWithMultipleTags(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	images := addImages(&server, 1, true)
 	server.buildMuxer()
 	imgID := images[0].ID
@@ -1775,7 +1772,7 @@ func TestRemoveImageByIDWithMultipleTags(t *testing.T) {
 
 func TestRemoveImageByIDWithSingleTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	images := addImages(&server, 1, true)
 	server.buildMuxer()
 	imgID := images[0].ID
@@ -1798,7 +1795,7 @@ func TestRemoveImageByIDWithSingleTag(t *testing.T) {
 
 func TestPrepareFailure(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{failures: make(map[string]string)}
+	server := baseDockerServer()
 	server.buildMuxer()
 	errorID := "my_error"
 	server.PrepareFailure(errorID, "containers/json")
@@ -1815,7 +1812,7 @@ func TestPrepareFailure(t *testing.T) {
 
 func TestPrepareMultiFailures(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{multiFailures: []map[string]string{}}
+	server := baseDockerServer()
 	server.buildMuxer()
 	errorID := "multi error"
 	server.PrepareMultiFailures(errorID, "containers/json")
@@ -1851,7 +1848,7 @@ func TestPrepareMultiFailures(t *testing.T) {
 
 func TestRemoveFailure(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{failures: make(map[string]string)}
+	server := baseDockerServer()
 	server.buildMuxer()
 	errorID := "my_error"
 	server.PrepareFailure(errorID, "containers/json")
@@ -1872,7 +1869,7 @@ func TestRemoveFailure(t *testing.T) {
 
 func TestResetMultiFailures(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{multiFailures: []map[string]string{}}
+	server := baseDockerServer()
 	server.buildMuxer()
 	errorID := "multi error"
 	server.PrepareMultiFailures(errorID, "containers/json")
@@ -1888,23 +1885,23 @@ func TestResetMultiFailures(t *testing.T) {
 
 func TestMutateContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{failures: make(map[string]string)}
+	server := baseDockerServer()
 	server.buildMuxer()
-	server.containers = append(server.containers, &docker.Container{ID: "id123"})
+	server.addContainer(&docker.Container{ID: "id123"})
 	state := docker.State{Running: false, ExitCode: 1}
 	err := server.MutateContainer("id123", state)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(server.containers[0].State, state) {
+	if !reflect.DeepEqual(getContainer(&server).State, state) {
 		t.Errorf("Wrong state after mutation.\nWant %#v.\nGot %#v.",
-			state, server.containers[0].State)
+			state, getContainer(&server).State)
 	}
 }
 
 func TestMutateContainerNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{failures: make(map[string]string)}
+	server := baseDockerServer()
 	server.buildMuxer()
 	state := docker.State{Running: false, ExitCode: 1}
 	err := server.MutateContainer("id123", state)
@@ -1918,10 +1915,7 @@ func TestMutateContainerNotFound(t *testing.T) {
 
 func TestBuildImageWithContentTypeTar(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		imgIDs: make(map[string]string),
-		images: make(map[string]docker.Image),
-	}
+	server := baseDockerServer()
 	imageName := "teste"
 	recorder := httptest.NewRecorder()
 	tarFile, err := os.Open("data/dockerfile.tar")
@@ -1943,10 +1937,7 @@ func TestBuildImageWithContentTypeTar(t *testing.T) {
 
 func TestBuildImageWithRemoteDockerfile(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{
-		imgIDs: make(map[string]string),
-		images: make(map[string]docker.Image),
-	}
+	server := baseDockerServer()
 	imageName := "teste"
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/build?t=teste&remote=http://localhost/Dockerfile", nil)
@@ -1958,7 +1949,7 @@ func TestBuildImageWithRemoteDockerfile(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/_ping", nil)
 	server.pingDocker(recorder, request)
@@ -1984,12 +1975,12 @@ func TestDefaultHandler(t *testing.T) {
 
 func TestCreateExecContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
-	addContainers(&server, 2)
+	server := baseDockerServer()
+	containers := addContainers(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Cmd": ["bash", "-c", "ls"]}`
-	path := fmt.Sprintf("/containers/%s/exec", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/exec", containers[0].ID)
 	request, _ := http.NewRequest("POST", path, strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -2011,7 +2002,7 @@ func TestCreateExecContainer(t *testing.T) {
 			EntryPoint: "bash",
 			Arguments:  []string{"-c", "ls"},
 		},
-		ContainerID: server.containers[0].ID,
+		ContainerID: containers[0].ID,
 	}
 
 	if !reflect.DeepEqual(*serverExec, expected) {
@@ -2021,12 +2012,12 @@ func TestCreateExecContainer(t *testing.T) {
 
 func TestInspectExecContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addContainers(&server, 1)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Cmd": ["bash", "-c", "ls"]}`
-	path := fmt.Sprintf("/containers/%s/exec", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/exec", getContainer(&server).ID)
 	request, _ := http.NewRequest("POST", path, strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -2054,7 +2045,7 @@ func TestInspectExecContainer(t *testing.T) {
 			EntryPoint: "bash",
 			Arguments:  []string{"-c", "ls"},
 		},
-		ContainerID: server.containers[0].ID,
+		ContainerID: getContainer(&server).ID,
 	}
 
 	if !reflect.DeepEqual(got2, expected) {
@@ -2070,7 +2061,7 @@ func TestStartExecContainer(t *testing.T) {
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Cmd": ["bash", "-c", "ls"]}`
-	path := fmt.Sprintf("/containers/%s/exec", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/exec", getContainer(server).ID)
 	request, _ := http.NewRequest("POST", path, strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -2125,7 +2116,7 @@ func TestStartExecContainerWildcardCallback(t *testing.T) {
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Cmd": ["bash", "-c", "ls"]}`
-	path := fmt.Sprintf("/containers/%s/exec", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/exec", getContainer(server).ID)
 	request, _ := http.NewRequest("POST", path, strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -2204,15 +2195,15 @@ func TestStatsContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer server.Stop()
-	addContainers(server, 2)
+	containers := addContainers(server, 2)
 	server.buildMuxer()
 	expected := docker.Stats{}
 	expected.CPUStats.CPUUsage.TotalUsage = 20
-	server.PrepareStats(server.containers[0].ID, func(id string) docker.Stats {
+	server.PrepareStats(containers[0].ID, func(id string) docker.Stats {
 		return expected
 	})
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/%s/stats?stream=false", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/stats?stream=false", containers[0].ID)
 	request, _ := http.NewRequest("GET", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -2249,18 +2240,18 @@ func TestStatsContainerStream(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer server.Stop()
-	addContainers(server, 2)
+	containers := addContainers(server, 2)
 	server.buildMuxer()
 	expected := docker.Stats{}
 	expected.CPUStats.CPUUsage.TotalUsage = 20
-	server.PrepareStats(server.containers[0].ID, func(id string) docker.Stats {
+	server.PrepareStats(containers[0].ID, func(id string) docker.Stats {
 		time.Sleep(50 * time.Millisecond)
 		return expected
 	})
 	recorder := &safeWriter{
 		ResponseRecorder: httptest.NewRecorder(),
 	}
-	path := fmt.Sprintf("/containers/%s/stats?stream=true", server.containers[0].ID)
+	path := fmt.Sprintf("/containers/%s/stats?stream=true", containers[0].ID)
 	request, _ := http.NewRequest("GET", path, nil)
 	go func() {
 		server.ServeHTTP(recorder, request)
@@ -2307,7 +2298,7 @@ func addNetworks(server *DockerServer, n int) {
 
 func TestListNetworks(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	addNetworks(&server, 2)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -2341,7 +2332,7 @@ type createNetworkResponse struct {
 
 func TestCreateNetwork(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	netid := fmt.Sprintf("%x", rand.Int()%10000)
@@ -2366,7 +2357,7 @@ func TestCreateNetwork(t *testing.T) {
 
 func TestCreateNetworkInvalidBody(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/networks/create", strings.NewReader("whaaaaaat---"))
@@ -2378,7 +2369,7 @@ func TestCreateNetworkInvalidBody(t *testing.T) {
 
 func TestCreateNetworkDuplicateName(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	addNetworks(&server, 1)
 	server.networks[0].Name = "mynetwork"
@@ -2393,7 +2384,7 @@ func TestCreateNetworkDuplicateName(t *testing.T) {
 
 func TestRemoveNetwork(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	server.networks = []*docker.Network{
@@ -2422,16 +2413,17 @@ func TestRemoveNetwork(t *testing.T) {
 
 func TestNetworkConnect(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	addNetworks(&server, 1)
 	server.networks[0].ID = fmt.Sprintf("%x", rand.Int()%10000)
 	server.imgIDs = map[string]string{"base": "a1234"}
-	addContainers(&server, 1)
-	server.containers[0].ID = fmt.Sprintf("%x", rand.Int()%10000)
+	containers := addContainers(&server, 1)
+	containers[0].ID = fmt.Sprintf("%x", rand.Int()%10000)
+	server.addContainer(containers[0])
 
 	recorder := httptest.NewRecorder()
-	body := fmt.Sprintf(`{"Container": "%s" }`, server.containers[0].ID)
+	body := fmt.Sprintf(`{"Container": "%s" }`, containers[0].ID)
 	request, _ := http.NewRequest("POST", fmt.Sprintf("/networks/%s/connect", server.networks[0].ID), strings.NewReader(body))
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -2441,7 +2433,7 @@ func TestNetworkConnect(t *testing.T) {
 
 func TestListVolumes(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	expected := []docker.Volume{{
 		Name:       "test-vol-1",
@@ -2478,7 +2470,7 @@ func TestListVolumes(t *testing.T) {
 
 func TestCreateVolume(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	body := `{"Name":"test-volume"}`
@@ -2505,7 +2497,7 @@ func TestCreateVolume(t *testing.T) {
 
 func TestCreateVolumeAlreadExists(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	server.volStore = make(map[string]*volumeCounter)
 	server.volStore["test-volume"] = &volumeCounter{
@@ -2541,7 +2533,7 @@ func TestCreateVolumeAlreadExists(t *testing.T) {
 
 func TestInspectVolume(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	expected := docker.Volume{
@@ -2579,7 +2571,7 @@ func TestInspectVolume(t *testing.T) {
 
 func TestInspectVolumeNotFound(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/volumes/test-volume", nil)
@@ -2591,7 +2583,7 @@ func TestInspectVolumeNotFound(t *testing.T) {
 
 func TestRemoveVolume(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	server.volStore = make(map[string]*volumeCounter)
 	server.volStore["test-volume"] = &volumeCounter{
@@ -2612,7 +2604,7 @@ func TestRemoveVolume(t *testing.T) {
 
 func TestRemoveMissingVolume(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("DELETE", "/volumes/test-volume", nil)
@@ -2624,7 +2616,7 @@ func TestRemoveMissingVolume(t *testing.T) {
 
 func TestRemoveVolumeInuse(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	server.volStore = make(map[string]*volumeCounter)
 	server.volStore["test-volume"] = &volumeCounter{
@@ -2645,7 +2637,7 @@ func TestRemoveVolumeInuse(t *testing.T) {
 
 func TestUploadToContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	cont := &docker.Container{
 		ID: "id123",
@@ -2654,7 +2646,7 @@ func TestUploadToContainer(t *testing.T) {
 			ExitCode: 0,
 		},
 	}
-	server.containers = append(server.containers, cont)
+	server.addContainer(cont)
 	server.uploadedFiles = make(map[string]string)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("PUT", fmt.Sprintf("/containers/%s/archive?path=abcd", cont.ID), nil)
@@ -2671,7 +2663,7 @@ func TestUploadToContainer(t *testing.T) {
 
 func TestUploadToContainerWithBodyTarFile(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	cont := &docker.Container{
 		ID: "id123",
@@ -2691,7 +2683,7 @@ func TestUploadToContainerWithBodyTarFile(t *testing.T) {
 	tw.WriteHeader(hdr)
 	tw.Write([]byte("something"))
 	tw.Close()
-	server.containers = append(server.containers, cont)
+	server.addContainer(cont)
 	server.uploadedFiles = make(map[string]string)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("PUT", fmt.Sprintf("/containers/%s/archive?path=abcd", cont.ID), buf)
@@ -2708,7 +2700,7 @@ func TestUploadToContainerWithBodyTarFile(t *testing.T) {
 
 func TestUploadToContainerBodyNotTarFile(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	cont := &docker.Container{
 		ID: "id123",
@@ -2718,7 +2710,7 @@ func TestUploadToContainerBodyNotTarFile(t *testing.T) {
 		},
 	}
 	buf := bytes.NewBufferString("something")
-	server.containers = append(server.containers, cont)
+	server.addContainer(cont)
 	server.uploadedFiles = make(map[string]string)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("PUT", fmt.Sprintf("/containers/%s/archive?path=abcd", cont.ID), buf)
@@ -2735,7 +2727,7 @@ func TestUploadToContainerBodyNotTarFile(t *testing.T) {
 
 func TestUploadToContainerMissingContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("PUT", "/containers/missing-container/archive?path=abcd", nil)
@@ -2813,7 +2805,7 @@ func TestVersionDocker(t *testing.T) {
 
 func TestDownloadFromContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := baseDockerServer()
 	server.buildMuxer()
 	cont := &docker.Container{
 		ID: "id123",
@@ -2822,7 +2814,7 @@ func TestDownloadFromContainer(t *testing.T) {
 			ExitCode: 0,
 		},
 	}
-	server.containers = append(server.containers, cont)
+	server.addContainer(cont)
 	server.uploadedFiles = make(map[string]string)
 	server.uploadedFiles[cont.ID] = "abcd"
 	recorder := httptest.NewRecorder()
