@@ -17,6 +17,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -480,7 +481,9 @@ func TestRenameContainerNotFound(t *testing.T) {
 
 func TestCommitContainer(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := DockerServer{
+		images: make(map[string]docker.Image),
+	}
 	addContainers(&server, 2)
 	server.uploadedFiles = map[string]string{server.containers[0].ID: "/abcd"}
 	server.buildMuxer()
@@ -490,14 +493,18 @@ func TestCommitContainer(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Errorf("CommitContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	expected := fmt.Sprintf(`{"ID":"%s"}`, server.images[0].ID)
+	if len(server.images) != 1 {
+		t.Errorf("CommitContainer: wrong images len in server. Want 1. Got %q.", len(server.images))
+	}
+	imgID := fmt.Sprintf("img-%s", server.containers[0].ID)
+	expected := fmt.Sprintf(`{"ID":"%s"}`, imgID)
 	if got := recorder.Body.String(); got != expected {
 		t.Errorf("CommitContainer: wrong response body. Want %q. Got %q.", expected, got)
 	}
-	if server.images[0].Config == nil {
+	if server.images[imgID].Config == nil {
 		t.Error("CommitContainer: image Config should not be nil.")
 	}
-	if val, ok := server.uploadedFiles[server.images[0].ID]; !ok {
+	if val, ok := server.uploadedFiles[server.images[imgID].ID]; !ok {
 		t.Error("CommitContainer: uploadedFiles should exist.")
 	} else if val != "/abcd" {
 		t.Errorf("CommitContainer: wrong uploadedFile. Want '/abcd', got %s.", val)
@@ -506,7 +513,9 @@ func TestCommitContainer(t *testing.T) {
 
 func TestCommitContainerComplete(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := DockerServer{
+		images: make(map[string]docker.Image),
+	}
 	server.imgIDs = make(map[string]string)
 	addContainers(&server, 2)
 	server.buildMuxer()
@@ -515,7 +524,8 @@ func TestCommitContainerComplete(t *testing.T) {
 	queryString += `&run={"Cmd": ["cat", "/world"],"PortSpecs":["22"]}`
 	request, _ := http.NewRequest("POST", "/commit?"+queryString, nil)
 	server.ServeHTTP(recorder, request)
-	image := server.images[0]
+	imgID := fmt.Sprintf("img-%s", server.containers[0].ID)
+	image := server.images[imgID]
 	if image.Parent != server.containers[0].Image {
 		t.Errorf("CommitContainer: wrong parent image. Want %q. Got %q.", server.containers[0].Image, image.Parent)
 	}
@@ -545,7 +555,9 @@ func TestCommitContainerComplete(t *testing.T) {
 
 func TestCommitContainerWithTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{}
+	server := DockerServer{
+		images: make(map[string]docker.Image),
+	}
 	server.imgIDs = make(map[string]string)
 	addContainers(&server, 2)
 	server.buildMuxer()
@@ -553,7 +565,8 @@ func TestCommitContainerWithTag(t *testing.T) {
 	queryString := "container=" + server.containers[0].ID + "&repo=tsuru/python&tag=v1"
 	request, _ := http.NewRequest("POST", "/commit?"+queryString, nil)
 	server.ServeHTTP(recorder, request)
-	image := server.images[0]
+	imgID := fmt.Sprintf("img-%s", server.containers[0].ID)
+	image := server.images[imgID]
 	if image.Parent != server.containers[0].Image {
 		t.Errorf("CommitContainer: wrong parent image. Want %q. Got %q.", server.containers[0].Image, image.Parent)
 	}
@@ -1297,7 +1310,10 @@ func TestRemoveContainerRunningForce(t *testing.T) {
 
 func TestPullImage(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: make(map[string]string)}
+	server := DockerServer{
+		imgIDs: make(map[string]string),
+		images: make(map[string]docker.Image),
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/create?fromImage=base", nil)
@@ -1311,14 +1327,20 @@ func TestPullImage(t *testing.T) {
 	if _, ok := server.imgIDs["base"]; !ok {
 		t.Error("PullImage: Repository should not be empty.")
 	}
-	if server.images[0].Config == nil {
+	var image docker.Image
+	for _, image = range server.images {
+	}
+	if image.Config == nil {
 		t.Error("PullImage: Image Config should not be nil.")
 	}
 }
 
 func TestPullImageWithTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: make(map[string]string)}
+	server := DockerServer{
+		imgIDs: make(map[string]string),
+		images: make(map[string]docker.Image),
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/create?fromImage=base&tag=tag", nil)
@@ -1336,7 +1358,10 @@ func TestPullImageWithTag(t *testing.T) {
 
 func TestPullImageWithShaTag(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: make(map[string]string)}
+	server := DockerServer{
+		imgIDs: make(map[string]string),
+		images: make(map[string]docker.Image),
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/create?fromImage=base&tag=sha256:deadc0de", nil)
@@ -1354,7 +1379,10 @@ func TestPullImageWithShaTag(t *testing.T) {
 
 func TestPullImageExisting(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: make(map[string]string)}
+	server := DockerServer{
+		imgIDs: make(map[string]string),
+		images: make(map[string]docker.Image),
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/create?fromImage=base", nil)
@@ -1455,7 +1483,10 @@ func TestTagImageWithRepoAndTag(t *testing.T) {
 
 func TestTagImageWithID(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{images: []docker.Image{{ID: "myimgid"}}, imgIDs: make(map[string]string)}
+	server := DockerServer{
+		images: map[string]docker.Image{"myimgid": {ID: "myimgid"}},
+		imgIDs: make(map[string]string),
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/images/myimgid/tag?repo=tsuru/new-python", nil)
@@ -1484,7 +1515,7 @@ func TestInspectImage(t *testing.T) {
 	t.Parallel()
 	server := DockerServer{
 		imgIDs: map[string]string{"tsuru/python": "a123"},
-		images: []docker.Image{{ID: "a123", Author: "me"}},
+		images: map[string]docker.Image{"a123": {ID: "a123", Author: "me"}},
 	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
@@ -1509,7 +1540,10 @@ func TestInspectImage(t *testing.T) {
 
 func TestInspectImageWithID(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{images: []docker.Image{{ID: "myimgid", Author: "me"}}, imgIDs: make(map[string]string)}
+	server := DockerServer{
+		images: map[string]docker.Image{"myimgid": {ID: "myimgid", Author: "me"}},
+		imgIDs: make(map[string]string),
+	}
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/images/myimgid/json", nil)
@@ -1590,24 +1624,30 @@ func addContainers(server *DockerServer, n int) {
 	}
 }
 
-func addImages(server *DockerServer, n int, repo bool) {
+func addImages(server *DockerServer, n int, repo bool) []docker.Image {
 	server.iMut.Lock()
 	defer server.iMut.Unlock()
 	if server.imgIDs == nil {
 		server.imgIDs = make(map[string]string)
 	}
+	if server.images == nil {
+		server.images = make(map[string]docker.Image)
+	}
+	var addedImages []docker.Image
 	for i := 0; i < n; i++ {
 		date := time.Now().Add(time.Duration((rand.Int() % (i + 1))) * time.Hour)
 		image := docker.Image{
 			ID:      fmt.Sprintf("%x", rand.Int()%10000),
 			Created: date,
 		}
-		server.images = append(server.images, image)
+		addedImages = append(addedImages, image)
+		server.images[image.ID] = image
 		if repo {
 			repo := "docker/python-" + image.ID
 			server.imgIDs[repo] = image.ID
 		}
 	}
+	return addedImages
 }
 
 func TestListImages(t *testing.T) {
@@ -1622,18 +1662,26 @@ func TestListImages(t *testing.T) {
 		t.Errorf("ListImages: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 	expected := make([]docker.APIImages, 2)
-	for i, image := range server.images {
+	i := 0
+	for _, image := range server.images {
 		expected[i] = docker.APIImages{
 			ID:       image.ID,
 			Created:  image.Created.Unix(),
 			RepoTags: []string{"docker/python-" + image.ID},
 		}
+		i++
 	}
+	sort.Slice(expected, func(i, j int) bool {
+		return expected[i].ID < expected[j].ID
+	})
 	var got []docker.APIImages
 	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
 		t.Fatal(err)
 	}
+	sort.Slice(got, func(i, j int) bool {
+		return got[i].ID < got[j].ID
+	})
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ListImages. Want %#v. Got %#v.", expected, got)
 	}
@@ -1642,10 +1690,10 @@ func TestListImages(t *testing.T) {
 func TestRemoveImage(t *testing.T) {
 	t.Parallel()
 	server := DockerServer{}
-	addImages(&server, 1, false)
+	images := addImages(&server, 1, false)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/images/%s", server.images[0].ID)
+	path := fmt.Sprintf("/images/%s", images[0].ID)
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNoContent {
@@ -1659,10 +1707,10 @@ func TestRemoveImage(t *testing.T) {
 func TestRemoveImageByName(t *testing.T) {
 	t.Parallel()
 	server := DockerServer{}
-	addImages(&server, 1, true)
+	images := addImages(&server, 1, true)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	imgName := "docker/python-" + server.images[0].ID
+	imgName := "docker/python-" + images[0].ID
 	path := "/images/" + imgName
 	request, _ := http.NewRequest("DELETE", path, nil)
 	server.ServeHTTP(recorder, request)
@@ -1681,9 +1729,9 @@ func TestRemoveImageByName(t *testing.T) {
 func TestRemoveImageWithMultipleTags(t *testing.T) {
 	t.Parallel()
 	server := DockerServer{}
-	addImages(&server, 1, true)
+	images := addImages(&server, 1, true)
 	server.buildMuxer()
-	imgID := server.images[0].ID
+	imgID := images[0].ID
 	imgName := "docker/python-" + imgID
 	server.imgIDs["docker/python-wat"] = imgID
 	recorder := httptest.NewRecorder()
@@ -1704,8 +1752,47 @@ func TestRemoveImageWithMultipleTags(t *testing.T) {
 	if len(server.images) < 1 {
 		t.Fatal("RemoveImage: removed the image, but should keep it")
 	}
-	if server.images[0].ID != imgID {
+	if server.images[imgID].ID != imgID {
 		t.Error("RemoveImage: changed the ID of the image!")
+	}
+}
+
+func TestRemoveImageByIDWithMultipleTags(t *testing.T) {
+	t.Parallel()
+	server := DockerServer{}
+	images := addImages(&server, 1, true)
+	server.buildMuxer()
+	imgID := images[0].ID
+	server.imgIDs["docker/python-wat"] = imgID
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/images/%s", imgID)
+	request, _ := http.NewRequest("DELETE", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusConflict {
+		t.Errorf("RemoveImage: wrong status. Want %d. Got %d.", http.StatusConflict, recorder.Code)
+	}
+}
+
+func TestRemoveImageByIDWithSingleTag(t *testing.T) {
+	t.Parallel()
+	server := DockerServer{}
+	images := addImages(&server, 1, true)
+	server.buildMuxer()
+	imgID := images[0].ID
+	recorder := httptest.NewRecorder()
+	path := fmt.Sprintf("/images/%s", imgID)
+	request, _ := http.NewRequest("DELETE", path, nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("RemoveImage: wrong status. Want %d. Got %d.", http.StatusNoContent, recorder.Code)
+	}
+	if len(server.images) > 0 {
+		t.Error("RemoveImage: did not remove the image.")
+	}
+	imgName := "docker/python-" + imgID
+	_, ok := server.imgIDs[imgName]
+	if ok {
+		t.Error("RemoveImage: did not remove image tag name.")
 	}
 }
 
@@ -1831,7 +1918,10 @@ func TestMutateContainerNotFound(t *testing.T) {
 
 func TestBuildImageWithContentTypeTar(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: make(map[string]string)}
+	server := DockerServer{
+		imgIDs: make(map[string]string),
+		images: make(map[string]docker.Image),
+	}
 	imageName := "teste"
 	recorder := httptest.NewRecorder()
 	tarFile, err := os.Open("data/dockerfile.tar")
@@ -1853,7 +1943,10 @@ func TestBuildImageWithContentTypeTar(t *testing.T) {
 
 func TestBuildImageWithRemoteDockerfile(t *testing.T) {
 	t.Parallel()
-	server := DockerServer{imgIDs: make(map[string]string)}
+	server := DockerServer{
+		imgIDs: make(map[string]string),
+		images: make(map[string]docker.Image),
+	}
 	imageName := "teste"
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("POST", "/build?t=teste&remote=http://localhost/Dockerfile", nil)

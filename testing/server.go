@@ -47,7 +47,7 @@ type DockerServer struct {
 	execs          []*docker.ExecInspect
 	execMut        sync.RWMutex
 	cMut           sync.RWMutex
-	images         []docker.Image
+	images         map[string]docker.Image
 	iMut           sync.RWMutex
 	imgIDs         map[string]string
 	networks       []*docker.Network
@@ -84,6 +84,7 @@ func buildDockerServer(listener net.Listener, containerChan chan<- *docker.Conta
 	server := DockerServer{
 		listener:       listener,
 		imgIDs:         make(map[string]string),
+		images:         make(map[string]docker.Image),
 		hook:           hook,
 		failures:       make(map[string]string),
 		execCallbacks:  make(map[string]func()),
@@ -433,7 +434,8 @@ loop:
 func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
 	s.cMut.RLock()
 	result := make([]docker.APIImages, len(s.images))
-	for i, image := range s.images {
+	i := 0
+	for _, image := range s.images {
 		result[i] = docker.APIImages{
 			ID:      image.ID,
 			Created: image.Created.Unix(),
@@ -443,6 +445,7 @@ func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
 				result[i].RepoTags = append(result[i].RepoTags, tag)
 			}
 		}
+		i++
 	}
 	s.cMut.RUnlock()
 	w.Header().Set("Content-Type", "application/json")
@@ -457,19 +460,10 @@ func (s *DockerServer) findImage(id string) (string, error) {
 	if ok {
 		return image, nil
 	}
-	image, _, err := s.findImageByID(id)
-	return image, err
-}
-
-func (s *DockerServer) findImageByID(id string) (string, int, error) {
-	s.iMut.RLock()
-	defer s.iMut.RUnlock()
-	for i, image := range s.images {
-		if image.ID == id {
-			return image.ID, i, nil
-		}
+	if _, ok := s.images[id]; ok {
+		return id, nil
 	}
-	return "", -1, errors.New("No such image")
+	return "", errors.New("No such image")
 }
 
 func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
@@ -907,7 +901,7 @@ func (s *DockerServer) commitContainer(w http.ResponseWriter, r *http.Request) {
 	repository := r.URL.Query().Get("repo")
 	tag := r.URL.Query().Get("tag")
 	s.iMut.Lock()
-	s.images = append(s.images, image)
+	s.images[image.ID] = image
 	if repository != "" {
 		if tag != "" {
 			repository += ":" + tag
@@ -1002,7 +996,7 @@ func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 		repository = t
 	}
 	s.iMut.Lock()
-	s.images = append(s.images, image)
+	s.images[image.ID] = image
 	s.imgIDs[repository] = image.ID
 	s.iMut.Unlock()
 	w.Write([]byte(fmt.Sprintf("Successfully built %s", image.ID)))
@@ -1026,7 +1020,7 @@ func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
 	}
 	s.iMut.Lock()
 	if _, exists := s.imgIDs[fromImageName]; fromImageName == "" || !exists {
-		s.images = append(s.images, image)
+		s.images[image.ID] = image
 		if fromImageName != "" {
 			s.imgIDs[fromImageName] = image.ID
 		}
@@ -1071,7 +1065,8 @@ func (s *DockerServer) tagImage(w http.ResponseWriter, r *http.Request) {
 
 func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	s.iMut.RLock()
+	s.iMut.Lock()
+	defer s.iMut.Unlock()
 	var tag string
 	if img, ok := s.imgIDs[id]; ok {
 		id, tag = img, id
@@ -1082,21 +1077,28 @@ func (s *DockerServer) removeImage(w http.ResponseWriter, r *http.Request) {
 			tags = append(tags, tag)
 		}
 	}
-	s.iMut.RUnlock()
-	_, index, err := s.findImageByID(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+	_, ok := s.images[id]
+	if !ok {
+		http.Error(w, "No such image", http.StatusNotFound)
+		return
+	}
+	if tag == "" && len(tags) > 1 {
+		http.Error(w, "image is referenced in multiple repositories", http.StatusConflict)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-	s.iMut.Lock()
-	defer s.iMut.Unlock()
-	if len(tags) < 2 {
-		s.images[index] = s.images[len(s.images)-1]
-		s.images = s.images[:len(s.images)-1]
-	}
-	if tag != "" {
+	if tag == "" {
+		// delete called with image ID
+		for _, t := range tags {
+			delete(s.imgIDs, t)
+		}
+		delete(s.images, id)
+	} else {
+		// delete called with image repository name
 		delete(s.imgIDs, tag)
+		if len(tags) == 1 {
+			delete(s.images, id)
+		}
 	}
 }
 
@@ -1107,15 +1109,14 @@ func (s *DockerServer) inspectImage(w http.ResponseWriter, r *http.Request) {
 	if id, ok := s.imgIDs[name]; ok {
 		name = id
 	}
-	for _, img := range s.images {
-		if img.ID == name {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(img)
-			return
-		}
+	img, ok := s.images[name]
+	if !ok {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
 	}
-	http.Error(w, "not found", http.StatusNotFound)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(img)
 }
 
 func (s *DockerServer) listEvents(w http.ResponseWriter, r *http.Request) {
