@@ -30,6 +30,8 @@ func TestExecCreate(t *testing.T) {
 		AttachStdout: true,
 		AttachStderr: false,
 		Tty:          false,
+		WorkingDir:   "/tmp",
+		Env:          []string{"FOO=BAR", "BAR=BAZ"},
 		Cmd:          []string{"touch", "/tmp/file"},
 		User:         "a-user",
 	}

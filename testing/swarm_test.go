@@ -190,7 +190,7 @@ func TestSwarmJoinWithService(t *testing.T) {
 	serviceCreateOpts := docker.CreateServiceOptions{
 		ServiceSpec: swarm.ServiceSpec{
 			TaskTemplate: swarm.TaskSpec{
-				ContainerSpec: swarm.ContainerSpec{
+				ContainerSpec: &swarm.ContainerSpec{
 					Image: "test/test",
 				},
 			},
@@ -341,7 +341,7 @@ func TestServiceCreate(t *testing.T) {
 				Name: "test",
 			},
 			TaskTemplate: swarm.TaskSpec{
-				ContainerSpec: swarm.ContainerSpec{
+				ContainerSpec: &swarm.ContainerSpec{
 					Image:   "test/test",
 					Command: []string{"sh"},
 					Args:    []string{"--test"},
@@ -437,7 +437,7 @@ func TestServiceCreateDynamicPort(t *testing.T) {
 				Name: "test",
 			},
 			TaskTemplate: swarm.TaskSpec{
-				ContainerSpec: swarm.ContainerSpec{
+				ContainerSpec: &swarm.ContainerSpec{
 					Image:   "test/test",
 					Command: []string{"sh"},
 					Args:    []string{"--test"},
@@ -991,7 +991,7 @@ func TestServiceUpdate(t *testing.T) {
 			Name: "test",
 		},
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: swarm.ContainerSpec{
+			ContainerSpec: &swarm.ContainerSpec{
 				Image: "test/test2",
 				Args:  []string{"--test2"},
 				Env:   []string{"ENV=2"},
@@ -1086,7 +1086,7 @@ func TestServiceUpdateMoreReplicas(t *testing.T) {
 			Name: "test",
 		},
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: swarm.ContainerSpec{
+			ContainerSpec: &swarm.ContainerSpec{
 				Image: "test/test2",
 				Args:  []string{"--test2"},
 				Env:   []string{"ENV=2"},
@@ -1131,7 +1131,7 @@ func TestServiceUpdateNotFound(t *testing.T) {
 			Name: "test",
 		},
 		TaskTemplate: swarm.TaskSpec{
-			ContainerSpec: swarm.ContainerSpec{
+			ContainerSpec: &swarm.ContainerSpec{
 				Image: "test/test2",
 				Args:  []string{"--test2"},
 				Env:   []string{"ENV=2"},
@@ -1295,7 +1295,7 @@ func addTestService(server *DockerServer) (*swarm.Service, error) {
 				},
 			},
 			TaskTemplate: swarm.TaskSpec{
-				ContainerSpec: swarm.ContainerSpec{
+				ContainerSpec: &swarm.ContainerSpec{
 					Image: "test/test",
 					Args:  []string{"--test"},
 					Env:   []string{"ENV=1"},

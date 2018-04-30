@@ -32,6 +32,8 @@ type CreateExecOptions struct {
 	Cmd          []string        `json:"Cmd,omitempty" yaml:"Cmd,omitempty"`
 	Container    string          `json:"Container,omitempty" yaml:"Container,omitempty"`
 	User         string          `json:"User,omitempty" yaml:"User,omitempty"`
+	Env          []string        `json:"Env,omitempty" yaml:"Env,omitempty"`
+	WorkingDir   string          `json:"WorkingDir,omitempty" yaml:"WorkingDir,omitempty"`
 	Context      context.Context `json:"-"`
 	Privileged   bool            `json:"Privileged,omitempty" yaml:"Privileged,omitempty"`
 }
