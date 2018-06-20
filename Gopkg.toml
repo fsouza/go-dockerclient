@@ -3,8 +3,8 @@
   version = "v0.4.5"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/docker/docker"
-  revision = "a422774e593b33bd287d9890544ad9e09b380d8c"
 
 [[constraint]]
   name = "github.com/docker/go-units"
@@ -22,3 +22,7 @@
   name = "github.com/Nvveen/Gotty"
   source = "https://github.com/ijc25/Gotty.git"
   revision = "a8b993ba6abdb0e0c12b0125c603323a71c7790c"
+
+[[override]]
+  name = "github.com/docker/libnetwork"
+  revision = "19279f0492417475b6bfbd0aa529f73e8f178fb5"
