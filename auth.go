@@ -146,25 +146,23 @@ func authConfigs(confs map[string]dockerConfig) (*AuthConfigurations, error) {
 
 		userpass := strings.SplitN(string(data), ":", 2)
 		if len(userpass) != 2 {
-			if conf.IdentityToken == "" {
-				return nil, ErrCannotParseDockercfg
-			}
-
-			// docker config contains username and identitytoken
-			c.Configs[reg] = AuthConfiguration{
-				Username:      string(data),
-				IdentityToken: conf.IdentityToken,
-			}
-
-			continue
+			return nil, ErrCannotParseDockercfg
 		}
 
-		c.Configs[reg] = AuthConfiguration{
+		authConfig := AuthConfiguration{
 			Email:         conf.Email,
 			Username:      userpass[0],
 			Password:      userpass[1],
 			ServerAddress: reg,
 		}
+
+		// if identitytoken provided then zero the password and set it
+		if conf.IdentityToken != "" {
+			authConfig.Password = ""
+			authConfig.IdentityToken = conf.IdentityToken
+		}
+
+		c.Configs[reg] = authConfig
 	}
 
 	return c, nil
