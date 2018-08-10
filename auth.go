@@ -152,6 +152,7 @@ func authConfigs(confs map[string]dockerConfig) (*AuthConfigurations, error) {
 
 			// docker config contains username and identitytoken
 			c.Configs[reg] = AuthConfiguration{
+				Username:      string(data),
 				IdentityToken: conf.IdentityToken,
 			}
 
