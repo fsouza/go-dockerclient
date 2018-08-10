@@ -187,9 +187,6 @@ func TestAuthConfigIdentityToken(t *testing.T) {
 	if !ok {
 		t.Error("NewAuthConfigurations: Expected Configs to contain docker.io")
 	}
-	if got, want := c.Username, "someuser"; got != want {
-		t.Errorf(`AuthConfigurations.Configs["docker.io"].IdentityToken: wrong result. Want %q. Got %q`, want, got)
-	}
 	if got, want := c.IdentityToken, "sometoken"; got != want {
 		t.Errorf(`AuthConfigurations.Configs["docker.io"].IdentityToken: wrong result. Want %q. Got %q`, want, got)
 	}
