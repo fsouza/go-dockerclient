@@ -177,18 +177,19 @@ func TestAuthConfig(t *testing.T) {
 
 func TestAuthConfigIdentityToken(t *testing.T) {
 	t.Parallel()
-	auth := base64.StdEncoding.EncodeToString([]byte("someuser"))
+	auth := base64.StdEncoding.EncodeToString([]byte("someuser:"))
 	read := strings.NewReader(fmt.Sprintf(`{"auths":{"docker.io":{"auth":"%s","identitytoken":"sometoken"}}}`, auth))
 	ac, err := NewAuthConfigurations(read)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
+
 	c, ok := ac.Configs["docker.io"]
 	if !ok {
 		t.Error("NewAuthConfigurations: Expected Configs to contain docker.io")
 	}
 	if got, want := c.Username, "someuser"; got != want {
-		t.Errorf(`AuthConfigurations.Configs["docker.io"].IdentityToken: wrong result. Want %q. Got %q`, want, got)
+		t.Errorf(`AuthConfigurations.Configs["docker.io"].Username: wrong result. Want %q. Got %q`, want, got)
 	}
 	if got, want := c.IdentityToken, "sometoken"; got != want {
 		t.Errorf(`AuthConfigurations.Configs["docker.io"].IdentityToken: wrong result. Want %q. Got %q`, want, got)
