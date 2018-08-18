@@ -47,7 +47,7 @@ func getInodeFromStat(stat interface{}) (inode uint64, err error) {
 	return
 }
 
-func getFileUIDGID(stat interface{}) (idtools.Identity, error) {
+func getFileIdentity(stat interface{}) (idtools.Identity, error) {
 	// no notion of file ownership mapping yet on Windows
 	return idtools.Identity{}, nil
 }

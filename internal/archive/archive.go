@@ -365,7 +365,7 @@ func (ta *tarAppender) addTarFile(path, name string) error {
 	if !isOverlayWhiteout &&
 		!strings.HasPrefix(filepath.Base(hdr.Name), WhiteoutPrefix) &&
 		!ta.IdentityMapping.Empty() {
-		fileIdentity, err := getFileUIDGID(fi.Sys())
+		fileIdentity, err := getFileIdentity(fi.Sys())
 		if err != nil {
 			return err
 		}
