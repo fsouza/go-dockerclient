@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// VolumeUsageData represents usage data from the docker system api
+// More Info Here https://dockr.ly/2PNzQyO
 type VolumeUsageData struct {
 
 	// The number of containers referencing this volume. This field
@@ -23,6 +25,9 @@ type VolumeUsageData struct {
 	Size int64 `json:"Size"`
 }
 
+// ImageSummary represents data about what images are
+// currently known to docker
+// More Info Here https://dockr.ly/2PNzQyO
 type ImageSummary struct {
 	Containers  int64             "json:\"Containers\""
 	Created     int64             "json:\"Created\""
@@ -36,6 +41,8 @@ type ImageSummary struct {
 	VirtualSize int64             "json:\"VirtualSize\""
 }
 
+// BuildCache Holds metadata about what the build cache holds
+// More Info Here https://dockr.ly/2PNzQyO
 type BuildCache struct {
 	ID          string
 	Parent      string
@@ -49,6 +56,8 @@ type BuildCache struct {
 	UsageCount  int
 }
 
+// DiskUsage holds information about what docker is using disk space on.
+// More Info Here https://dockr.ly/2PNzQyO
 type DiskUsage struct {
 	LayersSize  int64
 	Images      []*ImageSummary
@@ -58,17 +67,14 @@ type DiskUsage struct {
 	BuilderSize int64 // deprecated
 }
 
+// DiskUsageOptions only contains a context for canceling.
 type DiskUsageOptions struct {
 	Context context.Context
 }
 
+// DiskUsage returns a *DiskUsage describing what docker is using disk on.
 //
-//
-//
-//
-// ListImages returns the list of available images in the server.
-//
-// See https://goo.gl/BVzauZ for more details.
+// More Info Here https://dockr.ly/2PNzQyO
 func (c *Client) DiskUsage(opts DiskUsageOptions) (*DiskUsage, error) {
 	path := "/system/df"
 	resp, err := c.do("GET", path, doOptions{context: opts.Context})
