@@ -29,16 +29,16 @@ type VolumeUsageData struct {
 // currently known to docker
 // More Info Here https://dockr.ly/2PNzQyO
 type ImageSummary struct {
-	Containers  int64             "json:\"Containers\""
-	Created     int64             "json:\"Created\""
-	ID          string            "json:\"Id\""
-	Labels      map[string]string "json:\"Labels\""
-	ParentID    string            "json:\"ParentId\""
-	RepoDigests []string          "json:\"RepoDigests\""
-	RepoTags    []string          "json:\"RepoTags\""
-	SharedSize  int64             "json:\"SharedSize\""
-	Size        int64             "json:\"Size\""
-	VirtualSize int64             "json:\"VirtualSize\""
+	Containers  int64             `json:"Containers"`
+	Created     int64             `json:"Created"`
+	ID          string            `json:"Id"`
+	Labels      map[string]string `json:"Labels"`
+	ParentID    string            `json:"ParentId"`
+	RepoDigests []string          `json:"RepoDigests"`
+	RepoTags    []string          `json:"RepoTags"`
+	SharedSize  int64             `json:"SharedSize"`
+	Size        int64             `json:"Size"`
+	VirtualSize int64             `json:"VirtualSize"`
 }
 
 // BuildCache Holds metadata about what the build cache holds
@@ -59,12 +59,10 @@ type BuildCache struct {
 // DiskUsage holds information about what docker is using disk space on.
 // More Info Here https://dockr.ly/2PNzQyO
 type DiskUsage struct {
-	LayersSize  int64
-	Images      []*ImageSummary
-	Containers  []*APIContainers
-	Volumes     []*Volume
-	BuildCache  []*BuildCache
-	BuilderSize int64 // deprecated
+	LayersSize int64
+	Images     []*ImageSummary
+	Containers []*APIContainers
+	Volumes    []*Volume
 }
 
 // DiskUsageOptions only contains a context for canceling.
