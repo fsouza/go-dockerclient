@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"encoding/json"
-	"time"
 )
 
 // VolumeUsageData represents usage data from the docker system api
@@ -39,21 +38,6 @@ type ImageSummary struct {
 	SharedSize  int64             `json:"SharedSize"`
 	Size        int64             `json:"Size"`
 	VirtualSize int64             `json:"VirtualSize"`
-}
-
-// BuildCache Holds metadata about what the build cache holds
-// More Info Here https://dockr.ly/2PNzQyO
-type BuildCache struct {
-	ID          string
-	Parent      string
-	Type        string
-	Description string
-	InUse       bool
-	Shared      bool
-	Size        int64
-	CreatedAt   time.Time
-	LastUsedAt  *time.Time
-	UsageCount  int
 }
 
 // DiskUsage holds information about what docker is using disk space on.
