@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"encoding/base64"
-	"strings"
 
 	"github.com/docker/docker/api/types/swarm"
 )
@@ -54,13 +53,9 @@ func TestCreateService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
-	if err != nil {
-		t.Errorf("CreateService: caught error decoding auth. %#v", err.Error())
-	}
-	if strings.TrimSpace(string(auth)) != "{}" {
-		t.Errorf("CreateService: wrong body. Want %q. Got %q.",
-			base64.URLEncoding.EncodeToString([]byte("{}")), req.Header.Get("X-Registry-Auth"))
+	authHeader, ok := req.Header["X-Registry-Auth"]
+	if ok {
+		t.Errorf("CreateService: unexpected non-empty X-Registry-Auth header: %v", authHeader)
 	}
 }
 

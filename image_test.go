@@ -339,13 +339,9 @@ func TestPushImage(t *testing.T) {
 		t.Errorf("PushImage: Wrong query string. Want no parameters, got %q.", query)
 	}
 
-	auth, err := base64.URLEncoding.DecodeString(req.Header.Get("X-Registry-Auth"))
-	if err != nil {
-		t.Errorf("PushImage: caught error decoding auth. %#v", err.Error())
-	}
-	if strings.TrimSpace(string(auth)) != "{}" {
-		t.Errorf("PushImage: wrong body. Want %q. Got %q.",
-			base64.URLEncoding.EncodeToString([]byte("{}")), req.Header.Get("X-Registry-Auth"))
+	authHeader, ok := req.Header["X-Registry-Auth"]
+	if ok {
+		t.Errorf("PushImage: unexpected non-empty X-Registry-Auth header: %v", authHeader)
 	}
 }
 
