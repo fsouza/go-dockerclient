@@ -95,7 +95,19 @@ func TestInfo(t *testing.T) {
      	"name=apparmor",
      	"name=seccomp",
      	"profile=default"
-     ]
+     ],
+	 "Runtimes": {
+		"runc": {
+		  "path": "docker-runc"
+		},
+		"custom": {
+		  "path": "/usr/local/bin/my-oci-runtime",
+		  "runtimeArgs": [
+		    "--debug",
+		    "--systemd-cgroup=false"
+		    ]
+		  }
+	  }
 }`
 	fakeRT := FakeRoundTripper{message: body, status: http.StatusOK}
 	client := newTestClient(&fakeRT)
@@ -126,6 +138,18 @@ func TestInfo(t *testing.T) {
 			"name=apparmor",
 			"name=seccomp",
 			"profile=default",
+		},
+		Runtimes: map[string]Runtime{
+			"runc": {
+				Path: "docker-runc",
+			},
+			"custom": {
+				Path: "/usr/local/bin/my-oci-runtime",
+				Args: []string{
+					"--debug",
+					"--systemd-cgroup=false",
+				},
+			},
 		},
 	}
 	info, err := client.Info()
