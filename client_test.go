@@ -805,16 +805,11 @@ func TestClientStreamTimeoutNativeClient(t *testing.T) {
 	}
 }
 
-func TestClientStreamFailingOutputWriter(t *testing.T) {
+func TestClientStreamJSONDecoderFailingOutputWriter(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for i := 0; i < 5; i++ {
-			fmt.Fprintf(w, "%d\n", i)
-			if f, ok := w.(http.Flusher); ok {
-				f.Flush()
-			}
-			time.Sleep(500 * time.Millisecond)
-		}
+		fmt.Fprint(w, "{}")
+		time.Sleep(500 * time.Millisecond)
 	}))
 	client, err := NewClient(srv.URL)
 	if err != nil {
@@ -823,6 +818,7 @@ func TestClientStreamFailingOutputWriter(t *testing.T) {
 	var w eofWriter
 	err = client.stream("POST", "/image/create", streamOptions{
 		setRawTerminal: true,
+		useJSONDecoder: true,
 		stdout:         &w,
 	})
 	if err != io.EOF {
