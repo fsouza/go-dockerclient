@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -803,6 +804,31 @@ func TestClientStreamTimeoutNativeClient(t *testing.T) {
 		t.Fatalf("expected stream result %q, got: %q", expected, result)
 	}
 }
+
+func TestClientStreamJSONDecoderFailingOutputWriter(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "{}")
+		time.Sleep(500 * time.Millisecond)
+	}))
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var w eofWriter
+	err = client.stream("POST", "/image/create", streamOptions{
+		setRawTerminal: true,
+		useJSONDecoder: true,
+		stdout:         &w,
+	})
+	if err != io.EOF {
+		t.Fatalf("expected eof error, got: %s", err)
+	}
+}
+
+type eofWriter struct{}
+
+func (w eofWriter) Write(b []byte) (int, error) { return len(b), io.EOF }
 
 type FakeRoundTripper struct {
 	message  string
