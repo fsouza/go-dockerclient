@@ -8,12 +8,23 @@ This package presents a client for the Docker remote API. It also provides
 support for the extensions in the [Swarm API](https://docs.docker.com/swarm/swarm-api/).
 
 This package also provides support for docker's network API, which is a simple
-passthrough to the libnetwork remote API.  Note that docker's network API is
-only available in docker 1.8 and above, and only enabled in docker if
-DOCKER_EXPERIMENTAL is defined during the docker build process.
+passthrough to the libnetwork remote API.
 
 For more details, check the [remote API
-documentation](http://docs.docker.com/engine/reference/api/docker_remote_api/).
+documentation](https://docs.docker.com/engine/api/latest/).
+
+## Difference between go-dockerclient and the official SDK
+
+Link for the official SDK: https://docs.docker.com/develop/sdk/
+
+go-dockerclient was created before Docker had an official Go SDK and is
+still maintained and relatively active because it's still used out there. New
+features in the Docker API do not get automatically implemented here: it's
+based on demand, if someone wants it, they can file an issue or a PR and the
+feature may get implemented/merged.
+
+For new projects, using the official SDK is probably more appropriate as
+go-dockerclient lags behind the official SDK.
 
 ## Example
 
