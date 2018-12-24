@@ -9,10 +9,10 @@ os:
   - osx
 env:
   matrix:
-    - GOARCH=amd64 DOCKER_PKG_VERSION=18.06.0~ce-0~ubuntu
-    - GOARCH=386   DOCKER_PKG_VERSION=18.06.0~ce-0~ubuntu
-    - GOARCH=amd64 DOCKER_PKG_VERSION=18.03.0~ce-0~ubuntu
-    - GOARCH=386   DOCKER_PKG_VERSION=18.03.0~ce-0~ubuntu
+    - GOARCH=amd64 DOCKER_PKG_VERSION=18.06.1~ce~3-0~ubuntu
+    - GOARCH=386   DOCKER_PKG_VERSION=18.06.1~ce~3-0~ubuntu
+    - GOARCH=amd64 DOCKER_PKG_VERSION=18.03.1~ce-0~ubuntu
+    - GOARCH=386   DOCKER_PKG_VERSION=18.03.1~ce-0~ubuntu
   global:
     - DOCKER_HOST=tcp://127.0.0.1:2375
 install:
