@@ -21,6 +21,6 @@ require (
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
-	golang.org/x/sys v0.0.0-20181218192612-074acd46bca6
+	golang.org/x/sys v0.0.0-20181221143128-b4a75ba826a6
 	gotest.tools v2.2.0+incompatible // indirect
 )
