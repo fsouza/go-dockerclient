@@ -59,7 +59,7 @@ func TestGetBool(t *testing.T) {
 		input    string
 		expected bool
 	}{
-		{"EMTPY_VAR", false}, {"ZERO_VAR", false}, {"NO_VAR", false},
+		{"EMPTY_VAR", false}, {"ZERO_VAR", false}, {"NO_VAR", false},
 		{"FALSE_VAR", false}, {"NONE_VAR", false}, {"TRUE_VAR", true},
 		{"WAT", true}, {"PATH", true}, {"ONE_VAR", true}, {"NO_VAR_TAB", false},
 	}
