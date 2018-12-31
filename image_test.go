@@ -740,6 +740,9 @@ func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T)
 	}
 	req := fakeRT.requests[0]
 	tarContent, err := ioutil.ReadAll(tar)
+	if err != nil {
+		t.Fatal(err)
+	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		t.Fatal(err)
