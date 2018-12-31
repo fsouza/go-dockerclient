@@ -26,6 +26,6 @@ matrix:
   fast_finish: true
   exclude:
     - os: osx
-      env: GOARCH=amd64 DOCKER_PKG_VERSION=18.03.0~ce-0~ubuntu
+      env: GOARCH=amd64 DOCKER_PKG_VERSION=18.03.1~ce-0~ubuntu
     - os: osx
-      env: GOARCH=386   DOCKER_PKG_VERSION=18.03.0~ce-0~ubuntu
+      env: GOARCH=386   DOCKER_PKG_VERSION=18.03.1~ce-0~ubuntu
