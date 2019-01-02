@@ -9,21 +9,18 @@
 
 all: test
 
-lint:
-	@ go get -v golang.org/x/lint/golint
-	[ -z "$$(golint . | grep -v 'type name will be used as docker.DockerInfo' | grep -v 'context.Context should be the first' | tee /dev/stderr)" ]
-
-vet:
-	go vet ./...
+staticcheck:
+	@ cd /tmp && go get -v honnef.co/go/tools/cmd/staticcheck
+	staticcheck ./...
 
 fmtcheck:
 	if [ -z "$${SKIP_FMT_CHECK}" ]; then [ -z "$$(gofmt -s -d *.go ./testing | tee /dev/stderr)" ]; fi
 
 testdeps:
-	go get -u github.com/golang/dep/cmd/dep
+	@ cd /tmp && go get -u github.com/golang/dep/cmd/dep
 	dep ensure -v
 
-pretest: testdeps lint vet fmtcheck
+pretest: testdeps staticcheck fmtcheck
 
 gotest:
 	go test -race ./...
