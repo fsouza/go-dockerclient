@@ -2828,10 +2828,11 @@ func TestDownloadFromContainer(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", fmt.Sprintf("/containers/%s/archive?path=abcd", cont.ID), nil)
 	server.ServeHTTP(recorder, request)
-	if recorder.Code != http.StatusOK {
-		t.Errorf("DownloadFromContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	resp := recorder.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("DownloadFromContainer: wrong status. Want %d. Got %d.", http.StatusOK, resp.StatusCode)
 	}
-	if recorder.HeaderMap.Get("Content-Type") != "application/x-tar" {
-		t.Errorf("DownloadFromContainer: wrong Content-Type. Want 'application/x-tar'. Got %s.", recorder.HeaderMap.Get("Content-Type"))
+	if resp.Header.Get("Content-Type") != "application/x-tar" {
+		t.Errorf("DownloadFromContainer: wrong Content-Type. Want 'application/x-tar'. Got %s.", resp.Header.Get("Content-Type"))
 	}
 }

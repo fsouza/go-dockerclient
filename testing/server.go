@@ -468,7 +468,7 @@ func (s *DockerServer) findImage(id string) (string, error) {
 	if _, ok := s.images[id]; ok {
 		return id, nil
 	}
-	return "", errors.New("No such image")
+	return "", errors.New("no such image")
 }
 
 func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
@@ -941,7 +941,7 @@ func (s *DockerServer) findContainerWithLock(idOrName string, shouldLock bool) (
 	if cont, ok := s.containers[idOrName]; ok {
 		return cont, nil
 	}
-	return nil, errors.New("No such container")
+	return nil, errors.New("no such container")
 }
 
 func (s *DockerServer) logContainer(w http.ResponseWriter, r *http.Request) {
@@ -1288,7 +1288,7 @@ func (s *DockerServer) findNetwork(idOrName string) (*docker.Network, int, error
 			return network, i, nil
 		}
 	}
-	return nil, -1, errors.New("No such network")
+	return nil, -1, errors.New("no such network")
 }
 
 func (s *DockerServer) listNetworks(w http.ResponseWriter, r *http.Request) {
@@ -1386,7 +1386,7 @@ func (s *DockerServer) networksConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, found := network.Containers[container.ID]; found == true {
+	if _, found := network.Containers[container.ID]; found {
 		http.Error(w, "endpoint already exists in network", http.StatusBadRequest)
 		return
 	}

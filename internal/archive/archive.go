@@ -276,8 +276,10 @@ func CompressStream(dest io.Writer, compression Compression) (io.WriteCloser, er
 	case Bzip2, Xz:
 		// archive/bzip2 does not support writing, and there is no xz support at all
 		// However, this is not a problem as docker only currently generates gzipped tars
+		//lint:ignore ST1005 this is vendored/copied code
 		return nil, fmt.Errorf("Unsupported compression format %s", (&compression).Extension())
 	default:
+		//lint:ignore ST1005 this is vendored/copied code
 		return nil, fmt.Errorf("Unsupported compression format %s", (&compression).Extension())
 	}
 }
@@ -437,7 +439,9 @@ func (ta *tarAppender) addTarFile(path, name string) error {
 func ReadSecurityXattrToTarHeader(path string, hdr *tar.Header) error {
 	capability, _ := system.Lgetxattr(path, "security.capability")
 	if capability != nil {
+		//lint:ignore SA1019 this is vendored/copied code
 		hdr.Xattrs = make(map[string]string)
+		//lint:ignore SA1019 this is vendored/copied code
 		hdr.Xattrs["security.capability"] = string(capability)
 	}
 	return nil

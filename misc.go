@@ -17,7 +17,7 @@ import (
 //
 // See https://goo.gl/mU7yje for more details.
 func (c *Client) Version() (*Env, error) {
-	return c.VersionWithContext(nil)
+	return c.VersionWithContext(context.TODO())
 }
 
 // VersionWithContext returns version information about the docker server.

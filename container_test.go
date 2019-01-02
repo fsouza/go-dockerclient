@@ -2096,7 +2096,8 @@ func runStreamConnServer(t *testing.T, network, laddr string, listening chan<- s
 	breader := bufio.NewReader(c)
 	req, err := http.ReadRequest(breader)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	}
 	if path := "/containers/" + containerID + "/export"; req.URL.Path != path {
 		t.Errorf("wrong path. Want %q. Got %q", path, req.URL.Path)

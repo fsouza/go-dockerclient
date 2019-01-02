@@ -364,8 +364,7 @@ func TestServiceCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ServiceCreate error: %s", err.Error())
 	}
-	var params io.Reader
-	params = bytes.NewBuffer(buf)
+	var params io.Reader = bytes.NewBuffer(buf)
 	request, _ := http.NewRequest("POST", "/services/create", params)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -460,8 +459,7 @@ func TestServiceCreateDynamicPort(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ServiceCreate error: %s", err.Error())
 	}
-	var params io.Reader
-	params = bytes.NewBuffer(buf)
+	var params io.Reader = bytes.NewBuffer(buf)
 	request, _ := http.NewRequest("POST", "/services/create", params)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -525,8 +523,7 @@ func TestServiceCreateNoContainers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ServiceCreate error: %s", err.Error())
 	}
-	var params io.Reader
-	params = bytes.NewBuffer(buf)
+	var params io.Reader = bytes.NewBuffer(buf)
 	request, _ := http.NewRequest("POST", "/services/create", params)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {
@@ -1357,8 +1354,7 @@ func addTestService(server *DockerServer) (*swarm.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	var params io.Reader
-	params = bytes.NewBuffer(buf)
+	var params io.Reader = bytes.NewBuffer(buf)
 	request, _ := http.NewRequest("POST", "/services/create", params)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusOK {

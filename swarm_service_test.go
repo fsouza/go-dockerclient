@@ -484,7 +484,7 @@ func TestGetServiceLogs(t *testing.T) {
 	}
 }
 
-func TesGetServicetLogsNilStdoutDoesntFail(t *testing.T) {
+func TestGetServicetLogsNilStdoutDoesntFail(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		prefix := []byte{1, 0, 0, 0, 0, 0, 0, 19}
 		w.Write(prefix)

@@ -5,6 +5,7 @@
 package docker
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -176,7 +177,7 @@ func TestInspectSwarm(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: `{"ID": "123"}`, status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	response, err := client.InspectSwarm(nil)
+	response, err := client.InspectSwarm(context.TODO())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,12 +199,12 @@ func TestInspectSwarm(t *testing.T) {
 func TestInspectSwarmNotInSwarm(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusNotAcceptable})
-	_, err := client.InspectSwarm(nil)
+	_, err := client.InspectSwarm(context.TODO())
 	if err != ErrNodeNotInSwarm {
 		t.Errorf("InspectSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
 	}
 	client = newTestClient(&FakeRoundTripper{message: "", status: http.StatusServiceUnavailable})
-	_, err = client.InspectSwarm(nil)
+	_, err = client.InspectSwarm(context.TODO())
 	if err != ErrNodeNotInSwarm {
 		t.Errorf("InspectSwarm: Wrong error type. Want %#v. Got %#v", ErrNodeNotInSwarm, err)
 	}
