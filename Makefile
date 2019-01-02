@@ -1,7 +1,6 @@
 .PHONY: \
 	all \
-	lint \
-	vet \
+	staticcheck \
 	fmtcheck \
 	pretest \
 	test \
