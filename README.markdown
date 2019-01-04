@@ -112,14 +112,12 @@ All development commands can be seen in the [Makefile](Makefile).
 
 Commited code must pass:
 
-* [golint](https://github.com/golang/lint) (with some exceptions, see the Makefile).
-* [go vet](https://golang.org/cmd/vet/)
+* [staticcheck](https://staticcheck.io/)
 * [gofmt](https://golang.org/cmd/gofmt)
 * [go test](https://golang.org/cmd/go/#hdr-Test_packages)
 
 Running `make test` will check all of these. If your editor does not
-automatically call ``gofmt -s``, `make fmt` will format all go files in this
-repository.
+automatically call ``gofmt -s``, make sure you invoke it manually.
 
 ## Vendoring
 
