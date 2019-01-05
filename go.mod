@@ -16,11 +16,11 @@ require (
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
-	github.com/pkg/errors v0.8.0 // indirect
-	github.com/sirupsen/logrus v1.2.0
+	github.com/pkg/errors v0.8.1 // indirect
+	github.com/sirupsen/logrus v1.3.0
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
-	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
-	golang.org/x/sys v0.0.0-20181221143128-b4a75ba826a6
+	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc // indirect
+	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598
 	gotest.tools v2.2.0+incompatible // indirect
 )
