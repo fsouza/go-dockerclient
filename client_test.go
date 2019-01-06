@@ -20,6 +20,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func TestNewAPIClient(t *testing.T) {
@@ -699,6 +701,9 @@ func (b *terminalBuffer) IsTerminal() bool {
 }
 
 func TestClientStreamJSONDecodeWithTerminal(t *testing.T) {
+	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+		t.Skip("requires a terminal")
+	}
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockPullOutput))
@@ -723,7 +728,7 @@ func TestClientStreamJSONDecodeWithTerminal(t *testing.T) {
 		"Status: Downloaded newer image for 192.168.50.4:5000/tsuru/static\n"
 	result := w.String()
 	if result != expected {
-		t.Fatalf("expected stream result %q, got: %q", expected, result)
+		t.Fatalf("wrong stream result\nwant %v\ngot:  %v", expected, result)
 	}
 }
 
