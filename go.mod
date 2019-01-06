@@ -20,7 +20,7 @@ require (
 	github.com/sirupsen/logrus v1.3.0
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
-	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc // indirect
+	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
 	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598
 	gotest.tools v2.2.0+incompatible // indirect
 )
