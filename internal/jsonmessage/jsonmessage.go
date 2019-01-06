@@ -248,7 +248,7 @@ func (jm *JSONMessage) Display(out io.Writer, termInfo termInfo) error {
 	if termInfo != nil && jm.Stream == "" && jm.Progress != nil {
 		clearLine(out, termInfo)
 		endl = "\r"
-		_, err := fmt.Fprintf(out, endl)
+		_, err := fmt.Fprint(out, endl)
 		if err != nil {
 			return err
 		}
