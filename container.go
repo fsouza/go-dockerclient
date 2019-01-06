@@ -1103,13 +1103,8 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 	defer func() {
 		close(opts.Stats)
 
-		select {
-		case err := <-errC:
-			if err != nil && retErr == nil {
-				retErr = err
-			}
-		default:
-			// No errors
+		if err := <-errC; err != nil && retErr == nil {
+			retErr = err
 		}
 
 		if err := readCloser.Close(); err != nil && retErr == nil {
@@ -1119,6 +1114,7 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 
 	reqSent := make(chan struct{})
 	go func() {
+		defer close(errC)
 		err := c.stream("GET", fmt.Sprintf("/containers/%s/stats?stream=%v", opts.ID, opts.Stream), streamOptions{
 			rawJSONStream:     true,
 			useJSONDecoder:    true,
@@ -1140,7 +1136,6 @@ func (c *Client) Stats(opts StatsOptions) (retErr error) {
 			err = closeErr
 		}
 		errC <- err
-		close(errC)
 	}()
 
 	quit := make(chan struct{})
