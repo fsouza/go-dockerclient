@@ -18,9 +18,10 @@ require (
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.3.0
+	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
-	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598
+	golang.org/x/sys v0.0.0-20190109145017-48ac38b7c8cb
 	gotest.tools v2.2.0+incompatible // indirect
 )
