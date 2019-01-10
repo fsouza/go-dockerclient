@@ -6,14 +6,13 @@ package docker
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
-
-	"encoding/base64"
 
 	"github.com/docker/docker/api/types/swarm"
 )
