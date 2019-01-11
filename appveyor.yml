@@ -7,7 +7,7 @@ environment:
   matrix:
     - GOVERSION: 1.10.7
     - GOVERSION: 1.11.4
-    - GOVERSION: 1.12beta1
+    - GOVERSION: 1.12beta2
 install:
   - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
   - rmdir c:\go /s /q
