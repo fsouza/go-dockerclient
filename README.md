@@ -119,11 +119,12 @@ Commited code must pass:
 Running `make test` will check all of these. If your editor does not
 automatically call ``gofmt -s``, make sure you invoke it manually.
 
-## Vendoring
+## Vendoring / Modules
 
-go-dockerclient uses [dep](https://github.com/golang/dep/) for vendoring. If
-you're using dep, you should be able to pick go-dockerclient releases and get
-the proper dependencies.
+go-dockerclient supports [dep](https://github.com/golang/dep/) for vendoring
+and can also be installed as a module. If you're using dep or Go modules, you
+should be able to pick go-dockerclient releases and get the proper
+dependencies.
 
 With other vendoring tools, users might need to specify go-dockerclient's
 dependencies manually.
