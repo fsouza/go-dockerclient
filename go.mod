@@ -5,11 +5,12 @@ require (
 	github.com/Microsoft/go-winio v0.4.11
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5
 	github.com/containerd/continuity v0.0.0-20181203112020-004b46473808 // indirect
-	github.com/docker/docker v0.7.3-0.20180827131323-0c5f8d2b9b23
+	github.com/docker/docker v0.7.3-0.20190111153827-295413c9d0e1
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.3.3
 	github.com/docker/libnetwork v0.8.0-dev.2.0.20180608203834-19279f049241 // indirect
 	github.com/gogo/protobuf v1.2.0 // indirect
+	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/google/go-cmp v0.2.0
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
@@ -22,6 +23,7 @@ require (
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
+	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
 	golang.org/x/sys v0.0.0-20190109145017-48ac38b7c8cb
 	gotest.tools v2.2.0+incompatible // indirect
 )
