@@ -221,12 +221,16 @@ func TestParseRepositoryTag(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		repo, tag := ParseRepositoryTag(tt.input)
-		if repo != tt.expectedRepo {
-			t.Errorf("ParseRepositoryTag(%q): wrong repository. Want %q. Got %q", tt.input, tt.expectedRepo, repo)
-		}
-		if tag != tt.expectedTag {
-			t.Errorf("ParseRepositoryTag(%q): wrong tag. Want %q. Got %q", tt.input, tt.expectedTag, tag)
-		}
+		test := tt
+		t.Run(test.input, func(t *testing.T) {
+			t.Parallel()
+			repo, tag := ParseRepositoryTag(test.input)
+			if repo != test.expectedRepo {
+				t.Errorf("ParseRepositoryTag(%q): wrong repository. Want %q. Got %q", test.input, test.expectedRepo, repo)
+			}
+			if tag != test.expectedTag {
+				t.Errorf("ParseRepositoryTag(%q): wrong tag. Want %q. Got %q", test.input, test.expectedTag, tag)
+			}
+		})
 	}
 }

@@ -28,10 +28,14 @@ func TestAuthConfigurationSearchPath(t *testing.T) {
 		{"a", "b", []string{path.Join("a", "config.json"), path.Join("b", ".docker", "config.json"), path.Join("b", ".dockercfg")}},
 	}
 	for _, tt := range testData {
-		paths := cfgPaths(tt.dockerConfigEnv, tt.homeEnv)
-		if got, want := strings.Join(paths, ","), strings.Join(tt.expectedPaths, ","); got != want {
-			t.Errorf("cfgPaths: wrong result. Want: %s. Got: %s", want, got)
-		}
+		tt := tt
+		t.Run(tt.dockerConfigEnv+tt.homeEnv, func(t *testing.T) {
+			t.Parallel()
+			paths := cfgPaths(tt.dockerConfigEnv, tt.homeEnv)
+			if got, want := strings.Join(paths, ","), strings.Join(tt.expectedPaths, ","); got != want {
+				t.Errorf("cfgPaths: wrong result. Want: %s. Got: %s", want, got)
+			}
+		})
 	}
 }
 

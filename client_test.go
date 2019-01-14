@@ -218,13 +218,17 @@ func TestNewClientInvalidEndpoint(t *testing.T) {
 		"https://localhost:-20",
 	}
 	for _, c := range cases {
-		client, err := NewClient(c)
-		if client != nil {
-			t.Errorf("Want <nil> client for invalid endpoint, got %#v.", client)
-		}
-		if !reflect.DeepEqual(err, ErrInvalidEndpoint) {
-			t.Errorf("NewClient(%q): Got invalid error for invalid endpoint. Want %#v. Got %#v.", c, ErrInvalidEndpoint, err)
-		}
+		testCase := c
+		t.Run(testCase, func(t *testing.T) {
+			t.Parallel()
+			client, err := NewClient(testCase)
+			if client != nil {
+				t.Errorf("Want <nil> client for invalid endpoint, got %#v.", client)
+			}
+			if !reflect.DeepEqual(err, ErrInvalidEndpoint) {
+				t.Errorf("NewClient(%q): Got invalid error for invalid endpoint. Want %#v. Got %#v.", testCase, ErrInvalidEndpoint, err)
+			}
+		})
 	}
 }
 
@@ -232,13 +236,16 @@ func TestNewClientNoSchemeEndpoint(t *testing.T) {
 	t.Parallel()
 	cases := []string{"localhost", "localhost:8080"}
 	for _, c := range cases {
-		client, err := NewClient(c)
-		if client == nil {
-			t.Errorf("Want client for scheme-less endpoint, got <nil>")
-		}
-		if err != nil {
-			t.Errorf("Got unexpected error scheme-less endpoint: %q", err)
-		}
+		testCase := c
+		t.Run(testCase, func(t *testing.T) {
+			client, err := NewClient(testCase)
+			if client == nil {
+				t.Errorf("Want client for scheme-less endpoint, got <nil>")
+			}
+			if err != nil {
+				t.Errorf("Got unexpected error scheme-less endpoint: %q", err)
+			}
+		})
 	}
 }
 
@@ -254,14 +261,18 @@ func TestNewTLSClient(t *testing.T) {
 		{"http://localhost:4000", "https"},
 	}
 	for _, tt := range tests {
-		client, err := newTLSClient(tt.endpoint)
-		if err != nil {
-			t.Error(err)
-		}
-		got := client.endpointURL.Scheme
-		if got != tt.expected {
-			t.Errorf("endpointURL.Scheme: Got %s. Want %s.", got, tt.expected)
-		}
+		test := tt
+		t.Run(test.endpoint, func(t *testing.T) {
+			t.Parallel()
+			client, err := newTLSClient(test.endpoint)
+			if err != nil {
+				t.Error(err)
+			}
+			got := client.endpointURL.Scheme
+			if got != test.expected {
+				t.Errorf("endpointURL.Scheme: Got %s. Want %s.", got, test.expected)
+			}
+		})
 	}
 }
 
@@ -291,13 +302,17 @@ func TestGetURL(t *testing.T) {
 		{nativeRealEndpoint, "/containers", "/containers"},
 	}
 	for _, tt := range tests {
-		client, _ := NewClient(tt.endpoint)
-		client.endpoint = tt.endpoint
-		client.SkipServerVersionCheck = true
-		got := client.getURL(tt.path)
-		if got != tt.expected {
-			t.Errorf("getURL(%q): Got %s. Want %s.", tt.path, got, tt.expected)
-		}
+		test := tt
+		t.Run(test.endpoint+test.path, func(t *testing.T) {
+			t.Parallel()
+			client, _ := NewClient(test.endpoint)
+			client.endpoint = test.endpoint
+			client.SkipServerVersionCheck = true
+			got := client.getURL(test.path)
+			if got != test.expected {
+				t.Errorf("getURL(%q): Got %s. Want %s.", test.path, got, test.expected)
+			}
+		})
 	}
 }
 
@@ -313,13 +328,17 @@ func TestGetFakeNativeURL(t *testing.T) {
 		{nativeRealEndpoint, "/containers/ps", "http://unix.sock/containers/ps"},
 	}
 	for _, tt := range tests {
-		client, _ := NewClient(tt.endpoint)
-		client.endpoint = tt.endpoint
-		client.SkipServerVersionCheck = true
-		got := client.getFakeNativeURL(tt.path)
-		if got != tt.expected {
-			t.Errorf("getURL(%q): Got %s. Want %s.", tt.path, got, tt.expected)
-		}
+		test := tt
+		t.Run(test.path, func(t *testing.T) {
+			t.Parallel()
+			client, _ := NewClient(test.endpoint)
+			client.endpoint = test.endpoint
+			client.SkipServerVersionCheck = true
+			got := client.getFakeNativeURL(test.path)
+			if got != test.expected {
+				t.Errorf("getURL(%q): Got %s. Want %s.", test.path, got, test.expected)
+			}
+		})
 	}
 }
 
@@ -366,10 +385,14 @@ func TestQueryString(t *testing.T) {
 		{"not_a_struct", ""},
 	}
 	for _, tt := range tests {
-		got := queryString(tt.input)
-		if got != tt.want {
-			t.Errorf("queryString(%v). Want %q. Got %q.", tt.input, tt.want, got)
-		}
+		test := tt
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+			got := queryString(test.input)
+			if got != test.want {
+				t.Errorf("queryString(%v). Want %q. Got %q.", test.input, test.want, got)
+			}
+		})
 	}
 }
 
@@ -403,21 +426,25 @@ func TestAPIVersions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		a, _ := NewAPIVersion(tt.a)
-		b, _ := NewAPIVersion(tt.b)
+		test := tt
+		t.Run(test.a+test.b, func(t *testing.T) {
+			t.Parallel()
+			a, _ := NewAPIVersion(test.a)
+			b, _ := NewAPIVersion(test.b)
 
-		if tt.expectedALessThanB && !a.LessThan(b) {
-			t.Errorf("Expected %#v < %#v", a, b)
-		}
-		if tt.expectedALessThanOrEqualToB && !a.LessThanOrEqualTo(b) {
-			t.Errorf("Expected %#v <= %#v", a, b)
-		}
-		if tt.expectedAGreaterThanB && !a.GreaterThan(b) {
-			t.Errorf("Expected %#v > %#v", a, b)
-		}
-		if tt.expectedAGreaterThanOrEqualToB && !a.GreaterThanOrEqualTo(b) {
-			t.Errorf("Expected %#v >= %#v", a, b)
-		}
+			if test.expectedALessThanB && !a.LessThan(b) {
+				t.Errorf("Expected %#v < %#v", a, b)
+			}
+			if test.expectedALessThanOrEqualToB && !a.LessThanOrEqualTo(b) {
+				t.Errorf("Expected %#v <= %#v", a, b)
+			}
+			if test.expectedAGreaterThanB && !a.GreaterThan(b) {
+				t.Errorf("Expected %#v > %#v", a, b)
+			}
+			if test.expectedAGreaterThanOrEqualToB && !a.GreaterThanOrEqualTo(b) {
+				t.Errorf("Expected %#v >= %#v", a, b)
+			}
+		})
 	}
 }
 
@@ -781,7 +808,7 @@ func TestClientStreamTimeoutNativeClient(t *testing.T) {
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
 			}
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 		}
 	}))
 	if err != nil {
@@ -798,7 +825,7 @@ func TestClientStreamTimeoutNativeClient(t *testing.T) {
 	err = client.stream("POST", "/image/create", streamOptions{
 		setRawTerminal:    true,
 		stdout:            &w,
-		inactivityTimeout: 100 * time.Millisecond,
+		inactivityTimeout: 50 * time.Millisecond,
 	})
 	if err != ErrInactivityTimeout {
 		t.Fatalf("expected request canceled error, got: %s", err)

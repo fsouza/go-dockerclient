@@ -28,22 +28,27 @@ func TestStateString(t *testing.T) {
 	t.Parallel()
 	started := time.Now().Add(-3 * time.Hour)
 	var tests = []struct {
+		name     string
 		input    State
 		expected string
 	}{
-		{State{Running: true, Paused: true, StartedAt: started}, "Up 3 hours (Paused)"},
-		{State{Running: true, Restarting: true, ExitCode: 7, FinishedAt: started}, "Restarting (7) 3 hours ago"},
-		{State{Running: true, StartedAt: started}, "Up 3 hours"},
-		{State{RemovalInProgress: true}, "Removal In Progress"},
-		{State{Dead: true}, "Dead"},
-		{State{}, "Created"},
-		{State{StartedAt: started}, ""},
-		{State{ExitCode: 7, StartedAt: started, FinishedAt: started}, "Exited (7) 3 hours ago"},
+		{"paused", State{Running: true, Paused: true, StartedAt: started}, "Up 3 hours (Paused)"},
+		{"restarting", State{Running: true, Restarting: true, ExitCode: 7, FinishedAt: started}, "Restarting (7) 3 hours ago"},
+		{"up", State{Running: true, StartedAt: started}, "Up 3 hours"},
+		{"being removed", State{RemovalInProgress: true}, "Removal In Progress"},
+		{"dead", State{Dead: true}, "Dead"},
+		{"created", State{}, "Created"},
+		{"no creation info", State{StartedAt: started}, ""},
+		{"erro code", State{ExitCode: 7, StartedAt: started, FinishedAt: started}, "Exited (7) 3 hours ago"},
 	}
 	for _, tt := range tests {
-		if got := tt.input.String(); got != tt.expected {
-			t.Errorf("State.String(): wrong result. Want %q. Got %q.", tt.expected, got)
-		}
+		test := tt
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			if got := test.input.String(); got != test.expected {
+				t.Errorf("State.String(): wrong result. Want %q. Got %q.", test.expected, got)
+			}
+		})
 	}
 }
 
@@ -62,9 +67,13 @@ func TestStateStateString(t *testing.T) {
 		{State{StartedAt: started}, "exited"},
 	}
 	for _, tt := range tests {
-		if got := tt.input.StateString(); got != tt.expected {
-			t.Errorf("State.String(): wrong result. Want %q. Got %q.", tt.expected, got)
-		}
+		test := tt
+		t.Run(test.expected, func(t *testing.T) {
+			t.Parallel()
+			if got := test.input.StateString(); got != test.expected {
+				t.Errorf("State.String(): wrong result. Want %q. Got %q.", test.expected, got)
+			}
+		})
 	}
 }
 
@@ -141,24 +150,27 @@ func TestListContainersParams(t *testing.T) {
 			map[string][]string{"all": {"1"}, "filters": {"{\"exited\":[\"0\"],\"status\":[\"exited\"]}"}},
 		},
 	}
-	fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
-	client := newTestClient(fakeRT)
-	u, _ := url.Parse(client.getURL("/containers/json"))
+	const expectedPath = "/containers/json"
 	for _, tt := range tests {
-		if _, err := client.ListContainers(tt.input); err != nil {
-			t.Error(err)
-		}
-		got := map[string][]string(fakeRT.requests[0].URL.Query())
-		if !reflect.DeepEqual(got, tt.params) {
-			t.Errorf("Expected %#v, got %#v.", tt.params, got)
-		}
-		if path := fakeRT.requests[0].URL.Path; path != u.Path {
-			t.Errorf("Wrong path on request. Want %q. Got %q.", u.Path, path)
-		}
-		if meth := fakeRT.requests[0].Method; meth != "GET" {
-			t.Errorf("Wrong HTTP method. Want GET. Got %s.", meth)
-		}
-		fakeRT.Reset()
+		test := tt
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+			fakeRT := &FakeRoundTripper{message: "[]", status: http.StatusOK}
+			client := newTestClient(fakeRT)
+			if _, err := client.ListContainers(test.input); err != nil {
+				t.Error(err)
+			}
+			got := map[string][]string(fakeRT.requests[0].URL.Query())
+			if !reflect.DeepEqual(got, test.params) {
+				t.Errorf("Expected %#v, got %#v.", test.params, got)
+			}
+			if path := fakeRT.requests[0].URL.Path; path != expectedPath {
+				t.Errorf("Wrong path on request. Want %q. Got %q.", expectedPath, path)
+			}
+			if meth := fakeRT.requests[0].Method; meth != "GET" {
+				t.Errorf("Wrong HTTP method. Want GET. Got %s.", meth)
+			}
+		})
 	}
 }
 
@@ -172,15 +184,19 @@ func TestListContainersFailure(t *testing.T) {
 		{500, "internal server error"},
 	}
 	for _, tt := range tests {
-		client := newTestClient(&FakeRoundTripper{message: tt.message, status: tt.status})
-		expected := Error{Status: tt.status, Message: tt.message}
-		containers, err := client.ListContainers(ListContainersOptions{})
-		if !reflect.DeepEqual(expected, *err.(*Error)) {
-			t.Errorf("Wrong error in ListContainers. Want %#v. Got %#v.", expected, err)
-		}
-		if len(containers) > 0 {
-			t.Errorf("ListContainers failure. Expected empty list. Got %#v.", containers)
-		}
+		test := tt
+		t.Run(strconv.Itoa(test.status), func(t *testing.T) {
+			t.Parallel()
+			client := newTestClient(&FakeRoundTripper{message: test.message, status: test.status})
+			expected := Error{Status: test.status, Message: test.message}
+			containers, err := client.ListContainers(ListContainersOptions{})
+			if !reflect.DeepEqual(expected, *err.(*Error)) {
+				t.Errorf("Wrong error in ListContainers. Want %#v. Got %#v.", expected, err)
+			}
+			if len(containers) > 0 {
+				t.Errorf("ListContainers failure. Expected empty list. Got %#v.", containers)
+			}
+		})
 	}
 }
 
@@ -1524,33 +1540,36 @@ func TestCommitContainerParams(t *testing.T) {
 			json,
 		},
 	}
-	fakeRT := &FakeRoundTripper{message: "{}", status: http.StatusOK}
-	client := newTestClient(fakeRT)
-	u, _ := url.Parse(client.getURL("/commit"))
+	const expectedPath = "/commit"
 	for _, tt := range tests {
-		if _, err := client.CommitContainer(tt.input); err != nil {
-			t.Error(err)
-		}
-		got := map[string][]string(fakeRT.requests[0].URL.Query())
-		if !reflect.DeepEqual(got, tt.params) {
-			t.Errorf("Expected %#v, got %#v.", tt.params, got)
-		}
-		if path := fakeRT.requests[0].URL.Path; path != u.Path {
-			t.Errorf("Wrong path on request. Want %q. Got %q.", u.Path, path)
-		}
-		if meth := fakeRT.requests[0].Method; meth != "POST" {
-			t.Errorf("Wrong HTTP method. Want POST. Got %s.", meth)
-		}
-		if tt.body != nil {
-			if requestBody, err := ioutil.ReadAll(fakeRT.requests[0].Body); err == nil {
-				if !bytes.Equal(requestBody, tt.body) {
-					t.Errorf("Expected body %#v, got %#v", tt.body, requestBody)
-				}
-			} else {
-				t.Errorf("Error reading request body: %#v", err)
+		test := tt
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+			fakeRT := &FakeRoundTripper{message: "{}", status: http.StatusOK}
+			client := newTestClient(fakeRT)
+			if _, err := client.CommitContainer(test.input); err != nil {
+				t.Error(err)
 			}
-		}
-		fakeRT.Reset()
+			got := map[string][]string(fakeRT.requests[0].URL.Query())
+			if !reflect.DeepEqual(got, test.params) {
+				t.Errorf("Expected %#v, got %#v.", test.params, got)
+			}
+			if path := fakeRT.requests[0].URL.Path; path != expectedPath {
+				t.Errorf("Wrong path on request. Want %q. Got %q.", expectedPath, path)
+			}
+			if meth := fakeRT.requests[0].Method; meth != "POST" {
+				t.Errorf("Wrong HTTP method. Want POST. Got %s.", meth)
+			}
+			if test.body != nil {
+				if requestBody, err := ioutil.ReadAll(fakeRT.requests[0].Body); err == nil {
+					if !bytes.Equal(requestBody, test.body) {
+						t.Errorf("Expected body %#v, got %#v", test.body, requestBody)
+					}
+				} else {
+					t.Errorf("Error reading request body: %#v", err)
+				}
+			}
+		})
 	}
 }
 
