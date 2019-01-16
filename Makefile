@@ -11,7 +11,7 @@ DEP_TOOL ?= dep
 all: test
 
 staticcheck:
-	@ cd /tmp && go get -v honnef.co/go/tools/cmd/staticcheck
+	GO111MODULE=off go get -v honnef.co/go/tools/cmd/staticcheck
 	staticcheck ./...
 
 fmtcheck:
@@ -19,7 +19,7 @@ fmtcheck:
 
 testdeps:
 ifeq ($(DEP_TOOL), dep)
-	GOMODULE111=off go get -u github.com/golang/dep/cmd/dep
+	GO111MODULE=off go get -u github.com/golang/dep/cmd/dep
 	dep ensure -v
 else
 	go mod download
