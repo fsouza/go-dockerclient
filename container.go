@@ -627,7 +627,7 @@ func (c *Client) CreateContainer(opts CreateContainerOptions) (*Container, error
 	)
 
 	if e, ok := err.(*Error); ok {
-		if e.Status == http.StatusNotFound {
+		if e.Status == http.StatusNotFound && strings.Contains(e.Message, "No such image") {
 			return nil, ErrNoSuchImage
 		}
 		if e.Status == http.StatusConflict {

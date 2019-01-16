@@ -915,7 +915,7 @@ func TestCreateContainer(t *testing.T) {
 
 func TestCreateContainerImageNotFound(t *testing.T) {
 	t.Parallel()
-	client := newTestClient(&FakeRoundTripper{message: "No such image", status: http.StatusNotFound})
+	client := newTestClient(&FakeRoundTripper{message: "No such image: whatever", status: http.StatusNotFound})
 	config := Config{AttachStdout: true, AttachStdin: true}
 	container, err := client.CreateContainer(CreateContainerOptions{Config: &config})
 	if container != nil {
