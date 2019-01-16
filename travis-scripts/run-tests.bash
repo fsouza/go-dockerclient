@@ -8,7 +8,7 @@ if [[ $TRAVIS_GO_VERSION == 1.10* ]]; then
 	export SKIP_FMT_CHECK=1
 fi
 
-make test
+make staticcheck fmtcheck gotest
 
 if [[ $TRAVIS_OS_NAME == "linux" ]]; then
 	make integration

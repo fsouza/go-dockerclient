@@ -6,6 +6,8 @@
 	test \
 	integration
 
+DEP_TOOL ?= dep
+
 all: test
 
 staticcheck:
@@ -16,8 +18,12 @@ fmtcheck:
 	if [ -z "$${SKIP_FMT_CHECK}" ]; then [ -z "$$(gofmt -s -d *.go ./testing | tee /dev/stderr)" ]; fi
 
 testdeps:
-	@ cd /tmp && go get -u github.com/golang/dep/cmd/dep
+ifeq ($(DEP_TOOL), dep)
+	GOMODULE111=off go get -u github.com/golang/dep/cmd/dep
 	dep ensure -v
+else
+	go mod download
+endif
 
 pretest: testdeps staticcheck fmtcheck
 
