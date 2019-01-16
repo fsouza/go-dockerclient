@@ -9,12 +9,11 @@ os:
   - osx
 env:
   matrix:
-    - GOARCH=amd64 DOCKER_PKG_VERSION=18.06.1~ce~3-0~ubuntu
-    - GOARCH=386   DOCKER_PKG_VERSION=18.06.1~ce~3-0~ubuntu
-    - GOARCH=amd64 DOCKER_PKG_VERSION=18.03.1~ce-0~ubuntu
-    - GOARCH=386   DOCKER_PKG_VERSION=18.03.1~ce-0~ubuntu
+    - GOARCH=amd64
+    - GOARCH=386
   global:
     - DOCKER_HOST=tcp://127.0.0.1:2375
+    - DOCKER_PKG_VERSION=18.06.1~ce~3-0~ubuntu
 install:
   - make testdeps
   - travis_retry travis-scripts/install-docker.bash
@@ -24,8 +23,3 @@ services:
   - docker
 matrix:
   fast_finish: true
-  exclude:
-    - os: osx
-      env: GOARCH=amd64 DOCKER_PKG_VERSION=18.03.1~ce-0~ubuntu
-    - os: osx
-      env: GOARCH=386   DOCKER_PKG_VERSION=18.03.1~ce-0~ubuntu
