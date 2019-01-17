@@ -6,17 +6,29 @@ environment:
   GOPATH: c:\gopath
   matrix:
     - GOVERSION: 1.10.7
+      DEP_TOOL: dep
+      GO111MODULE: off
     - GOVERSION: 1.11.4
+      DEP_TOOL: dep
+      GO111MODULE: off
     - GOVERSION: 1.12beta2
+      DEP_TOOL: dep
+      GO111MODULE: off
+    - GOVERSION: 1.11.4
+      DEP_TOOL: mod
+      GO111MODULE: on
+    - GOVERSION: 1.12beta2
+      DEP_TOOL: mod
+      GO111MODULE: on
 install:
+  - choco install make
   - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
   - rmdir c:\go /s /q
   - appveyor DownloadFile https://storage.googleapis.com/golang/go%GOVERSION%.windows-amd64.zip
   - 7z x go%GOVERSION%.windows-amd64.zip -y -oC:\ > NUL
 build_script:
-  - go get -u github.com/golang/dep/cmd/dep
-  - dep ensure -v
+  - make testdeps DEP_TOOL=%DEP_TOOL%
 test_script:
-  - go test -race ./...
+  - make gotest
 matrix:
   fast_finish: true
