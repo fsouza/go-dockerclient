@@ -21,7 +21,7 @@ environment:
       DEP_TOOL: mod
       GO111MODULE: on
 install:
-  - choco install make
+  - choco install make --version 3.81.4
   - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
   - rmdir c:\go /s /q
   - appveyor DownloadFile https://storage.googleapis.com/golang/go%GOVERSION%.windows-amd64.zip
