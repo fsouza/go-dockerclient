@@ -1,6 +1,6 @@
 [[constraint]]
   name = "github.com/Microsoft/go-winio"
-  version = "v0.4.5"
+  version = "v0.4.11"
 
 [[constraint]]
   branch = "master"
@@ -8,7 +8,7 @@
 
 [[constraint]]
   name = "github.com/docker/go-units"
-  version = "v0.3.2"
+  version = "v0.3.3"
 
 [[constraint]]
   name = "github.com/google/go-cmp"
@@ -16,7 +16,7 @@
 
 [[constraint]]
   name = "github.com/gorilla/mux"
-  version = "v1.5.0"
+  version = "v1.6.2"
 
 [[override]]
   name = "github.com/docker/libnetwork"
