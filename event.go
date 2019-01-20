@@ -352,11 +352,9 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 					c.eventMonitor.RLock()
 					if c.eventMonitor.enabled && c.eventMonitor.C == eventChan {
 						// Signal that we're exiting.
-						c.eventMonitor.RUnlock()
 						eventChan <- EOFEvent
-					} else {
-						c.eventMonitor.RUnlock()
 					}
+					c.eventMonitor.RUnlock()
 					break
 				}
 				errChan <- err
