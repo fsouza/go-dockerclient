@@ -519,6 +519,7 @@ func TestClientStreamTimeoutNotHit(t *testing.T) {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -550,6 +551,7 @@ func TestClientStreamInactivityTimeout(t *testing.T) {
 			time.Sleep(500 * time.Millisecond)
 		}
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -583,6 +585,7 @@ func TestClientStreamContextDeadline(t *testing.T) {
 			f.Flush()
 		}
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -618,6 +621,7 @@ func TestClientStreamContextCancel(t *testing.T) {
 			f.Flush()
 		}
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -680,6 +684,7 @@ func TestClientStreamJSONDecode(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockPullOutput))
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -735,6 +740,7 @@ func TestClientStreamJSONDecodeWithTerminal(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mockPullOutput))
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -764,6 +770,7 @@ func TestClientDoContextDeadline(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(500 * time.Millisecond)
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -783,6 +790,7 @@ func TestClientDoContextCancel(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(500 * time.Millisecond)
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -808,7 +816,7 @@ func TestClientStreamTimeoutNativeClient(t *testing.T) {
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
 			}
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		}
 	}))
 	if err != nil {
@@ -843,6 +851,7 @@ func TestClientStreamJSONDecoderFailingOutputWriter(t *testing.T) {
 		fmt.Fprint(w, "{}")
 		time.Sleep(500 * time.Millisecond)
 	}))
+	defer srv.Close()
 	client, err := NewClient(srv.URL)
 	if err != nil {
 		t.Fatal(err)
