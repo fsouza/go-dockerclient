@@ -5,16 +5,16 @@ clone_folder: c:\gopath\src\github.com\fsouza\go-dockerclient
 environment:
   GOPATH: c:\gopath
   matrix:
-    - GOVERSION: 1.10.7
+    - GOVERSION: 1.10.8
       DEP_TOOL: dep
       GO111MODULE: off
-    - GOVERSION: 1.11.4
+    - GOVERSION: 1.11.5
       DEP_TOOL: dep
       GO111MODULE: off
     - GOVERSION: 1.12beta2
       DEP_TOOL: dep
       GO111MODULE: off
-    - GOVERSION: 1.11.4
+    - GOVERSION: 1.11.5
       DEP_TOOL: mod
       GO111MODULE: on
     - GOVERSION: 1.12beta2
