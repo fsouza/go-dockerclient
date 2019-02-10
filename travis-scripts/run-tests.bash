@@ -4,7 +4,7 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-if [[ $TRAVIS_GO_VERSION == 1.10* ]]; then
+if [[ $TRAVIS_GO_VERSION == 1.10* || $TRAVIS_OS_NAME == "windows" ]]; then
 	export SKIP_FMT_CHECK=1
 fi
 
