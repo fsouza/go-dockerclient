@@ -32,3 +32,7 @@ matrix:
       env: GOARCH=amd64 DEP_TOOL=mod GO111MODULE=on
     - go: 1.10.x
       env: GOARCH=386 DEP_TOOL=mod GO111MODULE=on
+    - os: osx
+      env: GOARCH=386 DEP_TOOL=dep GO111MODULE=off
+    - os: osx
+      env: GOARCH=386 DEP_TOOL=mod GO111MODULE=on
