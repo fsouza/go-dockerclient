@@ -18,7 +18,7 @@ env:
     - DOCKER_HOST=tcp://127.0.0.1:2375
     - DOCKER_PKG_VERSION=18.06.1~ce~3-0~ubuntu
 install:
-  - travis-script/win-setup.bash
+  - travis-scripts/win-setup.bash
   - make testdeps DEP_TOOL=${DEP_TOOL}
   - travis_retry travis-scripts/install-docker.bash
 script:
