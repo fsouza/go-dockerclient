@@ -1832,7 +1832,6 @@ func TestAttachToContainerRawTerminalFalse(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 		conn.Close()
 	}))
-	defer server.Close()
 	client, _ := NewClient(server.URL)
 	client.SkipServerVersionCheck = true
 	var stdout, stderr bytes.Buffer
