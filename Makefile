@@ -11,7 +11,7 @@ DEP_TOOL ?= dep
 all: test
 
 staticcheck:
-	GO111MODULE=off go get -u -v honnef.co/go/tools/cmd/staticcheck
+	GO111MODULE=off go get honnef.co/go/tools/cmd/staticcheck
 	staticcheck ./...
 
 fmtcheck:
