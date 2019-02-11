@@ -12,6 +12,8 @@ import (
 	"net/http"
 )
 
+const defaultHost = "unix:///var/run/docker.sock"
+
 // initializeNativeClient initializes the native Unix domain socket client on
 // Unix-style operating systems
 func (c *Client) initializeNativeClient(trFunc func() *http.Transport) {

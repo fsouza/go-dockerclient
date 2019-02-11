@@ -31,7 +31,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/docker/docker/opts"
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/fsouza/go-dockerclient/internal/jsonmessage"
@@ -1025,7 +1024,7 @@ func getDockerEnv() (*dockerEnv, error) {
 	dockerHost := os.Getenv("DOCKER_HOST")
 	var err error
 	if dockerHost == "" {
-		dockerHost = opts.DefaultHost
+		dockerHost = defaultHost
 	}
 	dockerTLSVerify := os.Getenv("DOCKER_TLS_VERIFY") != ""
 	var dockerCertPath string
