@@ -8,22 +8,15 @@ package docker
 
 import (
 	"bytes"
-	"os"
 	"testing"
 )
 
-var dockerEndpoint string
-
-func init() {
-	dockerEndpoint = os.Getenv("DOCKER_HOST")
-	if dockerEndpoint == "" {
-		dockerEndpoint = "unix:///var/run/docker.sock"
-	}
-}
-
 func TestIntegrationPullCreateStartLogs(t *testing.T) {
 	imageName := pullImage(t)
-	client := getClient()
+	client, err := NewClientFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 	hostConfig := HostConfig{PublishAllPorts: true}
 	createOpts := CreateContainerOptions{
 		Config: &Config{
@@ -73,22 +66,21 @@ Welcome to reality, and let them hear your voice, shout it out!
 }
 
 func pullImage(t *testing.T) string {
+	t.Helper()
 	imageName := "fsouza/go-dockerclient-integration:latest"
 	var buf bytes.Buffer
 	pullOpts := PullImageOptions{
 		Repository:   imageName,
 		OutputStream: &buf,
 	}
-	client := getClient()
-	err := client.PullImage(pullOpts, AuthConfiguration{})
+	client, err := NewClientFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = client.PullImage(pullOpts, AuthConfiguration{})
 	if err != nil {
 		t.Logf("Pull output: %s", buf.String())
 		t.Fatal(err)
 	}
 	return imageName
-}
-
-func getClient() *Client {
-	client, _ := NewClient(dockerEndpoint)
-	return client
 }
