@@ -8,6 +8,7 @@ package docker
 
 import (
 	"bytes"
+	"runtime"
 	"testing"
 )
 
@@ -18,14 +19,7 @@ func TestIntegrationPullCreateStartLogs(t *testing.T) {
 		t.Fatal(err)
 	}
 	hostConfig := HostConfig{PublishAllPorts: true}
-	createOpts := CreateContainerOptions{
-		Config: &Config{
-			Image: imageName,
-			Cmd:   []string{"cat", "/home/gopher/file.txt"},
-			User:  "gopher",
-		},
-		HostConfig: &hostConfig,
-	}
+	createOpts := integrationCreateContainerOpts(imageName, &hostConfig)
 	container, err := client.CreateContainer(createOpts)
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +60,11 @@ Welcome to reality, and let them hear your voice, shout it out!
 }
 
 func pullImage(t *testing.T) string {
-	imageName := "fsouza/go-dockerclient-integration:latest"
+	os := runtime.GOOS
+	if os != "windows" {
+		os = "linux"
+	}
+	imageName := "fsouza/go-dockerclient-integration:" + os
 	var buf bytes.Buffer
 	pullOpts := PullImageOptions{
 		Repository:   imageName,
