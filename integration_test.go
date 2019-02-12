@@ -8,7 +8,9 @@ package docker
 
 import (
 	"bytes"
+	"reflect"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -50,13 +52,27 @@ func TestIntegrationPullCreateStartLogs(t *testing.T) {
 	if stderr.String() != "" {
 		t.Errorf("Got unexpected stderr from logs: %q", stderr.String())
 	}
-	expected := `Welcome to reality, wake up and rejoice
-Welcome to reality, you've made the right choice
-Welcome to reality, and let them hear your voice, shout it out!
-`
-	if stdout.String() != expected {
-		t.Errorf("Got wrong stdout from logs.\nWant:\n%#v.\n\nGot:\n%#v.", expected, stdout.String())
+	// split stdout by lines to make sure the test is the same on Windows
+	// and Linux. Life is hard.
+	expected := []string{
+		"Welcome to reality, wake up and rejoice",
+		"Welcome to reality, you've made the right choice",
+		"Welcome to reality, and let them hear your voice, shout it out!",
 	}
+	if stdoutLines := getLines(&stdout); !reflect.DeepEqual(stdoutLines, expected) {
+		t.Errorf("Got wrong stdout from logs.\nWant:\n%#v.\n\nGot:\n%#v.", expected, stdoutLines)
+	}
+}
+
+func getLines(buf *bytes.Buffer) []string {
+	var lines []string
+	for _, line := range strings.Split(buf.String(), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+	return lines
 }
 
 func pullImage(t *testing.T) string {

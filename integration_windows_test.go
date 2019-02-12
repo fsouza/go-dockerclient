@@ -11,7 +11,7 @@ func integrationCreateContainerOpts(imageName string, hostConfig *HostConfig) Cr
 	return CreateContainerOptions{
 		Config: &Config{
 			Image: imageName,
-			Cmd:   []string{`cat`, `C:\file.txt`},
+			Cmd:   []string{"powershell", "-Command", `cat C:\file.txt`},
 		},
 		HostConfig: hostConfig,
 	}

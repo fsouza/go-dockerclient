@@ -17,7 +17,7 @@ install:
   - travis-scripts/win-setup.bash
   - make testdeps DEP_TOOL=${DEP_TOOL}
 script:
-  - travis-scripts/run-tests.bash
+  - travis_wait 25 travis-scripts/run-tests.bash
 services:
   - docker
 matrix:
