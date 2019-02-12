@@ -66,7 +66,6 @@ Welcome to reality, and let them hear your voice, shout it out!
 }
 
 func pullImage(t *testing.T) string {
-	t.Helper()
 	imageName := "fsouza/go-dockerclient-integration:latest"
 	var buf bytes.Buffer
 	pullOpts := PullImageOptions{
