@@ -10,6 +10,6 @@ fi
 
 make staticcheck fmtcheck gotest
 
-if [[ $TRAVIS_OS_NAME == "linux" || $TRAVIS_OS_NAME == "windows" ]]; then
+if [[ $TRAVIS_OS_NAME == "linux" ]]; then
 	make integration
 fi
