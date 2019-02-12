@@ -6,6 +6,7 @@
 
 package docker
 
+//lint:ignore staticcheck is dumb
 func integrationCreateContainerOpts(imageName string, hostConfig *HostConfig) CreateContainerOptions {
 	return CreateContainerOptions{
 		Config: &Config{
