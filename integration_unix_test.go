@@ -6,7 +6,7 @@
 
 package docker
 
-//lint:ignore staticcheck is dumb
+//lint:ignore U1000 staticcheck is dumb
 func integrationCreateContainerOpts(imageName string, hostConfig *HostConfig) CreateContainerOptions {
 	return CreateContainerOptions{
 		Config: &Config{
