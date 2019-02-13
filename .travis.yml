@@ -31,3 +31,5 @@ matrix:
       env: GOARCH=386 DEP_TOOL=dep GO111MODULE=off
     - os: osx
       env: GOARCH=386 DEP_TOOL=mod GO111MODULE=on
+  allow_failures:
+    - os: windows
