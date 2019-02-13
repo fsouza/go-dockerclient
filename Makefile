@@ -25,12 +25,12 @@ else
 	go mod download
 endif
 
-pretest: testdeps staticcheck fmtcheck
+pretest: staticcheck fmtcheck
 
 gotest:
 	go test -race ./...
 
-test: pretest gotest
+test: testdeps pretest gotest
 
 integration:
 	go test -tags docker_integration -run TestIntegration -v
