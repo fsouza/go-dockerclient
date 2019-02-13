@@ -28,7 +28,7 @@ import (
 
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
 )
 

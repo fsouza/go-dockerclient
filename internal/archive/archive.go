@@ -65,14 +65,12 @@ type WhiteoutFormat int
 
 // TarOptions wraps the tar options.
 type TarOptions struct {
-	IncludeFiles     []string
-	ExcludePatterns  []string
-	Compression      Compression
-	NoLchown         bool
-	UIDMaps          []idtools.IDMap
-	GIDMaps          []idtools.IDMap
-	ChownOpts        *idtools.Identity
-	IncludeSourceDir bool
+	IncludeFiles    []string
+	ExcludePatterns []string
+	Compression     Compression
+	UIDMaps         []idtools.IDMap
+	GIDMaps         []idtools.IDMap
+	ChownOpts       *idtools.Identity
 	// WhiteoutFormat is the expected on disk format for whiteout files.
 	// This format will be converted to the standard format on pack
 	// and from the standard format on unpack.
@@ -82,8 +80,10 @@ type TarOptions struct {
 	NoOverwriteDirNonDir bool
 	// For each include when creating an archive, the included name will be
 	// replaced with the matching name from this map.
-	RebaseNames map[string]string
-	InUserNS    bool
+	RebaseNames      map[string]string
+	NoLchown         bool
+	InUserNS         bool
+	IncludeSourceDir bool
 }
 
 // TarWithOptions creates an archive from the directory at `path`, only including files whose relative
@@ -161,6 +161,7 @@ func TarWithOptions(srcPath string, options *TarOptions) (io.ReadCloser, error) 
 		seen := make(map[string]bool)
 
 		for _, include := range options.IncludeFiles {
+			include := include
 			rebaseName := options.RebaseNames[include]
 
 			walkRoot := getWalkRoot(srcPath, include)

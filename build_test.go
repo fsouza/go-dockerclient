@@ -153,7 +153,7 @@ func TestBuildImageSendXRegistryConfig(t *testing.T) {
 	}
 }
 
-func unpackBodyTarball(req io.ReadCloser) (tmpdir string, err error) {
+func unpackBodyTarball(req io.Reader) (tmpdir string, err error) {
 	tmpdir, err = ioutil.TempDir("", "go-dockerclient-test")
 	if err != nil {
 		return

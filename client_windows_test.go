@@ -12,7 +12,7 @@ import (
 	"net/http/httptest"
 	"sync"
 
-	"github.com/Microsoft/go-winio"
+	winio "github.com/Microsoft/go-winio"
 )
 
 const (

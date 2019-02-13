@@ -52,6 +52,7 @@ func TestClientDoConcurrentStress(t *testing.T) {
 		{testCase: "native with client-only tls", srv: nativeSrvs[2], scheme: nativeProtocol, withTLSServer: false, withTLSClient: nativeProtocol == unixProtocol}, // TLS client only works with unix protocol
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.testCase, func(t *testing.T) {
 			reqs = nil
 			var client *Client

@@ -24,7 +24,7 @@ func (c *Client) initializeNativeClient(trFunc func() *http.Transport) {
 
 	tr := trFunc()
 	tr.Proxy = nil
-	tr.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+	tr.DialContext = func(_ context.Context, network, addr string) (net.Conn, error) {
 		return c.Dialer.Dial(unixProtocol, sockPath)
 	}
 	c.HTTPClient.Transport = tr
