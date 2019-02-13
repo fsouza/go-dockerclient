@@ -7,7 +7,6 @@ require (
 	github.com/docker/docker v0.7.3-0.20190111153827-295413c9d0e1
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.3.3
-	github.com/docker/libnetwork v0.8.0-dev.2.0.20180608203834-19279f049241 // indirect
 	github.com/gogo/protobuf v1.2.0 // indirect
 	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/google/go-cmp v0.2.0
@@ -19,8 +18,6 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
-	github.com/vishvananda/netlink v1.0.0 // indirect
-	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
 	golang.org/x/sys v0.0.0-20190109145017-48ac38b7c8cb
