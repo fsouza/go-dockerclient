@@ -48,19 +48,6 @@ type DockerInfo struct {
 	DriverStatus       [][2]string
 	SystemStatus       [][2]string
 	Plugins            PluginsInfo
-	MemoryLimit        bool
-	SwapLimit          bool
-	KernelMemory       bool
-	CPUCfsPeriod       bool `json:"CpuCfsPeriod"`
-	CPUCfsQuota        bool `json:"CpuCfsQuota"`
-	CPUShares          bool
-	CPUSet             bool
-	IPv4Forwarding     bool
-	BridgeNfIptables   bool
-	BridgeNfIP6tables  bool `json:"BridgeNfIp6tables"`
-	Debug              bool
-	OomKillDisable     bool
-	ExperimentalBuild  bool
 	NFd                int
 	NGoroutines        int
 	SystemTime         string
@@ -90,8 +77,21 @@ type DockerInfo struct {
 	Isolation          string
 	InitBinary         string
 	DefaultRuntime     string
-	LiveRestoreEnabled bool
 	Swarm              swarm.Info
+	LiveRestoreEnabled bool
+	MemoryLimit        bool
+	SwapLimit          bool
+	KernelMemory       bool
+	CPUCfsPeriod       bool `json:"CpuCfsPeriod"`
+	CPUCfsQuota        bool `json:"CpuCfsQuota"`
+	CPUShares          bool
+	CPUSet             bool
+	IPv4Forwarding     bool
+	BridgeNfIptables   bool
+	BridgeNfIP6tables  bool `json:"BridgeNfIp6tables"`
+	Debug              bool
+	OomKillDisable     bool
+	ExperimentalBuild  bool
 }
 
 // Runtime describes an OCI runtime

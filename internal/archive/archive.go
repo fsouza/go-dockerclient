@@ -77,13 +77,13 @@ type TarOptions struct {
 	WhiteoutFormat WhiteoutFormat
 	// When unpacking, specifies whether overwriting a directory with a
 	// non-directory is allowed and vice versa.
-	NoOverwriteDirNonDir bool
 	// For each include when creating an archive, the included name will be
 	// replaced with the matching name from this map.
-	RebaseNames      map[string]string
-	NoLchown         bool
-	InUserNS         bool
-	IncludeSourceDir bool
+	RebaseNames          map[string]string
+	NoLchown             bool
+	InUserNS             bool
+	IncludeSourceDir     bool
+	NoOverwriteDirNonDir bool
 }
 
 // TarWithOptions creates an archive from the directory at `path`, only including files whose relative
