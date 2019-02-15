@@ -1,6 +1,6 @@
 # go-dockerclient
 
-[![Travis Build Status](https://travis-ci.org/fsouza/go-dockerclient.svg?branch=master)](https://travis-ci.org/fsouza/go-dockerclient)
+[![Travis Build Status](https://travis-ci.com/fsouza/go-dockerclient.svg?branch=master)](https://travis-ci.com/fsouza/go-dockerclient)
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/4yusq1f9dqbicobt?svg=true)](https://ci.appveyor.com/project/fsouza/go-dockerclient)
 [![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://godoc.org/github.com/fsouza/go-dockerclient)
 
