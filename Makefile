@@ -28,7 +28,7 @@ endif
 pretest: staticcheck fmtcheck
 
 gotest:
-	go test -race ./...
+	go test -race -vet all ./...
 
 test: testdeps pretest gotest
 
