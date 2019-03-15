@@ -6,16 +6,16 @@ environment:
   GOPATH: c:\gopath
   SKIP_FMT_CHECK: 1
   matrix:
-    - GOVERSION: 1.11.5
+    - GOVERSION: 1.11.6
       DEP_TOOL: dep
       GO111MODULE: off
     - GOVERSION: 1.12
       DEP_TOOL: dep
       GO111MODULE: off
-    - GOVERSION: 1.11.5
+    - GOVERSION: 1.11.6
       DEP_TOOL: mod
       GO111MODULE: on
-    - GOVERSION: 1.12
+    - GOVERSION: 1.12.1
       DEP_TOOL: mod
       GO111MODULE: on
 install:
