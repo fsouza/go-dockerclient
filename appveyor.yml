@@ -1,3 +1,7 @@
+labels:
+  - &go111 "1.11.6"
+  - &go112 "1.12.1"
+
 version: "{build}"
 platform: x64
 clone_depth: 2
@@ -6,16 +10,16 @@ environment:
   GOPATH: c:\gopath
   SKIP_FMT_CHECK: 1
   matrix:
-    - GOVERSION: 1.11.6
+    - GOVERSION: *go111
       DEP_TOOL: dep
       GO111MODULE: off
-    - GOVERSION: 1.12
+    - GOVERSION: *go112
       DEP_TOOL: dep
       GO111MODULE: off
-    - GOVERSION: 1.11.6
+    - GOVERSION: *go111
       DEP_TOOL: mod
       GO111MODULE: on
-    - GOVERSION: 1.12.1
+    - GOVERSION: *go112
       DEP_TOOL: mod
       GO111MODULE: on
 install:
