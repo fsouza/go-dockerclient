@@ -28,7 +28,6 @@ func CanonicalTarNameForPath(p string) (string, error) {
 		return "", fmt.Errorf("Windows path contains forward slash: %s", p)
 	}
 	return strings.Replace(p, string(os.PathSeparator), "/", -1), nil
-
 }
 
 // fixVolumePathPrefix does platform specific processing to ensure that if
@@ -56,7 +55,7 @@ func getFileIdentity(stat interface{}) (idtools.Identity, error) {
 // chmodTarEntry is used to adjust the file permissions used in tar header based
 // on the platform the archival is done.
 func chmodTarEntry(perm os.FileMode) os.FileMode {
-	//perm &= 0755 // this 0-ed out tar flags (like link, regular file, directory marker etc.)
+	// perm &= 0755 // this 0-ed out tar flags (like link, regular file, directory marker etc.)
 	permPart := perm & os.ModePerm
 	noPermPart := perm &^ os.ModePerm
 	// Add the x bit: make everything +x from windows

@@ -337,7 +337,8 @@ func (c *Client) CreatePlugin(opts CreatePluginOptions) (string, error) {
 	path := "/plugins/create?" + queryString(opts)
 	resp, err := c.do("POST", path, doOptions{
 		data:    opts.Path,
-		context: opts.Context})
+		context: opts.Context,
+	})
 	if err != nil {
 		return "", err
 	}

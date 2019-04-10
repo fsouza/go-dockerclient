@@ -90,7 +90,6 @@ func TestListNodes(t *testing.T) {
 	if !reflect.DeepEqual(nodes, expected) {
 		t.Errorf("ListNodes: Expected %#v. Got %#v.", expected, nodes)
 	}
-
 }
 
 func TestInspectNode(t *testing.T) {
@@ -174,7 +173,6 @@ func TestInspectNode(t *testing.T) {
 	if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {
 		t.Errorf("InspectNode(%q): Wrong path in request. Want %q. Got %q.", id, expectedURL.Path, gotPath)
 	}
-
 }
 
 func TestInspectNodeNotFound(t *testing.T) {

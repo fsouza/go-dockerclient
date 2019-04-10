@@ -500,7 +500,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		}}
 	}
 
-	//the container may not have cmd when using a Dockerfile
+	// the container may not have cmd when using a Dockerfile
 	var path string
 	var args []string
 	if len(config.Cmd) == 1 {
@@ -994,7 +994,7 @@ func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	//we did not use that Dockerfile to build image cause we are a fake Docker daemon
+	// we did not use that Dockerfile to build image cause we are a fake Docker daemon
 	image := docker.Image{
 		ID:      s.generateID(),
 		Created: time.Now(),

@@ -13,54 +13,51 @@ import (
 	"testing"
 )
 
-var (
-	expectPluginDetail = PluginDetail{
-		ID:     "5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078",
-		Name:   "tiborvass/sample-volume-plugin",
-		Tag:    "latest",
-		Active: true,
-		Settings: PluginSettings{
-			Env:     []string{"DEBUG=0"},
-			Args:    nil,
-			Devices: nil,
+var expectPluginDetail = PluginDetail{
+	ID:     "5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078",
+	Name:   "tiborvass/sample-volume-plugin",
+	Tag:    "latest",
+	Active: true,
+	Settings: PluginSettings{
+		Env:     []string{"DEBUG=0"},
+		Args:    nil,
+		Devices: nil,
+	},
+	Config: PluginConfig{
+		Description:   "A sample volume plugin for Docker",
+		Documentation: "https://docs.docker.com/engine/extend/plugins/",
+		Interface: PluginInterface{
+			Types:  []string{"docker.volumedriver/1.0"},
+			Socket: "plugins.sock",
 		},
-		Config: PluginConfig{
-			Description:   "A sample volume plugin for Docker",
-			Documentation: "https://docs.docker.com/engine/extend/plugins/",
-			Interface: PluginInterface{
-				Types:  []string{"docker.volumedriver/1.0"},
-				Socket: "plugins.sock",
-			},
-			Entrypoint: []string{
-				"/usr/bin/sample-volume-plugin",
-				"/data",
-			},
-			WorkDir:         "",
-			User:            PluginUser{},
-			Network:         PluginNetwork{Type: ""},
-			Linux:           PluginLinux{Capabilities: nil, AllowAllDevices: false, Devices: nil},
-			Mounts:          nil,
-			PropagatedMount: "/data",
-			Env: []PluginEnv{
-				{
-					Name:        "DEBUG",
-					Description: "If set, prints debug messages",
-					Settable:    nil,
-					Value:       "0",
-				},
-			},
-			Args: PluginArgs{
-				Name:        "args",
-				Description: "command line arguments",
+		Entrypoint: []string{
+			"/usr/bin/sample-volume-plugin",
+			"/data",
+		},
+		WorkDir:         "",
+		User:            PluginUser{},
+		Network:         PluginNetwork{Type: ""},
+		Linux:           PluginLinux{Capabilities: nil, AllowAllDevices: false, Devices: nil},
+		Mounts:          nil,
+		PropagatedMount: "/data",
+		Env: []PluginEnv{
+			{
+				Name:        "DEBUG",
+				Description: "If set, prints debug messages",
 				Settable:    nil,
-				Value:       []string{},
+				Value:       "0",
 			},
 		},
-	}
-)
+		Args: PluginArgs{
+			Name:        "args",
+			Description: "command line arguments",
+			Settable:    nil,
+			Value:       []string{},
+		},
+	},
+}
 
-const (
-	jsonPluginDetail = `{
+const jsonPluginDetail = `{
     "Id": "5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078",
     "Name": "tiborvass/sample-volume-plugin",
     "Tag": "latest",
@@ -113,7 +110,6 @@ const (
       }
     }
   }`
-)
 
 func TestListPlugins(t *testing.T) {
 	t.Parallel()
@@ -149,7 +145,8 @@ func TestListFilteredPlugins(t *testing.T) {
 				"capability": {"volumedriver"},
 				"enabled":    {"true"},
 			},
-			Context: context.Background()})
+			Context: context.Background(),
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +188,8 @@ func TestGetPluginPrivileges(t *testing.T) {
 			Name:        "network",
 			Description: "",
 			Value:       []string{"host"},
-		}}
+		},
+	}
 	pluginPrivileges, err := client.GetPluginPrivileges(name, context.Background())
 	if err != nil {
 		t.Fatal(err)

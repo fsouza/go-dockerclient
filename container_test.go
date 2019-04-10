@@ -697,7 +697,6 @@ func TestInspectContainerNetwork(t *testing.T) {
 	} else {
 		t.Errorf("InspectContainerNetworks(%q): No method Networks for NetworkSettings", id)
 	}
-
 }
 
 func TestInspectContainerNegativeSwap(t *testing.T) {
@@ -2131,7 +2130,6 @@ func TestUploadToContainer(t *testing.T) {
 	if pathParam := req.URL.Query().Get("path"); pathParam != "abc" {
 		t.Errorf("ListImages({Path:abc}): Wrong parameter. Want path=abc.  Got path=%s", pathParam)
 	}
-
 }
 
 func TestDownloadFromContainer(t *testing.T) {

@@ -81,12 +81,10 @@ func ExampleClient_AddEventListener() {
 	}
 
 	defer func() {
-
 		err = client.RemoveEventListener(listener)
 		if err != nil {
 			log.Fatal(err)
 		}
-
 	}()
 
 	timeout := time.After(1 * time.Second)
@@ -99,7 +97,6 @@ func ExampleClient_AddEventListener() {
 			return
 		}
 	}
-
 }
 
 func ExampleEnv_Map() {
