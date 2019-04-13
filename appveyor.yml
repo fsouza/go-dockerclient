@@ -6,10 +6,10 @@ environment:
   GOPATH: c:\gopath
   SKIP_FMT_CHECK: 1
   matrix:
-    - GOVERSION: &go111 "1.11.8"
+    - GOVERSION: &go111 "1.11.9"
       DEP_TOOL: dep
       GO111MODULE: off
-    - GOVERSION: &go112 "1.12.3"
+    - GOVERSION: &go112 "1.12.4"
       DEP_TOOL: dep
       GO111MODULE: off
     - GOVERSION: *go111
