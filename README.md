@@ -113,11 +113,11 @@ All development commands can be seen in the [Makefile](Makefile).
 Commited code must pass:
 
 * [staticcheck](https://staticcheck.io/)
-* [gofmt](https://golang.org/cmd/gofmt)
+* [gofumpt](https://github.com/mvdan/gofumpt)
 * [go test](https://golang.org/cmd/go/#hdr-Test_packages)
 
-Running `make test` will check all of these. If your editor does not
-automatically call ``gofmt -s``, make sure you invoke it manually.
+Running ``make test`` will check all of these. You can reformat the code with
+``make fmt``.
 
 ## Vendoring / Modules
 
