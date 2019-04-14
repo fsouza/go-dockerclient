@@ -7,7 +7,7 @@
 	test \
 	integration
 
-DEP_TOOL ?= dep
+DEP_TOOL ?= mod
 
 all: test
 
