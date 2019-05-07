@@ -7,10 +7,10 @@ environment:
   GOPROXY: https://proxy.golang.org
   SKIP_FMT_CHECK: 1
   matrix:
-    - GOVERSION: &go111 "1.11.9"
+    - GOVERSION: &go111 "1.11.10"
       DEP_TOOL: dep
       GO111MODULE: off
-    - GOVERSION: &go112 "1.12.4"
+    - GOVERSION: &go112 "1.12.5"
       DEP_TOOL: dep
       GO111MODULE: off
     - GOVERSION: *go111
