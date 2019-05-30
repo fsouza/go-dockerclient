@@ -225,6 +225,7 @@ type EndpointConfig struct {
 	GlobalIPv6Address   string              `json:"GlobalIPv6Address,omitempty" yaml:"GlobalIPv6Address,omitempty" toml:"GlobalIPv6Address,omitempty"`
 	GlobalIPv6PrefixLen int                 `json:"GlobalIPv6PrefixLen,omitempty" yaml:"GlobalIPv6PrefixLen,omitempty" toml:"GlobalIPv6PrefixLen,omitempty"`
 	MacAddress          string              `json:"MacAddress,omitempty" yaml:"MacAddress,omitempty" toml:"MacAddress,omitempty"`
+	DriverOpts          map[string]string   `json:"DriverOpts,omitempty" yaml:"DriverOpts,omitempty" toml:"DriverOpts,omitempty"`
 }
 
 // EndpointIPAMConfig represents IPAM configurations for an
