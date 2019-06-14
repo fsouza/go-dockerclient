@@ -157,7 +157,7 @@ func TestListFilteredPlugins(t *testing.T) {
 
 func TestListFilteredPluginsFailure(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		status  int
 		message string
 	}{

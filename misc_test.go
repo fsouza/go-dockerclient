@@ -184,7 +184,7 @@ func TestInfoError(t *testing.T) {
 
 func TestParseRepositoryTag(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input        string
 		expectedRepo string
 		expectedTag  string

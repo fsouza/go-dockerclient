@@ -24,7 +24,7 @@ import (
 func TestStateString(t *testing.T) {
 	t.Parallel()
 	started := time.Now().Add(-3 * time.Hour)
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    State
 		expected string
@@ -52,7 +52,7 @@ func TestStateString(t *testing.T) {
 func TestStateStateString(t *testing.T) {
 	t.Parallel()
 	started := time.Now().Add(-3 * time.Hour)
-	var tests = []struct {
+	tests := []struct {
 		input    State
 		expected string
 	}{
@@ -127,7 +127,7 @@ func TestListContainers(t *testing.T) {
 
 func TestListContainersParams(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input  ListContainersOptions
 		params map[string][]string
 	}{
@@ -173,7 +173,7 @@ func TestListContainersParams(t *testing.T) {
 
 func TestListContainersFailure(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		status  int
 		message string
 	}{
@@ -1518,7 +1518,7 @@ func TestCommitContainerParams(t *testing.T) {
 	t.Parallel()
 	cfg := Config{Memory: 67108864}
 	json, _ := json.Marshal(&cfg)
-	var tests = []struct {
+	tests := []struct {
 		input  CommitContainerOptions
 		params map[string][]string
 		body   []byte
@@ -1635,7 +1635,7 @@ func TestAttachToContainerLogs(t *testing.T) {
 
 func TestAttachToContainer(t *testing.T) {
 	t.Parallel()
-	var reader = strings.NewReader("send value")
+	reader := strings.NewReader("send value")
 	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
@@ -1675,7 +1675,7 @@ func TestAttachToContainer(t *testing.T) {
 
 func TestAttachToContainerSentinel(t *testing.T) {
 	t.Parallel()
-	var reader = strings.NewReader("send value")
+	reader := strings.NewReader("send value")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
@@ -1709,7 +1709,7 @@ func TestAttachToContainerSentinel(t *testing.T) {
 
 func TestAttachToContainerNilStdout(t *testing.T) {
 	t.Parallel()
-	var reader = strings.NewReader("send value")
+	reader := strings.NewReader("send value")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
@@ -1737,7 +1737,7 @@ func TestAttachToContainerNilStdout(t *testing.T) {
 
 func TestAttachToContainerNilStderr(t *testing.T) {
 	t.Parallel()
-	var reader = strings.NewReader("send value")
+	reader := strings.NewReader("send value")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
@@ -1764,7 +1764,7 @@ func TestAttachToContainerNilStderr(t *testing.T) {
 
 func TestAttachToContainerStdinOnly(t *testing.T) {
 	t.Parallel()
-	var reader = strings.NewReader("send value")
+	reader := strings.NewReader("send value")
 	serverFinished := make(chan struct{})
 	clientFinished := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2061,7 +2061,7 @@ func TestLogsNoContainer(t *testing.T) {
 
 func TestNoSuchContainerError(t *testing.T) {
 	t.Parallel()
-	var err = &NoSuchContainer{ID: "i345"}
+	err := &NoSuchContainer{ID: "i345"}
 	expected := "No such container: i345"
 	if got := err.Error(); got != expected {
 		t.Errorf("NoSuchContainer: wrong message. Want %q. Got %q.", expected, got)
@@ -2070,7 +2070,7 @@ func TestNoSuchContainerError(t *testing.T) {
 
 func TestNoSuchContainerErrorMessage(t *testing.T) {
 	t.Parallel()
-	var err = &NoSuchContainer{ID: "i345", Err: errors.New("some advanced error info")}
+	err := &NoSuchContainer{ID: "i345", Err: errors.New("some advanced error info")}
 	expected := "some advanced error info"
 	if got := err.Error(); got != expected {
 		t.Errorf("NoSuchContainer: wrong message. Want %q. Got %q.", expected, got)

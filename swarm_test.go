@@ -88,7 +88,7 @@ func TestLeaveSwarm(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	var testData = []struct {
+	testData := []struct {
 		force       bool
 		expectedURI string
 	}{

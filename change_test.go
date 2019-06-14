@@ -8,7 +8,7 @@ import "testing"
 
 func TestChangeString(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		change   Change
 		expected string
 	}{

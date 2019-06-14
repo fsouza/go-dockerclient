@@ -14,7 +14,7 @@ import (
 
 func TestGet(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    []string
 		query    string
 		expected string
@@ -39,7 +39,7 @@ func TestGet(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    []string
 		query    string
 		expected bool
@@ -63,7 +63,7 @@ func TestExists(t *testing.T) {
 
 func TestGetBool(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    string
 		expected bool
 	}{
@@ -96,7 +96,7 @@ func TestGetBool(t *testing.T) {
 
 func TestSetBool(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    bool
 		expected string
 	}{
@@ -114,7 +114,7 @@ func TestSetBool(t *testing.T) {
 
 func TestGetInt(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    string
 		expected int
 	}{
@@ -138,7 +138,7 @@ func TestGetInt(t *testing.T) {
 
 func TestSetInt(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    int
 		expected string
 	}{
@@ -164,7 +164,7 @@ func TestSetInt(t *testing.T) {
 
 func TestGetInt64(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    string
 		expected int64
 	}{
@@ -188,7 +188,7 @@ func TestGetInt64(t *testing.T) {
 
 func TestSetInt64(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    int64
 		expected string
 	}{
@@ -258,7 +258,7 @@ func TestGetJSONFailure(t *testing.T) {
 
 func TestSetJSON(t *testing.T) {
 	t.Parallel()
-	var p1 = struct {
+	p1 := struct {
 		Name string `json:"name"`
 		Age  int    `json:"age"`
 	}{Name: "Gopher", Age: 5}
@@ -294,7 +294,7 @@ func TestSetJSONFailure(t *testing.T) {
 
 func TestGetList(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    string
 		expected []string
 	}{
@@ -339,7 +339,7 @@ func TestSet(t *testing.T) {
 
 func TestDecode(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input       string
 		expectedOut []string
 		expectedErr string
@@ -378,7 +378,7 @@ func TestDecode(t *testing.T) {
 func TestSetAuto(t *testing.T) {
 	t.Parallel()
 	buf := bytes.NewBufferString("oi")
-	var tests = []struct {
+	tests := []struct {
 		input    interface{}
 		expected string
 	}{
@@ -403,7 +403,7 @@ func TestSetAuto(t *testing.T) {
 
 func TestMap(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		input    []string
 		expected map[string]string
 	}{

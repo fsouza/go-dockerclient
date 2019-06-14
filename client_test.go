@@ -251,7 +251,7 @@ func TestNewClientNoSchemeEndpoint(t *testing.T) {
 
 func TestNewTLSClient(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		endpoint string
 		expected string
 	}{
@@ -289,7 +289,7 @@ func TestEndpoint(t *testing.T) {
 
 func TestGetURL(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		endpoint string
 		path     string
 		expected string
@@ -318,7 +318,7 @@ func TestGetURL(t *testing.T) {
 
 func TestGetFakeNativeURL(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		endpoint string
 		path     string
 		expected string
@@ -365,7 +365,7 @@ func TestQueryString(t *testing.T) {
 	v := float32(2.4)
 	f32QueryString := fmt.Sprintf("w=%s&x=10&y=10.35", strconv.FormatFloat(float64(v), 'f', -1, 64))
 	jsonPerson := url.QueryEscape(`{"Name":"gopher","age":4}`)
-	var tests = []struct {
+	tests := []struct {
 		input interface{}
 		want  string
 	}{
@@ -398,7 +398,7 @@ func TestQueryString(t *testing.T) {
 
 func TestAPIVersions(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		a                              string
 		b                              string
 		expectedALessThanB             bool

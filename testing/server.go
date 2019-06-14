@@ -1351,7 +1351,7 @@ func (s *DockerServer) createNetwork(w http.ResponseWriter, r *http.Request) {
 	s.networks = append(s.networks, &network)
 	s.netMut.Unlock()
 	w.WriteHeader(http.StatusCreated)
-	var c = struct{ ID string }{ID: network.ID}
+	c := struct{ ID string }{ID: network.ID}
 	json.NewEncoder(w).Encode(c)
 }
 

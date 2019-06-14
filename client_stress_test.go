@@ -36,7 +36,7 @@ func TestClientDoConcurrentStress(t *testing.T) {
 		defer cleanup()
 		nativeSrvs = append(nativeSrvs, srv)
 	}
-	var tests = []struct {
+	tests := []struct {
 		testCase      string
 		srv           *httptest.Server
 		scheme        string

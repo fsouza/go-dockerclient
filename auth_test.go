@@ -17,7 +17,7 @@ import (
 
 func TestAuthConfigurationSearchPath(t *testing.T) {
 	t.Parallel()
-	var testData = []struct {
+	testData := []struct {
 		dockerConfigEnv string
 		homeEnv         string
 		expectedPaths   []string

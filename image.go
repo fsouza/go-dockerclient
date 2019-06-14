@@ -609,7 +609,7 @@ func isURL(u string) bool {
 }
 
 func headersWithAuth(auths ...registryAuth) (map[string]string, error) {
-	var headers = make(map[string]string)
+	headers := make(map[string]string)
 
 	for _, auth := range auths {
 		if auth.isEmpty() {
