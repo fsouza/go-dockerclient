@@ -124,12 +124,13 @@ Commited code must pass:
 Running ``make test`` will check all of these. You can reformat the code with
 ``make fmt``.
 
-## Vendoring / Modules
+## Modules
 
-go-dockerclient supports [dep](https://github.com/golang/dep/) for vendoring
-and can also be installed as a module. If you're using dep or Go modules, you
-should be able to pick go-dockerclient releases and get the proper
-dependencies.
+go-dockerclient supports Go modules.
+
+If you're using dep, you can check the [releases
+page](https://github.com/fsouza/go-dockerclient/releases) for the latest
+release fully compatible with dep.
 
 With other vendoring tools, users might need to specify go-dockerclient's
 dependencies manually.
