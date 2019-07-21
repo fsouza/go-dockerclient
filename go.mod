@@ -4,7 +4,7 @@ go 1.11
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-	github.com/Microsoft/go-winio v0.4.12
+	github.com/Microsoft/go-winio v0.4.13
 	github.com/Microsoft/hcsshim v0.8.6 // indirect
 	github.com/containerd/continuity v0.0.0-20181203112020-004b46473808 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
