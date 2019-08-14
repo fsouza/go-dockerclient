@@ -94,9 +94,11 @@ func cfgPaths(dockerConfigEnv string, homeEnv string) []string {
 	var paths []string
 	if dockerConfigEnv != "" {
 		paths = append(paths, path.Join(dockerConfigEnv, "config.json"))
+		paths = append(paths, path.Join(dockerConfigEnv, "plaintext-passwords.json"))
 	}
 	if homeEnv != "" {
 		paths = append(paths, path.Join(homeEnv, ".docker", "config.json"))
+		paths = append(paths, path.Join(homeEnv, ".docker", "plaintext-passwords.json"))
 		paths = append(paths, path.Join(homeEnv, ".dockercfg"))
 	}
 	return paths
