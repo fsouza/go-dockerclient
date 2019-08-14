@@ -23,9 +23,9 @@ func TestAuthConfigurationSearchPath(t *testing.T) {
 		expectedPaths   []string
 	}{
 		{"", "", []string{}},
-		{"", "home", []string{path.Join("home", ".docker", "config.json"), path.Join("home", ".dockercfg")}},
+		{"", "home", []string{path.Join("home", ".docker", "config.json"), path.Join("home", ".docker", "plaintext-passwords.json"), path.Join("home", ".dockercfg")}},
 		{"docker_config", "", []string{path.Join("docker_config", "config.json")}},
-		{"a", "b", []string{path.Join("a", "config.json"), path.Join("b", ".docker", "config.json"), path.Join("b", ".dockercfg")}},
+		{"a", "b", []string{path.Join("a", "config.json"), path.Join("b", ".docker", "config.json"), path.Join("b", ".docker", "plaintext-passwords.json"), path.Join("b", ".dockercfg")}},
 	}
 	for _, tt := range testData {
 		tt := tt
