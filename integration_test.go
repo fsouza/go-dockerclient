@@ -85,6 +85,7 @@ func pullImage(t *testing.T) string {
 	pullOpts := PullImageOptions{
 		Repository:   imageName,
 		OutputStream: &buf,
+		Platform:     runtime.GOOS + "/" + runtime.GOARCH,
 	}
 	client, err := NewClientFromEnv()
 	if err != nil {

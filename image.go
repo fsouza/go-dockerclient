@@ -88,7 +88,7 @@ var (
 	// InputStream are provided in BuildImageOptions
 	ErrMultipleContexts = errors.New("image build may not be provided BOTH context dir and input stream")
 
-	// ErrMustSpecifyNames is the error rreturned when the Names field on
+	// ErrMustSpecifyNames is the error returned when the Names field on
 	// ExportImagesOptions is nil or empty
 	ErrMustSpecifyNames = errors.New("must specify at least one name to export")
 )
@@ -288,6 +288,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 type PullImageOptions struct {
 	Repository string `qs:"fromImage"`
 	Tag        string
+	Platform   string
 
 	// Only required for Docker Engine 1.9 or 1.10 w/ Remote API < 1.21
 	// and Docker Engine < 1.9
