@@ -288,7 +288,7 @@ func (c *Client) PushImage(opts PushImageOptions, auth AuthConfiguration) error 
 type PullImageOptions struct {
 	Repository string `qs:"fromImage"`
 	Tag        string
-	Platform   string
+	Platform   string `ver:"1.32"`
 
 	// Only required for Docker Engine 1.9 or 1.10 w/ Remote API < 1.21
 	// and Docker Engine < 1.9
@@ -319,12 +319,15 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 		opts.Repository = parts[0]
 		opts.Tag = parts[1]
 	}
-	return c.createImage(queryString(&opts), headers, nil, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
+	return c.createImage(&opts, headers, nil, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
 }
 
-func (c *Client) createImage(qs string, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool, timeout time.Duration, context context.Context) error {
-	path := "/images/create?" + qs
-	return c.stream("POST", path, streamOptions{
+func (c *Client) createImage(opts interface{}, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool, timeout time.Duration, context context.Context) error {
+	url, err := c.getPath("/images/create", opts)
+	if err != nil {
+		return err
+	}
+	return c.streamUrl("POST", url, streamOptions{
 		setRawTerminal:    true,
 		headers:           headers,
 		in:                in,
@@ -436,7 +439,7 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 		opts.InputStream = f
 		opts.Source = "-"
 	}
-	return c.createImage(queryString(&opts), nil, opts.InputStream, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
+	return c.createImage(&opts, nil, opts.InputStream, opts.OutputStream, opts.RawJSONStream, opts.InactivityTimeout, opts.Context)
 }
 
 // BuildImageOptions present the set of informations available for building an

@@ -527,7 +527,20 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 			return err
 		}
 	}
-	req, err := http.NewRequest(method, c.getURL(path), streamOptions.in)
+	return c.streamUrl(method, c.getURL(path), streamOptions)
+}
+
+func (c *Client) streamUrl(method, url string, streamOptions streamOptions) error {
+	if (method == "POST" || method == "PUT") && streamOptions.in == nil {
+		streamOptions.in = bytes.NewReader(nil)
+	}
+	if !c.SkipServerVersionCheck && c.expectedAPIVersion == nil {
+		err := c.checkAPIVersion()
+		if err != nil {
+			return err
+		}
+	}
+	req, err := http.NewRequest(method, url, streamOptions.in)
 	if err != nil {
 		return err
 	}
@@ -858,6 +871,28 @@ func (c *Client) getURL(path string) string {
 	return fmt.Sprintf("%s%s", urlStr, path)
 }
 
+func (c *Client) getPath(basepath string, opts interface{}) (string, error) {
+	urlStr := strings.TrimRight(c.endpointURL.String(), "/")
+	if c.endpointURL.Scheme == unixProtocol || c.endpointURL.Scheme == namedPipeProtocol {
+		urlStr = ""
+	}
+	queryStr, requiredAPIVersion := queryStringVersion(opts)
+
+	if c.requestedAPIVersion != nil {
+		if c.requestedAPIVersion.GreaterThanOrEqualTo(requiredAPIVersion) {
+			return fmt.Sprintf("%s/v%s%s?%s", urlStr, c.requestedAPIVersion, basepath, queryStr), nil
+		} else {
+			return "", fmt.Errorf("API %s requires version %s, requested version %s is insufficient",
+				basepath, requiredAPIVersion, c.requestedAPIVersion)
+		}
+	}
+	if requiredAPIVersion != nil {
+		return fmt.Sprintf("%s/v%s%s?%s", urlStr, requiredAPIVersion, basepath, queryStr), nil
+	} else {
+		return fmt.Sprintf("%s%s?%s", urlStr, basepath, queryStr), nil
+	}
+}
+
 // getFakeNativeURL returns the URL needed to make an HTTP request over a UNIX
 // domain socket to the given path.
 func (c *Client) getFakeNativeURL(path string) string {
@@ -874,17 +909,18 @@ func (c *Client) getFakeNativeURL(path string) string {
 	return fmt.Sprintf("%s%s", urlStr, path)
 }
 
-func queryString(opts interface{}) string {
+func queryStringVersion(opts interface{}) (string, APIVersion) {
 	if opts == nil {
-		return ""
+		return "", nil
 	}
 	value := reflect.ValueOf(opts)
 	if value.Kind() == reflect.Ptr {
 		value = value.Elem()
 	}
 	if value.Kind() != reflect.Struct {
-		return ""
+		return "", nil
 	}
+	var apiVersion APIVersion = nil
 	items := url.Values(map[string][]string{})
 	for i := 0; i < value.NumField(); i++ {
 		field := value.Type().Field(i)
@@ -897,53 +933,80 @@ func queryString(opts interface{}) string {
 		} else if key == "-" {
 			continue
 		}
-		addQueryStringValue(items, key, value.Field(i))
+		if addQueryStringValue(items, key, value.Field(i)) {
+			verstr := field.Tag.Get("ver")
+			if verstr != "" {
+				ver, _ := NewAPIVersion(verstr)
+				if apiVersion == nil {
+					apiVersion = ver
+				} else if ver.GreaterThan(apiVersion) {
+					apiVersion = ver
+				}
+			}
+		}
 	}
-	return items.Encode()
+	return items.Encode(), apiVersion
 }
 
-func addQueryStringValue(items url.Values, key string, v reflect.Value) {
+func queryString(opts interface{}) string {
+	s, _ := queryStringVersion(opts)
+	return s
+}
+
+func addQueryStringValue(items url.Values, key string, v reflect.Value) bool {
 	switch v.Kind() {
 	case reflect.Bool:
 		if v.Bool() {
 			items.Add(key, "1")
+			return true
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if v.Int() > 0 {
 			items.Add(key, strconv.FormatInt(v.Int(), 10))
+			return true
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if v.Uint() > 0 {
 			items.Add(key, strconv.FormatUint(v.Uint(), 10))
+			return true
 		}
 	case reflect.Float32, reflect.Float64:
 		if v.Float() > 0 {
 			items.Add(key, strconv.FormatFloat(v.Float(), 'f', -1, 64))
+			return true
 		}
 	case reflect.String:
 		if v.String() != "" {
 			items.Add(key, v.String())
+			return true
 		}
 	case reflect.Ptr:
 		if !v.IsNil() {
 			if b, err := json.Marshal(v.Interface()); err == nil {
 				items.Add(key, string(b))
+				return true
 			}
 		}
 	case reflect.Map:
 		if len(v.MapKeys()) > 0 {
 			if b, err := json.Marshal(v.Interface()); err == nil {
 				items.Add(key, string(b))
+				return true
 			}
 		}
 	case reflect.Array, reflect.Slice:
 		vLen := v.Len()
+		var valuesAdded int
 		if vLen > 0 {
 			for i := 0; i < vLen; i++ {
-				addQueryStringValue(items, key, v.Index(i))
+				if addQueryStringValue(items, key, v.Index(i)) {
+					valuesAdded += 1
+				}
 			}
 		}
+		return valuesAdded > 0
 	}
+	return false
 }
 
 // Error represents failures in the API. It represents a failure from the API.
