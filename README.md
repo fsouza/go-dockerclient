@@ -91,7 +91,8 @@ func main() {
 
 If using [docker-machine](https://docs.docker.com/machine/), or another
 application that exports environment variables `DOCKER_HOST`,
-`DOCKER_TLS_VERIFY`, `DOCKER_CERT_PATH`, you can use NewClientFromEnv.
+`DOCKER_TLS_VERIFY`, `DOCKER_CERT_PATH`, `DOCKER_API_VERSION`, you can use
+NewClientFromEnv.
 
 
 ```go
