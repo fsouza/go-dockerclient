@@ -1036,6 +1036,7 @@ func TestExportImages(t *testing.T) {
 	var buf bytes.Buffer
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
+	client.requestedAPIVersion = apiVersion125
 	opts := ExportImagesOptions{Names: []string{"testimage1", "testimage2:latest"}, OutputStream: &buf}
 	err := client.ExportImages(opts)
 	if nil != err {
@@ -1045,10 +1046,10 @@ func TestExportImages(t *testing.T) {
 	if req.Method != "GET" {
 		t.Errorf("ExportImage: wrong method. Expected %q. Got %q.", "GET", req.Method)
 	}
-	expected := "http://localhost:4243/images/get?names=testimage1&names=testimage2%3Alatest"
+	expected := "http://localhost:4243/v1.25/images/get?names=testimage1&names=testimage2%3Alatest"
 	got := req.URL.String()
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("ExportIMage: wrong path. Expected %q. Got %q.", expected, got)
+		t.Errorf("ExportImage: wrong path. Expected %q. Got %q.", expected, got)
 	}
 }
 

@@ -398,7 +398,13 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 	if opts.Names == nil || len(opts.Names) == 0 {
 		return ErrMustSpecifyNames
 	}
-	return c.stream("GET", "/images/get?"+queryString(&opts), streamOptions{
+	// TODO API < 1.25 allows multiple name values
+	// 1.25 says name must be a comma separated list
+	exporturl, err :=  c.getPath("/images/get", &opts)
+	if err != nil {
+		return err
+	}
+	return c.streamUrl("GET", exporturl, streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
