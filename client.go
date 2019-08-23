@@ -262,12 +262,14 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 }
 
 // NewClientFromEnv returns a Client instance ready for communication created from
-// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH.
+// Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, DOCKER_CERT_PATH,
+// and DOCKER_API_VERSION.
 //
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
+// See https://github.com/moby/moby/blob/28d7dba41d0c0d9c7f0dafcc79d3c59f2b3f5dc3/client/options.go#L51
 func NewClientFromEnv() (*Client, error) {
-	client, err := NewVersionedClientFromEnv("")
+	client, err := NewVersionedClientFromEnv(os.Getenv("DOCKER_API_VERSION"))
 	if err != nil {
 		return nil, err
 	}
