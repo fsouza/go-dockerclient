@@ -366,23 +366,24 @@ func TestQueryString(t *testing.T) {
 	f32QueryString := fmt.Sprintf("w=%s&x=10&y=10.35", strconv.FormatFloat(float64(v), 'f', -1, 64))
 	jsonPerson := url.QueryEscape(`{"Name":"gopher","age":4}`)
 	tests := []struct {
-		input interface{}
-		want  string
+		input   interface{}
+		want    string
+		wantAPI APIVersion
 	}{
-		{&ListContainersOptions{All: true}, "all=1"},
-		{ListContainersOptions{All: true}, "all=1"},
-		{ListContainersOptions{Before: "something"}, "before=something"},
-		{ListContainersOptions{Before: "something", Since: "other"}, "before=something&since=other"},
-		{ListContainersOptions{Filters: map[string][]string{"status": {"paused", "running"}}}, "filters=%7B%22status%22%3A%5B%22paused%22%2C%22running%22%5D%7D"},
-		{dumb{X: 10, Y: 10.35000}, "x=10&y=10.35"},
-		{dumb{W: v, X: 10, Y: 10.35000}, f32QueryString},
-		{dumb{X: 10, Y: 10.35000, Z: 10}, "x=10&y=10.35&zee=10"},
-		{dumb{v: 4, X: 10, Y: 10.35000}, "x=10&y=10.35"},
-		{dumb{T: 10, Y: 10.35000}, "y=10.35"},
-		{dumb{Person: &person{Name: "gopher", Age: 4}}, "p=" + jsonPerson},
-		{nil, ""},
-		{10, ""},
-		{"not_a_struct", ""},
+		{&ListContainersOptions{All: true}, "all=1", nil},
+		{ListContainersOptions{All: true}, "all=1", nil},
+		{ListContainersOptions{Before: "something"}, "before=something", nil},
+		{ListContainersOptions{Before: "something", Since: "other"}, "before=something&since=other", nil},
+		{ListContainersOptions{Filters: map[string][]string{"status": {"paused", "running"}}}, "filters=%7B%22status%22%3A%5B%22paused%22%2C%22running%22%5D%7D", nil},
+		{dumb{X: 10, Y: 10.35000}, "x=10&y=10.35", apiVersion119},
+		{dumb{W: v, X: 10, Y: 10.35000}, f32QueryString, apiVersion124},
+		{dumb{X: 10, Y: 10.35000, Z: 10}, "x=10&y=10.35&zee=10", apiVersion119},
+		{dumb{v: 4, X: 10, Y: 10.35000}, "x=10&y=10.35", apiVersion119},
+		{dumb{T: 10, Y: 10.35000}, "y=10.35", nil},
+		{dumb{Person: &person{Name: "gopher", Age: 4}}, "p=" + jsonPerson, nil},
+		{nil, "", nil},
+		{10, "", nil},
+		{"not_a_struct", "", nil},
 	}
 	for _, tt := range tests {
 		test := tt
@@ -391,6 +392,13 @@ func TestQueryString(t *testing.T) {
 			got := queryString(test.input)
 			if got != test.want {
 				t.Errorf("queryString(%v). Want %q. Got %q.", test.input, test.want, got)
+			}
+			gotstring, gotAPI := queryStringVersion(test.input)
+			if gotstring != test.want {
+				t.Errorf("queryStringVersion(%v). Want %q. Got %q.", test.input, test.want, gotstring)
+			}
+			if gotAPI.compare(test.wantAPI) != 0 {
+				t.Errorf("queryStringVersion(%v). Want API %q. Got API %q.", test.input, test.wantAPI, gotAPI)
 			}
 		})
 	}
@@ -904,8 +912,8 @@ type person struct {
 type dumb struct {
 	T      int `qs:"-"`
 	v      int
-	W      float32
-	X      int
+	W      float32 `ver:"1.24"`
+	X      int     `ver:"1.19"`
 	Y      float64
 	Z      int     `qs:"zee"`
 	Person *person `qs:"p"`
