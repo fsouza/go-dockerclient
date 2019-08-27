@@ -269,11 +269,12 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 // See https://github.com/moby/moby/blob/28d7dba41d0c0d9c7f0dafcc79d3c59f2b3f5dc3/client/options.go#L51
 func NewClientFromEnv() (*Client, error) {
-	client, err := NewVersionedClientFromEnv(os.Getenv("DOCKER_API_VERSION"))
+	apiVersionString := os.Getenv("DOCKER_API_VERSION")
+	client, err := NewVersionedClientFromEnv(apiVersionString)
 	if err != nil {
 		return nil, err
 	}
-	client.SkipServerVersionCheck = true
+	client.SkipServerVersionCheck = apiVersionString == ""
 	return client, nil
 }
 
