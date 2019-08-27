@@ -167,6 +167,7 @@ func NewClient(endpoint string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.SkipServerVersionCheck = true
 	return client, nil
 }
 
@@ -178,6 +179,7 @@ func NewTLSClient(endpoint string, cert, key, ca string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.SkipServerVersionCheck = true
 	return client, nil
 }
 
@@ -189,6 +191,7 @@ func NewTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, caPEMCert
 	if err != nil {
 		return nil, err
 	}
+	client.SkipServerVersionCheck = true
 	return client, nil
 }
 
@@ -207,13 +210,12 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 		}
 	}
 	c := &Client{
-		HTTPClient:             defaultClient(),
-		SkipServerVersionCheck: apiVersionString == "",
-		Dialer:                 &net.Dialer{},
-		endpoint:               endpoint,
-		endpointURL:            u,
-		eventMonitor:           new(eventMonitoringState),
-		requestedAPIVersion:    requestedAPIVersion,
+		HTTPClient:          defaultClient(),
+		Dialer:              &net.Dialer{},
+		endpoint:            endpoint,
+		endpointURL:         u,
+		eventMonitor:        new(eventMonitoringState),
+		requestedAPIVersion: requestedAPIVersion,
 	}
 	c.initializeNativeClient(defaultTransport)
 	return c, nil
@@ -271,6 +273,7 @@ func NewClientFromEnv() (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.SkipServerVersionCheck = true
 	return client, nil
 }
 
@@ -337,14 +340,13 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 		return nil, err
 	}
 	c := &Client{
-		HTTPClient:             &http.Client{Transport: tr},
-		TLSConfig:              tlsConfig,
-		SkipServerVersionCheck: apiVersionString == "",
-		Dialer:                 &net.Dialer{},
-		endpoint:               endpoint,
-		endpointURL:            u,
-		eventMonitor:           new(eventMonitoringState),
-		requestedAPIVersion:    requestedAPIVersion,
+		HTTPClient:          &http.Client{Transport: tr},
+		TLSConfig:           tlsConfig,
+		Dialer:              &net.Dialer{},
+		endpoint:            endpoint,
+		endpointURL:         u,
+		eventMonitor:        new(eventMonitoringState),
+		requestedAPIVersion: requestedAPIVersion,
 	}
 	c.initializeNativeClient(defaultTransport)
 	return c, nil
