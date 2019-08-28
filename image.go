@@ -472,33 +472,37 @@ func (c *Client) ImportImage(opts ImportImageOptions) error {
 type BuildImageOptions struct {
 	Context             context.Context
 	Name                string             `qs:"t"`
-	Dockerfile          string             `qs:"dockerfile"`
-	CacheFrom           []string           `qs:"-"`
-	Memory              int64              `qs:"memory"`
-	Memswap             int64              `qs:"memswap"`
-	CPUShares           int64              `qs:"cpushares"`
-	CPUQuota            int64              `qs:"cpuquota"`
-	CPUPeriod           int64              `qs:"cpuperiod"`
-	CPUSetCPUs          string             `qs:"cpusetcpus"`
-	Labels              map[string]string  `qs:"labels"`
+	Dockerfile          string             `ver:"1.25"`
+	ExtraHosts          string             `ver:"1.28"`
+	CacheFrom           []string           `qs:"-" ver:"1.25"`
+	Memory              int64
+	Memswap             int64
+	ShmSize             int64
+	CPUShares           int64
+	CPUQuota            int64              `ver:"1.21"`
+	CPUPeriod           int64              `ver:"1.21"`
+	CPUSetCPUs          string
+	Labels              map[string]string
 	InputStream         io.Reader          `qs:"-"`
 	OutputStream        io.Writer          `qs:"-"`
-	Remote              string             `qs:"remote"`
+	Remote              string
 	Auth                AuthConfiguration  `qs:"-"` // for older docker X-Registry-Auth header
 	AuthConfigs         AuthConfigurations `qs:"-"` // for newer docker X-Registry-Config header
 	ContextDir          string             `qs:"-"`
-	Ulimits             []ULimit           `qs:"-"`
-	BuildArgs           []BuildArg         `qs:"-"`
-	NetworkMode         string             `qs:"networkmode"`
+	Ulimits             []ULimit           `qs:"-" ver:"1.18"`
+	BuildArgs           []BuildArg         `qs:"-" ver:"1.21"`
+	NetworkMode         string             `ver:"1.25"`
+	Platform            string             `ver:"1.32"`
 	InactivityTimeout   time.Duration      `qs:"-"`
-	CgroupParent        string             `qs:"cgroupparent"`
-	SecurityOpt         []string           `qs:"securityopt"`
-	Target              string             `gs:"target"`
-	NoCache             bool               `qs:"nocache"`
+	CgroupParent        string
+	SecurityOpt         []string
+	Target              string
+	NoCache             bool
+	Outputs             string             `ver:"1.40"`
 	SuppressOutput      bool               `qs:"q"`
-	Pull                bool               `qs:"pull"`
+	Pull                bool               `ver:"1.16"`
 	RmTmpContainer      bool               `qs:"rm"`
-	ForceRmTmpContainer bool               `qs:"forcerm"`
+	ForceRmTmpContainer bool               `qs:"forcerm" ver:"1.12"`
 	RawJSONStream       bool               `qs:"-"`
 }
 
@@ -542,13 +546,16 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 			return err
 		}
 	}
-	qs := queryString(&opts)
+	qs, ver := queryStringVersion(&opts)
 
-	if c.serverAPIVersion.GreaterThanOrEqualTo(apiVersion125) && len(opts.CacheFrom) > 0 {
+	if len(opts.CacheFrom) > 0 {
 		if b, err := json.Marshal(opts.CacheFrom); err == nil {
 			item := url.Values(map[string][]string{})
 			item.Add("cachefrom", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+			if ver == nil || apiVersion125.GreaterThan(ver) {
+				ver = apiVersion125
+			}
 		}
 	}
 
@@ -557,6 +564,9 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 			item := url.Values(map[string][]string{})
 			item.Add("ulimits", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+			if ver == nil || apiVersion118.GreaterThan(ver) {
+				ver = apiVersion118
+			}
 		}
 	}
 
@@ -569,10 +579,18 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 			item := url.Values(map[string][]string{})
 			item.Add("buildargs", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+			if ver == nil || apiVersion121.GreaterThan(ver) {
+				ver = apiVersion121
+			}
 		}
 	}
 
-	return c.stream("POST", fmt.Sprintf("/build?%s", qs), streamOptions{
+	buildUrl, err := c.pathVersionCheck("/build", qs, ver)
+	if err != nil {
+		return err
+	}
+
+	return c.streamUrl("POST", buildUrl, streamOptions{
 		setRawTerminal:    true,
 		rawJSONStream:     opts.RawJSONStream,
 		headers:           headers,

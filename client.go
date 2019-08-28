@@ -54,7 +54,9 @@ var (
 	ErrInactivityTimeout = errors.New("inactivity time exceeded timeout")
 
 	apiVersion112, _ = NewAPIVersion("1.12")
+	apiVersion118, _ = NewAPIVersion("1.18")
 	apiVersion119, _ = NewAPIVersion("1.19")
+	apiVersion121, _ = NewAPIVersion("1.21")
 	apiVersion124, _ = NewAPIVersion("1.24")
 	apiVersion125, _ = NewAPIVersion("1.25")
 	apiVersion135, _ = NewAPIVersion("1.35")
@@ -875,12 +877,15 @@ func (c *Client) getURL(path string) string {
 }
 
 func (c *Client) getPath(basepath string, opts interface{}) (string, error) {
+	queryStr, requiredAPIVersion := queryStringVersion(opts)
+	return c.pathVersionCheck(basepath, queryStr, requiredAPIVersion)
+}
+
+func (c *Client) pathVersionCheck(basepath, queryStr string, requiredAPIVersion APIVersion) (string, error) {
 	urlStr := strings.TrimRight(c.endpointURL.String(), "/")
 	if c.endpointURL.Scheme == unixProtocol || c.endpointURL.Scheme == namedPipeProtocol {
 		urlStr = ""
 	}
-	queryStr, requiredAPIVersion := queryStringVersion(opts)
-
 	if c.requestedAPIVersion != nil {
 		if c.requestedAPIVersion.GreaterThanOrEqualTo(requiredAPIVersion) {
 			return fmt.Sprintf("%s/v%s%s?%s", urlStr, c.requestedAPIVersion, basepath, queryStr), nil

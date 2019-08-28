@@ -810,6 +810,7 @@ func TestBuildImageParameters(t *testing.T) {
 	expected := map[string][]string{
 		"t":            {opts.Name},
 		"nocache":      {"1"},
+		"cachefrom":    {`["test1","test2"]`},
 		"q":            {"1"},
 		"pull":         {"1"},
 		"rm":           {"1"},
@@ -830,6 +831,10 @@ func TestBuildImageParameters(t *testing.T) {
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("BuildImage: wrong query string. Want %#v.\n Got %#v.", expected, got)
+	}
+	expectedPrefix := "http://localhost:4243/v1.25/"
+	if !strings.HasPrefix(req.URL.String(), expectedPrefix) {
+		t.Errorf("BuildImage: wrong URL version Want Prefix %s.\n Got URL: %s", expectedPrefix, req.URL.String())
 	}
 }
 
