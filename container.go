@@ -474,6 +474,12 @@ type Container struct {
 	RestartCount int `json:"RestartCount,omitempty" yaml:"RestartCount,omitempty" toml:"RestartCount,omitempty"`
 
 	AppArmorProfile string `json:"AppArmorProfile,omitempty" yaml:"AppArmorProfile,omitempty" toml:"AppArmorProfile,omitempty"`
+
+	MountLabel      string `json:"MountLabel,omitempty" yaml:"MountLabel,omitempty" toml:"MountLabel,omitempty"`
+	ProcessLabel    string `json:"ProcessLabel,omitempty" yaml:"ProcessLabel,omitempty" toml:"ProcessLabel,omitempty"`
+	Platform        string `json:"Platform,omitempty" yaml:"Platform,omitempty" toml:"Platform,omitempty"`
+	SizeRw          int64  `json:"SizeRw,omitempty" yaml:"SizeRw,omitempty" toml:"SizeRw,omitempty"`
+	SizeRootFs      int64  `json:"SizeRootFs,omitempty" yaml:"SizeRootFs,omitempty" toml:"SizeRootFs,omitempty"`
 }
 
 // UpdateContainerOptions specify parameters to the UpdateContainer function.
@@ -729,6 +735,7 @@ type HostConfig struct {
 	Binds                []string               `json:"Binds,omitempty" yaml:"Binds,omitempty" toml:"Binds,omitempty"`
 	CapAdd               []string               `json:"CapAdd,omitempty" yaml:"CapAdd,omitempty" toml:"CapAdd,omitempty"`
 	CapDrop              []string               `json:"CapDrop,omitempty" yaml:"CapDrop,omitempty" toml:"CapDrop,omitempty"`
+	Capabilities         []string               `json:"Capabilities,omitempty" yaml:"Capabilities,omitempty" toml:"Capabilities,omitempty"` // Mutually exclusive w.r.t. CapAdd and CapDrop API v1.40
 	GroupAdd             []string               `json:"GroupAdd,omitempty" yaml:"GroupAdd,omitempty" toml:"GroupAdd,omitempty"`
 	ContainerIDFile      string                 `json:"ContainerIDFile,omitempty" yaml:"ContainerIDFile,omitempty" toml:"ContainerIDFile,omitempty"`
 	LxcConf              []KeyValuePair         `json:"LxcConf,omitempty" yaml:"LxcConf,omitempty" toml:"LxcConf,omitempty"`
@@ -742,6 +749,8 @@ type HostConfig struct {
 	UsernsMode           string                 `json:"UsernsMode,omitempty" yaml:"UsernsMode,omitempty" toml:"UsernsMode,omitempty"`
 	NetworkMode          string                 `json:"NetworkMode,omitempty" yaml:"NetworkMode,omitempty" toml:"NetworkMode,omitempty"`
 	IpcMode              string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty" toml:"IpcMode,omitempty"`
+	Isolation            string                 `json:"Isolation,omitempty" yaml:"Isolation,omitempty" toml:"Isolation,omitempty"`       // Windows only
+	ConsoleSize          [2]int                 `json:"ConsoleSize,omitempty" yaml:"ConsoleSize,omitempty" toml:"ConsoleSize,omitempty"` // Windows only height x width
 	PidMode              string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty" toml:"PidMode,omitempty"`
 	UTSMode              string                 `json:"UTSMode,omitempty" yaml:"UTSMode,omitempty" toml:"UTSMode,omitempty"`
 	RestartPolicy        RestartPolicy          `json:"RestartPolicy,omitempty" yaml:"RestartPolicy,omitempty" toml:"RestartPolicy,omitempty"`
@@ -749,6 +758,7 @@ type HostConfig struct {
 	DeviceCgroupRules    []string               `json:"DeviceCgroupRules,omitempty" yaml:"DeviceCgroupRules,omitempty" toml:"DeviceCgroupRules,omitempty"`
 	LogConfig            LogConfig              `json:"LogConfig,omitempty" yaml:"LogConfig,omitempty" toml:"LogConfig,omitempty"`
 	SecurityOpt          []string               `json:"SecurityOpt,omitempty" yaml:"SecurityOpt,omitempty" toml:"SecurityOpt,omitempty"`
+	CgroupnsMode         string                 `json:"CgroupnsMode,omitempty" yaml:"CgroupnsMode,omitempty" toml:"CgroupnsMode,omitempty"` // v1.40+
 	Cgroup               string                 `json:"Cgroup,omitempty" yaml:"Cgroup,omitempty" toml:"Cgroup,omitempty"`
 	CgroupParent         string                 `json:"CgroupParent,omitempty" yaml:"CgroupParent,omitempty" toml:"CgroupParent,omitempty"`
 	Memory               int64                  `json:"Memory,omitempty" yaml:"Memory,omitempty" toml:"Memory,omitempty"`
@@ -784,6 +794,8 @@ type HostConfig struct {
 	IOMaximumBandwidth   int64                  `json:"IOMaximumBandwidth,omitempty" yaml:"IOMaximumBandwidth,omitempty"`
 	IOMaximumIOps        int64                  `json:"IOMaximumIOps,omitempty" yaml:"IOMaximumIOps,omitempty"`
 	Mounts               []HostMount            `json:"Mounts,omitempty" yaml:"Mounts,omitempty" toml:"Mounts,omitempty"`
+	MaskedPaths          []string               `json:"MaskedPaths,omitempty" yaml:"MaskedPaths,omitempty" toml:"MaskedPaths,omitempty"`
+	ReadonlyPaths        []string               `json:"ReadonlyPaths,omitempty" yaml:"ReadonlyPaths,omitempty" toml:"ReadonlyPaths,omitempty"`
 	Runtime              string                 `json:"Runtime,omitempty" yaml:"Runtime,omitempty" toml:"Runtime,omitempty"`
 	Init                 bool                   `json:",omitempty" yaml:",omitempty"`
 	Privileged           bool                   `json:"Privileged,omitempty" yaml:"Privileged,omitempty" toml:"Privileged,omitempty"`
