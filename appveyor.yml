@@ -8,9 +8,8 @@ environment:
   GO111MODULE: on
   SKIP_FMT_CHECK: 1
   matrix:
-    - GOVERSION: "1.11.13"
     - GOVERSION: "1.12.9"
-    - GOVERSION: "1.13rc2"
+    - GOVERSION: "1.13"
 install:
   - choco install make
   - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
