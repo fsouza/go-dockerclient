@@ -12,7 +12,7 @@ issues:
         - goconst
         - gosec
         - scopelint
-    - path: testing/.+\.go
+    - path: testing[/\\].+\.go
       linters:
         - gosec
 
