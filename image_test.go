@@ -112,7 +112,7 @@ func TestListImagesParameters(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "GET" {
+	if req.Method != http.MethodGet {
 		t.Errorf("ListImages({All: false}: Wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
 	if all := req.URL.Query().Get("all"); all != "0" && all != "" {
@@ -199,7 +199,7 @@ func TestRemoveImage(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "DELETE"
+	expectedMethod := http.MethodDelete
 	if req.Method != expectedMethod {
 		t.Errorf("RemoveImage(%q): Wrong HTTP method. Want %s. Got %s.", name, expectedMethod, req.Method)
 	}
@@ -228,7 +228,7 @@ func TestRemoveImageExtended(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expectedMethod := "DELETE"
+	expectedMethod := http.MethodDelete
 	if req.Method != expectedMethod {
 		t.Errorf("RemoveImage(%q): Wrong HTTP method. Want %s. Got %s.", name, expectedMethod, req.Method)
 	}
@@ -292,7 +292,7 @@ func TestInspectImage(t *testing.T) {
 		t.Errorf("InspectImage(%q): Wrong image returned. Want %#v. Got %#v.", expected.ID, expected, *image)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "GET" {
+	if req.Method != http.MethodGet {
 		t.Errorf("InspectImage(%q): Wrong HTTP method. Want GET. Got %s.", expected.ID, req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/images/" + expected.ID + "/json"))
@@ -328,7 +328,7 @@ func TestPushImage(t *testing.T) {
 		t.Errorf("PushImage: Wrong output. Want %q. Got %q.", expected, buf.String())
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
+	if req.Method != http.MethodPost {
 		t.Errorf("PushImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/images/test/push"))
@@ -451,7 +451,7 @@ func TestPullImage(t *testing.T) {
 		t.Errorf("PullImage: Wrong output. Want %q. Got %q.", expected, buf.String())
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
+	if req.Method != http.MethodPost {
 		t.Errorf("PullImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/images/create"))
@@ -481,7 +481,7 @@ func TestPullImageWithDigest(t *testing.T) {
 		t.Errorf("PullImage: Wrong output. Want %q. Got %q.", expected, buf.String())
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
+	if req.Method != http.MethodPost {
 		t.Errorf("PullImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/images/create"))
@@ -518,7 +518,7 @@ func TestPullImageWithDigestAndTag(t *testing.T) {
 		t.Errorf("PullImage: Wrong output. Want %q. Got %q.", expected, buf.String())
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
+	if req.Method != http.MethodPost {
 		t.Errorf("PullImage: Wrong HTTP method. Want POST. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/images/create"))
@@ -1008,8 +1008,8 @@ func TestLoadImage(t *testing.T) {
 		t.Error(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("LoadImage: wrong method. Expected %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("LoadImage: wrong method. Expected %q. Got %q.", http.MethodPost, req.Method)
 	}
 	if req.URL.Path != "/images/load" {
 		t.Errorf("LoadImage: wrong URL. Expected %q. Got %q.", "/images/load", req.URL.Path)
@@ -1027,8 +1027,8 @@ func TestExportImage(t *testing.T) {
 		t.Error(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "GET" {
-		t.Errorf("ExportImage: wrong method. Expected %q. Got %q.", "GET", req.Method)
+	if req.Method != http.MethodGet {
+		t.Errorf("ExportImage: wrong method. Expected %q. Got %q.", http.MethodGet, req.Method)
 	}
 	expectedPath := "/images/testimage/get"
 	if req.URL.Path != expectedPath {
@@ -1048,8 +1048,8 @@ func TestExportImages(t *testing.T) {
 		t.Error(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "GET" {
-		t.Errorf("ExportImages: wrong method. Expected %q. Got %q.", "GET", req.Method)
+	if req.Method != http.MethodGet {
+		t.Errorf("ExportImages: wrong method. Expected %q. Got %q.", http.MethodGet, req.Method)
 	}
 	expected := "http://localhost:4243/v1.25/images/get?names=testimage1%2Ctestimage2%3Alatest"
 	got := req.URL.String()

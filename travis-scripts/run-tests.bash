@@ -8,7 +8,7 @@ if [[ $TRAVIS_OS_NAME == "windows" ]]; then
 	export SKIP_FMT_CHECK=1
 fi
 
-make staticcheck fmtcheck gotest
+make lint fmtcheck gotest
 
 if [[ $TRAVIS_OS_NAME == "linux" || $TRAVIS_OS_NAME == "windows" ]]; then
 	make integration

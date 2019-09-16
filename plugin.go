@@ -36,7 +36,7 @@ type InstallPluginOptions struct {
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) InstallPlugins(opts InstallPluginOptions) error {
 	path := "/plugins/pull?" + queryString(opts)
-	resp, err := c.do("POST", path, doOptions{
+	resp, err := c.do(http.MethodPost, path, doOptions{
 		data:    opts.Plugins,
 		context: opts.Context,
 	})
@@ -152,7 +152,7 @@ type PluginDetail struct {
 //
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) ListPlugins(ctx context.Context) ([]PluginDetail, error) {
-	resp, err := c.do("GET", "/plugins", doOptions{
+	resp, err := c.do(http.MethodGet, "/plugins", doOptions{
 		context: ctx,
 	})
 	if err != nil {
@@ -179,7 +179,7 @@ type ListFilteredPluginsOptions struct {
 // See https://goo.gl/rmdmWg for more details.
 func (c *Client) ListFilteredPlugins(opts ListFilteredPluginsOptions) ([]PluginDetail, error) {
 	path := "/plugins/json?" + queryString(opts)
-	resp, err := c.do("GET", path, doOptions{
+	resp, err := c.do(http.MethodGet, path, doOptions{
 		context: opts.Context,
 	})
 	if err != nil {
@@ -196,8 +196,9 @@ func (c *Client) ListFilteredPlugins(opts ListFilteredPluginsOptions) ([]PluginD
 // GetPluginPrivileges returns pulginPrivileges or an error.
 //
 // See https://goo.gl/C4t7Tz for more details.
+//nolint:golint
 func (c *Client) GetPluginPrivileges(name string, ctx context.Context) ([]PluginPrivilege, error) {
-	resp, err := c.do("GET", "/plugins/privileges?remote="+name, doOptions{
+	resp, err := c.do(http.MethodGet, "/plugins/privileges?remote="+name, doOptions{
 		context: ctx,
 	})
 	if err != nil {
@@ -214,21 +215,18 @@ func (c *Client) GetPluginPrivileges(name string, ctx context.Context) ([]Plugin
 // InspectPlugins returns a pluginDetail or an error.
 //
 // See https://goo.gl/C4t7Tz for more details.
+//nolint:golint
 func (c *Client) InspectPlugins(name string, ctx context.Context) (*PluginDetail, error) {
-	resp, err := c.do("GET", "/plugins/"+name+"/json", doOptions{
+	resp, err := c.do(http.MethodGet, "/plugins/"+name+"/json", doOptions{
 		context: ctx,
 	})
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchPlugin{ID: name}
 		}
 		return nil, err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	var pluginDetail PluginDetail
 	if err := json.NewDecoder(resp.Body).Decode(&pluginDetail); err != nil {
 		return nil, err
@@ -252,18 +250,14 @@ type RemovePluginOptions struct {
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) RemovePlugin(opts RemovePluginOptions) (*PluginDetail, error) {
 	path := "/plugins/" + opts.Name + "?" + queryString(opts)
-	resp, err := c.do("DELETE", path, doOptions{context: opts.Context})
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	resp, err := c.do(http.MethodDelete, path, doOptions{context: opts.Context})
 	if err != nil {
 		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
 			return nil, &NoSuchPlugin{ID: opts.Name}
 		}
 		return nil, err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	var pluginDetail PluginDetail
 	if err := json.NewDecoder(resp.Body).Decode(&pluginDetail); err != nil {
 		return nil, err
@@ -287,7 +281,7 @@ type EnablePluginOptions struct {
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) EnablePlugin(opts EnablePluginOptions) error {
 	path := "/plugins/" + opts.Name + "/enable?" + queryString(opts)
-	resp, err := c.do("POST", path, doOptions{context: opts.Context})
+	resp, err := c.do(http.MethodPost, path, doOptions{context: opts.Context})
 	if err != nil {
 		return err
 	}
@@ -310,7 +304,7 @@ type DisablePluginOptions struct {
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) DisablePlugin(opts DisablePluginOptions) error {
 	path := "/plugins/" + opts.Name + "/disable"
-	resp, err := c.do("POST", path, doOptions{context: opts.Context})
+	resp, err := c.do(http.MethodPost, path, doOptions{context: opts.Context})
 	if err != nil {
 		return err
 	}
@@ -335,7 +329,7 @@ type CreatePluginOptions struct {
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) CreatePlugin(opts CreatePluginOptions) (string, error) {
 	path := "/plugins/create?" + queryString(opts)
-	resp, err := c.do("POST", path, doOptions{
+	resp, err := c.do(http.MethodPost, path, doOptions{
 		data:    opts.Path,
 		context: opts.Context,
 	})
@@ -365,7 +359,7 @@ type PushPluginOptions struct {
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) PushPlugin(opts PushPluginOptions) error {
 	path := "/plugins/" + opts.Name + "/push"
-	resp, err := c.do("POST", path, doOptions{context: opts.Context})
+	resp, err := c.do(http.MethodPost, path, doOptions{context: opts.Context})
 	if err != nil {
 		return err
 	}
@@ -389,7 +383,7 @@ type ConfigurePluginOptions struct {
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) ConfigurePlugin(opts ConfigurePluginOptions) error {
 	path := "/plugins/" + opts.Name + "/set"
-	resp, err := c.do("POST", path, doOptions{
+	resp, err := c.do(http.MethodPost, path, doOptions{
 		data:    opts.Envs,
 		context: opts.Context,
 	})

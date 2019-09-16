@@ -90,17 +90,17 @@ func TestClientDoConcurrentStress(t *testing.T) {
 			waiters := make(chan CloseWaiter, n)
 			for i := 0; i < n; i++ {
 				path := fmt.Sprintf("/%05d", i)
-				paths = append(paths, "GET"+path)
-				paths = append(paths, "POST"+path)
+				paths = append(paths, http.MethodGet+path)
+				paths = append(paths, http.MethodPost+path)
 				paths = append(paths, "HEAD"+path)
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					_, clientErr := client.do("GET", path, doOptions{})
+					_, clientErr := client.do(http.MethodGet, path, doOptions{})
 					if clientErr != nil {
 						errsCh <- clientErr
 					}
-					clientErr = client.stream("POST", path, streamOptions{})
+					clientErr = client.stream(http.MethodPost, path, streamOptions{})
 					if clientErr != nil {
 						errsCh <- clientErr
 					}

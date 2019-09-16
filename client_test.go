@@ -533,7 +533,7 @@ func TestClientStreamTimeoutNotHit(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w bytes.Buffer
-	err = client.stream("POST", "/image/create", streamOptions{
+	err = client.stream(http.MethodPost, "/image/create", streamOptions{
 		setRawTerminal:    true,
 		stdout:            &w,
 		inactivityTimeout: 300 * time.Millisecond,
@@ -565,7 +565,7 @@ func TestClientStreamInactivityTimeout(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w bytes.Buffer
-	err = client.stream("POST", "/image/create", streamOptions{
+	err = client.stream(http.MethodPost, "/image/create", streamOptions{
 		setRawTerminal:    true,
 		stdout:            &w,
 		inactivityTimeout: 100 * time.Millisecond,
@@ -601,7 +601,7 @@ func TestClientStreamContextDeadline(t *testing.T) {
 	var w bytes.Buffer
 	ctx, cancel := context.WithTimeout(context.Background(), 400*time.Millisecond)
 	defer cancel()
-	err = client.stream("POST", "/image/create", streamOptions{
+	err = client.stream(http.MethodPost, "/image/create", streamOptions{
 		setRawTerminal: true,
 		stdout:         &w,
 		context:        ctx,
@@ -640,7 +640,7 @@ func TestClientStreamContextCancel(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 		cancel()
 	}()
-	err = client.stream("POST", "/image/create", streamOptions{
+	err = client.stream(http.MethodPost, "/image/create", streamOptions{
 		setRawTerminal: true,
 		stdout:         &w,
 		context:        ctx,
@@ -698,7 +698,7 @@ func TestClientStreamJSONDecode(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w bytes.Buffer
-	err = client.stream("POST", "/image/create", streamOptions{
+	err = client.stream(http.MethodPost, "/image/create", streamOptions{
 		stdout:         &w,
 		useJSONDecoder: true,
 	})
@@ -754,7 +754,7 @@ func TestClientStreamJSONDecodeWithTerminal(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w terminalBuffer
-	err = client.stream("POST", "/image/create", streamOptions{
+	err = client.stream(http.MethodPost, "/image/create", streamOptions{
 		stdout:         &w,
 		useJSONDecoder: true,
 	})
@@ -785,7 +785,7 @@ func TestClientDoContextDeadline(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	_, err = client.do("POST", "/image/create", doOptions{
+	_, err = client.do(http.MethodPost, "/image/create", doOptions{
 		context: ctx,
 	})
 	if err != context.DeadlineExceeded {
@@ -808,7 +808,7 @@ func TestClientDoContextCancel(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		cancel()
 	}()
-	_, err = client.do("POST", "/image/create", doOptions{
+	_, err = client.do(http.MethodPost, "/image/create", doOptions{
 		context: ctx,
 	})
 	if err != context.Canceled {
@@ -838,7 +838,7 @@ func TestClientStreamTimeoutNativeClient(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w bytes.Buffer
-	err = client.stream("POST", "/image/create", streamOptions{
+	err = client.stream(http.MethodPost, "/image/create", streamOptions{
 		setRawTerminal:    true,
 		stdout:            &w,
 		inactivityTimeout: 50 * time.Millisecond,
@@ -865,7 +865,7 @@ func TestClientStreamJSONDecoderFailingOutputWriter(t *testing.T) {
 		t.Fatal(err)
 	}
 	var w eofWriter
-	err = client.stream("POST", "/image/create", streamOptions{
+	err = client.stream(http.MethodPost, "/image/create", streamOptions{
 		setRawTerminal: true,
 		useJSONDecoder: true,
 		stdout:         &w,

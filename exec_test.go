@@ -44,8 +44,8 @@ func TestExecCreate(t *testing.T) {
 		t.Errorf("ExecCreate: wrong ID. Want %q. Got %q.", expectedID, execObj.ID)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("ExecCreate: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("ExecCreate: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/test/exec"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -195,8 +195,8 @@ func TestExecStartDetached(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("ExecStart: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("ExecStart: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/exec/" + execID + "/start"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -250,8 +250,8 @@ func TestExecResize(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("ExecStart: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("ExecStart: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/exec/" + execID + "/resize?h=10&w=20"))
 	if gotPath := req.URL.RequestURI(); gotPath != expectedURL.RequestURI() {
@@ -298,8 +298,8 @@ func TestExecInspect(t *testing.T) {
 		t.Errorf("ExecInspect: Expected %#v. Got %#v.", expected, *execObj)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "GET" {
-		t.Errorf("ExecInspect: wrong HTTP method. Want %q. Got %q.", "GET", req.Method)
+	if req.Method != http.MethodGet {
+		t.Errorf("ExecInspect: wrong HTTP method. Want %q. Got %q.", http.MethodGet, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/exec/" + expectedID + "/json"))
 	if gotPath := fakeRT.requests[0].URL.Path; gotPath != expectedURL.Path {

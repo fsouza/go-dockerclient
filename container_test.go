@@ -164,7 +164,7 @@ func TestListContainersParams(t *testing.T) {
 			if path := fakeRT.requests[0].URL.Path; path != expectedPath {
 				t.Errorf("Wrong path on request. Want %q. Got %q.", expectedPath, path)
 			}
-			if meth := fakeRT.requests[0].Method; meth != "GET" {
+			if meth := fakeRT.requests[0].Method; meth != http.MethodGet {
 				t.Errorf("Wrong HTTP method. Want GET. Got %s.", meth)
 			}
 		})
@@ -895,8 +895,8 @@ func TestCreateContainer(t *testing.T) {
 		t.Errorf("CreateContainer: wrong ID. Want %q. Got %q.", id, container.ID)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("CreateContainer: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("CreateContainer: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/create"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -983,8 +983,8 @@ func TestUpdateContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("UpdateContainer: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("UpdateContainer: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/update"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1013,8 +1013,8 @@ func TestStartContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/start"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1037,8 +1037,8 @@ func TestStartContainerHostConfigAPI124(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/start"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1064,8 +1064,8 @@ func TestStartContainerNilHostConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/start"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1101,8 +1101,8 @@ func TestStartContainerWithContext(t *testing.T) {
 			t.Fatal(err)
 		}
 		req := fakeRT.requests[0]
-		if req.Method != "POST" {
-			t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		if req.Method != http.MethodPost {
+			t.Errorf("StartContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 		}
 		expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/start"))
 		if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1148,8 +1148,8 @@ func TestStopContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("StopContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("StopContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/stop"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1176,8 +1176,8 @@ func TestStopContainerWithContext(t *testing.T) {
 			t.Fatal(err)
 		}
 		req := fakeRT.requests[0]
-		if req.Method != "POST" {
-			t.Errorf("StopContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		if req.Method != http.MethodPost {
+			t.Errorf("StopContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 		}
 		expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/stop"))
 		if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1219,8 +1219,8 @@ func TestRestartContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("RestartContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("RestartContainer(%q, 10): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/restart"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1248,8 +1248,8 @@ func TestPauseContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("PauseContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("PauseContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/pause"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1277,8 +1277,8 @@ func TestUnpauseContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("PauseContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("PauseContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/unpause"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1306,8 +1306,8 @@ func TestKillContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("KillContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("KillContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/kill"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1325,8 +1325,8 @@ func TestKillContainerSignal(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("KillContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("KillContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	if signal := req.URL.Query().Get("signal"); signal != "15" {
 		t.Errorf("KillContainer(%q): Wrong query string in request. Want %q. Got %q.", id, "15", signal)
@@ -1366,8 +1366,8 @@ func TestRemoveContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "DELETE" {
-		t.Errorf("RemoveContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "DELETE", req.Method)
+	if req.Method != http.MethodDelete {
+		t.Errorf("RemoveContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodDelete, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1413,8 +1413,8 @@ func TestResizeContainerTTY(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("ResizeContainerTTY(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("ResizeContainerTTY(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/resize"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1443,8 +1443,8 @@ func TestWaitContainer(t *testing.T) {
 		t.Errorf("WaitContainer(%q): wrong return. Want 56. Got %d.", id, status)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("WaitContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("WaitContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/wait"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1477,8 +1477,8 @@ func TestWaitContainerWithContext(t *testing.T) {
 			t.Errorf("WaitContainer(%q): wrong return. Want 56. Got %d.", id, status)
 		}
 		req := fakeRT.requests[0]
-		if req.Method != "POST" {
-			t.Errorf("WaitContainer(%q): wrong HTTP method. Want %q. Got %q.", id, "POST", req.Method)
+		if req.Method != http.MethodPost {
+			t.Errorf("WaitContainer(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodPost, req.Method)
 		}
 		expectedURL, _ := url.Parse(client.getURL("/containers/" + id + "/wait"))
 		if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -1553,7 +1553,7 @@ func TestCommitContainerParams(t *testing.T) {
 			if path := fakeRT.requests[0].URL.Path; path != expectedPath {
 				t.Errorf("Wrong path on request. Want %q. Got %q.", expectedPath, path)
 			}
-			if meth := fakeRT.requests[0].Method; meth != "POST" {
+			if meth := fakeRT.requests[0].Method; meth != http.MethodPost {
 				t.Errorf("Wrong HTTP method. Want POST. Got %s.", meth)
 			}
 			if test.body != nil {
@@ -1615,7 +1615,7 @@ func TestAttachToContainerLogs(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("AttachToContainer for logs: wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-	if req.Method != "POST" {
+	if req.Method != http.MethodPost {
 		t.Errorf("AttachToContainer: wrong HTTP method. Want POST. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/containers/a123456/attach"))
@@ -1904,7 +1904,7 @@ func TestLogs(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("Logs: wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-	if req.Method != "GET" {
+	if req.Method != http.MethodGet {
 		t.Errorf("Logs: wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/containers/a123456/logs"))
@@ -2000,7 +2000,7 @@ func TestLogsSpecifyingTail(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("Logs: wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-	if req.Method != "GET" {
+	if req.Method != http.MethodGet {
 		t.Errorf("Logs: wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/containers/a123456/logs"))
@@ -2123,7 +2123,7 @@ func TestUploadToContainer(t *testing.T) {
 
 	req := fakeRT.requests[0]
 
-	if req.Method != "PUT" {
+	if req.Method != http.MethodPut {
 		t.Errorf("UploadToContainer{Path:abc}: Wrong HTTP method.  Want PUT. Got %s", req.Method)
 	}
 
@@ -2647,7 +2647,7 @@ func TestStats(t *testing.T) {
 	if !reflect.DeepEqual(resultStats[1], &expected2) {
 		t.Errorf("Stats: Expected:\n%+v\nGot:\n%+v", expected2, resultStats[1])
 	}
-	if req.Method != "GET" {
+	if req.Method != http.MethodGet {
 		t.Errorf("Stats: wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/containers/" + id + "/stats"))
@@ -2679,8 +2679,8 @@ func TestRenameContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("RenameContainer: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("RenameContainer: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/containers/something_old/rename?name=something_new"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {

@@ -34,7 +34,7 @@ func newSwarmServer(srv *DockerServer, bind string) (*swarmServer, error) {
 		return nil, err
 	}
 	router := mux.NewRouter()
-	router.Path("/internal/updatenodes").Methods("POST").HandlerFunc(srv.handlerWrapper(srv.internalUpdateNodes))
+	router.Path("/internal/updatenodes").Methods(http.MethodPost).HandlerFunc(srv.handlerWrapper(srv.internalUpdateNodes))
 	server := &swarmServer{
 		listener: listener,
 		mux:      router,
@@ -626,6 +626,7 @@ func (s *DockerServer) runNodeOperation(dst string, nodeOp nodeOperation) error 
 	if err != nil {
 		return err
 	}
+	defer rsp.Body.Close()
 	if rsp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code in updatenodes: %d", rsp.StatusCode)
 	}
@@ -676,11 +677,13 @@ func (s *DockerServer) internalUpdateNodes(w http.ResponseWriter, r *http.Reques
 				continue
 			}
 			url := fmt.Sprintf("http://%s/internal/updatenodes?propagate=0", node.ManagerStatus.Addr)
-			_, err = http.Post(url, "application/json", bytes.NewReader(data))
+			var resp *http.Response
+			resp, err = http.Post(url, "application/json", bytes.NewReader(data))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+			resp.Body.Close()
 		}
 	}
 	if nodeOp.Services != nil {

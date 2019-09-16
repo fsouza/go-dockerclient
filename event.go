@@ -178,7 +178,7 @@ func (eventState *eventMonitoringState) enableEventMonitoring(c *Client) error {
 	return nil
 }
 
-func (eventState *eventMonitoringState) disableEventMonitoring() error {
+func (eventState *eventMonitoringState) disableEventMonitoring() {
 	eventState.Lock()
 	defer eventState.Unlock()
 
@@ -191,7 +191,6 @@ func (eventState *eventMonitoringState) disableEventMonitoring() error {
 		close(eventState.C)
 		close(eventState.errC)
 	}
-	return nil
 }
 
 func (eventState *eventMonitoringState) monitorEvents(c *Client) {
@@ -332,10 +331,11 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 	}
 	//lint:ignore SA1019 this is needed here
 	conn := httputil.NewClientConn(dial, nil)
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
 		return err
 	}
+	//nolint:bodyclose
 	res, err := conn.Do(req)
 	if err != nil {
 		return err

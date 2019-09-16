@@ -39,8 +39,8 @@ func TestCreateService(t *testing.T) {
 		t.Errorf("CreateServce: wrong ID. Want %q. Got %q.", id, service.ID)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("CreateService: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("CreateService: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/services/create"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -85,8 +85,8 @@ func TestCreateServiceWithAuthentication(t *testing.T) {
 		t.Errorf("CreateServce: wrong ID. Want %q. Got %q.", id, service.ID)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("CreateService: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("CreateService: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/services/create"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -124,8 +124,8 @@ func TestRemoveService(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "DELETE" {
-		t.Errorf("RemoveService(%q): wrong HTTP method. Want %q. Got %q.", id, "DELETE", req.Method)
+	if req.Method != http.MethodDelete {
+		t.Errorf("RemoveService(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodDelete, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/services/" + id))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -154,8 +154,8 @@ func TestUpdateService(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("UpdateService: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("UpdateService: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/services/" + id + "/update?version=23"))
 	if gotURI := req.URL.RequestURI(); gotURI != expectedURL.RequestURI() {
@@ -186,8 +186,8 @@ func TestUpdateServiceRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("UpdateService: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("UpdateService: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/services/" + id + "/update?version=23&rollback=previous"))
 	if req.URL.Path != expectedURL.Path {
@@ -215,8 +215,8 @@ func TestUpdateServiceWithAuthentication(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("UpdateService: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("UpdateService: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/services/" + id + "/update?version=23"))
 	if gotURI := req.URL.RequestURI(); gotURI != expectedURL.RequestURI() {
@@ -463,7 +463,7 @@ func TestGetServiceLogs(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("Logs: wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-	if req.Method != "GET" {
+	if req.Method != http.MethodGet {
 		t.Errorf("Logs: wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/services/a123456/logs"))
@@ -556,7 +556,7 @@ func TestGetServiceLogsSpecifyingTail(t *testing.T) {
 	if buf.String() != expected {
 		t.Errorf("Logs: wrong output. Want %q. Got %q.", expected, buf.String())
 	}
-	if req.Method != "GET" {
+	if req.Method != http.MethodGet {
 		t.Errorf("Logs: wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
 	u, _ := url.Parse(client.getURL("/services/a123456/logs"))

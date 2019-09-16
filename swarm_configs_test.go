@@ -37,8 +37,8 @@ func TestCreateConfig(t *testing.T) {
 		t.Errorf("CreateConfig: wrong ID. Want %q. Got %q.", id, config.ID)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("CreateConfig: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("CreateConfig: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/configs/create"))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -62,8 +62,8 @@ func TestRemoveConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "DELETE" {
-		t.Errorf("RemoveConfig(%q): wrong HTTP method. Want %q. Got %q.", id, "DELETE", req.Method)
+	if req.Method != http.MethodDelete {
+		t.Errorf("RemoveConfig(%q): wrong HTTP method. Want %q. Got %q.", id, http.MethodDelete, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/configs/" + id))
 	if gotPath := req.URL.Path; gotPath != expectedURL.Path {
@@ -92,8 +92,8 @@ func TestUpdateConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("UpdateConfig: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("UpdateConfig: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/configs/" + id + "/update?version=23"))
 	if gotURI := req.URL.RequestURI(); gotURI != expectedURL.RequestURI() {
@@ -130,8 +130,8 @@ func TestUpdateConfigWithAuthentication(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	if req.Method != "POST" {
-		t.Errorf("UpdateConfig: wrong HTTP method. Want %q. Got %q.", "POST", req.Method)
+	if req.Method != http.MethodPost {
+		t.Errorf("UpdateConfig: wrong HTTP method. Want %q. Got %q.", http.MethodPost, req.Method)
 	}
 	expectedURL, _ := url.Parse(client.getURL("/configs/" + id + "/update?version=23"))
 	if gotURI := req.URL.RequestURI(); gotURI != expectedURL.RequestURI() {
