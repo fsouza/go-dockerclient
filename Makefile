@@ -2,7 +2,6 @@
 	all \
 	lint \
 	fmt \
-	fmtcheck \
 	pretest \
 	test \
 	integration
@@ -13,9 +12,6 @@ lint:
 	cd /tmp && GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	golangci-lint run
 
-fmtcheck:
-	if [ -z "$${SKIP_FMT_CHECK}" ]; then [ -z "$$(gofumpt -s -d . | tee /dev/stderr)" ]; fi
-
 fmt:
 	GO111MODULE=off go get mvdan.cc/gofumpt
 	gofumpt -s -w .
@@ -23,7 +19,7 @@ fmt:
 testdeps:
 	go mod download
 
-pretest: lint fmtcheck
+pretest: lint
 
 gotest:
 	go test -race -vet all ./...

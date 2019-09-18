@@ -6,7 +6,6 @@ environment:
   GOPATH: c:\gopath
   GOPROXY: https://proxy.golang.org
   GO111MODULE: on
-  SKIP_FMT_CHECK: 1
   matrix:
     - GOVERSION: "1.12.9"
     - GOVERSION: "1.13"
