@@ -1428,6 +1428,9 @@ type AttachToContainerOptions struct {
 	// to unexpected behavior.
 	Success chan struct{}
 
+	// Override the key sequence for detaching a container.
+	DetachKeys string
+
 	// Use raw terminal? Usually true when the container contains a TTY.
 	RawTerminal bool `qs:"-"`
 
