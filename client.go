@@ -780,7 +780,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 	errs := make(chan error, 1)
 	quit := make(chan struct{})
 	go func() {
-		//lint:ignore SA1019 this is needed here
+		//nolint:staticcheck
 		clientconn := httputil.NewClientConn(dial, nil)
 		defer clientconn.Close()
 		//nolint:bodyclose
