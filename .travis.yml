@@ -16,7 +16,6 @@ env:
     - GO111MODULE=on
 install:
   - travis-scripts/win-setup.bash
-  - make testdeps
 script:
   - travis_wait 25 travis-scripts/run-tests.bash
 services:

@@ -16,15 +16,12 @@ fmt:
 	GO111MODULE=off go get mvdan.cc/gofumpt
 	gofumpt -s -w .
 
-testdeps:
-	go mod download
-
 pretest: lint
 
 gotest:
 	go test -race -vet all ./...
 
-test: testdeps pretest gotest
+test: pretest gotest
 
 integration:
 	go test -tags docker_integration -run TestIntegration -v
