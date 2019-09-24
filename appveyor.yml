@@ -15,7 +15,9 @@ install:
   - rmdir c:\go /s /q
   - appveyor DownloadFile https://storage.googleapis.com/golang/go%GOVERSION%.windows-amd64.zip
   - 7z x go%GOVERSION%.windows-amd64.zip -y -oC:\ > NUL
+build_script:
+  - make pretest
 test_script:
-  - make pretest gotest
+  - make gotest
 matrix:
   fast_finish: true
