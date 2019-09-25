@@ -9,7 +9,7 @@
 all: test
 
 lint:
-	cd /tmp && GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.18.0
+	cd /tmp && GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	golangci-lint run
 
 fmt:
