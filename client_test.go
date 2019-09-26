@@ -761,15 +761,15 @@ func TestClientStreamJSONDecodeWithTerminal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := "latest: Pulling from tsuru/static\n\n" +
-		"\x1b[1A\x1b[1K\x1b[K\ra6aa3b66376f: Already exists \r\x1b[1B\n" +
-		"\x1b[1A\x1b[1K\x1b[K\r106572778bf7: Pulling fs layer \r\x1b[1B\n" +
-		"\x1b[1A\x1b[1K\x1b[K\rbac681833e51: Pulling fs layer \r\x1b[1B\n" +
-		"\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Pulling fs layer \r\x1b[1B\x1b[2A\x1b[1K\x1b[K\rbac681833e51: Downloading [==================================================>]     621B/621B\r\x1b[2B\x1b[2A\x1b[1K\x1b[K\rbac681833e51: Verifying Checksum \r\x1b[2B\x1b[2A\x1b[1K\x1b[K\rbac681833e51: Download complete \r\x1b[2B\x1b[3A\x1b[1K\x1b[K\r106572778bf7: Downloading [==================================================>]  1.854kB/1.854kB\r\x1b[3B\x1b[3A\x1b[1K\x1b[K\r106572778bf7: Verifying Checksum \r\x1b[3B\x1b[3A\x1b[1K\x1b[K\r106572778bf7: Download complete \r\x1b[3B\x1b[3A\x1b[1K\x1b[K\r106572778bf7: Extracting [==================================================>]  1.854kB/1.854kB\r\x1b[3B\x1b[3A\x1b[1K\x1b[K\r106572778bf7: Extracting [==================================================>]  1.854kB/1.854kB\r\x1b[3B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Downloading [>                                                  ]    233kB/21.06MB\r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Downloading [=>                                                 ]  462.4kB/21.06MB\r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Downloading [====================>                              ]  8.491MB/21.06MB\r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Downloading [=================================================> ]  20.88MB/21.06MB\r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Verifying Checksum \r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Download complete \r\x1b[1B\x1b[3A\x1b[1K\x1b[K\r106572778bf7: Pull complete \r\x1b[3B\x1b[2A\x1b[1K\x1b[K\rbac681833e51: Extracting [==================================================>]     621B/621B\r\x1b[2B\x1b[2A\x1b[1K\x1b[K\rbac681833e51: Extracting [==================================================>]     621B/621B\r\x1b[2B\x1b[2A\x1b[1K\x1b[K\rbac681833e51: Pull complete \r\x1b[2B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Extracting [>                                                  ]  229.4kB/21.06MB\r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Extracting [=>                                                 ]  458.8kB/21.06MB\r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Extracting [==========================>                        ]  11.24MB/21.06MB\r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Extracting [==================================================>]  21.06MB/21.06MB\r\x1b[1B\x1b[1A\x1b[1K\x1b[K\r7302e23ef08a: Pull complete \r\x1b[1BDigest: sha256:b754472891aa7e33fc0214e3efa988174f2c2289285fcae868b7ec8b6675fc77\n" +
+	const expected = "latest: Pulling from tsuru/static\n\n" +
+		"\x1b[1A\x1b[2K\ra6aa3b66376f: Already exists \r\x1b[1B\n" +
+		"\x1b[1A\x1b[2K\r106572778bf7: Pulling fs layer \r\x1b[1B\n" +
+		"\x1b[1A\x1b[2K\rbac681833e51: Pulling fs layer \r\x1b[1B\n" +
+		"\x1b[1A\x1b[2K\r7302e23ef08a: Pulling fs layer \r\x1b[1B\x1b[2A\x1b[2K\rbac681833e51: Downloading [==================================================>]     621B/621B\r\x1b[2B\x1b[2A\x1b[2K\rbac681833e51: Verifying Checksum \r\x1b[2B\x1b[2A\x1b[2K\rbac681833e51: Download complete \r\x1b[2B\x1b[3A\x1b[2K\r106572778bf7: Downloading [==================================================>]  1.854kB/1.854kB\r\x1b[3B\x1b[3A\x1b[2K\r106572778bf7: Verifying Checksum \r\x1b[3B\x1b[3A\x1b[2K\r106572778bf7: Download complete \r\x1b[3B\x1b[3A\x1b[2K\r106572778bf7: Extracting [==================================================>]  1.854kB/1.854kB\r\x1b[3B\x1b[3A\x1b[2K\r106572778bf7: Extracting [==================================================>]  1.854kB/1.854kB\r\x1b[3B\x1b[1A\x1b[2K\r7302e23ef08a: Downloading [>                                                  ]    233kB/21.06MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Downloading [=>                                                 ]  462.4kB/21.06MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Downloading [====================>                              ]  8.491MB/21.06MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Downloading [=================================================> ]  20.88MB/21.06MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Verifying Checksum \r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Download complete \r\x1b[1B\x1b[3A\x1b[2K\r106572778bf7: Pull complete \r\x1b[3B\x1b[2A\x1b[2K\rbac681833e51: Extracting [==================================================>]     621B/621B\r\x1b[2B\x1b[2A\x1b[2K\rbac681833e51: Extracting [==================================================>]     621B/621B\r\x1b[2B\x1b[2A\x1b[2K\rbac681833e51: Pull complete \r\x1b[2B\x1b[1A\x1b[2K\r7302e23ef08a: Extracting [>                                                  ]  229.4kB/21.06MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Extracting [=>                                                 ]  458.8kB/21.06MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Extracting [==========================>                        ]  11.24MB/21.06MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Extracting [==================================================>]  21.06MB/21.06MB\r\x1b[1B\x1b[1A\x1b[2K\r7302e23ef08a: Pull complete \r\x1b[1BDigest: sha256:b754472891aa7e33fc0214e3efa988174f2c2289285fcae868b7ec8b6675fc77\n" +
 		"Status: Downloaded newer image for 192.168.50.4:5000/tsuru/static\n"
 	result := w.String()
 	if result != expected {
-		t.Fatalf("wrong stream result\nwant %v\ngot:  %v", expected, result)
+		t.Fatalf("wrong stream result\nwant %q\ngot:  %q", expected, result)
 	}
 }
 
@@ -853,7 +853,7 @@ func TestClientStreamTimeoutNativeClient(t *testing.T) {
 	}
 }
 
-func TestClientStreamJSONDecoderFailingOutputWriter(t *testing.T) {
+func TestClientStreamJSONDecoderEOFOutputWriter(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "{}")
@@ -870,8 +870,8 @@ func TestClientStreamJSONDecoderFailingOutputWriter(t *testing.T) {
 		useJSONDecoder: true,
 		stdout:         &w,
 	})
-	if err != io.EOF {
-		t.Fatalf("expected eof error, got: %s", err)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
