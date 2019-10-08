@@ -250,6 +250,24 @@ func TestRemovePlugin(t *testing.T) {
 	}
 }
 
+func TestRemovePluginNoResponse(t *testing.T) {
+	opts := RemovePluginOptions{
+		Name:    "test_plugin",
+		Force:   false,
+		Context: context.Background(),
+	}
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	plugindetails, err := client.RemovePlugin(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if plugindetails != nil {
+		t.Errorf("RemovePlugin: Expected %#v. Got %#v.", nil, plugindetails)
+	}
+}
+
 func TestEnablePlugin(t *testing.T) {
 	opts := EnablePluginOptions{
 		Name:    "test",

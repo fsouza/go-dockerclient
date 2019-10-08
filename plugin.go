@@ -43,7 +43,12 @@ func (c *Client) InstallPlugins(opts InstallPluginOptions) error {
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+	// PullPlugin streams back the progress of the pull, we must consume the whole body
+	// otherwise the pull will be canceled on the engine.
+	if _, err := ioutil.ReadAll(resp.Body); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -258,8 +263,18 @@ func (c *Client) RemovePlugin(opts RemovePluginOptions) (*PluginDetail, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(body) == 0 {
+		// Seems like newer docker versions won't return the plugindetail after removal
+		return nil, nil
+	}
+
 	var pluginDetail PluginDetail
-	if err := json.NewDecoder(resp.Body).Decode(&pluginDetail); err != nil {
+	if err := json.Unmarshal(body, &pluginDetail); err != nil {
 		return nil, err
 	}
 	return &pluginDetail, nil
