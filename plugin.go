@@ -204,13 +204,41 @@ func (c *Client) ListFilteredPlugins(opts ListFilteredPluginsOptions) ([]PluginD
 	return pluginDetails, nil
 }
 
-// GetPluginPrivileges returns pulginPrivileges or an error.
+// GetPluginPrivileges returns pluginPrivileges or an error.
 //
 // See https://goo.gl/C4t7Tz for more details.
 //nolint:golint
-func (c *Client) GetPluginPrivileges(name string, ctx context.Context) ([]PluginPrivilege, error) {
-	resp, err := c.do(http.MethodGet, "/plugins/privileges?remote="+name, doOptions{
-		context: ctx,
+func (c *Client) GetPluginPrivileges(remote string, ctx context.Context) ([]PluginPrivilege, error) {
+	return c.GetPluginPrivilegesWithOptions(
+		GetPluginPrivilegesOptions{
+			Remote:  remote,
+			Context: ctx,
+		})
+}
+
+// GetPluginPrivilegesOptions specify parameters to the GetPluginPrivilegesWithOptions function.
+//
+// See https://goo.gl/C4t7Tz for more details.
+type GetPluginPrivilegesOptions struct {
+	Remote  string
+	Auth    AuthConfiguration
+	Context context.Context
+}
+
+// GetPluginPrivilegesWithOptions returns pluginPrivileges or an error.
+//
+// See https://goo.gl/C4t7Tz for more details.
+//nolint:golint
+func (c *Client) GetPluginPrivilegesWithOptions(opts GetPluginPrivilegesOptions) ([]PluginPrivilege, error) {
+	headers, err := headersWithAuth(opts.Auth)
+	if err != nil {
+		return nil, err
+	}
+
+	path := "/plugins/privileges?" + queryString(opts)
+	resp, err := c.do(http.MethodGet, path, doOptions{
+		context: opts.Context,
+		headers: headers,
 	})
 	if err != nil {
 		return nil, err

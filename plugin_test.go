@@ -199,6 +199,38 @@ func TestGetPluginPrivileges(t *testing.T) {
 	}
 }
 
+func TestGetPluginPrivilegesWithOptions(t *testing.T) {
+	t.Parallel()
+	remote := "test_plugin"
+	jsonPluginPrivileges := `[ { "Name": "network", "Description": "", "Value": [ "host" ] }]`
+	fakeRT := &FakeRoundTripper{message: jsonPluginPrivileges, status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	expected := []PluginPrivilege{
+		{
+			Name:        "network",
+			Description: "",
+			Value:       []string{"host"},
+		},
+	}
+	pluginPrivileges, err := client.GetPluginPrivilegesWithOptions(GetPluginPrivilegesOptions{
+		Remote:  remote,
+		Context: context.Background(),
+		Auth:    AuthConfiguration{Username: "XY"},
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(pluginPrivileges, expected) {
+		t.Errorf("PluginPrivileges: Expected %#v. Got %#v.", expected, pluginPrivileges)
+	}
+	req := fakeRT.requests[0]
+	authHeader := req.Header.Get("X-Registry-Auth")
+	if authHeader == "" {
+		t.Errorf("InstallImage: unexpected empty X-Registry-Auth header: %v", authHeader)
+	}
+}
+
 func TestInstallPlugins(t *testing.T) {
 	opts := InstallPluginOptions{
 		Remote: "", Name: "test",
