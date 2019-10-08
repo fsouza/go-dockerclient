@@ -35,10 +35,16 @@ type InstallPluginOptions struct {
 //
 // See https://goo.gl/C4t7Tz for more details.
 func (c *Client) InstallPlugins(opts InstallPluginOptions) error {
+	headers, err := headersWithAuth(opts.Auth)
+	if err != nil {
+		return err
+	}
+
 	path := "/plugins/pull?" + queryString(opts)
 	resp, err := c.do(http.MethodPost, path, doOptions{
 		data:    opts.Plugins,
 		context: opts.Context,
+		headers: headers,
 	})
 	if err != nil {
 		return err

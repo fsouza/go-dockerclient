@@ -210,13 +210,20 @@ func TestInstallPlugins(t *testing.T) {
 			},
 		},
 		Context: context.Background(),
-		Auth:    AuthConfiguration{},
+		Auth:    AuthConfiguration{Username: "XY"},
 	}
 
-	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
 	err := client.InstallPlugins(opts)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	req := fakeRT.requests[0]
+	authHeader := req.Header.Get("X-Registry-Auth")
+	if authHeader == "" {
+		t.Errorf("InstallImage: unexpected empty X-Registry-Auth header: %v", authHeader)
 	}
 }
 
