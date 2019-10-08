@@ -23,5 +23,7 @@ linters:
     - errcheck
     - funlen
     - gochecknoglobals
+    - gocognit
     - goconst
     - lll
+    - wsl
