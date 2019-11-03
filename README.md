@@ -115,11 +115,11 @@ All development commands can be seen in the [Makefile](Makefile).
 
 Commited code must pass:
 
-* [golangci-lint](integration_unix_test.go)
+* [golangci-lint](https://github.com/golangci/golangci-lint)
 * [go test](https://golang.org/cmd/go/#hdr-Test_packages)
 
-Running ``make test`` will check all of these. You can reformat the code with
-``make fmt``.
+Running ``make test`` will run all checks, as well as install any required
+dependencies.
 
 ## Modules
 
