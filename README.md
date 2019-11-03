@@ -18,19 +18,13 @@ documentation](https://docs.docker.com/engine/api/latest/).
 Link for the official SDK: https://docs.docker.com/develop/sdk/
 
 go-dockerclient was created before Docker had an official Go SDK and is
-still maintained and relatively active because it's still used out there. New
-features in the Docker API do not get automatically implemented here: it's
-based on demand, if someone wants it, they can file an issue or a PR and the
-feature may get implemented/merged.
+still maintained and active because it's still used out there. New features in
+the Docker API do not get automatically implemented here: it's based on demand,
+if someone wants it, they can file an issue or a PR and the feature may get
+implemented/merged.
 
 For new projects, using the official SDK is probably more appropriate as
 go-dockerclient lags behind the official SDK.
-
-When using the official SDK, keep in mind that because of how the its
-dependencies are organized, you may need some extra steps in order to be able
-to import it in your projects (see
-[#784](https://github.com/fsouza/go-dockerclient/issues/784) and
-[moby/moby#28269](https://github.com/moby/moby/issues/28269)).
 
 ## Example
 
@@ -105,7 +99,10 @@ import (
 )
 
 func main() {
-	client, _ := docker.NewClientFromEnv()
+	client, err := docker.NewClientFromEnv()
+	if err != nil {
+		// handle err
+	}
 	// use client
 }
 ```
@@ -133,7 +130,7 @@ If you're using dep, you can check the [releases
 page](https://github.com/fsouza/go-dockerclient/releases) for the latest
 release fully compatible with dep.
 
-With other vendoring tools, users might need to specify go-dockerclient's
+With other vendoring tools, users need to specify go-dockerclient's
 dependencies manually.
 
 ## Using with Docker 1.9 and Go 1.4
