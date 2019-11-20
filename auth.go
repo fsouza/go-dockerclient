@@ -30,7 +30,7 @@ type AuthConfiguration struct {
 	ServerAddress string `json:"serveraddress,omitempty"`
 
 	// IdentityToken can be supplied with the identitytoken response of the AuthCheck call
-	// see https://godoc.org/github.com/docker/docker/api/types#AuthConfig
+	// see https://pkg.go.dev/github.com/docker/docker/api/types?tab=doc#AuthConfig
 	// It can be used in place of password not in conjunction with it
 	IdentityToken string `json:"identitytoken,omitempty"`
 
