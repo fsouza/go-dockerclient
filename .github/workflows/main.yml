@@ -58,7 +58,7 @@ jobs:
       #     GOARCH: ${{ matrix.goarch }}
 
       - name: run-tests
-        run: go test -race -vet all -mod readonly ./...
+        run: make gotest
         shell: bash
         env:
           GOARCH: ${{ matrix.goarch }}
