@@ -1,0 +1,52 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint-and-test:
+    strategy:
+      matrix:
+        go_version:
+          - 1.13
+          - 1.14
+        os:
+          - macos
+          - ubuntu
+          - windows
+
+    name: lint-and-test (${{ matrix.os }}/go-${{ matrix.go_version }})
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/setup-go@master
+        id: go
+        with:
+          stable: false
+          go-version: "^${{ matrix.go_version }}"
+
+      - uses: actions/checkout@master
+
+      - name: install deps
+        run: |
+          go mod download
+          (
+            cd /tmp
+            env GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          )
+
+      - name: run-linter
+        run: |
+          $(go env GOPATH)/bin/golangci-lint run
+        env:
+          GOPROXY: off
+          GOFLAGS: -mod=readonly
+
+      - name: run-tests
+        run: go test -race -vet all -mod readonly ./...
+        env:
+          GOPROXY: off
