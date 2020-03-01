@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  lint-and-test:
+  test:
     strategy:
       matrix:
         go_version:
@@ -19,8 +19,14 @@ jobs:
           - macos
           - ubuntu
           - windows
+        goarch:
+          - 386
+          - amd64
+        exclude:
+          - os: macos
+            goarch: 386
 
-    name: lint-and-test (${{ matrix.os }}/go-${{ matrix.go_version }})
+    name: test (${{ matrix.os }}/go-${{ matrix.go_version }}/${{ matrix.goarch }})
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/setup-go@master
@@ -38,15 +44,22 @@ jobs:
             cd /tmp
             env GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint@latest
           )
+        shell: bash
+        env:
+          GOARCH: ${{ matrix.goarch }}
 
       - name: run-linter
         run: |
           $(go env GOPATH)/bin/golangci-lint run
+        shell: bash
         env:
           GOPROXY: off
           GOFLAGS: -mod=readonly
+          GOARCH: ${{ matrix.goarch }}
 
       - name: run-tests
         run: go test -race -vet all -mod readonly ./...
+        shell: bash
         env:
+          GOARCH: ${{ matrix.goarch }}
           GOPROXY: off
