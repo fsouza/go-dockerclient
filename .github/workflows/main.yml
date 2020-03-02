@@ -49,7 +49,6 @@ jobs:
           GOPROXY: off
 
       - run: make integration
-        if: matrix.os != 'macos'
+        if: matrix.os != 'macos' && matrix.goarch == 'amd64'
         env:
           GOFLAGS: -mod=readonly
-          GOARCH: ${{ matrix.goarch }}
