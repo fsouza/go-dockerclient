@@ -38,14 +38,11 @@ jobs:
       - uses: actions/checkout@master
 
       - run: go mod download
-        env:
-          GOARCH: ${{ matrix.goarch }}
 
       - run: make lint
         shell: bash
         env:
           GOFLAGS: -mod=readonly
-          GOARCH: ${{ matrix.goarch }}
 
       - run: make gotest
         shell: bash
