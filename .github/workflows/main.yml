@@ -39,10 +39,10 @@ jobs:
 
       - run: go mod download
 
-      - run: make lint
-        shell: bash
-        env:
-          GOFLAGS: -mod=readonly
+      # - run: make lint
+      #   shell: bash
+      #   env:
+      #     GOFLAGS: -mod=readonly
 
       - run: make gotest
         shell: bash
