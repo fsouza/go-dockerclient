@@ -29,12 +29,7 @@ jobs:
     name: test (${{ matrix.os }}/go-${{ matrix.go_version }}/${{ matrix.goarch }})
     runs-on: ${{ matrix.os }}-latest
     steps:
-      # can I run docker on windows?
-      - name: test docker
-        if: matrix.os != 'macos'
-        run: docker run hello-world
-
-      - uses: actions/setup-go@master
+      - uses: fsouza/setup-go@add-gobin
         id: go
         with:
           stable: false
@@ -42,30 +37,18 @@ jobs:
 
       - uses: actions/checkout@master
 
-      - name: install deps
-        run: |
-          echo $PATH
-          go mod download
-          (
-            cd /tmp
-            env GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-          )
-        shell: bash
+      - run: go mod download
         env:
           GOARCH: ${{ matrix.goarch }}
 
-      # - name: run-linter
-      #   run: |
-      #     $(go env GOPATH)/bin/golangci-lint run
-      #   shell: bash
-      #   env:
-      #     GOPROXY: off
-      #     GOFLAGS: -mod=readonly
-      #     GOARCH: ${{ matrix.goarch }}
-
-      - name: run-tests
-        run: make gotest
+      - run: make gotest
         shell: bash
         env:
           GOARCH: ${{ matrix.goarch }}
           GOPROXY: off
+
+      - run: make lint
+        shell: bash
+        env:
+          GOFLAGS: -mod=readonly
+          GOARCH: ${{ matrix.goarch }}
