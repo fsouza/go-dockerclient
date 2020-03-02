@@ -29,6 +29,11 @@ jobs:
     name: test (${{ matrix.os }}/go-${{ matrix.go_version }}/${{ matrix.goarch }})
     runs-on: ${{ matrix.os }}-latest
     steps:
+      # can I run docker on windows?
+      - name: test docker
+        if: matrix.os != 'macos'
+        run: docker run hello-world
+
       - uses: actions/setup-go@master
         id: go
         with:
