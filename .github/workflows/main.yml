@@ -41,13 +41,20 @@ jobs:
         env:
           GOARCH: ${{ matrix.goarch }}
 
+      - run: make lint
+        shell: bash
+        env:
+          GOFLAGS: -mod=readonly
+          GOARCH: ${{ matrix.goarch }}
+
       - run: make gotest
         shell: bash
         env:
           GOARCH: ${{ matrix.goarch }}
           GOPROXY: off
 
-      - run: make lint
+      - run: make integration
+        if: matrix.os != 'macos'
         shell: bash
         env:
           GOFLAGS: -mod=readonly
