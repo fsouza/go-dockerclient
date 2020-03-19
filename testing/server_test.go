@@ -1279,8 +1279,7 @@ func TestRemoveContainerNotFound(t *testing.T) {
 	server := baseDockerServer()
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
-	path := fmt.Sprintf("/containers/abc123")
-	request, _ := http.NewRequest(http.MethodDelete, path, nil)
+	request, _ := http.NewRequest(http.MethodDelete, "/containers/abc123", nil)
 	server.ServeHTTP(recorder, request)
 	if recorder.Code != http.StatusNotFound {
 		t.Errorf("RemoveContainer: wrong status. Want %d. Got %d.", http.StatusNotFound, recorder.Code)
