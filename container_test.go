@@ -921,13 +921,7 @@ func TestInspectContainerNotFound(t *testing.T) {
 	if container != nil {
 		t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)
 	}
-	var containerErr *NoSuchContainer
-	if !errors.As(err, &containerErr) {
-		t.Errorf("InspectContainer: Wrong error information. Want %#v. Got %#v.", containerErr, err)
-	}
-	if containerErr.ID != containerID {
-		t.Errorf("InspectContainer: wrong container in error\nWant %q\ngot  %q", containerID, containerErr.ID)
-	}
+	expectNoSuchContainer(t, containerID, err)
 }
 
 func TestContainerChanges(t *testing.T) {
@@ -982,15 +976,13 @@ func TestContainerChangesFailure(t *testing.T) {
 
 func TestContainerChangesNotFound(t *testing.T) {
 	t.Parallel()
+	const containerID = "abe033"
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: 404})
-	changes, err := client.ContainerChanges("abe033")
+	changes, err := client.ContainerChanges(containerID)
 	if changes != nil {
 		t.Errorf("ContainerChanges: Expected <nil> changes, got %#v", changes)
 	}
-	expected := &NoSuchContainer{ID: "abe033"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("ContainerChanges: Wrong error information. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, containerID, err)
 }
 
 func TestCreateContainer(t *testing.T) {
@@ -1039,7 +1031,7 @@ func TestCreateContainerImageNotFound(t *testing.T) {
 	if container != nil {
 		t.Errorf("CreateContainer: expected <nil> container, got %#v.", container)
 	}
-	if !reflect.DeepEqual(err, ErrNoSuchImage) {
+	if !errors.Is(err, ErrNoSuchImage) {
 		t.Errorf("CreateContainer: Wrong error type. Want %#v. Got %#v.", ErrNoSuchImage, err)
 	}
 }
@@ -1244,10 +1236,7 @@ func TestStartContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.StartContainer("a2344", &HostConfig{})
-	expected := &NoSuchContainer{ID: "a2344", Err: err.(*NoSuchContainer).Err}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("StartContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "a2344", err)
 }
 
 func TestStartContainerAlreadyRunning(t *testing.T) {
@@ -1315,10 +1304,7 @@ func TestStopContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.StopContainer("a2334", 10)
-	expected := &NoSuchContainer{ID: "a2334"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("StopContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "a2334", err)
 }
 
 func TestStopContainerNotRunning(t *testing.T) {
@@ -1354,10 +1340,7 @@ func TestRestartContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.RestartContainer("a2334", 10)
-	expected := &NoSuchContainer{ID: "a2334"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("RestartContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "a2334", err)
 }
 
 func TestPauseContainer(t *testing.T) {
@@ -1383,10 +1366,7 @@ func TestPauseContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.PauseContainer("a2334")
-	expected := &NoSuchContainer{ID: "a2334"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("PauseContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "a2334", err)
 }
 
 func TestUnpauseContainer(t *testing.T) {
@@ -1412,10 +1392,7 @@ func TestUnpauseContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.UnpauseContainer("a2334")
-	expected := &NoSuchContainer{ID: "a2334"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("PauseContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "a2334", err)
 }
 
 func TestKillContainer(t *testing.T) {
@@ -1459,10 +1436,7 @@ func TestKillContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.KillContainer(KillContainerOptions{ID: "a2334"})
-	expected := &NoSuchContainer{ID: "a2334"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("KillContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "a2334", err)
 }
 
 func TestKillContainerNotRunning(t *testing.T) {
@@ -1519,10 +1493,7 @@ func TestRemoveContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	err := client.RemoveContainer(RemoveContainerOptions{ID: "a2334"})
-	expected := &NoSuchContainer{ID: "a2334"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("RemoveContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "a2334", err)
 }
 
 func TestResizeContainerTTY(t *testing.T) {
@@ -1616,10 +1587,7 @@ func TestWaitContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	_, err := client.WaitContainer("a2334")
-	expected := &NoSuchContainer{ID: "a2334"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("WaitContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "a2334", err)
 }
 
 func TestCommitContainer(t *testing.T) {
@@ -1704,10 +1672,7 @@ func TestCommitContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	_, err := client.CommitContainer(CommitContainerOptions{})
-	expected := &NoSuchContainer{ID: ""}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("CommitContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "", err)
 }
 
 func TestAttachToContainerLogs(t *testing.T) {
@@ -1991,10 +1956,7 @@ func TestAttachToContainerWithoutContainer(t *testing.T) {
 	t.Parallel()
 	var client Client
 	err := client.AttachToContainer(AttachToContainerOptions{})
-	expected := &NoSuchContainer{ID: ""}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("AttachToContainer: wrong error. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "", err)
 }
 
 func TestLogs(t *testing.T) {
@@ -2175,10 +2137,7 @@ func TestLogsNoContainer(t *testing.T) {
 	t.Parallel()
 	var client Client
 	err := client.Logs(LogsOptions{})
-	expected := &NoSuchContainer{ID: ""}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("AttachToContainer: wrong error. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "", err)
 }
 
 func TestNoSuchContainerError(t *testing.T) {
@@ -2446,20 +2405,16 @@ func TestTopContainerNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: http.StatusNotFound})
 	_, err := client.TopContainer("abef348", "")
-	expected := &NoSuchContainer{ID: "abef348"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("StopContainer: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "abef348", err)
 }
 
 func TestTopContainerWithPsArgs(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "no such container", status: http.StatusNotFound}
 	client := newTestClient(fakeRT)
-	expectedErr := &NoSuchContainer{ID: "abef348"}
-	if _, err := client.TopContainer("abef348", "aux"); !reflect.DeepEqual(expectedErr, err) {
-		t.Errorf("TopContainer: Expected %v. Got %v.", expectedErr, err)
-	}
+	_, err := client.TopContainer("abef348", "aux")
+	expectNoSuchContainer(t, "abef348", err)
+
 	expectedURI := "/containers/abef348/top?ps_args=aux"
 	if !strings.HasSuffix(fakeRT.requests[0].URL.String(), expectedURI) {
 		t.Errorf("TopContainer: Expected URI to have %q. Got %q.", expectedURI, fakeRT.requests[0].URL.String())
@@ -2785,10 +2740,7 @@ func TestStatsContainerNotFound(t *testing.T) {
 	done := make(chan bool)
 	defer close(done)
 	err := client.Stats(StatsOptions{ID: "abef348", Stats: statsC, Stream: true, Done: done})
-	expected := &NoSuchContainer{ID: "abef348"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("Stats: Wrong error returned. Want %#v. Got %#v.", expected, err)
-	}
+	expectNoSuchContainer(t, "abef348", err)
 }
 
 func TestRenameContainer(t *testing.T) {
