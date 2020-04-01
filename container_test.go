@@ -915,14 +915,18 @@ func TestInspectContainerFailure(t *testing.T) {
 
 func TestInspectContainerNotFound(t *testing.T) {
 	t.Parallel()
+	const containerID = "abe033"
 	client := newTestClient(&FakeRoundTripper{message: "no such container", status: 404})
-	container, err := client.InspectContainer("abe033")
+	container, err := client.InspectContainer(containerID)
 	if container != nil {
 		t.Errorf("InspectContainer: Expected <nil> container, got %#v", container)
 	}
-	expected := &NoSuchContainer{ID: "abe033"}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("InspectContainer: Wrong error information. Want %#v. Got %#v.", expected, err)
+	var containerErr *NoSuchContainer
+	if !errors.As(err, &containerErr) {
+		t.Errorf("InspectContainer: Wrong error information. Want %#v. Got %#v.", containerErr, err)
+	}
+	if containerErr.ID != containerID {
+		t.Errorf("InspectContainer: wrong container in error\nWant %q\ngot  %q", containerID, containerErr.ID)
 	}
 }
 
@@ -1794,7 +1798,7 @@ func TestAttachToContainer(t *testing.T) {
 func TestAttachToContainerSentinel(t *testing.T) {
 	t.Parallel()
 	reader := strings.NewReader("send value")
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
 	}))
@@ -1828,7 +1832,7 @@ func TestAttachToContainerSentinel(t *testing.T) {
 func TestAttachToContainerNilStdout(t *testing.T) {
 	t.Parallel()
 	reader := strings.NewReader("send value")
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
 	}))
@@ -1856,7 +1860,7 @@ func TestAttachToContainerNilStdout(t *testing.T) {
 func TestAttachToContainerNilStderr(t *testing.T) {
 	t.Parallel()
 	reader := strings.NewReader("send value")
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte{1, 0, 0, 0, 0, 0, 0, 5})
 		w.Write([]byte("hello"))
 	}))
@@ -1885,7 +1889,7 @@ func TestAttachToContainerStdinOnly(t *testing.T) {
 	reader := strings.NewReader("send value")
 	serverFinished := make(chan struct{})
 	clientFinished := make(chan struct{})
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		hj, ok := w.(http.Hijacker)
 		if !ok {
@@ -2044,7 +2048,7 @@ func TestLogs(t *testing.T) {
 
 func TestLogsNilStdoutDoesntFail(t *testing.T) {
 	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		prefix := []byte{1, 0, 0, 0, 0, 0, 0, 19}
 		w.Write(prefix)
 		w.Write([]byte("something happened!"))
@@ -2067,7 +2071,7 @@ func TestLogsNilStdoutDoesntFail(t *testing.T) {
 
 func TestLogsNilStderrDoesntFail(t *testing.T) {
 	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		prefix := []byte{2, 0, 0, 0, 0, 0, 0, 19}
 		w.Write(prefix)
 		w.Write([]byte("something happened!"))
@@ -2140,7 +2144,7 @@ func TestLogsSpecifyingTail(t *testing.T) {
 
 func TestLogsRawTerminal(t *testing.T) {
 	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte("something happened!"))
 	}))
 	defer server.Close()
