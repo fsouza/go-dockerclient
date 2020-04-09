@@ -44,7 +44,7 @@ func TestAuthConfigurationsFromFile(t *testing.T) {
 	t.Parallel()
 	tmpDir, err := ioutil.TempDir("", "go-dockerclient-auth-test")
 	if err != nil {
-		t.Errorf("Unable to create temporary directory for TestAuthConfigurationsFromFile: %s", err)
+		t.Fatalf("Unable to create temporary directory for TestAuthConfigurationsFromFile: %s", err)
 	}
 	defer os.RemoveAll(tmpDir)
 	authString := base64.StdEncoding.EncodeToString([]byte("user:pass"))
@@ -59,6 +59,47 @@ func TestAuthConfigurationsFromFile(t *testing.T) {
 	}
 	if _, hasKey := auths.Configs["foo"]; !hasKey {
 		t.Errorf("Returned auths did not include expected auth key foo")
+	}
+}
+
+func TestAuthConfigurationsFromDockerCfg(t *testing.T) {
+	t.Parallel()
+	tmpDir, err := ioutil.TempDir("", "go-dockerclient-auth-dockercfg-test")
+	if err != nil {
+		t.Fatalf("Unable to create temporary directory for TestAuthConfigurationsFromDockerCfg: %s", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	keys := []string{
+		"docker.io",
+		"us.gcr.io",
+	}
+	pathsToTry := []string{"some/unknown/path"}
+	for i, key := range keys {
+		authString := base64.StdEncoding.EncodeToString([]byte("user:pass"))
+		content := fmt.Sprintf(`{"auths":{"%s": {"auth": "%s"}}}`, key, authString)
+		configFile := path.Join(tmpDir, fmt.Sprintf("docker_config_%d.json", i))
+		if err = ioutil.WriteFile(configFile, []byte(content), 0600); err != nil {
+			t.Errorf("Error writing auth config for TestAuthConfigurationsFromFile: %s", err)
+		}
+		pathsToTry = append(pathsToTry, configFile)
+	}
+	auths, err := newAuthConfigurationsFromDockerCfg(pathsToTry)
+	if err != nil {
+		t.Errorf("Error calling NewAuthConfigurationsFromFile: %s", err)
+	}
+
+	for _, key := range keys {
+		if _, hasKey := auths.Configs[key]; !hasKey {
+			t.Errorf("Returned auths did not include expected auth key %q", key)
+		}
+	}
+}
+
+func TestAuthConfigurationsFromDockerCfgError(t *testing.T) {
+	auths, err := newAuthConfigurationsFromDockerCfg([]string{"this/doesnt/exist.json"})
+	if err == nil {
+		t.Fatalf("unexpected <nil> error, returned auth config: %#v", auths)
 	}
 }
 

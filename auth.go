@@ -130,7 +130,10 @@ func NewAuthConfigurationsFromDockerCfg() (*AuthConfigurations, error) {
 	if len(pathsToTry) < 1 {
 		return nil, errors.New("no docker configuration found")
 	}
+	return newAuthConfigurationsFromDockerCfg(pathsToTry)
+}
 
+func newAuthConfigurationsFromDockerCfg(pathsToTry []string) (*AuthConfigurations, error) {
 	var result *AuthConfigurations
 	var auths *AuthConfigurations
 	var err error
