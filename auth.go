@@ -104,17 +104,20 @@ func NewAuthConfigurationsFromFile(path string) (*AuthConfigurations, error) {
 }
 
 func cfgPaths(dockerConfigEnv string, homeEnv string) []string {
-	var paths []string
 	if dockerConfigEnv != "" {
-		paths = append(paths, path.Join(dockerConfigEnv, "plaintext-passwords.json"))
-		paths = append(paths, path.Join(dockerConfigEnv, "config.json"))
+		return []string{
+			path.Join(dockerConfigEnv, "plaintext-passwords.json"),
+			path.Join(dockerConfigEnv, "config.json"),
+		}
 	}
 	if homeEnv != "" {
-		paths = append(paths, path.Join(homeEnv, ".docker", "plaintext-passwords.json"))
-		paths = append(paths, path.Join(homeEnv, ".docker", "config.json"))
-		paths = append(paths, path.Join(homeEnv, ".dockercfg"))
+		return []string{
+			path.Join(homeEnv, ".docker", "plaintext-passwords.json"),
+			path.Join(homeEnv, ".docker", "config.json"),
+			path.Join(homeEnv, ".dockercfg"),
+		}
 	}
-	return paths
+	return nil
 }
 
 // NewAuthConfigurationsFromDockerCfg returns AuthConfigurations from
@@ -128,6 +131,7 @@ func NewAuthConfigurationsFromDockerCfg() (*AuthConfigurations, error) {
 		return nil, errors.New("no docker configuration found")
 	}
 
+	var result *AuthConfigurations
 	var auths *AuthConfigurations
 	var err error
 	for _, path := range pathsToTry {
@@ -136,14 +140,17 @@ func NewAuthConfigurationsFromDockerCfg() (*AuthConfigurations, error) {
 			continue
 		}
 
-		if !auths.isEmpty() {
-			return auths, nil
-		}
-		if err == nil {
-			return auths, nil
+		if result == nil {
+			result = auths
+		} else {
+			result.merge(*auths)
 		}
 	}
-	return auths, err
+
+	if result != nil {
+		return result, nil
+	}
+	return result, err
 }
 
 // NewAuthConfigurations returns AuthConfigurations from a JSON encoded string in the
