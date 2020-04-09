@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -235,5 +236,97 @@ func TestAuthCheck(t *testing.T) {
 	*fakeRT = FakeRoundTripper{status: http.StatusUnauthorized}
 	if _, err := client.AuthCheck(&AuthConfiguration{}); err == nil {
 		t.Fatal("expected failure from unauthorized auth")
+	}
+}
+
+func TestAuthConfigurationsMerge(t *testing.T) {
+	t.Parallel()
+	var tests = []struct {
+		name     string
+		left     AuthConfigurations
+		right    AuthConfigurations
+		expected AuthConfigurations
+	}{
+		{
+			name:     "empty configs",
+			expected: AuthConfigurations{},
+		},
+		{
+			name: "empty left config",
+			right: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"docker.io": {Email: "user@example.com"},
+				},
+			},
+			expected: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"docker.io": {Email: "user@example.com"},
+				},
+			},
+		},
+		{
+			name: "empty right config",
+			left: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"docker.io": {Email: "user@example.com"},
+				},
+			},
+			expected: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"docker.io": {Email: "user@example.com"},
+				},
+			},
+		},
+		{
+			name: "no conflicts",
+			left: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"docker.io": {Email: "user@example.com"},
+				},
+			},
+			right: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"us.gcr.io": {Email: "user@google.com"},
+				},
+			},
+			expected: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"docker.io": {Email: "user@example.com"},
+					"us.gcr.io": {Email: "user@google.com"},
+				},
+			},
+		},
+		{
+			name: "no conflicts",
+			left: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"docker.io": {Email: "user@example.com"},
+					"us.gcr.io": {Email: "google-user@example.com"},
+				},
+			},
+			right: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"us.gcr.io": {Email: "user@google.com"},
+				},
+			},
+			expected: AuthConfigurations{
+				Configs: map[string]AuthConfiguration{
+					"docker.io": {Email: "user@example.com"},
+					"us.gcr.io": {Email: "google-user@example.com"},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			test.left.merge(test.right)
+
+			if !reflect.DeepEqual(test.left, test.expected) {
+				t.Errorf("wrong configuration map after merge\nwant %#v\ngot  %#v", test.expected, test.left)
+			}
+		})
 	}
 }

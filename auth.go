@@ -55,8 +55,21 @@ func (c AuthConfigurations) isEmpty() bool {
 	return len(c.Configs) == 0
 }
 
-func (c AuthConfigurations) headerKey() string {
+func (AuthConfigurations) headerKey() string {
 	return "X-Registry-Config"
+}
+
+// merge updates the configuration. If a key is defined in both maps, the one
+// in c.Configs takes precedence.
+func (c *AuthConfigurations) merge(other AuthConfigurations) {
+	for k, v := range other.Configs {
+		if c.Configs == nil {
+			c.Configs = make(map[string]AuthConfiguration)
+		}
+		if _, ok := c.Configs[k]; !ok {
+			c.Configs[k] = v
+		}
+	}
 }
 
 // AuthConfigurations119 is used to serialize a set of AuthConfigurations
@@ -119,6 +132,13 @@ func NewAuthConfigurationsFromDockerCfg() (*AuthConfigurations, error) {
 	var err error
 	for _, path := range pathsToTry {
 		auths, err = NewAuthConfigurationsFromFile(path)
+		if err != nil {
+			continue
+		}
+
+		if !auths.isEmpty() {
+			return auths, nil
+		}
 		if err == nil {
 			return auths, nil
 		}
