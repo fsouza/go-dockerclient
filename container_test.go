@@ -1044,7 +1044,7 @@ func TestCreateContainerDuplicateName(t *testing.T) {
 	if container != nil {
 		t.Errorf("CreateContainer: expected <nil> container, got %#v.", container)
 	}
-	if err != ErrContainerAlreadyExists {
+	if !errors.Is(err, ErrContainerAlreadyExists) {
 		t.Errorf("CreateContainer: Wrong error type. Want %#v. Got %#v.", ErrContainerAlreadyExists, err)
 	}
 }
@@ -1059,7 +1059,7 @@ func TestCreateContainerDuplicateNameWorkaroundDocker17_09(t *testing.T) {
 	if container != nil {
 		t.Errorf("CreateContainer: expected <nil> container, got %#v.", container)
 	}
-	if err != ErrContainerAlreadyExists {
+	if !errors.Is(err, ErrContainerAlreadyExists) {
 		t.Errorf("CreateContainer: Wrong error type. Want %#v. Got %#v.", ErrContainerAlreadyExists, err)
 	}
 }
@@ -2788,7 +2788,7 @@ func TestInspectContainerWhenContextTimesOut(t *testing.T) {
 	defer cancel()
 
 	_, err := client.InspectContainerWithContext("id", ctx)
-	if err != context.DeadlineExceeded {
+	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
 }
@@ -2803,7 +2803,7 @@ func TestStartContainerWhenContextTimesOut(t *testing.T) {
 	defer cancel()
 
 	err := client.StartContainerWithContext("id", nil, ctx)
-	if err != context.DeadlineExceeded {
+	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
 }
@@ -2818,7 +2818,7 @@ func TestStopContainerWhenContextTimesOut(t *testing.T) {
 	defer cancel()
 
 	err := client.StopContainerWithContext("id", 10, ctx)
-	if err != context.DeadlineExceeded {
+	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
 }
@@ -2833,7 +2833,7 @@ func TestWaitContainerWhenContextTimesOut(t *testing.T) {
 	defer cancel()
 
 	_, err := client.WaitContainerWithContext("id", ctx)
-	if err != context.DeadlineExceeded {
+	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
 	}
 }

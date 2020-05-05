@@ -571,7 +571,7 @@ func TestClientStreamInactivityTimeout(t *testing.T) {
 		stdout:            &w,
 		inactivityTimeout: 100 * time.Millisecond,
 	})
-	if err != ErrInactivityTimeout {
+	if !errors.Is(err, ErrInactivityTimeout) {
 		t.Fatalf("expected request canceled error, got: %s", err)
 	}
 	expected := "0\n"
@@ -607,7 +607,7 @@ func TestClientStreamContextDeadline(t *testing.T) {
 		stdout:         &w,
 		context:        ctx,
 	})
-	if err != context.DeadlineExceeded {
+	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected %s, got: %s", context.DeadlineExceeded, err)
 	}
 	expected := "abc\n"
@@ -646,7 +646,7 @@ func TestClientStreamContextCancel(t *testing.T) {
 		stdout:         &w,
 		context:        ctx,
 	})
-	if err != context.Canceled {
+	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected %s, got: %s", context.Canceled, err)
 	}
 	expected := "abc\n"
@@ -789,7 +789,7 @@ func TestClientDoContextDeadline(t *testing.T) {
 	_, err = client.do(http.MethodPost, "/image/create", doOptions{
 		context: ctx,
 	})
-	if err != context.DeadlineExceeded {
+	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("expected %s, got: %s", context.DeadlineExceeded, err)
 	}
 }
@@ -812,7 +812,7 @@ func TestClientDoContextCancel(t *testing.T) {
 	_, err = client.do(http.MethodPost, "/image/create", doOptions{
 		context: ctx,
 	})
-	if err != context.Canceled {
+	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected %s, got: %s", context.Canceled, err)
 	}
 }
@@ -844,7 +844,7 @@ func TestClientStreamTimeoutNativeClient(t *testing.T) {
 		stdout:            &w,
 		inactivityTimeout: 50 * time.Millisecond,
 	})
-	if err != ErrInactivityTimeout {
+	if !errors.Is(err, ErrInactivityTimeout) {
 		t.Fatalf("expected request canceled error, got: %s", err)
 	}
 	expected := "0\n"

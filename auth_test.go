@@ -6,6 +6,7 @@ package docker
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -134,7 +135,7 @@ func TestAuthBadConfig(t *testing.T) {
 	auth := base64.StdEncoding.EncodeToString([]byte("userpass"))
 	read := strings.NewReader(fmt.Sprintf(`{"docker.io":{"auth":"%s","email":"user@example.com"}}`, auth))
 	ac, err := NewAuthConfigurations(read)
-	if err != ErrCannotParseDockercfg {
+	if !errors.Is(err, ErrCannotParseDockercfg) {
 		t.Errorf("Incorrect error returned %v\n", err)
 	}
 	if ac != nil {
