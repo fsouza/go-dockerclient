@@ -19,6 +19,8 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
 	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79
+	golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3 // indirect
 	google.golang.org/grpc v1.29.1 // indirect
 	gotest.tools/v3 v3.0.2 // indirect
+	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc // indirect
 )
