@@ -1,5 +1,10 @@
 package docker
 
+import (
+	"context"
+	"net/http"
+)
+
 // RemoveContainerOptions encapsulates options to remove a container.
 //
 // See https://goo.gl/hL5IPC for more details.

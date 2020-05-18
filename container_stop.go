@@ -1,5 +1,11 @@
 package docker
 
+import (
+	"context"
+	"fmt"
+	"net/http"
+)
+
 // StopContainer stops a container, killing it after the given timeout (in
 // seconds).
 //

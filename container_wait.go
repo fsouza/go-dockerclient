@@ -1,5 +1,11 @@
 package docker
 
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+)
+
 // WaitContainer blocks until the given container stops, return the exit code
 // of the container status.
 //

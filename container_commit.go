@@ -1,5 +1,11 @@
 package docker
 
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+)
+
 // CommitContainerOptions aggregates parameters to the CommitContainer method.
 //
 // See https://goo.gl/CzIguf for more details.

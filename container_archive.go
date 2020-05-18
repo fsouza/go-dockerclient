@@ -1,5 +1,13 @@
 package docker
 
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+)
+
 // UploadToContainerOptions is the set of options that can be used when
 // uploading an archive into a container.
 //

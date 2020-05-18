@@ -1,5 +1,13 @@
 package docker
 
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+)
+
 // ExportContainerOptions is the set of parameters to the ExportContainer
 // method.
 //

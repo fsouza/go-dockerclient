@@ -1,5 +1,12 @@
 package docker
 
+import (
+	"context"
+	"io"
+	"net/http"
+	"time"
+)
+
 // LogsOptions represents the set of options used when getting logs from a
 // container.
 //

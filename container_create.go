@@ -1,5 +1,13 @@
 package docker
 
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strings"
+)
+
 // ErrContainerAlreadyExists is the error returned by CreateContainer when the
 // container already exists.
 var ErrContainerAlreadyExists = errors.New("container already exists")

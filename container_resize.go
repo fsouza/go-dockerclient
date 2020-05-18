@@ -1,5 +1,11 @@
 package docker
 
+import (
+	"net/http"
+	"net/url"
+	"strconv"
+)
+
 // ResizeContainerTTY resizes the terminal to the given height and width.
 //
 // See https://goo.gl/FImjeq for more details.

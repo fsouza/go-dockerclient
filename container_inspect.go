@@ -2,6 +2,8 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 )
 
 // InspectContainer returns information about a container by its ID.

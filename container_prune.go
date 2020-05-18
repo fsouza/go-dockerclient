@@ -1,5 +1,11 @@
 package docker
 
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+)
+
 // PruneContainersOptions specify parameters to the PruneContainers function.
 //
 // See https://goo.gl/wnkgDT for more details.

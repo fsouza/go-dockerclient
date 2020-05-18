@@ -1,5 +1,11 @@
 package docker
 
+import (
+	"context"
+	"fmt"
+	"net/http"
+)
+
 // RenameContainerOptions specify parameters to the RenameContainer function.
 //
 // See https://goo.gl/46inai for more details.

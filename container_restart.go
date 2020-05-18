@@ -1,5 +1,10 @@
 package docker
 
+import (
+	"fmt"
+	"net/http"
+)
+
 // RestartPolicy represents the policy for automatically restarting a container.
 //
 // Possible values are:

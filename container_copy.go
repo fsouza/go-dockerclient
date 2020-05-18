@@ -1,5 +1,13 @@
 package docker
 
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+)
+
 // CopyFromContainerOptions contains the set of options used for copying
 // files from a container.
 //

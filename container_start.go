@@ -1,5 +1,10 @@
 package docker
 
+import (
+	"context"
+	"net/http"
+)
+
 // StartContainer starts a container, returning an error in case of failure.
 //
 // Passing the HostConfig to this method has been deprecated in Docker API 1.22

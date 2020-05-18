@@ -1,5 +1,10 @@
 package docker
 
+import (
+	"fmt"
+	"net/http"
+)
+
 // PauseContainer pauses the given container.
 //
 // See https://goo.gl/D1Yaii for more details.

@@ -1,5 +1,10 @@
 package docker
 
+import (
+	"fmt"
+	"net/http"
+)
+
 // UnpauseContainer unpauses the given container.
 //
 // See https://goo.gl/sZ2faO for more details.

@@ -1,5 +1,14 @@
 package docker
 
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+)
+
 // Stats represents container statistics, returned by /containers/<id>/stats.
 //
 // See https://goo.gl/Dk3Xio for more details.

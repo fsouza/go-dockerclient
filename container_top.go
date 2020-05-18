@@ -1,5 +1,11 @@
 package docker
 
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
 // TopResult represents the list of processes running in a container, as
 // returned by /containers/<id>/top.
 //

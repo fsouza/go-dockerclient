@@ -1,5 +1,11 @@
 package docker
 
+import (
+	"context"
+	"fmt"
+	"net/http"
+)
+
 // UpdateContainerOptions specify parameters to the UpdateContainer function.
 //
 // See https://goo.gl/Y6fXUy for more details.

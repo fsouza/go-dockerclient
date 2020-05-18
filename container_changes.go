@@ -1,5 +1,10 @@
 package docker
 
+import (
+	"encoding/json"
+	"net/http"
+)
+
 // ContainerChanges returns changes in the filesystem of the given container.
 //
 // See https://goo.gl/15KKzh for more details.

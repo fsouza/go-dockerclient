@@ -1,5 +1,10 @@
 package docker
 
+import (
+	"io"
+	"net/http"
+)
+
 // AttachToContainerOptions is the set of options that can be used when
 // attaching to a container.
 //

@@ -1,5 +1,10 @@
 package docker
 
+import (
+	"context"
+	"net/http"
+)
+
 // KillContainerOptions represents the set of options that can be used in a
 // call to KillContainer.
 //
