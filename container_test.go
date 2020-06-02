@@ -74,3 +74,21 @@ func (rt *sleepyRoudTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 	time.Sleep(rt.sleepDuration)
 	return nil, errors.New("Can't complete round trip")
 }
+
+func TestNoSuchContainerError(t *testing.T) {
+	t.Parallel()
+	err := &NoSuchContainer{ID: "i345"}
+	expected := "No such container: i345"
+	if got := err.Error(); got != expected {
+		t.Errorf("NoSuchContainer: wrong message. Want %q. Got %q.", expected, got)
+	}
+}
+
+func TestNoSuchContainerErrorMessage(t *testing.T) {
+	t.Parallel()
+	err := &NoSuchContainer{ID: "i345", Err: errors.New("some advanced error info")}
+	expected := "some advanced error info"
+	if got := err.Error(); got != expected {
+		t.Errorf("NoSuchContainer: wrong message. Want %q. Got %q.", expected, got)
+	}
+}

@@ -2,7 +2,6 @@ package docker
 
 import (
 	"bytes"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -189,22 +188,4 @@ func TestLogsNoContainer(t *testing.T) {
 	var client Client
 	err := client.Logs(LogsOptions{})
 	expectNoSuchContainer(t, "", err)
-}
-
-func TestNoSuchContainerError(t *testing.T) {
-	t.Parallel()
-	err := &NoSuchContainer{ID: "i345"}
-	expected := "No such container: i345"
-	if got := err.Error(); got != expected {
-		t.Errorf("NoSuchContainer: wrong message. Want %q. Got %q.", expected, got)
-	}
-}
-
-func TestNoSuchContainerErrorMessage(t *testing.T) {
-	t.Parallel()
-	err := &NoSuchContainer{ID: "i345", Err: errors.New("some advanced error info")}
-	expected := "some advanced error info"
-	if got := err.Error(); got != expected {
-		t.Errorf("NoSuchContainer: wrong message. Want %q. Got %q.", expected, got)
-	}
 }
