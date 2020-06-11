@@ -16,6 +16,7 @@ jobs:
         go_version:
           - 1.13
           - 1.14
+          - 1.15beta1
         os:
           - macos
           - ubuntu
