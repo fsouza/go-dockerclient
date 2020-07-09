@@ -27,6 +27,7 @@ linters:
     - goconst
     - godot
     - goerr113
+    - gofumpt
     - gomnd
     - lll
     - nestif
