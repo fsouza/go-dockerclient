@@ -111,7 +111,7 @@ func copyTLSConfig(cfg *tls.Config) *tls.Config {
 		Rand:                     cfg.Rand,
 		RootCAs:                  cfg.RootCAs,
 		ServerName:               cfg.ServerName,
-		SessionTicketKey:         cfg.SessionTicketKey, //nolint:staticcheck
+		SessionTicketKey:         cfg.SessionTicketKey,
 		SessionTicketsDisabled:   cfg.SessionTicketsDisabled,
 	}
 }
