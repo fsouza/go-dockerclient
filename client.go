@@ -958,6 +958,7 @@ func queryString(opts interface{}) string {
 }
 
 func addQueryStringValue(items url.Values, key string, v reflect.Value) bool {
+	//nolint:exhaustive
 	switch v.Kind() {
 	case reflect.Bool:
 		if v.Bool() {
