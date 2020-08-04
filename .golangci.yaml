@@ -32,5 +32,6 @@ linters:
     - gomnd
     - lll
     - nestif
+    - nlreturn
     - testpackage
     - wsl
