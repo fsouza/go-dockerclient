@@ -317,7 +317,7 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 			return nil, err
 		}
 	}
-	tlsConfig := &tls.Config{}
+	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 	if certPEMBlock != nil && keyPEMBlock != nil {
 		tlsCert, err := tls.X509KeyPair(certPEMBlock, keyPEMBlock)
 		if err != nil {
