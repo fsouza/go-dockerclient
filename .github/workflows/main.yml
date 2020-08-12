@@ -14,8 +14,8 @@ jobs:
     strategy:
       matrix:
         go_version:
-          - 1.13
           - 1.14
+          - 1.15
         os:
           - macos
           - ubuntu
@@ -40,10 +40,6 @@ jobs:
 
       - run: go mod download
 
-      - run: make lint
-        env:
-          GOFLAGS: -mod=readonly
-
       - run: make gotest
         env:
           GOARCH: ${{ matrix.goarch }}
@@ -53,3 +49,11 @@ jobs:
         if: matrix.os != 'macos' && matrix.goarch == 'amd64'
         env:
           GOFLAGS: -mod=readonly
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.1
+
+      - uses: golangci/golangci-lint-action@v2.2.0
