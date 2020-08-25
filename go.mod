@@ -12,7 +12,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0
 	github.com/google/go-cmp v0.5.1
-	github.com/gorilla/mux v1.7.4
+	github.com/gorilla/mux v1.8.0
 	github.com/moby/sys/mount v0.1.0 // indirect
 	github.com/moby/term v0.0.0-20200429084858-129dac9f73f6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
