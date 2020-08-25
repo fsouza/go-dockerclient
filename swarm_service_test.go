@@ -433,8 +433,6 @@ func TestListServices(t *testing.T) {
 	}
 }
 
-/// ##################################################""
-
 func TestGetServiceLogs(t *testing.T) {
 	var req http.Request
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
