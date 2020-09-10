@@ -26,6 +26,7 @@ linters:
     - gochecknoglobals
     - gocognit
     - goconst
+    - gocritic
     - godot
     - goerr113
     - gofumpt
