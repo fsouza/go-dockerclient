@@ -10,6 +10,7 @@ issues:
     - path: _test\.go
       linters:
         - bodyclose
+        - errorlint
         - goconst
         - gosec
         - scopelint
