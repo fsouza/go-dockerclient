@@ -349,7 +349,7 @@ func TestDecode(t *testing.T) {
 			[]string{"PATH=/usr/bin:/bin", "containers=54", `wat=["123","345"]`},
 			"",
 		},
-		{"}}", nil, "invalid character '}' looking for beginning of value"},
+		{"}}", nil, "json: invalid character '}' looking for beginning of value"},
 		{`{}`, nil, ""},
 	}
 	for _, tt := range tests {

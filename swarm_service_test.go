@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -138,7 +139,8 @@ func TestRemoveServiceNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such service", status: http.StatusNotFound})
 	err := client.RemoveService(RemoveServiceOptions{ID: "a2334"})
 	expected := &NoSuchService{ID: "a2334"}
-	if e := err.(*NoSuchService); e.ID != expected.ID {
+	var e *NoSuchService
+	if errors.As(err, &e) && e.ID != expected.ID {
 		t.Errorf("RemoveService: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
@@ -253,7 +255,8 @@ func TestUpdateServiceNotFound(t *testing.T) {
 	update := UpdateServiceOptions{}
 	err := client.UpdateService("notfound", update)
 	expected := &NoSuchService{ID: "notfound"}
-	if e := err.(*NoSuchService); e.ID != expected.ID {
+	var e *NoSuchService
+	if errors.As(err, &e) && e.ID != expected.ID {
 		t.Errorf("UpdateService: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
@@ -266,7 +269,8 @@ func TestInspectServiceNotFound(t *testing.T) {
 		t.Errorf("InspectService: Expected <nil> service, got %#v", service)
 	}
 	expected := &NoSuchService{ID: "notfound"}
-	if e := err.(*NoSuchService); e.ID != expected.ID {
+	var e *NoSuchService
+	if errors.As(err, &e) && e.ID != expected.ID {
 		t.Errorf("InspectService: Wrong error returned. Want %#v. Got %#v.", expected, err)
 	}
 }
@@ -606,7 +610,8 @@ func TestGetServiceLogsNoContainer(t *testing.T) {
 	var client Client
 	err := client.GetServiceLogs(LogsServiceOptions{})
 	expected := &NoSuchService{ID: ""}
-	if e := err.(*NoSuchService); e.ID != expected.ID {
+	var e *NoSuchService
+	if errors.As(err, &e) && e.ID != expected.ID {
 		t.Errorf("AttachToContainer: wrong error. Want %#v. Got %#v.", expected, err)
 	}
 }

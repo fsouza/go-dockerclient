@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -31,7 +32,8 @@ func (c *Client) InspectContainerWithOptions(opts InspectContainerOptions) (*Con
 		context: opts.Context,
 	})
 	if err != nil {
-		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+		var e *Error
+		if errors.As(err, &e) && e.Status == http.StatusNotFound {
 			return nil, &NoSuchContainer{ID: opts.ID}
 		}
 		return nil, err

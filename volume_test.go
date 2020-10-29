@@ -6,6 +6,7 @@ package docker
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -161,7 +162,7 @@ func TestRemoveVolumeWithOptions(t *testing.T) {
 func TestRemoveVolumeNotFound(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "no such volume", status: http.StatusNotFound})
-	if err := client.RemoveVolume("test:"); err != ErrNoSuchVolume {
+	if err := client.RemoveVolume("test:"); !errors.Is(err, ErrNoSuchVolume) {
 		t.Errorf("RemoveVolume: wrong error. Want %#v. Got %#v.", ErrNoSuchVolume, err)
 	}
 }
@@ -177,7 +178,7 @@ func TestRemoveVolumeInternalError(t *testing.T) {
 func TestRemoveVolumeInUse(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "volume in use and cannot be removed", status: http.StatusConflict})
-	if err := client.RemoveVolume("test:"); err != ErrVolumeInUse {
+	if err := client.RemoveVolume("test:"); !errors.Is(err, ErrVolumeInUse) {
 		t.Errorf("RemoveVolume: wrong error. Want %#v. Got %#v.", ErrVolumeInUse, err)
 	}
 }

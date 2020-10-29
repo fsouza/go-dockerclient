@@ -1059,7 +1059,8 @@ func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
 	case "http", "https", "tcp":
 		_, port, err := net.SplitHostPort(u.Host)
 		if err != nil {
-			if e, ok := err.(*net.AddrError); ok {
+			var e *net.AddrError
+			if errors.As(err, &e) {
 				if e.Err == "missing port in address" {
 					return u, nil
 				}

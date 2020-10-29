@@ -7,6 +7,7 @@ package docker
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -218,7 +219,8 @@ func TestNetworkConnectNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such network container", status: http.StatusNotFound})
 	opts := NetworkConnectionOptions{Container: "foobar"}
 	err := client.ConnectNetwork("8dfafdbc3a40", opts)
-	if serr, ok := err.(*NoSuchNetworkOrContainer); !ok {
+	var serr *NoSuchNetworkOrContainer
+	if !errors.As(err, &serr) {
 		t.Errorf("ConnectNetwork: wrong error type: %s.", serr)
 	}
 }
@@ -249,7 +251,8 @@ func TestNetworkDisconnectNotFound(t *testing.T) {
 	client := newTestClient(&FakeRoundTripper{message: "no such network container", status: http.StatusNotFound})
 	opts := NetworkConnectionOptions{Container: "foobar"}
 	err := client.DisconnectNetwork("8dfafdbc3a40", opts)
-	if serr, ok := err.(*NoSuchNetworkOrContainer); !ok {
+	var serr *NoSuchNetworkOrContainer
+	if !errors.As(err, &serr) {
 		t.Errorf("DisconnectNetwork: wrong error type: %s.", serr)
 	}
 }

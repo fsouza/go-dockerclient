@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -27,7 +28,8 @@ func (c *Client) WaitContainerWithContext(id string, ctx context.Context) (int, 
 func (c *Client) waitContainer(id string, opts doOptions) (int, error) {
 	resp, err := c.do(http.MethodPost, "/containers/"+id+"/wait", opts)
 	if err != nil {
-		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+		var e *Error
+		if errors.As(err, &e) && e.Status == http.StatusNotFound {
 			return 0, &NoSuchContainer{ID: id}
 		}
 		return 0, err

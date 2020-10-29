@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"errors"
 	"net/http"
 )
 
@@ -43,7 +44,8 @@ func (c *Client) startContainer(id string, hostConfig *HostConfig, opts doOption
 	}
 	resp, err := c.do(http.MethodPost, path, opts)
 	if err != nil {
-		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+		var e *Error
+		if errors.As(err, &e) && e.Status == http.StatusNotFound {
 			return &NoSuchContainer{ID: id, Err: err}
 		}
 		return err

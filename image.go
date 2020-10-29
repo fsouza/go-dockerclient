@@ -138,7 +138,8 @@ type ImageHistory struct {
 func (c *Client) ImageHistory(name string) ([]ImageHistory, error) {
 	resp, err := c.do(http.MethodGet, "/images/"+name+"/history", doOptions{})
 	if err != nil {
-		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+		var e *Error
+		if errors.As(err, &e) && e.Status == http.StatusNotFound {
 			return nil, ErrNoSuchImage
 		}
 		return nil, err
@@ -157,7 +158,8 @@ func (c *Client) ImageHistory(name string) ([]ImageHistory, error) {
 func (c *Client) RemoveImage(name string) error {
 	resp, err := c.do(http.MethodDelete, "/images/"+name, doOptions{})
 	if err != nil {
-		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+		var e *Error
+		if errors.As(err, &e) && e.Status == http.StatusNotFound {
 			return ErrNoSuchImage
 		}
 		return err
@@ -184,7 +186,8 @@ func (c *Client) RemoveImageExtended(name string, opts RemoveImageOptions) error
 	uri := fmt.Sprintf("/images/%s?%s", name, queryString(&opts))
 	resp, err := c.do(http.MethodDelete, uri, doOptions{context: opts.Context})
 	if err != nil {
-		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+		var e *Error
+		if errors.As(err, &e) && e.Status == http.StatusNotFound {
 			return ErrNoSuchImage
 		}
 		return err
@@ -199,7 +202,8 @@ func (c *Client) RemoveImageExtended(name string, opts RemoveImageOptions) error
 func (c *Client) InspectImage(name string) (*Image, error) {
 	resp, err := c.do(http.MethodGet, "/images/"+name+"/json", doOptions{})
 	if err != nil {
-		if e, ok := err.(*Error); ok && e.Status == http.StatusNotFound {
+		var e *Error
+		if errors.As(err, &e) && e.Status == http.StatusNotFound {
 			return nil, ErrNoSuchImage
 		}
 		return nil, err
