@@ -5,6 +5,7 @@ run:
     - internal
 
 issues:
+  max-same-issues: 0
   exclude-rules:
     - path: _test\.go
       linters:
@@ -12,6 +13,7 @@ issues:
         - goconst
         - gosec
         - scopelint
+        - tparallel
     - path: testing[/\\].+\.go
       linters:
         - gosec
@@ -22,6 +24,7 @@ linters:
   disable:
     - dupl
     - errcheck
+    - exhaustivestruct
     - funlen
     - gochecknoglobals
     - gocognit
@@ -35,4 +38,5 @@ linters:
     - nestif
     - nlreturn
     - testpackage
+    - wrapcheck
     - wsl
