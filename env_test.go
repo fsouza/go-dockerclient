@@ -342,15 +342,15 @@ func TestDecode(t *testing.T) {
 	tests := []struct {
 		input       string
 		expectedOut []string
-		expectedErr string
+		expectedErr bool
 	}{
 		{
 			`{"PATH":"/usr/bin:/bin","containers":54,"wat":["123","345"]}`,
 			[]string{"PATH=/usr/bin:/bin", "containers=54", `wat=["123","345"]`},
-			"",
+			false,
 		},
-		{"}}", nil, "json: invalid character '}' looking for beginning of value"},
-		{`{}`, nil, ""},
+		{"}}", nil, true},
+		{`{}`, nil, false},
 	}
 	for _, tt := range tests {
 		test := tt
@@ -358,12 +358,10 @@ func TestDecode(t *testing.T) {
 			t.Parallel()
 			var env Env
 			err := env.Decode(bytes.NewBufferString(test.input))
-			if test.expectedErr == "" {
-				if err != nil {
-					t.Error(err)
-				}
-			} else if test.expectedErr != err.Error() {
-				t.Errorf("Env.Decode(): invalid error. Want %q. Got %q.", test.expectedErr, err)
+			if !test.expectedErr && err != nil {
+				t.Error(err)
+			} else if test.expectedErr && err == nil {
+				t.Error("Env.Decode(): unexpected <nil> error")
 			}
 			got := []string(env)
 			sort.Strings(got)
