@@ -360,14 +360,15 @@ func getCredentialsFromHelper(provider string, registry string) (*helperCredenti
 	}
 
 	c := new(helperCredentials)
-	if err := json.NewDecoder(helpercreds).Decode(c); err != nil {
+	err = json.Unmarshal(helpercreds, c)
+	if err != nil {
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func runDockerCredentialsHelper(provider string, registry string) (*bytes.Buffer, error) {
+func runDockerCredentialsHelper(provider string, registry string) ([]byte, error) {
 	cmd := exec.Command("docker-credential-"+provider, "get") //nolint:gosec
 
 	var stdout bytes.Buffer
@@ -380,5 +381,5 @@ func runDockerCredentialsHelper(provider string, registry string) (*bytes.Buffer
 		return nil, err
 	}
 
-	return &stdout, err
+	return stdout.Bytes(), nil
 }
