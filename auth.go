@@ -368,7 +368,7 @@ func getCredentialsFromHelper(provider string, registry string) (*helperCredenti
 }
 
 func runDockerCredentialsHelper(provider string, registry string) (*bytes.Buffer, error) {
-	cmd := exec.Command("docker-credential-"+provider, "get")
+	cmd := exec.Command("docker-credential-"+provider, "get") //nolint:gosec
 
 	var stdout bytes.Buffer
 
