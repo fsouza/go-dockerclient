@@ -2,6 +2,7 @@ daysUntilStale: 30
 daysUntilClose: 5
 exemptLabels:
   - bug
+  - nostale
 staleLabel: stale
 markComment: >
   This issue has been automatically marked as stale because it has not had
