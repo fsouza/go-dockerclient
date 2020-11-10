@@ -372,3 +372,62 @@ func TestAuthConfigurationsMerge(t *testing.T) {
 		})
 	}
 }
+
+func TestGetHelperProviderFromDockerCfg(t *testing.T) {
+	t.Parallel()
+	tmpDir, err := ioutil.TempDir("", "go-dockerclient-creds-test")
+	if err != nil {
+		t.Fatalf("Unable to create temporary directory for TestGetHelperProviderFromDockerCfg: %s", err)
+	}
+	defer os.RemoveAll(tmpDir)
+	expectedProvider := "ecr-login-test"
+	content := fmt.Sprintf(`{"credsStore": "ecr-login","credHelpers":{"docker.io":"%s"}}`, expectedProvider)
+	configFile := path.Join(tmpDir, "docker_config")
+	if err = ioutil.WriteFile(configFile, []byte(content), 0o600); err != nil {
+		t.Errorf("Error writing auth config for TestGetHelperProviderFromDockerCfg: %s", err)
+	}
+
+	configFileNotExists := path.Join(tmpDir, "do_not_exists")
+
+	provider, err := getHelperProviderFromDockerCfg([]string{configFileNotExists, configFile}, "docker.io")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if provider != expectedProvider {
+		t.Errorf("wrong provider found: \nwant %s\ngot  %s", expectedProvider, provider)
+	}
+}
+
+func TestParseCredsDockerConfig(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		config   []byte
+		provider string
+		registry string
+	}{
+		{
+			config:   []byte(`{"credsStore": "ecr-login"}`),
+			provider: "ecr-login",
+			registry: "docker.io",
+		},
+		{
+			config:   []byte(`{"credsStore": "ecr-login","credHelpers":{"docker.io":"ecr-login-test"}}`),
+			provider: "ecr-login-test",
+			registry: "docker.io",
+		},
+		{
+			config:   []byte(`{"credsStore": "ecr-login","credHelpers":{"docker.io":"ecr-login-test"}}`),
+			provider: "ecr-login",
+			registry: "docker.io2",
+		},
+	}
+	for _, test := range tests {
+		provider, err := parseCredsDockerConfig(test.config, test.registry)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if provider != test.provider {
+			t.Errorf("wrong provider found: \nwant %s\ngot  %s", test.provider, provider)
+		}
+	}
+}
