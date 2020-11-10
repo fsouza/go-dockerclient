@@ -36,7 +36,7 @@ jobs:
           stable: false
           go-version: ${{ matrix.go_version }}
 
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.4
 
       - run: go mod download
 
@@ -54,6 +54,6 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v2.3.4
 
       - uses: golangci/golangci-lint-action@v2.3.0
