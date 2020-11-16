@@ -17,6 +17,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
-	golang.org/x/crypto v0.0.0-20201116153603-4be66e5b6582
+	golang.org/x/term v0.0.0-20201113234701-d7a72108b828
 	gotest.tools/v3 v3.0.3 // indirect
 )

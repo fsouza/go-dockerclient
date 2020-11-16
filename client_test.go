@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func TestNewAPIClient(t *testing.T) {
@@ -742,7 +742,7 @@ func (b *terminalBuffer) IsTerminal() bool {
 }
 
 func TestClientStreamJSONDecodeWithTerminal(t *testing.T) {
-	if !terminal.IsTerminal(int(os.Stdout.Fd())) {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		t.Skip("requires a terminal")
 	}
 	t.Parallel()
