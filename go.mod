@@ -7,8 +7,7 @@ require (
 	github.com/Microsoft/hcsshim v0.8.10 // indirect
 	github.com/containerd/containerd v1.4.1 // indirect
 	github.com/containerd/continuity v0.0.0-20200928162600-f2cc35102c2a // indirect
-	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v17.12.0-ce-rc1.0.20200505174321-1655290016ac+incompatible
+	github.com/docker/docker v20.10.0-beta1.0.20201113105859-b6bfff2a628f+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0
 	github.com/google/go-cmp v0.5.3
@@ -18,7 +17,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
-	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79
-	google.golang.org/grpc v1.33.2 // indirect
+	golang.org/x/crypto v0.0.0-20201116153603-4be66e5b6582
 	gotest.tools/v3 v3.0.3 // indirect
 )
