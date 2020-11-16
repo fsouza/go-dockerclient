@@ -750,6 +750,6 @@ func TestInspectContainerWhenContextTimesOut(t *testing.T) {
 
 	_, err := client.InspectContainerWithContext("id", ctx)
 	if !errors.Is(err, context.DeadlineExceeded) {
-		t.Errorf("Expected 'DeadlineExceededError', got: %v", err)
+		t.Errorf("Expected 'DeadlineExceededError', got: %#v", err)
 	}
 }
