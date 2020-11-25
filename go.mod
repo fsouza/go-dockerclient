@@ -10,7 +10,7 @@ require (
 	github.com/docker/docker v20.10.0-beta1.0.20201113105859-b6bfff2a628f+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0
-	github.com/google/go-cmp v0.5.3
+	github.com/google/go-cmp v0.5.4
 	github.com/gorilla/mux v1.8.0
 	github.com/moby/sys/mount v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20201110203204-bea5bbe245bf // indirect
