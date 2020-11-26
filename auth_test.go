@@ -98,6 +98,7 @@ func TestAuthConfigurationsFromDockerCfg(t *testing.T) {
 }
 
 func TestAuthConfigurationsFromDockerCfgError(t *testing.T) {
+	t.Parallel()
 	auths, err := newAuthConfigurationsFromDockerCfg([]string{"this/doesnt/exist.json"})
 	if err == nil {
 		t.Fatalf("unexpected <nil> error, returned auth config: %#v", auths)
