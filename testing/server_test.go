@@ -783,6 +783,10 @@ func TestStartContainerChangeNetwork(t *testing.T) {
 			"8888/tcp": {{HostIP: "0.0.0.0", HostPort: "12345"}},
 		},
 	}
+	portString := hostConfig.PortBindings.String()
+	if portString != "0.0.0.0:12345 -> 8888/tcp" {
+		t.Errorf("StartContainer: PortBindings string is incorrect: %s", portString)
+	}
 	configBytes, err := json.Marshal(hostConfig)
 	if err != nil {
 		t.Fatal(err)

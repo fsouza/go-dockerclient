@@ -171,6 +171,25 @@ type PortBinding struct {
 
 type PortMap map[Port][]PortBinding
 
+// Format ports to string e.g. "0.0.0.0:3307 -> 3306/tcp"
+func (ports PortMap) String() string {
+	var exposed []string
+	var published []string
+
+	for k, v := range ports {
+		if len(v) == 0 {
+			exposed = append(exposed, string(k))
+			continue
+		}
+		for _, binding := range v {
+			s := fmt.Sprintf("%s:%s -> %s", binding.HostIP, binding.HostPort, k)
+			published = append(published, s)
+		}
+	}
+
+	return strings.Join(append(exposed, published...), "\n")
+}
+
 // PortMapping represents a deprecated field in the `docker inspect` output,
 // and its value as found in NetworkSettings should always be nil
 type PortMapping map[string]string
