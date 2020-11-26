@@ -492,7 +492,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	ports := map[docker.Port][]docker.PortBinding{}
+	ports := docker.PortMap{}
 	for port := range config.ExposedPorts {
 		ports[port] = []docker.PortBinding{{
 			HostIP:   "0.0.0.0",
@@ -711,7 +711,7 @@ func (s *DockerServer) startContainer(w http.ResponseWriter, r *http.Request) {
 		container.HostConfig = hostConfig
 	}
 	if hostConfig != nil && len(hostConfig.PortBindings) > 0 {
-		ports := map[docker.Port][]docker.PortBinding{}
+		ports := docker.PortMap{}
 		for key, items := range hostConfig.PortBindings {
 			bindings := make([]docker.PortBinding, len(items))
 			for i := range items {

@@ -779,8 +779,8 @@ func TestStartContainerChangeNetwork(t *testing.T) {
 	addContainers(&server, 1)
 	server.buildMuxer()
 	hostConfig := docker.HostConfig{
-		PortBindings: map[docker.Port][]docker.PortBinding{
-			"8888/tcp": {{HostIP: "", HostPort: "12345"}},
+		PortBindings: docker.PortMap{
+			"8888/tcp": {{HostIP: "0.0.0.0", HostPort: "12345"}},
 		},
 	}
 	configBytes, err := json.Marshal(hostConfig)
@@ -1614,7 +1614,7 @@ func addContainers(server *DockerServer, n int) []*docker.Container {
 				PortMapping: map[string]docker.PortMapping{
 					"Tcp": {"8888": fmt.Sprintf("%d", 49600+i)},
 				},
-				Ports: map[docker.Port][]docker.PortBinding{
+				Ports: docker.PortMap{
 					"8888/tcp": {
 						{HostIP: "0.0.0.0", HostPort: fmt.Sprintf("%d", 49600+i)},
 					},
