@@ -23,6 +23,7 @@ import (
 )
 
 func TestSwarmInit(t *testing.T) {
+	t.Parallel()
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -58,6 +59,7 @@ func TestSwarmInit(t *testing.T) {
 }
 
 func TestSwarmInitDynamicAdvertiseAddrPort(t *testing.T) {
+	t.Parallel()
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -82,6 +84,7 @@ func TestSwarmInitDynamicAdvertiseAddrPort(t *testing.T) {
 }
 
 func TestSwarmInitAlreadyInSwarm(t *testing.T) {
+	t.Parallel()
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +101,7 @@ func TestSwarmInitAlreadyInSwarm(t *testing.T) {
 }
 
 func TestSwarmJoinNoBody(t *testing.T) {
+	t.Parallel()
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -116,6 +120,7 @@ func TestSwarmJoinNoBody(t *testing.T) {
 }
 
 func TestSwarmJoin(t *testing.T) {
+	t.Parallel()
 	server1, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -169,6 +174,7 @@ func TestSwarmJoin(t *testing.T) {
 }
 
 func TestSwarmJoinWithService(t *testing.T) {
+	t.Parallel()
 	server1, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -251,6 +257,7 @@ func TestSwarmJoinAlreadyInSwarm(t *testing.T) {
 }
 
 func TestSwarmLeave(t *testing.T) {
+	t.Parallel()
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -271,6 +278,7 @@ func TestSwarmLeave(t *testing.T) {
 }
 
 func TestSwarmLeaveNotInSwarm(t *testing.T) {
+	t.Parallel()
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -289,6 +297,7 @@ func TestSwarmLeaveNotInSwarm(t *testing.T) {
 }
 
 func TestSwarmInspect(t *testing.T) {
+	t.Parallel()
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -318,6 +327,7 @@ func TestSwarmInspect(t *testing.T) {
 }
 
 func TestSwarmInspectNotInSwarm(t *testing.T) {
+	t.Parallel()
 	server, err := NewServer("127.0.0.1:0", nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -333,6 +343,7 @@ func TestSwarmInspectNotInSwarm(t *testing.T) {
 }
 
 func TestServiceCreate(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -428,6 +439,7 @@ func TestServiceCreate(t *testing.T) {
 }
 
 func TestServiceCreateDynamicPort(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -484,6 +496,7 @@ func TestServiceCreateDynamicPort(t *testing.T) {
 }
 
 func TestServiceCreateMultipleServers(t *testing.T) {
+	t.Parallel()
 	server1, server2 := setUpSwarm(t)
 	defer server1.Stop()
 	defer server2.Stop()
@@ -509,6 +522,7 @@ func TestServiceCreateMultipleServers(t *testing.T) {
 }
 
 func TestServiceCreateNoContainers(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -553,6 +567,7 @@ func compareTasks(task1 *swarm.Task, task2 *swarm.Task) bool {
 }
 
 func TestServiceInspect(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -577,6 +592,7 @@ func TestServiceInspect(t *testing.T) {
 }
 
 func TestServiceInspectByName(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -601,6 +617,7 @@ func TestServiceInspectByName(t *testing.T) {
 }
 
 func TestServiceInspectNotFound(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -613,6 +630,7 @@ func TestServiceInspectNotFound(t *testing.T) {
 }
 
 func TestTaskInspect(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -638,6 +656,7 @@ func TestTaskInspect(t *testing.T) {
 }
 
 func TestTaskInspectNotFound(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -650,6 +669,7 @@ func TestTaskInspectNotFound(t *testing.T) {
 }
 
 func TestServiceList(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -674,6 +694,7 @@ func TestServiceList(t *testing.T) {
 }
 
 func TestServiceListFilterID(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -698,6 +719,7 @@ func TestServiceListFilterID(t *testing.T) {
 }
 
 func TestServiceListFilterName(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -722,6 +744,7 @@ func TestServiceListFilterName(t *testing.T) {
 }
 
 func TestServiceListFilterEmpty(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -746,6 +769,7 @@ func TestServiceListFilterEmpty(t *testing.T) {
 }
 
 func TestTaskList(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -771,6 +795,7 @@ func TestTaskList(t *testing.T) {
 }
 
 func TestTaskListFilterID(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -796,6 +821,7 @@ func TestTaskListFilterID(t *testing.T) {
 }
 
 func TestTaskListFilterServiceID(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -821,6 +847,7 @@ func TestTaskListFilterServiceID(t *testing.T) {
 }
 
 func TestTaskListFilterServiceName(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -846,6 +873,7 @@ func TestTaskListFilterServiceName(t *testing.T) {
 }
 
 func TestTaskListFilterMultipleFields(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -871,6 +899,7 @@ func TestTaskListFilterMultipleFields(t *testing.T) {
 }
 
 func TestTaskListFilterMultipleFieldsNotFound(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -896,6 +925,7 @@ func TestTaskListFilterMultipleFieldsNotFound(t *testing.T) {
 }
 
 func TestTaskListFilterNotFound(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -921,6 +951,7 @@ func TestTaskListFilterNotFound(t *testing.T) {
 }
 
 func TestTaskListFilterLabel(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -975,6 +1006,7 @@ func TestTaskListFilterLabel(t *testing.T) {
 }
 
 func TestServiceDelete(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -1000,6 +1032,7 @@ func TestServiceDelete(t *testing.T) {
 }
 
 func TestServiceDeleteNotFound(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -1012,6 +1045,7 @@ func TestServiceDeleteNotFound(t *testing.T) {
 }
 
 func TestServiceUpdate(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -1111,6 +1145,7 @@ func TestServiceUpdate(t *testing.T) {
 }
 
 func TestServiceUpdateMoreReplicas(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -1161,6 +1196,7 @@ func TestServiceUpdateMoreReplicas(t *testing.T) {
 }
 
 func TestServiceUpdateNotFound(t *testing.T) {
+	t.Parallel()
 	server, unused := setUpSwarm(t)
 	defer server.Stop()
 	defer unused.Stop()
@@ -1198,6 +1234,7 @@ func TestServiceUpdateNotFound(t *testing.T) {
 }
 
 func TestNodeList(t *testing.T) {
+	t.Parallel()
 	srv1, srv2 := setUpSwarm(t)
 	defer srv1.Stop()
 	defer srv2.Stop()
@@ -1223,6 +1260,7 @@ func TestNodeList(t *testing.T) {
 }
 
 func TestNodeInfo(t *testing.T) {
+	t.Parallel()
 	srv1, srv2 := setUpSwarm(t)
 	defer srv1.Stop()
 	defer srv2.Stop()
@@ -1248,6 +1286,7 @@ func TestNodeInfo(t *testing.T) {
 }
 
 func TestNodeUpdate(t *testing.T) {
+	t.Parallel()
 	srv1, srv2 := setUpSwarm(t)
 	defer srv1.Stop()
 	defer srv2.Stop()
@@ -1276,6 +1315,7 @@ func TestNodeUpdate(t *testing.T) {
 }
 
 func TestNodeDelete(t *testing.T) {
+	t.Parallel()
 	srv1, srv2 := setUpSwarm(t)
 	defer srv1.Stop()
 	defer srv2.Stop()
@@ -1371,6 +1411,7 @@ func addTestService(server *DockerServer) (*swarm.Service, error) {
 }
 
 func TestMutateTask(t *testing.T) {
+	t.Parallel()
 	server := DockerServer{failures: make(map[string]string)}
 	server.buildMuxer()
 	server.tasks = append(server.tasks, &swarm.Task{ID: "id123"})
@@ -1386,6 +1427,7 @@ func TestMutateTask(t *testing.T) {
 }
 
 func TestMutateTaskNotFound(t *testing.T) {
+	t.Parallel()
 	server := DockerServer{failures: make(map[string]string)}
 	server.buildMuxer()
 	newTask := swarm.Task{Status: swarm.TaskStatus{State: swarm.TaskStateFailed}}
