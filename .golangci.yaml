@@ -13,6 +13,7 @@ issues:
         - errorlint
         - goconst
         - gosec
+        - paralleltest
         - scopelint
         - tparallel
     - path: testing[/\\].+\.go
