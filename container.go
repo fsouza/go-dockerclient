@@ -21,6 +21,26 @@ type APIPort struct {
 	IP          string `json:"IP,omitempty" yaml:"IP,omitempty" toml:"IP,omitempty"`
 }
 
+type Ports []APIPort
+
+// Format ports to string e.g. "0.0.0.0:3307 -> 3306/tcp"
+func (ports Ports) String() string {
+	var exposed []string
+	var published []string
+	for _, binding := range ports {
+		if binding.PublicPort == 0 {
+			// 3306/tcp
+			s := fmt.Sprintf("%d/%s", binding.PrivatePort, binding.Type)
+			exposed = append(exposed, s)
+		} else {
+			// 0.0.0.0:3307 -> 3306/tcp
+			s := fmt.Sprintf("%s:%d -> %d/%s", binding.IP, binding.PublicPort, binding.PrivatePort, binding.Type)
+			published = append(published, s)
+		}
+	}
+	return strings.Join(append(exposed, published...), "\n")
+}
+
 // APIMount represents a mount point for a container.
 type APIMount struct {
 	Name        string `json:"Name,omitempty" yaml:"Name,omitempty" toml:"Name,omitempty"`
@@ -42,7 +62,7 @@ type APIContainers struct {
 	Created    int64             `json:"Created,omitempty" yaml:"Created,omitempty" toml:"Created,omitempty"`
 	State      string            `json:"State,omitempty" yaml:"State,omitempty" toml:"State,omitempty"`
 	Status     string            `json:"Status,omitempty" yaml:"Status,omitempty" toml:"Status,omitempty"`
-	Ports      []APIPort         `json:"Ports,omitempty" yaml:"Ports,omitempty" toml:"Ports,omitempty"`
+	Ports      Ports             `json:"Ports,omitempty" yaml:"Ports,omitempty" toml:"Ports,omitempty"`
 	SizeRw     int64             `json:"SizeRw,omitempty" yaml:"SizeRw,omitempty" toml:"SizeRw,omitempty"`
 	SizeRootFs int64             `json:"SizeRootFs,omitempty" yaml:"SizeRootFs,omitempty" toml:"SizeRootFs,omitempty"`
 	Names      []string          `json:"Names,omitempty" yaml:"Names,omitempty" toml:"Names,omitempty"`
@@ -232,8 +252,8 @@ type NetworkSettings struct {
 
 // PortMappingAPI translates the port mappings as contained in NetworkSettings
 // into the format in which they would appear when returned by the API
-func (settings *NetworkSettings) PortMappingAPI() []APIPort {
-	var mapping []APIPort
+func (settings *NetworkSettings) PortMappingAPI() Ports {
+	var mapping Ports
 	for port, bindings := range settings.Ports {
 		p, _ := parsePort(port.Port())
 		if len(bindings) == 0 {

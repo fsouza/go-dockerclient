@@ -405,7 +405,7 @@ func (s *DockerServer) listContainers(w http.ResponseWriter, r *http.Request) {
 loop:
 	for _, container := range s.containers {
 		if all == "1" || container.State.Running {
-			var ports []docker.APIPort
+			var ports docker.Ports
 			if container.NetworkSettings != nil {
 				ports = container.NetworkSettings.PortMappingAPI()
 			}
