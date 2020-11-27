@@ -73,12 +73,12 @@ func TestListContainersParams(t *testing.T) {
 			map[string][]string{"all": {"1"}, "limit": {"10"}, "since": {"adf9983"}, "before": {"abdeef"}},
 		},
 		{
-			ListContainersOptions{Filters: map[string][]string{"status": {"paused", "running"}}},
-			map[string][]string{"filters": {"{\"status\":[\"paused\",\"running\"]}"}},
+			ListContainersOptions{Filters: Args{"status": {"paused", "running"}}},
+			Args{"filters": {"{\"status\":[\"paused\",\"running\"]}"}},
 		},
 		{
-			ListContainersOptions{All: true, Filters: map[string][]string{"exited": {"0"}, "status": {"exited"}}},
-			map[string][]string{"all": {"1"}, "filters": {"{\"exited\":[\"0\"],\"status\":[\"exited\"]}"}},
+			ListContainersOptions{All: true, Filters: Args{"exited": {"0"}, "status": {"exited"}}},
+			Args{"all": {"1"}, "filters": {"{\"exited\":[\"0\"],\"status\":[\"exited\"]}"}},
 		},
 	}
 	const expectedPath = "/containers/json"

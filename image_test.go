@@ -129,7 +129,7 @@ func TestListImagesParameters(t *testing.T) {
 		t.Errorf("ListImages({All: true}): Wrong parameter. Want all=1. Got all=%s", all)
 	}
 	fakeRT.Reset()
-	_, err = client.ListImages(ListImagesOptions{Filters: map[string][]string{
+	_, err = client.ListImages(ListImagesOptions{Filters: Args{
 		"dangling": {"true"},
 	}})
 	if err != nil {
@@ -137,7 +137,7 @@ func TestListImagesParameters(t *testing.T) {
 	}
 	req = fakeRT.requests[0]
 	body := req.URL.Query().Get("filters")
-	var filters map[string][]string
+	var filters Args
 	err = json.Unmarshal([]byte(body), &filters)
 	if err != nil {
 		t.Fatal(err)

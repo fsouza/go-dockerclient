@@ -141,7 +141,7 @@ func TestListFilteredPlugins(t *testing.T) {
 
 	pluginDetails, err := client.ListFilteredPlugins(
 		ListFilteredPluginsOptions{
-			Filters: map[string][]string{
+			Filters: Args{
 				"capability": {"volumedriver"},
 				"enabled":    {"true"},
 			},

@@ -10,7 +10,7 @@ import (
 //
 // See https://goo.gl/wnkgDT for more details.
 type PruneContainersOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 

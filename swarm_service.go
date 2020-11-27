@@ -150,7 +150,7 @@ func (c *Client) InspectService(id string) (*swarm.Service, error) {
 //
 // See https://goo.gl/DwvNMd for more details.
 type ListServicesOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Status  bool
 	Context context.Context
 }

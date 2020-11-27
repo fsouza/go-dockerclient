@@ -153,7 +153,7 @@ func (c *Client) InspectConfig(id string) (*swarm.Config, error) {
 //
 // See https://goo.gl/DwvNMd for more details.
 type ListConfigsOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 

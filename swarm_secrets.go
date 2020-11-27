@@ -153,7 +153,7 @@ func (c *Client) InspectSecret(id string) (*swarm.Secret, error) {
 //
 // See https://goo.gl/DwvNMd for more details.
 type ListSecretsOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 

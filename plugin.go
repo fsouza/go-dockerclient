@@ -182,7 +182,7 @@ func (c *Client) ListPlugins(ctx context.Context) ([]PluginDetail, error) {
 //
 // See https://goo.gl/C4t7Tz for more details.
 type ListFilteredPluginsOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 

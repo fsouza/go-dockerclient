@@ -32,7 +32,7 @@ func (err *NoSuchNode) Error() string {
 //
 // See http://goo.gl/3K4GwU for more details.
 type ListNodesOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 

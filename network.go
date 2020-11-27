@@ -291,7 +291,7 @@ func (c *Client) DisconnectNetwork(id string, opts NetworkConnectionOptions) err
 //
 // See https://goo.gl/kX0S9h for more details.
 type PruneNetworksOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 

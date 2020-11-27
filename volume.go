@@ -36,7 +36,7 @@ type Volume struct {
 //
 // See https://goo.gl/3wgTsd for more details.
 type ListVolumesOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 
@@ -164,7 +164,7 @@ func (c *Client) RemoveVolumeWithOptions(opts RemoveVolumeOptions) error {
 //
 // See https://goo.gl/f9XDem for more details.
 type PruneVolumesOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 

@@ -731,7 +731,7 @@ func (c *Client) SearchImagesEx(term string, auth AuthConfiguration) ([]APIImage
 //
 // See https://goo.gl/qfZlbZ for more details.
 type PruneImagesOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 

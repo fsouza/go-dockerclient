@@ -30,7 +30,7 @@ func (err *NoSuchTask) Error() string {
 //
 // See http://goo.gl/rByLzw for more details.
 type ListTasksOptions struct {
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 
