@@ -366,6 +366,9 @@ func TestQueryString(t *testing.T) {
 	v := float32(2.4)
 	f32QueryString := fmt.Sprintf("w=%s&x=10&y=10.35", strconv.FormatFloat(float64(v), 'f', -1, 64))
 	jsonPerson := url.QueryEscape(`{"Name":"gopher","age":4}`)
+	filters := NewArgs()
+	filters.Add("status", "paused")
+	filters.Add("status", "running")
 	tests := []struct {
 		input   interface{}
 		want    string
@@ -375,7 +378,7 @@ func TestQueryString(t *testing.T) {
 		{ListContainersOptions{All: true}, "all=1", nil},
 		{ListContainersOptions{Before: "something"}, "before=something", nil},
 		{ListContainersOptions{Before: "something", Since: "other"}, "before=something&since=other", nil},
-		{ListContainersOptions{Filters: map[string][]string{"status": {"paused", "running"}}}, "filters=%7B%22status%22%3A%5B%22paused%22%2C%22running%22%5D%7D", nil},
+		{ListContainersOptions{Filters: filters}, "filters=%7B%22status%22%3A%5B%22paused%22%2C%22running%22%5D%7D", nil},
 		{dumb{X: 10, Y: 10.35000}, "x=10&y=10.35", apiVersion119},
 		{dumb{W: v, X: 10, Y: 10.35000}, f32QueryString, apiVersion124},
 		{dumb{X: 10, Y: 10.35000, Z: 10}, "x=10&y=10.35&zee=10", apiVersion119},

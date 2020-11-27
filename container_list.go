@@ -15,7 +15,7 @@ type ListContainersOptions struct {
 	Limit   int
 	Since   string
 	Before  string
-	Filters map[string][]string
+	Filters Args
 	Context context.Context
 }
 
