@@ -1,44 +1,8 @@
 run:
   deadline: 5m
 
-  skip-dirs:
-    - internal
-
-issues:
-  max-same-issues: 0
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - bodyclose
-        - errorlint
-        - goconst
-        - gosec
-        - paralleltest
-        - scopelint
-        - tparallel
-    - path: testing[/\\].+\.go
-      linters:
-        - gosec
-        - noctx
-
 linters:
-  enable-all: true
-  disable:
-    - dupl
-    - errcheck
-    - exhaustivestruct
-    - funlen
-    - gochecknoglobals
-    - gocognit
-    - goconst
-    - gocritic
-    - godot
-    - goerr113
-    - gofumpt
-    - gomnd
-    - lll
-    - nestif
-    - nlreturn
-    - testpackage
-    - wrapcheck
-    - wsl
+  disable-all: true
+  enable:
+    - gofmt
+    - goimports

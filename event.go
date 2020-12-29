@@ -329,16 +329,17 @@ func (c *Client) eventHijack(startTime int64, eventChan chan *APIEvents, errChan
 	if err != nil {
 		return err
 	}
-	conn := httputil.NewClientConn(dial, nil)             //nolint:staticcheck
-	req, err := http.NewRequest(http.MethodGet, uri, nil) //nolint:noctx
+	//lint:ignore SA1019 the alternative doesn't quite work, so keep using the deprecated thing.
+	conn := httputil.NewClientConn(dial, nil)
+	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
 		return err
 	}
-	res, err := conn.Do(req) //nolint:bodyclose
+	res, err := conn.Do(req)
 	if err != nil {
 		return err
 	}
-	//nolint:staticcheck
+	//lint:ignore SA1019 the alternative doesn't quite work, so keep using the deprecated thing.
 	go func(res *http.Response, conn *httputil.ClientConn) {
 		defer conn.Close()
 		defer res.Body.Close()

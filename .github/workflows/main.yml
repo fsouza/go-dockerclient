@@ -40,6 +40,8 @@ jobs:
 
       - run: go mod download
 
+      - run: make staticcheck
+
       - run: make gotest
         env:
           GOARCH: ${{ matrix.goarch }}

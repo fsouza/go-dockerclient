@@ -20,7 +20,6 @@ func (c *Client) StopContainer(id string, timeout uint) error {
 // container request.
 //
 // See https://goo.gl/R9dZcV for more details.
-//nolint:golint
 func (c *Client) StopContainerWithContext(id string, timeout uint, ctx context.Context) error {
 	return c.stopContainer(id, timeout, doOptions{context: ctx})
 }

@@ -208,7 +208,6 @@ func (c *Client) ListFilteredPlugins(opts ListFilteredPluginsOptions) ([]PluginD
 // GetPluginPrivileges returns pluginPrivileges or an error.
 //
 // See https://goo.gl/C4t7Tz for more details.
-//nolint:golint
 func (c *Client) GetPluginPrivileges(remote string, ctx context.Context) ([]PluginPrivilege, error) {
 	return c.GetPluginPrivilegesWithOptions(
 		GetPluginPrivilegesOptions{
@@ -229,7 +228,6 @@ type GetPluginPrivilegesOptions struct {
 // GetPluginPrivilegesWithOptions returns pluginPrivileges or an error.
 //
 // See https://goo.gl/C4t7Tz for more details.
-//nolint:golint
 func (c *Client) GetPluginPrivilegesWithOptions(opts GetPluginPrivilegesOptions) ([]PluginPrivilege, error) {
 	headers, err := headersWithAuth(opts.Auth)
 	if err != nil {
@@ -255,7 +253,6 @@ func (c *Client) GetPluginPrivilegesWithOptions(opts GetPluginPrivilegesOptions)
 // InspectPlugins returns a pluginDetail or an error.
 //
 // See https://goo.gl/C4t7Tz for more details.
-//nolint:golint
 func (c *Client) InspectPlugins(name string, ctx context.Context) (*PluginDetail, error) {
 	resp, err := c.do(http.MethodGet, "/plugins/"+name+"/json", doOptions{
 		context: ctx,

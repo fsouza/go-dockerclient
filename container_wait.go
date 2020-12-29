@@ -20,7 +20,6 @@ func (c *Client) WaitContainer(id string) (int, error) {
 // inspect request.
 //
 // See https://goo.gl/4AGweZ for more details.
-//nolint:golint
 func (c *Client) WaitContainerWithContext(id string, ctx context.Context) (int, error) {
 	return c.waitContainer(id, doOptions{context: ctx})
 }

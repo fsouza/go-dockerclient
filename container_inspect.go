@@ -18,7 +18,6 @@ func (c *Client) InspectContainer(id string) (*Container, error) {
 // The context object can be used to cancel the inspect request.
 //
 // Deprecated: Use InspectContainerWithOptions instead.
-//nolint:golint
 func (c *Client) InspectContainerWithContext(id string, ctx context.Context) (*Container, error) {
 	return c.InspectContainerWithOptions(InspectContainerOptions{ID: id, Context: ctx})
 }

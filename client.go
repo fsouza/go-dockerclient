@@ -777,10 +777,9 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 	errs := make(chan error, 1)
 	quit := make(chan struct{})
 	go func() {
-		//nolint:staticcheck
+		//lint:ignore SA1019 the alternative doesn't quite work, so keep using the deprecated thing.
 		clientconn := httputil.NewClientConn(dial, nil)
 		defer clientconn.Close()
-		//nolint:bodyclose
 		clientconn.Do(req)
 		if hijackOptions.success != nil {
 			hijackOptions.success <- struct{}{}
@@ -959,7 +958,6 @@ func queryString(opts interface{}) string {
 }
 
 func addQueryStringValue(items url.Values, key string, v reflect.Value) bool {
-	//nolint:exhaustive
 	switch v.Kind() {
 	case reflect.Bool:
 		if v.Bool() {
