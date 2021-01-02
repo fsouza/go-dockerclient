@@ -7,12 +7,12 @@ package docker
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"math"
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -346,7 +346,7 @@ func (eventState *eventMonitoringState) updateLastSeen(e *APIEvents) {
 func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan *APIEvents, errChan chan error) error {
 	// on reconnect override initial Since with last event seen time
 	if startTime != 0 {
-		opts.Since = fmt.Sprintf("%d", startTime)
+		opts.Since = strconv.FormatInt(startTime, 10)
 	}
 	uri := "/events?" + queryString(opts)
 	protocol := c.endpointURL.Scheme
