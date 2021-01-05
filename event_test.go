@@ -239,8 +239,12 @@ func testEventListeners(testName string, t *testing.T, buildServer func(http.Han
 			t.Error(err)
 		}
 	}()
-
-	err = client.AddEventListener(listener)
+	filters := map[string][]string{
+		"type":  {"container"},
+		"event": {"create", "destroy", "start", "stop", "pull", "attach"},
+	}
+	opts := EventsOptions{Since: "1374067970", Until: "1442421700", Filters: filters}
+	err = client.AddEventListenerWithOptions(opts, listener)
 	if err != nil {
 		t.Errorf("Failed to add event listener: %s", err)
 	}
