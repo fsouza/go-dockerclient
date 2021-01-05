@@ -28,7 +28,7 @@ type EventsOptions struct {
 	Until string
 
 	// Filter for events. For example:
-	//  map[string][]string{"type": {"container"}, "event": {"start", "die"}
+	//  map[string][]string{"type": {"container"}, "event": {"start", "die"}}
 	// will return events when container was started and stopped or killed
 	//
 	// Available filters:
