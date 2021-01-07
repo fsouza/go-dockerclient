@@ -2836,3 +2836,16 @@ func TestDownloadFromContainer(t *testing.T) {
 		t.Errorf("DownloadFromContainer: wrong Content-Type. Want 'application/x-tar'. Got %s.", resp.Header.Get("Content-Type"))
 	}
 }
+
+func TestSupportVersionPathPrefix(t *testing.T) {
+	t.Parallel()
+	server, _ := NewServer("127.0.0.1:0", nil, nil)
+	defer server.Stop()
+	server.buildMuxer()
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/v1.16/version", nil)
+	server.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("VersionDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
+	}
+}
