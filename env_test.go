@@ -418,8 +418,7 @@ func TestMap(t *testing.T) {
 	}
 }
 
-type unmarshable struct {
-}
+type unmarshable struct{}
 
 func (unmarshable) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("cannot marshal")
