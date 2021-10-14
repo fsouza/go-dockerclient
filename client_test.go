@@ -106,13 +106,14 @@ func TestNewVersionedClientFromEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 	if client.endpoint != endpoint {
-		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
+		t.Errorf("Expected endpoint %q. Got %q.", endpoint, client.endpoint)
 	}
 	if client.endpointURL.String() != endpointURL {
-		t.Errorf("Expected endpointURL %s. Got %s.", endpoint, client.endpoint)
+		t.Errorf("Expected endpointURL %q. Got %q.", endpointURL, client.endpointURL.String())
 	}
-	if reqVersion := client.requestedAPIVersion.String(); reqVersion != "1.12" {
-		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", "1.12", reqVersion)
+	const expectedReqVersion = "1.12"
+	if reqVersion := client.requestedAPIVersion.String(); reqVersion != expectedReqVersion {
+		t.Errorf("Wrong requestAPIVersion. Want %q. Got %q.", expectedReqVersion, reqVersion)
 	}
 	if client.SkipServerVersionCheck {
 		t.Error("Expected SkipServerVersionCheck to be false, got true")
