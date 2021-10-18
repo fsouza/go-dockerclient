@@ -3,7 +3,7 @@ module github.com/fsouza/go-dockerclient
 go 1.16
 
 require (
-	github.com/Microsoft/go-winio v0.5.0
+	github.com/Microsoft/go-winio v0.5.1
 	github.com/containerd/containerd v1.5.5 // indirect
 	github.com/docker/docker v20.10.9+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
