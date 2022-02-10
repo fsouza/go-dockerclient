@@ -10,6 +10,26 @@ on:
     - cron: "0 0 * * 4"
 
 jobs:
+  build:
+    strategy:
+      matrix:
+        goos:
+          - darwin
+          - freebsd
+          - linux
+          - windows
+
+    name: cross-compilation (GOOS=${{ matrix.goos }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2.2.0
+
+      - uses: actions/checkout@v2.4.0
+
+      - run: go build
+        env:
+          GOOS: ${{ matrix.goos }}
+
   test:
     strategy:
       matrix:
