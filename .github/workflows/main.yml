@@ -30,7 +30,7 @@ jobs:
     name: test (${{ matrix.os }}/go-${{ matrix.go_version }}/${{ matrix.goarch }})
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/setup-go@v2.1.5
+      - uses: actions/setup-go@v2.2.0
         id: go
         with:
           stable: false
