@@ -10,7 +10,6 @@ package docker
 import (
 	"bytes"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -56,9 +55,7 @@ func TestIntegrationPullCreateStartLogs(t *testing.T) {
 	// split stdout by lines to make sure the test is the same on Windows
 	// and Linux. Life is hard.
 	expected := []string{
-		"Welcome to reality, wake up and rejoice",
-		"Welcome to reality, you've made the right choice",
-		"Welcome to reality, and let them hear your voice, shout it out!",
+		"hello hello",
 	}
 	if stdoutLines := getLines(&stdout); !reflect.DeepEqual(stdoutLines, expected) {
 		t.Errorf("Got wrong stdout from logs.\nWant:\n%#v.\n\nGot:\n%#v.", expected, stdoutLines)
@@ -77,17 +74,11 @@ func getLines(buf *bytes.Buffer) []string {
 }
 
 func pullImage(t *testing.T) string {
-	os := runtime.GOOS
-	if os != "windows" {
-		os = "linux"
-	}
-	platform := os + "/" + runtime.GOARCH
-	imageName := "fsouza/go-dockerclient-integration:" + os
+	imageName := integrationDockerImage
 	var buf bytes.Buffer
 	pullOpts := PullImageOptions{
 		Repository:   imageName,
 		OutputStream: &buf,
-		Platform:     platform,
 	}
 	client, err := NewClientFromEnv()
 	if err != nil {

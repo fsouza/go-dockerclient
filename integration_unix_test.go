@@ -7,12 +7,13 @@
 
 package docker
 
+const integrationDockerImage = "alpine:latest"
+
 func integrationCreateContainerOpts(imageName string, hostConfig *HostConfig) CreateContainerOptions {
 	return CreateContainerOptions{
 		Config: &Config{
 			Image: imageName,
-			Cmd:   []string{"cat", "/home/gopher/file.txt"},
-			User:  "gopher",
+			Cmd:   []string{"sh", "-c", `echo "hello hello"`},
 		},
 		HostConfig: hostConfig,
 	}

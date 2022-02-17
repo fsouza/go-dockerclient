@@ -7,11 +7,13 @@
 
 package docker
 
+const integrationDockerImage = "mcr.microsoft.com/dotnet/sdk:latest"
+
 func integrationCreateContainerOpts(imageName string, hostConfig *HostConfig) CreateContainerOptions {
 	return CreateContainerOptions{
 		Config: &Config{
 			Image: imageName,
-			Cmd:   []string{"powershell", "-Command", `cat C:\file.txt`},
+			Cmd:   []string{"powershell", "-Command", `Write-Host "hello hello"`},
 		},
 		HostConfig: hostConfig,
 	}
