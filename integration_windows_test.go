@@ -7,7 +7,7 @@
 
 package docker
 
-const integrationDockerImage = "mcr.microsoft.com/dotnet/sdk:latest"
+const integrationDockerImage = "mcr.microsoft.com/windows/servercore:ltsc2022"
 
 func integrationCreateContainerOpts(imageName string, hostConfig *HostConfig) CreateContainerOptions {
 	return CreateContainerOptions{
