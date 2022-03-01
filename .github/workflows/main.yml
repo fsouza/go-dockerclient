@@ -55,7 +55,6 @@ jobs:
       - uses: actions/setup-go@v3.0.0
         id: go
         with:
-          stable: false
           go-version: ${{ matrix.go_version }}
 
       - uses: actions/checkout@v2.4.0
