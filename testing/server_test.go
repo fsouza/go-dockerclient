@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"net/http"
@@ -1089,7 +1089,7 @@ func (r *HijackableResponseRecorder) Hijack() (net.Conn, *bufio.ReadWriter, erro
 	myConn, otherConn := net.Pipe()
 	r.readCh = make(chan []byte)
 	go func() {
-		data, _ := ioutil.ReadAll(myConn)
+		data, _ := io.ReadAll(myConn)
 		r.readCh <- data
 	}()
 	return otherConn, nil, nil

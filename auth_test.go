@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -43,7 +42,7 @@ func TestAuthConfigurationSearchPath(t *testing.T) {
 
 func TestAuthConfigurationsFromFile(t *testing.T) {
 	t.Parallel()
-	tmpDir, err := ioutil.TempDir("", "go-dockerclient-auth-test")
+	tmpDir, err := os.MkdirTemp("", "go-dockerclient-auth-test")
 	if err != nil {
 		t.Fatalf("Unable to create temporary directory for TestAuthConfigurationsFromFile: %s", err)
 	}
@@ -51,7 +50,7 @@ func TestAuthConfigurationsFromFile(t *testing.T) {
 	authString := base64.StdEncoding.EncodeToString([]byte("user:pass"))
 	content := fmt.Sprintf(`{"auths":{"foo": {"auth": "%s"}}}`, authString)
 	configFile := path.Join(tmpDir, "docker_config")
-	if err = ioutil.WriteFile(configFile, []byte(content), 0o600); err != nil {
+	if err = os.WriteFile(configFile, []byte(content), 0o600); err != nil {
 		t.Errorf("Error writing auth config for TestAuthConfigurationsFromFile: %s", err)
 	}
 	auths, err := NewAuthConfigurationsFromFile(configFile)
@@ -65,7 +64,7 @@ func TestAuthConfigurationsFromFile(t *testing.T) {
 
 func TestAuthConfigurationsFromDockerCfg(t *testing.T) {
 	t.Parallel()
-	tmpDir, err := ioutil.TempDir("", "go-dockerclient-auth-dockercfg-test")
+	tmpDir, err := os.MkdirTemp("", "go-dockerclient-auth-dockercfg-test")
 	if err != nil {
 		t.Fatalf("Unable to create temporary directory for TestAuthConfigurationsFromDockerCfg: %s", err)
 	}
@@ -80,7 +79,7 @@ func TestAuthConfigurationsFromDockerCfg(t *testing.T) {
 		authString := base64.StdEncoding.EncodeToString([]byte("user:pass"))
 		content := fmt.Sprintf(`{"auths":{"%s": {"auth": "%s"}}}`, key, authString)
 		configFile := path.Join(tmpDir, fmt.Sprintf("docker_config_%d.json", i))
-		if err = ioutil.WriteFile(configFile, []byte(content), 0o600); err != nil {
+		if err = os.WriteFile(configFile, []byte(content), 0o600); err != nil {
 			t.Errorf("Error writing auth config for TestAuthConfigurationsFromFile: %s", err)
 		}
 		pathsToTry = append(pathsToTry, configFile)
@@ -376,7 +375,7 @@ func TestAuthConfigurationsMerge(t *testing.T) {
 
 func TestGetHelperProviderFromDockerCfg(t *testing.T) {
 	t.Parallel()
-	tmpDir, err := ioutil.TempDir("", "go-dockerclient-creds-test")
+	tmpDir, err := os.MkdirTemp("", "go-dockerclient-creds-test")
 	if err != nil {
 		t.Fatalf("Unable to create temporary directory for TestGetHelperProviderFromDockerCfg: %s", err)
 	}
@@ -384,7 +383,7 @@ func TestGetHelperProviderFromDockerCfg(t *testing.T) {
 	expectedProvider := "ecr-login-test"
 	content := fmt.Sprintf(`{"credsStore": "ecr-login","credHelpers":{"docker.io":"%s"}}`, expectedProvider)
 	configFile := path.Join(tmpDir, "docker_config")
-	if err = ioutil.WriteFile(configFile, []byte(content), 0o600); err != nil {
+	if err = os.WriteFile(configFile, []byte(content), 0o600); err != nil {
 		t.Errorf("Error writing auth config for TestGetHelperProviderFromDockerCfg: %s", err)
 	}
 

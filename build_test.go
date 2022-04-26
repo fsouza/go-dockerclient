@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -54,6 +53,9 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 		}
 	}()
 	workingdir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
@@ -82,7 +84,7 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 		}
 	}()
 
-	files, err := ioutil.ReadDir(tmpdir)
+	files, err := os.ReadDir(tmpdir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +155,7 @@ func TestBuildImageSendXRegistryConfig(t *testing.T) {
 }
 
 func unpackBodyTarball(req io.Reader) (tmpdir string, err error) {
-	tmpdir, err = ioutil.TempDir("", "go-dockerclient-test")
+	tmpdir, err = os.MkdirTemp("", "go-dockerclient-test")
 	if err != nil {
 		return
 	}

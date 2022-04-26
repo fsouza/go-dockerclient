@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -57,7 +57,7 @@ func TestStartContainerHostConfigAPI124(t *testing.T) {
 		t.Errorf("StartContainer(%q): Unepected %q Content-Type in request.", id, contentType)
 	}
 	if req.Body != nil {
-		data, _ := ioutil.ReadAll(req.Body)
+		data, _ := io.ReadAll(req.Body)
 		t.Errorf("StartContainer(%q): Unexpected data sent: %s", id, data)
 	}
 }

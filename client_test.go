@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -346,7 +345,7 @@ func TestGetFakeNativeURL(t *testing.T) {
 
 func TestError(t *testing.T) {
 	t.Parallel()
-	fakeBody := ioutil.NopCloser(bytes.NewBufferString("bad parameter"))
+	fakeBody := io.NopCloser(bytes.NewBufferString("bad parameter"))
 	resp := &http.Response{
 		StatusCode: 400,
 		Body:       fakeBody,
@@ -893,7 +892,7 @@ func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	rt.requests = append(rt.requests, r)
 	res := &http.Response{
 		StatusCode: rt.status,
-		Body:       ioutil.NopCloser(body),
+		Body:       io.NopCloser(body),
 		Header:     make(http.Header),
 	}
 	for k, v := range rt.header {

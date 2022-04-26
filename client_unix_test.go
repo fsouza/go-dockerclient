@@ -8,7 +8,7 @@
 package docker
 
 import (
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -46,7 +46,7 @@ func TestNewTSLAPIClientUnixEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := ioutil.ReadAll(rsp.Body)
+	data, err := io.ReadAll(rsp.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestNewTSLAPIClientUnixEndpoint(t *testing.T) {
 }
 
 func newNativeServer(handler http.Handler) (*httptest.Server, func(), error) {
-	tmpdir, err := ioutil.TempDir("", "socket")
+	tmpdir, err := os.MkdirTemp("", "socket")
 	if err != nil {
 		return nil, nil, err
 	}

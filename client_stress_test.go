@@ -9,9 +9,9 @@ package docker
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"sort"
 	"sync"
@@ -66,11 +66,11 @@ func TestClientDoConcurrentStress(t *testing.T) {
 			}
 			defer tt.srv.Close()
 			if tt.withTLSClient {
-				certPEMBlock, certErr := ioutil.ReadFile("testing/data/cert.pem")
+				certPEMBlock, certErr := os.ReadFile("testing/data/cert.pem")
 				if certErr != nil {
 					t.Fatal(certErr)
 				}
-				keyPEMBlock, certErr := ioutil.ReadFile("testing/data/key.pem")
+				keyPEMBlock, certErr := os.ReadFile("testing/data/key.pem")
 				if certErr != nil {
 					t.Fatal(certErr)
 				}

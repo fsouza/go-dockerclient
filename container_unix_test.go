@@ -10,7 +10,6 @@ package docker
 import (
 	"bufio"
 	"bytes"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -54,7 +53,7 @@ func TestExportContainerViaUnixSocket(t *testing.T) {
 
 func TestStatsTimeoutUnixSocket(t *testing.T) {
 	t.Parallel()
-	tmpdir, err := ioutil.TempDir("", "socket")
+	tmpdir, err := os.MkdirTemp("", "socket")
 	if err != nil {
 		t.Fatal(err)
 	}

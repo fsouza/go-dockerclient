@@ -321,7 +321,7 @@ func TestSwarmInspect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SwarmInspect: got error. %s", err.Error())
 	}
-	if expected.ClusterInfo.ID != swarmInspect.ClusterInfo.ID {
+	if expected.ID != swarmInspect.ID {
 		t.Fatalf("SwarmInspect: wrong response. Want %+v. Got %+v.", expected, swarmInspect)
 	}
 }
@@ -412,7 +412,7 @@ func TestServiceCreate(t *testing.T) {
 		ID:   srv.ID,
 		Spec: serviceCreateOpts.ServiceSpec,
 		Endpoint: swarm.Endpoint{
-			Spec:  *serviceCreateOpts.ServiceSpec.EndpointSpec,
+			Spec:  *serviceCreateOpts.EndpointSpec,
 			Ports: []swarm.PortConfig{{Protocol: "tcp", TargetPort: 80, PublishedPort: 80}},
 		},
 	}
@@ -431,7 +431,7 @@ func TestServiceCreate(t *testing.T) {
 			},
 		},
 		DesiredState: swarm.TaskStateReady,
-		Spec:         serviceCreateOpts.ServiceSpec.TaskTemplate,
+		Spec:         serviceCreateOpts.TaskTemplate,
 	}
 	if !reflect.DeepEqual(task, expectedTask) {
 		t.Fatalf("ServiceCreate: wrong task. Want\n%#v\nGot\n%#v", expectedTask, task)
@@ -486,7 +486,7 @@ func TestServiceCreateDynamicPort(t *testing.T) {
 		ID:   srv.ID,
 		Spec: serviceCreateOpts.ServiceSpec,
 		Endpoint: swarm.Endpoint{
-			Spec:  *serviceCreateOpts.ServiceSpec.EndpointSpec,
+			Spec:  *serviceCreateOpts.EndpointSpec,
 			Ports: []swarm.PortConfig{{Protocol: "tcp", TargetPort: 80, PublishedPort: 30000}},
 		},
 	}
@@ -1305,10 +1305,10 @@ func TestNodeUpdate(t *testing.T) {
 		if recorder.Code != http.StatusOK {
 			t.Fatalf("invalid status code: %d", recorder.Code)
 		}
-		if srv1.nodes[0].Spec.Annotations.Labels[key] != "value" {
+		if srv1.nodes[0].Spec.Labels[key] != "value" {
 			t.Fatalf("expected node to have label %s", key)
 		}
-		if srv2.nodes[0].Spec.Annotations.Labels[key] != "value" {
+		if srv2.nodes[0].Spec.Labels[key] != "value" {
 			t.Fatalf("expected node to have label %s", key)
 		}
 	}
