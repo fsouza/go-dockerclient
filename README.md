@@ -1,7 +1,7 @@
 # go-dockerclient
 
-[![Build Status](https://github.com/fsouza/go-dockerclient/workflows/Build/badge.svg)](https://github.com/fsouza/go-dockerclient/actions?query=branch:main+workflow:Build)
-[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/fsouza/go-dockerclient)
+[![Build Status](https://github.com/henryse/go-dockerclient/workflows/Build/badge.svg)](https://github.com/henryse/go-dockerclient/actions?query=branch:main+workflow:Build)
+[![GoDoc](https://img.shields.io/badge/api-Godoc-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/henryse/go-dockerclient)
 
 This package presents a client for the Docker remote API. It also provides
 support for the extensions in the [Swarm API](https://docs.docker.com/swarm/swarm-api/).
@@ -28,7 +28,7 @@ go-dockerclient lags behind the official SDK.
 When using the official SDK, keep in mind that because of how the its
 dependencies are organized, you may need some extra steps in order to be able
 to import it in your projects (see
-[#784](https://github.com/fsouza/go-dockerclient/issues/784) and
+[#784](https://github.com/henryse/go-dockerclient/issues/784) and
 [moby/moby#28269](https://github.com/moby/moby/issues/28269)).
 
 ## Example
@@ -39,7 +39,7 @@ package main
 import (
 	"fmt"
 
-	docker "github.com/fsouza/go-dockerclient"
+	docker "github.com/henryse/go-dockerclient"
 )
 
 func main() {
@@ -74,7 +74,7 @@ package main
 import (
 	"fmt"
 
-	docker "github.com/fsouza/go-dockerclient"
+	docker "github.com/henryse/go-dockerclient"
 )
 
 func main() {
@@ -100,7 +100,7 @@ package main
 import (
 	"fmt"
 
-	docker "github.com/fsouza/go-dockerclient"
+	docker "github.com/henryse/go-dockerclient"
 )
 
 func main() {

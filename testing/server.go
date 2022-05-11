@@ -28,8 +28,8 @@ import (
 
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/pkg/stdcopy"
-	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
+	docker "github.com/henryse/go-dockerclient"
 )
 
 var nameRegexp = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
