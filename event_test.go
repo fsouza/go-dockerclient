@@ -8,9 +8,9 @@ import (
 	"bufio"
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -33,7 +33,7 @@ func TestTLSEventListeners(t *testing.T) {
 			t.Fatalf("Error loading server key pair: %s", err)
 		}
 
-		caCert, err := ioutil.ReadFile("testing/data/ca.pem")
+		caCert, err := os.ReadFile("testing/data/ca.pem")
 		if err != nil {
 			t.Fatalf("Error loading ca certificate: %s", err)
 		}

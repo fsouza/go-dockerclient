@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -379,10 +378,10 @@ func (s *DockerServer) taskList(w http.ResponseWriter, r *http.Request) {
 		}
 		if inFilter(filters["id"], task.ID) &&
 			(inFilter(filters["service"], task.ServiceID) ||
-				inFilter(filters["service"], srv.Spec.Annotations.Name)) &&
+				inFilter(filters["service"], srv.Spec.Name)) &&
 			inFilter(filters["node"], task.NodeID) &&
 			inFilter(filters["desired-state"], string(task.DesiredState)) &&
-			inLabelFilter(filters["label"], srv.Spec.Annotations.Labels) {
+			inLabelFilter(filters["label"], srv.Spec.Labels) {
 			ret = append(ret, s.tasks[i])
 		}
 	}
@@ -639,7 +638,7 @@ func (s *DockerServer) internalUpdateNodes(w http.ResponseWriter, r *http.Reques
 		s.swarmMut.Lock()
 		defer s.swarmMut.Unlock()
 	}
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

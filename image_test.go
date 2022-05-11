@@ -9,7 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -682,7 +682,7 @@ func TestImportImageFromInput(t *testing.T) {
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		t.Errorf("ImportImage: caugth error while reading body %#v", err.Error())
 	}
@@ -712,7 +712,7 @@ func TestImportImageDoesNotPassInputIfSourceIsNotDash(t *testing.T) {
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		t.Errorf("ImportImage: caugth error while reading body %#v", err.Error())
 	}
@@ -740,11 +740,11 @@ func TestImportImageShouldPassTarContentToBodyWhenSourceIsFilePath(t *testing.T)
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	tarContent, err := ioutil.ReadAll(tar)
+	tarContent, err := io.ReadAll(tar)
 	if err != nil {
 		t.Fatal(err)
 	}
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		t.Fatal(err)
 	}

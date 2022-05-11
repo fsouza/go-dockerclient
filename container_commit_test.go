@@ -3,7 +3,7 @@ package docker
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -66,7 +66,7 @@ func TestCommitContainerParams(t *testing.T) {
 				t.Errorf("Wrong HTTP method. Want POST. Got %s.", meth)
 			}
 			if test.body != nil {
-				if requestBody, err := ioutil.ReadAll(fakeRT.requests[0].Body); err == nil {
+				if requestBody, err := io.ReadAll(fakeRT.requests[0].Body); err == nil {
 					if !bytes.Equal(requestBody, test.body) {
 						t.Errorf("Expected body %#v, got %#v", test.body, requestBody)
 					}

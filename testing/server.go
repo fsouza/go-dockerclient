@@ -15,10 +15,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	mathrand "math/rand"
 	"net"
 	"net/http"
+	"os"
 	libpath "path"
 	"regexp"
 	"strconv"
@@ -145,7 +145,7 @@ func NewTLSServer(bind string, containerChan chan<- *docker.Container, hook func
 	tlsServerConfig := new(tls.Config)
 	tlsServerConfig.Certificates = []tls.Certificate{defaultCertificate}
 	if tlsConfig.RootCAPath != "" {
-		rootCertPEM, err := ioutil.ReadFile(tlsConfig.RootCAPath)
+		rootCertPEM, err := os.ReadFile(tlsConfig.RootCAPath)
 		if err != nil {
 			return nil, err
 		}
@@ -248,19 +248,19 @@ func (s *DockerServer) SetHook(hook func(*http.Request)) {
 // running, so it's useful for emulating an exec that runs for two seconds, for
 // example:
 //
-//    opts := docker.CreateExecOptions{
-//        AttachStdin:  true,
-//        AttachStdout: true,
-//        AttachStderr: true,
-//        Tty:          true,
-//        Cmd:          []string{"/bin/bash", "-l"},
-//    }
-//    // Client points to a fake server.
-//    exec, err := client.CreateExec(opts)
-//    // handle error
-//    server.PrepareExec(exec.ID, func() {time.Sleep(2 * time.Second)})
-//    err = client.StartExec(exec.ID, docker.StartExecOptions{Tty: true}) // will block for 2 seconds
-//    // handle error
+//	opts := docker.CreateExecOptions{
+//	    AttachStdin:  true,
+//	    AttachStdout: true,
+//	    AttachStderr: true,
+//	    Tty:          true,
+//	    Cmd:          []string{"/bin/bash", "-l"},
+//	}
+//	// Client points to a fake server.
+//	exec, err := client.CreateExec(opts)
+//	// handle error
+//	server.PrepareExec(exec.ID, func() {time.Sleep(2 * time.Second)})
+//	err = client.StartExec(exec.ID, docker.StartExecOptions{Tty: true}) // will block for 2 seconds
+//	// handle error
 func (s *DockerServer) PrepareExec(id string, callback func()) {
 	s.execCallbacks[id] = callback
 }
@@ -300,9 +300,9 @@ func (s *DockerServer) ResetMultiFailures() {
 //
 // For example:
 //
-//     server.CustomHandler("/containers/json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//         http.Error(w, "Something wrong is not right", http.StatusInternalServerError)
-//     }))
+//	server.CustomHandler("/containers/json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//	    http.Error(w, "Something wrong is not right", http.StatusInternalServerError)
+//	}))
 func (s *DockerServer) CustomHandler(path string, handler http.Handler) {
 	s.handlerMutex.Lock()
 	s.customHandlers[path] = handler
@@ -517,7 +517,7 @@ func (s *DockerServer) createContainer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	generatedID := s.generateID()
-	config.Config.Hostname = generatedID[:12]
+	config.Hostname = generatedID[:12]
 	container := docker.Container{
 		Name:       name,
 		ID:         generatedID,
@@ -817,7 +817,7 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("stdin") == "1" {
 		wg.Add(1)
 		go func() {
-			ioutil.ReadAll(conn)
+			io.ReadAll(conn)
 			wg.Done()
 		}()
 	}
@@ -1015,7 +1015,7 @@ func (s *DockerServer) buildImage(w http.ResponseWriter, r *http.Request) {
 	s.images[image.ID] = image
 	s.imgIDs[repository] = image.ID
 	s.iMut.Unlock()
-	w.Write([]byte(fmt.Sprintf("Successfully built %s", image.ID)))
+	fmt.Fprintf(w, "Successfully built %s", image.ID)
 }
 
 func (s *DockerServer) pullImage(w http.ResponseWriter, r *http.Request) {
@@ -1149,7 +1149,7 @@ func (s *DockerServer) listEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	for _, d := range events {
-		fmt.Fprintln(w, d)
+		fmt.Fprintln(w, string(d))
 		time.Sleep(time.Duration(mathrand.Intn(200)) * time.Millisecond)
 	}
 }
@@ -1427,8 +1427,8 @@ func (s *DockerServer) createVolume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	volume := &docker.Volume{
-		Name:   data.CreateVolumeOptions.Name,
-		Driver: data.CreateVolumeOptions.Driver,
+		Name:   data.Name,
+		Driver: data.Driver,
 	}
 	// If the name is not specified, generate one.  Just using generateID for now
 	if len(volume.Name) == 0 {
