@@ -2,6 +2,7 @@ daysUntilStale: 30
 daysUntilClose: 5
 exemptLabels:
   - bug
+  - enhancement
   - nostale
 staleLabel: stale
 markComment: >
