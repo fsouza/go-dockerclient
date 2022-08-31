@@ -1,4 +1,4 @@
-module github.com/fsouza/go-dockerclient
+module github.com/yyuuttaaoo/go-dockerclient
 
 go 1.18
 

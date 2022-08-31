@@ -7,6 +7,7 @@ package docker
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net"
@@ -133,6 +134,7 @@ func (c *Client) AddEventListener(listener chan<- *APIEvents) error {
 //
 // The listener parameter is a channel through which events will be sent.
 func (c *Client) AddEventListenerWithOptions(options EventsOptions, listener chan<- *APIEvents) error {
+    fmt.Println("AddEventListenerWithOptions")
 	var err error
 	if !c.eventMonitor.isEnabled() {
 		err = c.eventMonitor.enableEventMonitoring(c, options)
@@ -145,6 +147,7 @@ func (c *Client) AddEventListenerWithOptions(options EventsOptions, listener cha
 
 // RemoveEventListener removes a listener from the monitor.
 func (c *Client) RemoveEventListener(listener chan *APIEvents) error {
+    fmt.Println("RemoveEventListenerWithOptions")
 	err := c.eventMonitor.removeListener(listener)
 	if err != nil {
 		return err
@@ -219,6 +222,7 @@ func (eventState *eventMonitoringState) enableEventMonitoring(c *Client, opts Ev
 }
 
 func (eventState *eventMonitoringState) disableEventMonitoring() {
+    fmt.Println("disableEventMonitoring")
 	eventState.Lock()
 	defer eventState.Unlock()
 
@@ -232,6 +236,7 @@ func (eventState *eventMonitoringState) disableEventMonitoring() {
 		close(eventState.errC)
 
 		if eventState.closeConn != nil {
+            fmt.Println("call closeConn")
 			eventState.closeConn()
 			eventState.closeConn = nil
 		}
@@ -418,8 +423,10 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 			}
 			c.eventMonitor.RUnlock()
 		}
+        fmt.Println("goroutine stop")
 	}(res, conn)
 	return func() {
+        fmt.Println("set keepRunning = 0")
 		atomic.StoreInt32(&keepRunning, 0)
 	}, nil
 }
