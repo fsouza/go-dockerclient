@@ -8,6 +8,7 @@
 package docker
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"net"
@@ -31,7 +32,7 @@ func (c *tlsClientCon) CloseWrite() error {
 	return nil
 }
 
-func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Config) (net.Conn, error) {
+func tlsDialWithDialer(ctx context.Context, dialer *net.Dialer, network, addr string, config *tls.Config) (net.Conn, error) {
 	// We want the Timeout and Deadline values from dialer to cover the
 	// whole process: TCP connection and TLS handshake. This means that we
 	// also need to start our own timers now.
@@ -53,7 +54,7 @@ func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Con
 		})
 	}
 
-	rawConn, err := dialer.Dial(network, addr)
+	rawConn, err := dialer.DialContext(ctx, network, addr)
 	if err != nil {
 		return nil, err
 	}

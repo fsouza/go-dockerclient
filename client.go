@@ -155,6 +155,7 @@ type Client struct {
 // winio.DialPipe)
 type Dialer interface {
 	Dial(network, address string) (net.Conn, error)
+	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
 // NewClient returns a Client instance ready for communication with the given
@@ -762,7 +763,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 		if !ok {
 			return nil, ErrTLSNotSupported
 		}
-		dial, err = tlsDialWithDialer(netDialer, protocol, address, c.TLSConfig)
+		dial, err = tlsDialWithDialer(context.Background(), netDialer, protocol, address, c.TLSConfig)
 		if err != nil {
 			return nil, err
 		}

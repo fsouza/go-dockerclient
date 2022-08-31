@@ -5,19 +5,29 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 )
+
+func FdOpened() string {
+	fdDir := "/proc/self/fd"
+	arr, err := ioutil.ReadDir(fdDir)
+	if err != nil {
+		fmt.Printf("read fd dir error %s: %v\n", fdDir, err)
+	}
+	return fmt.Sprintf("%s %s %d", time.Now().Format("Mon Jan 02 15:04:05"), "fd count:", len(arr))
+}
 
 // EventsOptions to filter events
 // See https://docs.docker.com/engine/api/v1.41/#operation/SystemEvents for more details.
@@ -134,7 +144,6 @@ func (c *Client) AddEventListener(listener chan<- *APIEvents) error {
 //
 // The listener parameter is a channel through which events will be sent.
 func (c *Client) AddEventListenerWithOptions(options EventsOptions, listener chan<- *APIEvents) error {
-    fmt.Println("AddEventListenerWithOptions")
 	var err error
 	if !c.eventMonitor.isEnabled() {
 		err = c.eventMonitor.enableEventMonitoring(c, options)
@@ -147,7 +156,6 @@ func (c *Client) AddEventListenerWithOptions(options EventsOptions, listener cha
 
 // RemoveEventListener removes a listener from the monitor.
 func (c *Client) RemoveEventListener(listener chan *APIEvents) error {
-    fmt.Println("RemoveEventListenerWithOptions")
 	err := c.eventMonitor.removeListener(listener)
 	if err != nil {
 		return err
@@ -222,7 +230,6 @@ func (eventState *eventMonitoringState) enableEventMonitoring(c *Client, opts Ev
 }
 
 func (eventState *eventMonitoringState) disableEventMonitoring() {
-    fmt.Println("disableEventMonitoring")
 	eventState.Lock()
 	defer eventState.Unlock()
 
@@ -232,13 +239,13 @@ func (eventState *eventMonitoringState) disableEventMonitoring() {
 
 	if eventState.enabled {
 		eventState.enabled = false
-		close(eventState.C)
-		close(eventState.errC)
 
 		if eventState.closeConn != nil {
-            fmt.Println("call closeConn")
 			eventState.closeConn()
 			eventState.closeConn = nil
+		} else {
+			close(eventState.C)
+			close(eventState.errC)
 		}
 	}
 }
@@ -369,34 +376,48 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 		protocol = "tcp"
 		address = c.endpointURL.Host
 	}
-	var dial net.Conn
-	if c.TLSConfig == nil {
-		dial, err = c.Dialer.Dial(protocol, address)
-	} else {
+
+	ctx, cancel := context.WithCancel(context.Background())
+	tr := &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return c.Dialer.DialContext(ctx, protocol, address)
+		},
+	}
+	urlScheme := "http"
+	if c.TLSConfig != nil {
+		urlScheme = "https"
 		netDialer, ok := c.Dialer.(*net.Dialer)
 		if !ok {
+			cancel()
 			return nil, ErrTLSNotSupported
 		}
-		dial, err = tlsDialWithDialer(netDialer, protocol, address, c.TLSConfig)
-	}
-	if err != nil {
-		return nil, err
+		tr.TLSClientConfig = c.TLSConfig
+		tr.DialTLSContext = func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return tlsDialWithDialer(ctx, netDialer, protocol, address, c.TLSConfig)
+		}
 	}
 	//lint:ignore SA1019 the alternative doesn't quite work, so keep using the deprecated thing.
-	conn := httputil.NewClientConn(dial, nil)
-	req, err := http.NewRequest(http.MethodGet, uri, nil)
+	conn := &http.Client{Transport: tr}
+	url := fmt.Sprintf("%s://unix/%s", urlScheme, uri)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
+	fmt.Println("Before conn.Do:", FdOpened())
 	res, err := conn.Do(req)
 	if err != nil {
+		fmt.Println(err)
+		cancel()
 		return nil, err
 	}
+	fmt.Println("After conn.Do:", FdOpened())
 
 	keepRunning := int32(1)
 	//lint:ignore SA1019 the alternative doesn't quite work, so keep using the deprecated thing.
-	go func(res *http.Response, conn *httputil.ClientConn) {
-		defer conn.Close()
+	go func() {
+		defer close(eventChan)
+		defer close(errChan)
 		defer res.Body.Close()
 		decoder := json.NewDecoder(res.Body)
 		for atomic.LoadInt32(&keepRunning) == 1 {
@@ -411,7 +432,9 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 					c.eventMonitor.RUnlock()
 					break
 				}
-				errChan <- err
+				if atomic.LoadInt32(&keepRunning) == 1 {
+					errChan <- err
+				}
 			}
 			if event.Time == 0 {
 				continue
@@ -423,11 +446,10 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 			}
 			c.eventMonitor.RUnlock()
 		}
-        fmt.Println("goroutine stop")
-	}(res, conn)
+	}()
 	return func() {
-        fmt.Println("set keepRunning = 0")
 		atomic.StoreInt32(&keepRunning, 0)
+		cancel()
 	}, nil
 }
 
