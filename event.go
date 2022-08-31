@@ -413,14 +413,13 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 	}
 	fmt.Println("After conn.Do:", FdOpened())
 
-	keepRunning := int32(1)
 	//lint:ignore SA1019 the alternative doesn't quite work, so keep using the deprecated thing.
 	go func() {
 		defer close(eventChan)
 		defer close(errChan)
 		defer res.Body.Close()
 		decoder := json.NewDecoder(res.Body)
-		for atomic.LoadInt32(&keepRunning) == 1 {
+		for ctx.Err() == nil {
 			var event APIEvents
 			if err := decoder.Decode(&event); err != nil {
 				if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
@@ -432,7 +431,7 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 					c.eventMonitor.RUnlock()
 					break
 				}
-				if atomic.LoadInt32(&keepRunning) == 1 {
+				if ctx.Err() == nil {
 					errChan <- err
 				}
 			}
@@ -448,7 +447,6 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 		}
 	}()
 	return func() {
-		atomic.StoreInt32(&keepRunning, 0)
 		cancel()
 	}, nil
 }
