@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 
 //go:build docker_integration && !windows
-// +build docker_integration,!windows
 
 package docker
 
