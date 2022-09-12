@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/Microsoft/go-winio v0.5.2
-	github.com/docker/docker v20.10.17+incompatible
+	github.com/docker/docker v20.10.18+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/mux v1.8.0
