@@ -101,6 +101,13 @@ type StartExecOptions struct {
 //
 // See https://goo.gl/1EeDWi for more details
 func (c *Client) StartExec(id string, opts StartExecOptions) error {
+	// if not detached, we actually want to wait for the process to exit, but
+	// the hijacked connection will close the error channel early unless one of
+	// stderr/stdout is set, so explicitly set one of them to io.Discard if so.
+	if !opts.Detach && opts.OutputStream == nil && opts.ErrorStream == nil {
+		opts.OutputStream = io.Discard
+		opts.ErrorStream = io.Discard
+	}
 	cw, err := c.StartExecNonBlocking(id, opts)
 	if err != nil {
 		return err
