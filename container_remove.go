@@ -29,6 +29,7 @@ type RemoveContainerOptions struct {
 func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 	path := "/containers/" + opts.ID + "?" + queryString(opts)
 	resp, err := c.do(http.MethodDelete, path, doOptions{context: opts.Context})
+	defer resp.Body.Close()
 	if err != nil {
 		var e *Error
 		if errors.As(err, &e) && e.Status == http.StatusNotFound {
@@ -36,6 +37,5 @@ func (c *Client) RemoveContainer(opts RemoveContainerOptions) error {
 		}
 		return err
 	}
-	resp.Body.Close()
 	return nil
 }
