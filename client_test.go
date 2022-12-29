@@ -95,11 +95,10 @@ func TestNewVersionedClient(t *testing.T) {
 }
 
 func TestNewVersionedClientFromEnv(t *testing.T) {
-	t.Parallel()
 	endpoint := "tcp://localhost:2376"
 	endpointURL := "http://localhost:2376"
-	os.Setenv("DOCKER_HOST", endpoint)
-	os.Setenv("DOCKER_TLS_VERIFY", "")
+	t.Setenv("DOCKER_HOST", endpoint)
+	t.Setenv("DOCKER_TLS_VERIFY", "")
 	client, err := NewVersionedClientFromEnv("1.12")
 	if err != nil {
 		t.Fatal(err)
@@ -120,13 +119,12 @@ func TestNewVersionedClientFromEnv(t *testing.T) {
 }
 
 func TestNewVersionedClientFromEnvTLS(t *testing.T) {
-	t.Parallel()
 	endpoint := "tcp://localhost:2376"
 	endpointURL := "https://localhost:2376"
 	base, _ := os.Getwd()
-	os.Setenv("DOCKER_CERT_PATH", filepath.Join(base, "/testing/data/"))
-	os.Setenv("DOCKER_HOST", endpoint)
-	os.Setenv("DOCKER_TLS_VERIFY", "1")
+	t.Setenv("DOCKER_CERT_PATH", filepath.Join(base, "/testing/data/"))
+	t.Setenv("DOCKER_HOST", endpoint)
+	t.Setenv("DOCKER_TLS_VERIFY", "1")
 	client, err := NewVersionedClientFromEnv("1.12")
 	if err != nil {
 		t.Fatal(err)
