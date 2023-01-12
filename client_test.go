@@ -365,7 +365,7 @@ func TestQueryString(t *testing.T) {
 	f32QueryString := fmt.Sprintf("w=%s&x=10&y=10.35", strconv.FormatFloat(float64(v), 'f', -1, 64))
 	jsonPerson := url.QueryEscape(`{"Name":"gopher","age":4}`)
 	tests := []struct {
-		input   interface{}
+		input   any
 		want    string
 		wantAPI APIVersion
 	}{

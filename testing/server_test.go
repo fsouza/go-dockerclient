@@ -2757,7 +2757,7 @@ func TestInfoDocker(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("InfoDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
-	var infoData map[string]interface{}
+	var infoData map[string]any
 	err := json.Unmarshal(recorder.Body.Bytes(), &infoData)
 	if err != nil {
 		t.Fatal(err)

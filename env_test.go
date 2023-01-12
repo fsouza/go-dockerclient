@@ -377,7 +377,7 @@ func TestSetAuto(t *testing.T) {
 	t.Parallel()
 	buf := bytes.NewBufferString("oi")
 	tests := []struct {
-		input    interface{}
+		input    any
 		expected string
 	}{
 		{10, "10"},

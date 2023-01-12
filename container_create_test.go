@@ -99,7 +99,7 @@ func TestCreateContainerWithHostConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	var gotBody map[string]interface{}
+	var gotBody map[string]any
 	err = json.NewDecoder(req.Body).Decode(&gotBody)
 	if err != nil {
 		t.Fatal(err)
