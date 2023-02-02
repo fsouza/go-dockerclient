@@ -18,8 +18,11 @@ jobs:
           - freebsd
           - linux
           - windows
+        goarch:
+          - amd64
+          - arm64
 
-    name: cross-compilation (GOOS=${{ matrix.goos }})
+    name: cross-compilation (GOOS=${{ matrix.goos }}, GOARCH=${{ matrix.goarch }})
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v3.5.0
@@ -31,6 +34,7 @@ jobs:
       - run: go build
         env:
           GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
 
   test:
     strategy:
