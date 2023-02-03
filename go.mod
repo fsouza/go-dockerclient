@@ -8,6 +8,7 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/mux v1.8.0
+	github.com/moby/patternmatcher v0.5.0
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 )
 
@@ -17,7 +18,6 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/klauspost/compress v1.11.13 // indirect
-	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
