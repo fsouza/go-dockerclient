@@ -39,7 +39,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go_version:
+        go-version:
           - 1.19
           - "1.20"
         os:
@@ -53,30 +53,44 @@ jobs:
           - os: macos
             goarch: 386
 
-    name: test (${{ matrix.os }}/go-${{ matrix.go_version }}/${{ matrix.goarch }})
+    name: tests (${{ matrix.os }}/go-${{ matrix.go-version }}/${{ matrix.goarch }})
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/setup-go@v3.5.0
         id: go
         with:
-          go-version: ${{ matrix.go_version }}
+          go-version: ${{ matrix.go-version }}
 
       - uses: actions/checkout@v3.3.0
 
       - run: go mod download
 
       - run: make staticcheck
-        if: matrix.go_version == '1.20'
+        if: matrix.go-version == '1.20'
 
       - run: make gotest
         env:
           GOARCH: ${{ matrix.goarch }}
           GOPROXY: off
 
+  integration-tests:
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+          - windows
+
+    name: integration tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/setup-go@v3.5.0
+        id: go
+        with:
+          go-version: "1.20"
+
+      - uses: actions/checkout@v3.3.0
+
       - run: make integration
-        if: matrix.os != 'macos' && matrix.goarch == 'amd64'
-        env:
-          GOFLAGS: -mod=readonly
 
   lint:
     name: lint
