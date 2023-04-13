@@ -29,7 +29,7 @@ jobs:
         with:
           go-version: "1.20"
 
-      - uses: actions/checkout@v3.5.0
+      - uses: actions/checkout@v3.5.1
 
       - run: go build
         env:
@@ -61,7 +61,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - uses: actions/checkout@v3.5.0
+      - uses: actions/checkout@v3.5.1
 
       - run: go mod download
 
@@ -88,7 +88,7 @@ jobs:
         with:
           go-version: "1.20"
 
-      - uses: actions/checkout@v3.5.0
+      - uses: actions/checkout@v3.5.1
 
       - run: make integration
 
@@ -96,6 +96,6 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.5.0
+      - uses: actions/checkout@v3.5.1
 
       - uses: golangci/golangci-lint-action@v3.4.0
