@@ -127,3 +127,20 @@ func TestPassingNameOptToCreateContainerReturnsItInContainer(t *testing.T) {
 		t.Errorf("Container name expected to be TestCreateContainer, was %s", container.Name)
 	}
 }
+
+func TestPassingPlatformOpt(t *testing.T) {
+	t.Parallel()
+	fakeRT := &FakeRoundTripper{message: "{}", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	config := Config{}
+	opts := CreateContainerOptions{Name: "TestCreateContainerWithPlatform", Platform: "darwin/arm64", Config: &config}
+	_, err := client.CreateContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	gotQs := req.URL.Query().Get("platform")
+	if gotQs != "darwin/arm64" {
+		t.Errorf("CreateContainer: missing expected platform query string (%v)", req.URL.RequestURI())
+	}
+}
