@@ -433,6 +433,7 @@ loop:
 				State:   container.State.StateString(),
 				Ports:   ports,
 				Names:   []string{fmt.Sprintf("/%s", container.Name)},
+				Labels:  container.Config.Labels,
 			})
 		}
 	}
