@@ -207,6 +207,7 @@ func TestListContainers(t *testing.T) {
 			Ports:   container.NetworkSettings.PortMappingAPI(),
 			Names:   []string{"/" + container.Name},
 			State:   container.State.StateString(),
+			Labels:  map[string]string{"key": fmt.Sprintf("val-%d", i)},
 		}
 	}
 	sortFn := func(left, right docker.APIContainers) int {
@@ -220,7 +221,7 @@ func TestListContainers(t *testing.T) {
 	}
 	slices.SortFunc(got, sortFn)
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("ListContainers. Want %#v. Got %#v.", expected, got)
+		t.Errorf("ListContainers.\nWant %#v.\nGot  %#v.", expected, got)
 	}
 }
 
