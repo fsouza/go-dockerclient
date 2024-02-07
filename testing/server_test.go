@@ -18,6 +18,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -208,17 +209,16 @@ func TestListContainers(t *testing.T) {
 			State:   container.State.StateString(),
 		}
 	}
-	sort.Slice(expected, func(i, j int) bool {
-		return expected[i].ID < expected[j].ID
-	})
+	sortFn := func(left, right docker.APIContainers) int {
+		return strings.Compare(left.ID, right.ID)
+	}
+	slices.SortFunc(expected, sortFn)
 	var got []docker.APIContainers
 	err := json.NewDecoder(recorder.Body).Decode(&got)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sort.Slice(got, func(i, j int) bool {
-		return got[i].ID < got[j].ID
-	})
+	slices.SortFunc(got, sortFn)
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ListContainers. Want %#v. Got %#v.", expected, got)
 	}
