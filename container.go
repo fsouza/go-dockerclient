@@ -555,6 +555,7 @@ type HostConfig struct {
 	PublishAllPorts      bool                   `json:"PublishAllPorts,omitempty" yaml:"PublishAllPorts,omitempty" toml:"PublishAllPorts,omitempty"`
 	ReadonlyRootfs       bool                   `json:"ReadonlyRootfs,omitempty" yaml:"ReadonlyRootfs,omitempty" toml:"ReadonlyRootfs,omitempty"`
 	AutoRemove           bool                   `json:"AutoRemove,omitempty" yaml:"AutoRemove,omitempty" toml:"AutoRemove,omitempty"`
+	Annotations          map[string]string      `json:"Annotations,omitempty" yaml:"Annotations,omitempty" toml:"Annotations,omitempty"`
 }
 
 // NetworkingConfig represents the container's networking configuration for each of its interfaces
