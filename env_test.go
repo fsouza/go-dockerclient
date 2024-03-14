@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"reflect"
-	"sort"
+	"slices"
 	"testing"
 )
 
@@ -364,8 +364,8 @@ func TestDecode(t *testing.T) {
 				t.Error("Env.Decode(): unexpected <nil> error")
 			}
 			got := []string(env)
-			sort.Strings(got)
-			sort.Strings(test.expectedOut)
+			slices.Sort(got)
+			slices.Sort(test.expectedOut)
 			if !reflect.DeepEqual(got, test.expectedOut) {
 				t.Errorf("Env.Decode(): wrong result. Want %v. Got %v.", test.expectedOut, got)
 			}
@@ -377,7 +377,7 @@ func TestSetAuto(t *testing.T) {
 	t.Parallel()
 	buf := bytes.NewBufferString("oi")
 	tests := []struct {
-		input    interface{}
+		input    any
 		expected string
 	}{
 		{10, "10"},

@@ -12,7 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
-	"sort"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -126,8 +126,8 @@ func TestClientDoConcurrentStress(t *testing.T) {
 			for _, r := range reqs {
 				reqPaths = append(reqPaths, r.Method+r.URL.Path)
 			}
-			sort.Strings(paths)
-			sort.Strings(reqPaths)
+			slices.Sort(paths)
+			slices.Sort(reqPaths)
 			if !reflect.DeepEqual(reqPaths, paths) {
 				t.Fatalf("expected server request paths to equal %v, got: %v", paths, reqPaths)
 			}

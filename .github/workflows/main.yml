@@ -18,26 +18,29 @@ jobs:
           - freebsd
           - linux
           - windows
+        goarch:
+          - amd64
+          - arm64
 
-    name: cross-compilation (GOOS=${{ matrix.goos }})
+    name: cross-compilation (GOOS=${{ matrix.goos }}, GOARCH=${{ matrix.goarch }})
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3.3.0
+      - uses: actions/checkout@v4.1.2
+      - uses: actions/setup-go@v5.0.0
         with:
-          go-version: 1.19
-
-      - uses: actions/checkout@v3.0.2
+          go-version: "1.x"
 
       - run: go build
         env:
           GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
 
   test:
     strategy:
       matrix:
-        go_version:
-          - 1.18
-          - 1.19
+        go-version:
+          - "1.21"
+          - "1.22"
         os:
           - macos
           - ubuntu
@@ -49,35 +52,47 @@ jobs:
           - os: macos
             goarch: 386
 
-    name: test (${{ matrix.os }}/go-${{ matrix.go_version }}/${{ matrix.goarch }})
+    name: tests (${{ matrix.os }}/go-${{ matrix.go-version }}/${{ matrix.goarch }})
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/setup-go@v3.3.0
+      - uses: actions/checkout@v4.1.2
+      - uses: actions/setup-go@v5.0.0
         id: go
         with:
-          go-version: ${{ matrix.go_version }}
-
-      - uses: actions/checkout@v3.0.2
+          go-version: ${{ matrix.go-version }}
 
       - run: go mod download
 
       - run: make staticcheck
-        if: matrix.go_version == '1.19'
+        if: matrix.go-version == '1.21'
 
       - run: make gotest
         env:
           GOARCH: ${{ matrix.goarch }}
           GOPROXY: off
 
+  integration-tests:
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+          - windows
+
+    name: integration tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v4.1.2
+
+      - uses: actions/setup-go@v5.0.0
+        id: go
+        with:
+          go-version: "1.x"
+
       - run: make integration
-        if: matrix.os != 'macos' && matrix.goarch == 'amd64'
-        env:
-          GOFLAGS: -mod=readonly
 
   lint:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.0.2
-
-      - uses: golangci/golangci-lint-action@v3.2.0
+      - uses: actions/checkout@v4.1.2
+      - uses: golangci/golangci-lint-action@v4.0.0

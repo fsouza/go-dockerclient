@@ -433,6 +433,7 @@ loop:
 				State:   container.State.StateString(),
 				Ports:   ports,
 				Names:   []string{fmt.Sprintf("/%s", container.Name)},
+				Labels:  container.Config.Labels,
 			})
 		}
 	}
@@ -1528,7 +1529,7 @@ func (s *DockerServer) infoDocker(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
-	envs := map[string]interface{}{
+	envs := map[string]any{
 		"ID":                "AAAA:XXXX:0000:BBBB:AAAA:XXXX:0000:BBBB:AAAA:XXXX:0000:BBBB",
 		"Containers":        len(s.containers),
 		"ContainersRunning": running,
@@ -1538,7 +1539,7 @@ func (s *DockerServer) infoDocker(w http.ResponseWriter, r *http.Request) {
 		"Driver":            "aufs",
 		"DriverStatus":      [][]string{},
 		"SystemStatus":      nil,
-		"Plugins": map[string]interface{}{
+		"Plugins": map[string]any{
 			"Volume": []string{
 				"local",
 			},
@@ -1571,9 +1572,9 @@ func (s *DockerServer) infoDocker(w http.ResponseWriter, r *http.Request) {
 		"OSType":             "linux",
 		"Architecture":       "x86_64",
 		"IndexServerAddress": "https://index.docker.io/v1/",
-		"RegistryConfig": map[string]interface{}{
+		"RegistryConfig": map[string]any{
 			"InsecureRegistryCIDRs": []string{},
-			"IndexConfigs":          map[string]interface{}{},
+			"IndexConfigs":          map[string]any{},
 			"Mirrors":               nil,
 		},
 		"InitSha1":          "e2042dbb0fcf49bb9da199186d9a5063cda92a01",
@@ -1597,7 +1598,7 @@ func (s *DockerServer) infoDocker(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *DockerServer) versionDocker(w http.ResponseWriter, r *http.Request) {
-	envs := map[string]interface{}{
+	envs := map[string]any{
 		"Version":       "1.10.1",
 		"Os":            "linux",
 		"KernelVersion": "3.13.0-77-generic",

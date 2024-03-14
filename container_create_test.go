@@ -99,7 +99,7 @@ func TestCreateContainerWithHostConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	var gotBody map[string]interface{}
+	var gotBody map[string]any
 	err = json.NewDecoder(req.Body).Decode(&gotBody)
 	if err != nil {
 		t.Fatal(err)
@@ -125,5 +125,22 @@ func TestPassingNameOptToCreateContainerReturnsItInContainer(t *testing.T) {
 	}
 	if container.Name != "TestCreateContainer" {
 		t.Errorf("Container name expected to be TestCreateContainer, was %s", container.Name)
+	}
+}
+
+func TestPassingPlatformOpt(t *testing.T) {
+	t.Parallel()
+	fakeRT := &FakeRoundTripper{message: "{}", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	config := Config{}
+	opts := CreateContainerOptions{Name: "TestCreateContainerWithPlatform", Platform: "darwin/arm64", Config: &config}
+	_, err := client.CreateContainer(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	gotQs := req.URL.Query().Get("platform")
+	if gotQs != "darwin/arm64" {
+		t.Errorf("CreateContainer: missing expected platform query string (%v)", req.URL.RequestURI())
 	}
 }
