@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/Microsoft/go-winio v0.6.1
-	github.com/docker/docker v26.0.1+incompatible
+	github.com/docker/docker v26.0.2+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/mux v1.8.1
