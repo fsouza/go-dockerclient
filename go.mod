@@ -3,7 +3,7 @@ module github.com/fsouza/go-dockerclient
 go 1.21
 
 require (
-	github.com/Microsoft/go-winio v0.6.1
+	github.com/Microsoft/go-winio v0.6.2
 	github.com/docker/docker v26.0.2+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.6.0
@@ -28,7 +28,5 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/tools v0.6.0 // indirect
 )
