@@ -9,7 +9,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/moby/patternmatcher v0.6.0
-	golang.org/x/term v0.27.0
+	golang.org/x/term v0.28.0
 )
 
 require (
@@ -30,6 +30,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	gotest.tools/v3 v3.5.0 // indirect
 )
