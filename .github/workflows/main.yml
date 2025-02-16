@@ -40,8 +40,8 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - "1.22"
           - "1.23"
+          - "1.24"
         os:
           - macos
           - ubuntu
