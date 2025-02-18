@@ -16,6 +16,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/fsouza/go-dockerclient/internal/testutils"
 )
 
 func TestClientDoConcurrentStress(t *testing.T) {
@@ -28,7 +30,7 @@ func TestClientDoConcurrentStress(t *testing.T) {
 		mu.Unlock()
 	})
 	var nativeSrvs []*httptest.Server
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		srv, cleanup, err := newNativeServer(handler)
 		if err != nil {
 			t.Fatal(err)
@@ -54,6 +56,8 @@ func TestClientDoConcurrentStress(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.testCase, func(t *testing.T) {
+			_, serverCert := testutils.GenCertificate(t)
+
 			reqs = nil
 			var client *Client
 			var err error
@@ -65,11 +69,11 @@ func TestClientDoConcurrentStress(t *testing.T) {
 			}
 			defer tt.srv.Close()
 			if tt.withTLSClient {
-				certPEMBlock, certErr := os.ReadFile("testing/data/cert.pem")
+				certPEMBlock, certErr := os.ReadFile(serverCert.CertPath)
 				if certErr != nil {
 					t.Fatal(certErr)
 				}
-				keyPEMBlock, certErr := os.ReadFile("testing/data/key.pem")
+				keyPEMBlock, certErr := os.ReadFile(serverCert.KeyPath)
 				if certErr != nil {
 					t.Fatal(certErr)
 				}
@@ -88,7 +92,7 @@ func TestClientDoConcurrentStress(t *testing.T) {
 			var paths []string
 			errsCh := make(chan error, 3*n)
 			waiters := make(chan CloseWaiter, n)
-			for i := 0; i < n; i++ {
+			for i := range n {
 				path := fmt.Sprintf("/%05d", i)
 				paths = append(paths, http.MethodGet+path)
 				paths = append(paths, http.MethodPost+path)

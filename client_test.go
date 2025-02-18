@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsouza/go-dockerclient/internal/testutils"
 	"golang.org/x/term"
 )
 
@@ -187,9 +188,11 @@ func TestNewTLSVersionedClientNoClientCert(t *testing.T) {
 
 func TestNewTLSVersionedClientInvalidCA(t *testing.T) {
 	t.Parallel()
-	certPath := "testing/data/cert.pem"
-	keyPath := "testing/data/key.pem"
-	caPath := "testing/data/key.pem"
+	_, serverCert := testutils.GenCertificate(t)
+
+	certPath := serverCert.CertPath
+	keyPath := serverCert.KeyPath
+	caPath := serverCert.KeyPath
 	endpoint := "https://localhost:4243"
 	_, err := NewVersionedTLSClient(endpoint, certPath, keyPath, caPath, "1.14")
 	if err == nil {
@@ -199,9 +202,11 @@ func TestNewTLSVersionedClientInvalidCA(t *testing.T) {
 
 func TestNewTLSVersionedClientInvalidCANoClientCert(t *testing.T) {
 	t.Parallel()
+	_, serverCert := testutils.GenCertificate(t)
+
 	certPath := "testing/data/cert_doesnotexist.pem"
 	keyPath := "testing/data/key_doesnotexist.pem"
-	caPath := "testing/data/key.pem"
+	caPath := serverCert.KeyPath
 	endpoint := "https://localhost:4243"
 	_, err := NewVersionedTLSClient(endpoint, certPath, keyPath, caPath, "1.14")
 	if err == nil {

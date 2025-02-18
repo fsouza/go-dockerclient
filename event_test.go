@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsouza/go-dockerclient/internal/testutils"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -25,15 +26,17 @@ func TestEventListeners(t *testing.T) {
 
 func TestTLSEventListeners(t *testing.T) {
 	t.Parallel()
+	caCert, serverCert := testutils.GenCertificate(t)
+
 	testEventListeners("TestTLSEventListeners", t, func(handler http.Handler) *httptest.Server {
 		server := httptest.NewUnstartedServer(handler)
 
-		cert, err := tls.LoadX509KeyPair("testing/data/server.pem", "testing/data/serverkey.pem")
+		cert, err := tls.LoadX509KeyPair(serverCert.CertPath, serverCert.KeyPath)
 		if err != nil {
 			t.Fatalf("Error loading server key pair: %s", err)
 		}
 
-		caCert, err := os.ReadFile("testing/data/ca.pem")
+		caCert, err := os.ReadFile(caCert.CertPath)
 		if err != nil {
 			t.Fatalf("Error loading ca certificate: %s", err)
 		}

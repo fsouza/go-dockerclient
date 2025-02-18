@@ -98,11 +98,6 @@ func TestBuildImageContextDirDockerignoreParsing(t *testing.T) {
 		".dockerignore",
 		"Dockerfile",
 		"barfile",
-		"ca.pem",
-		"cert.pem",
-		"key.pem",
-		"server.pem",
-		"serverkey.pem",
 		"symlink",
 	}
 

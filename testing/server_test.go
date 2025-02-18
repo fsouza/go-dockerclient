@@ -27,6 +27,7 @@ import (
 
 	"github.com/docker/docker/api/types/swarm"
 	docker "github.com/fsouza/go-dockerclient"
+	"github.com/fsouza/go-dockerclient/internal/testutils"
 )
 
 func TestNewServer(t *testing.T) {
@@ -45,10 +46,12 @@ func TestNewServer(t *testing.T) {
 
 func TestNewTLSServer(t *testing.T) {
 	t.Parallel()
+	caCert, serverCert := testutils.GenCertificate(t)
+
 	tlsConfig := TLSConfig{
-		CertPath:    "./data/server.pem",
-		CertKeyPath: "./data/serverkey.pem",
-		RootCAPath:  "./data/ca.pem",
+		CertPath:    serverCert.CertPath,
+		CertKeyPath: serverCert.KeyPath,
+		RootCAPath:  caCert.CertPath,
 	}
 	server, err := NewTLSServer("127.0.0.1:0", nil, nil, tlsConfig)
 	if err != nil {
