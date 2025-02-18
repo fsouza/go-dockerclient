@@ -6,13 +6,13 @@
 
 package docker
 
-const integrationDockerImage = "mcr.microsoft.com/windows/servercore:ltsc2022"
+const integrationDockerImage = "mcr.microsoft.com/windows/nanoserver:ltsc2022"
 
 func integrationCreateContainerOpts(imageName string, hostConfig *HostConfig) CreateContainerOptions {
 	return CreateContainerOptions{
 		Config: &Config{
 			Image: imageName,
-			Cmd:   []string{"powershell", "-Command", `Write-Host "hello hello"`},
+			Cmd:   []string{"cmd", "/S", "/C", "echo hello hello"},
 		},
 		HostConfig: hostConfig,
 	}
