@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
-	github.com/docker/docker v27.5.1+incompatible
+	github.com/docker/docker v28.0.0+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.6.0
 	github.com/gorilla/mux v1.8.1
@@ -27,7 +27,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	golang.org/x/sys v0.30.0 // indirect
