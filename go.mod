@@ -6,7 +6,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/docker/docker v28.0.0+incompatible
 	github.com/docker/go-units v0.5.0
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/gorilla/mux v1.8.1
 	github.com/moby/patternmatcher v0.6.0
 	golang.org/x/term v0.29.0
