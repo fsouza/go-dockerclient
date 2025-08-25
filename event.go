@@ -338,10 +338,7 @@ func (eventState *eventMonitoringState) sendEvent(event *APIEvents) {
 		}
 
 		for _, listener := range eventState.listeners {
-			select {
-			case listener <- event:
-			default:
-			}
+			listener <- event
 		}
 	}
 }
