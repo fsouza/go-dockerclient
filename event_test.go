@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -267,10 +268,15 @@ loop:
 			t.Fatalf("%s: timed out waiting on events after %d events", testName, i)
 		}
 	}
-	cmpr := cmp.Comparer(func(e1, e2 APIEvents) bool {
+	cmpInt := func(e1, e2 APIEvents) int {
+		return int(e1.TimeNano - e2.TimeNano)
+	}
+	slices.SortFunc(events, cmpInt)
+	slices.SortFunc(wantedEvents, cmpInt)
+	cmpEqual := cmp.Comparer(func(e1, e2 APIEvents) bool {
 		return e1.Action == e2.Action && e1.Actor.ID == e2.Actor.ID
 	})
-	if dff := cmp.Diff(events, wantedEvents, cmpr); dff != "" {
+	if dff := cmp.Diff(events, wantedEvents, cmpEqual); dff != "" {
 		t.Errorf("wrong events:\n%s", dff)
 	}
 }
