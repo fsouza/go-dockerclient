@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
-	github.com/docker/docker v28.3.3+incompatible
+	github.com/docker/docker v28.4.0+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.7.0
 	github.com/gorilla/mux v1.8.1
@@ -17,7 +17,6 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
