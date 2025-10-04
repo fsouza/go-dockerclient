@@ -268,11 +268,16 @@ loop:
 			t.Fatalf("%s: timed out waiting on events after %d events", testName, i)
 		}
 	}
-	cmpInt := func(e1, e2 APIEvents) int {
-		return int(e1.TimeNano - e2.TimeNano)
+	cmpAPIEvent := func(e1, e2 APIEvents) int {
+		diff := int(e1.TimeNano - e2.TimeNano)
+		if diff != 0 {
+			return diff
+		}
+
+		return strings.Compare(e1.Action, e2.Action)
 	}
-	slices.SortFunc(events, cmpInt)
-	slices.SortFunc(wantedEvents, cmpInt)
+	slices.SortFunc(events, cmpAPIEvent)
+	slices.SortFunc(wantedEvents, cmpAPIEvent)
 	cmpEqual := cmp.Comparer(func(e1, e2 APIEvents) bool {
 		return e1.Action == e2.Action && e1.Actor.ID == e2.Actor.ID
 	})
