@@ -152,11 +152,11 @@ func TestBuildImageSendXRegistryConfig(t *testing.T) {
 func unpackBodyTarball(req io.Reader) (tmpdir string, err error) {
 	tmpdir, err = os.MkdirTemp("", "go-dockerclient-test")
 	if err != nil {
-		return
+		return tmpdir, err
 	}
 	err = archive.Untar(req, tmpdir, &archive.TarOptions{
 		Compression: archive.Uncompressed,
 		NoLchown:    true,
 	})
-	return
+	return tmpdir, err
 }
