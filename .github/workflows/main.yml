@@ -98,4 +98,4 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.0
 
-      - uses: golangci/golangci-lint-action@v9.1.0
+      - uses: golangci/golangci-lint-action@v9.2.0
