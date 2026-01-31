@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/moby/go-archive"
+	"github.com/moby/go-archive/compression"
 )
 
 func TestBuildImageMultipleContextsError(t *testing.T) {
@@ -155,7 +156,7 @@ func unpackBodyTarball(req io.Reader) (tmpdir string, err error) {
 		return tmpdir, err
 	}
 	err = archive.Untar(req, tmpdir, &archive.TarOptions{
-		Compression: archive.Uncompressed,
+		Compression: compression.None,
 		NoLchown:    true,
 	})
 	return tmpdir, err
