@@ -20,13 +20,13 @@ import (
 
 // APIImages represent an image returned in the ListImages call.
 type APIImages struct {
-	ID          string            `json:"Id" yaml:"Id" toml:"Id"`
-	RepoTags    []string          `json:"RepoTags,omitempty" yaml:"RepoTags,omitempty" toml:"RepoTags,omitempty"`
-	Created int64 `json:"Created,omitempty" yaml:"Created,omitempty" toml:"Created,omitempty"`
-	Size    int64 `json:"Size,omitempty" yaml:"Size,omitempty" toml:"Size,omitempty"`
+	ID       string   `json:"Id" yaml:"Id" toml:"Id"`
+	RepoTags []string `json:"RepoTags,omitempty" yaml:"RepoTags,omitempty" toml:"RepoTags,omitempty"`
+	Created  int64    `json:"Created,omitempty" yaml:"Created,omitempty" toml:"Created,omitempty"`
+	Size     int64    `json:"Size,omitempty" yaml:"Size,omitempty" toml:"Size,omitempty"`
 	// Deprecated: VirtualSize is deprecated as of API 1.44. Use Size instead.
-	VirtualSize int64  `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty" toml:"VirtualSize,omitempty"`
-	ParentID    string `json:"ParentId,omitempty" yaml:"ParentId,omitempty" toml:"ParentId,omitempty"`
+	VirtualSize int64             `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty" toml:"VirtualSize,omitempty"`
+	ParentID    string            `json:"ParentId,omitempty" yaml:"ParentId,omitempty" toml:"ParentId,omitempty"`
 	RepoDigests []string          `json:"RepoDigests,omitempty" yaml:"RepoDigests,omitempty" toml:"RepoDigests,omitempty"`
 	Labels      map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty" toml:"Labels,omitempty"`
 }
@@ -49,13 +49,13 @@ type Image struct {
 	DockerVersion   string    `json:"DockerVersion,omitempty" yaml:"DockerVersion,omitempty" toml:"DockerVersion,omitempty"`
 	Author          string    `json:"Author,omitempty" yaml:"Author,omitempty" toml:"Author,omitempty"`
 	Config          *Config   `json:"Config,omitempty" yaml:"Config,omitempty" toml:"Config,omitempty"`
-	Architecture string `json:"Architecture,omitempty" yaml:"Architecture,omitempty"`
-	Size         int64  `json:"Size,omitempty" yaml:"Size,omitempty" toml:"Size,omitempty"`
+	Architecture    string    `json:"Architecture,omitempty" yaml:"Architecture,omitempty"`
+	Size            int64     `json:"Size,omitempty" yaml:"Size,omitempty" toml:"Size,omitempty"`
 	// Deprecated: VirtualSize is deprecated as of API 1.44. Use Size instead.
 	VirtualSize int64    `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty" toml:"VirtualSize,omitempty"`
 	RepoDigests []string `json:"RepoDigests,omitempty" yaml:"RepoDigests,omitempty" toml:"RepoDigests,omitempty"`
-	RootFS          *RootFS   `json:"RootFS,omitempty" yaml:"RootFS,omitempty" toml:"RootFS,omitempty"`
-	OS              string    `json:"Os,omitempty" yaml:"Os,omitempty" toml:"Os,omitempty"`
+	RootFS      *RootFS  `json:"RootFS,omitempty" yaml:"RootFS,omitempty" toml:"RootFS,omitempty"`
+	OS          string   `json:"Os,omitempty" yaml:"Os,omitempty" toml:"Os,omitempty"`
 }
 
 // ImagePre012 serves the same purpose as the Image type except that it is for

@@ -26,9 +26,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/moby/moby/api/pkg/stdcopy"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gorilla/mux"
+	"github.com/moby/moby/api/pkg/stdcopy"
 )
 
 var nameRegexp = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
@@ -62,8 +62,8 @@ type DockerServer struct {
 	customHandlers map[string]http.Handler
 	handlerMutex   sync.RWMutex
 	cChan          chan<- *docker.Container
-	volStore map[string]*volumeCounter
-	volMut   sync.RWMutex
+	volStore       map[string]*volumeCounter
+	volMut         sync.RWMutex
 }
 
 type volumeCounter struct {
@@ -1549,8 +1549,8 @@ func (s *DockerServer) infoDocker(w http.ResponseWriter, r *http.Request) {
 		"Labels":            nil,
 		"ExperimentalBuild": false,
 		"ServerVersion":     "1.10.1",
-		"ClusterStore":     "",
-		"ClusterAdvertise": "",
+		"ClusterStore":      "",
+		"ClusterAdvertise":  "",
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(envs)

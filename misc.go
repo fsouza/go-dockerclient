@@ -78,17 +78,17 @@ type DockerInfo struct {
 	DefaultRuntime     string
 	Swarm              SwarmInfo
 	LiveRestoreEnabled bool
-	MemoryLimit bool
-	SwapLimit   bool
+	MemoryLimit        bool
+	SwapLimit          bool
 	// Deprecated: KernelMemory is deprecated as of API 1.42 and removed in API 1.52.
-	KernelMemory bool
-	CPUCfsPeriod       bool `json:"CpuCfsPeriod"`
-	CPUCfsQuota        bool `json:"CpuCfsQuota"`
-	CPUShares          bool
-	CPUSet             bool
-	IPv4Forwarding     bool
-	BridgeNfIptables   bool
-	BridgeNfIP6tables  bool `json:"BridgeNfIp6tables"`
+	KernelMemory      bool
+	CPUCfsPeriod      bool `json:"CpuCfsPeriod"`
+	CPUCfsQuota       bool `json:"CpuCfsQuota"`
+	CPUShares         bool
+	CPUSet            bool
+	IPv4Forwarding    bool
+	BridgeNfIptables  bool
+	BridgeNfIP6tables bool `json:"BridgeNfIp6tables"`
 	Debug             bool
 	OomKillDisable    bool
 	ExperimentalBuild bool
