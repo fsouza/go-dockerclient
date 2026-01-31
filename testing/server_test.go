@@ -25,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types/swarm"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/fsouza/go-dockerclient/internal/testutils"
 )
@@ -2771,34 +2770,6 @@ func TestInfoDocker(t *testing.T) {
 	}
 	if infoData["DockerRootDir"].(string) != "/var/lib/docker" {
 		t.Fatalf("InfoDocker: wrong docker root. Want /var/lib/docker. Got %s.", infoData["DockerRootDir"])
-	}
-}
-
-func TestInfoDockerWithSwarm(t *testing.T) {
-	t.Parallel()
-	srv1, srv2 := setUpSwarm(t)
-	defer srv1.Stop()
-	defer srv2.Stop()
-	recorder := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodGet, "/info", nil)
-	srv1.ServeHTTP(recorder, request)
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("InfoDocker: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
-	}
-	var infoData docker.DockerInfo
-	err := json.Unmarshal(recorder.Body.Bytes(), &infoData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	expectedSwarm := swarm.Info{
-		NodeID: srv1.nodeID,
-		RemoteManagers: []swarm.Peer{
-			{NodeID: srv1.nodeID, Addr: srv1.SwarmAddress()},
-			{NodeID: srv2.nodeID, Addr: srv2.SwarmAddress()},
-		},
-	}
-	if !reflect.DeepEqual(infoData.Swarm, expectedSwarm) {
-		t.Fatalf("InfoDocker: wrong swarm info. Want:\n%#v\nGot:\n%#v", expectedSwarm, infoData.Swarm)
 	}
 }
 

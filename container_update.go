@@ -19,10 +19,11 @@ type UpdateContainerOptions struct {
 	CpusetCpus         string        `json:"CpusetCpus"`
 	CpusetMems         string        `json:"CpusetMems"`
 	Memory             int           `json:"Memory"`
-	MemorySwap         int           `json:"MemorySwap"`
-	MemoryReservation  int           `json:"MemoryReservation"`
-	KernelMemory       int           `json:"KernelMemory"`
-	RestartPolicy      RestartPolicy `json:"RestartPolicy,omitempty"`
+	MemorySwap        int `json:"MemorySwap"`
+	MemoryReservation int `json:"MemoryReservation"`
+	// Deprecated: KernelMemory is deprecated as of API 1.42 and removed in API 1.52.
+	KernelMemory  int           `json:"KernelMemory"`
+	RestartPolicy RestartPolicy `json:"RestartPolicy,omitempty"`
 	Context            context.Context
 }
 

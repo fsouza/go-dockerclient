@@ -30,9 +30,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/docker/docker/pkg/homedir"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/moby/moby/api/pkg/stdcopy"
+	"github.com/moby/moby/client/pkg/jsonmessage"
+	"github.com/moby/moby/v2/pkg/homedir"
 )
 
 const (
@@ -59,6 +59,12 @@ var (
 	apiVersion124, _ = NewAPIVersion("1.24")
 	apiVersion125, _ = NewAPIVersion("1.25")
 	apiVersion135, _ = NewAPIVersion("1.35")
+	apiVersion140, _ = NewAPIVersion("1.40")
+	apiVersion144, _ = NewAPIVersion("1.44")
+	apiVersion145, _ = NewAPIVersion("1.45")
+	apiVersion146, _ = NewAPIVersion("1.46")
+	apiVersion148, _ = NewAPIVersion("1.48")
+	apiVersion152, _ = NewAPIVersion("1.52")
 )
 
 // APIVersion is an internal representation of a version of the Remote API.
@@ -654,7 +660,7 @@ func handleStreamResponse(resp *http.Response, streamOptions *streamOptions) err
 		return err
 	}
 	if st, ok := streamOptions.stdout.(stream); ok {
-		err = jsonmessage.DisplayJSONMessagesToStream(resp.Body, st, nil)
+		err = jsonmessage.DisplayJSONMessagesStream(resp.Body, st, st.FD(), st.IsTerminal(), nil)
 	} else {
 		err = jsonmessage.DisplayJSONMessagesStream(resp.Body, streamOptions.stdout, 0, false, nil)
 	}
