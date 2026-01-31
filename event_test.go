@@ -21,12 +21,10 @@ import (
 )
 
 func TestEventListeners(t *testing.T) {
-	t.Parallel()
 	testEventListeners("TestEventListeners", t, httptest.NewServer, NewClient)
 }
 
 func TestTLSEventListeners(t *testing.T) {
-	t.Parallel()
 	caCert, serverCert := testutils.GenCertificate(t)
 
 	testEventListeners("TestTLSEventListeners", t, func(handler http.Handler) *httptest.Server {
@@ -287,7 +285,6 @@ loop:
 }
 
 func TestEventListenerReAdding(t *testing.T) {
-	t.Parallel()
 	endChan := make(chan bool)
 	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		<-endChan
