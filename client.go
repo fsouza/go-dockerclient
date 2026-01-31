@@ -59,12 +59,6 @@ var (
 	apiVersion124, _ = NewAPIVersion("1.24")
 	apiVersion125, _ = NewAPIVersion("1.25")
 	apiVersion135, _ = NewAPIVersion("1.35")
-	apiVersion140, _ = NewAPIVersion("1.40")
-	apiVersion144, _ = NewAPIVersion("1.44")
-	apiVersion145, _ = NewAPIVersion("1.45")
-	apiVersion146, _ = NewAPIVersion("1.46")
-	apiVersion148, _ = NewAPIVersion("1.48")
-	apiVersion152, _ = NewAPIVersion("1.52")
 )
 
 // APIVersion is an internal representation of a version of the Remote API.
