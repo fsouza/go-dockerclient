@@ -12,7 +12,7 @@ require (
 	github.com/moby/moby/client v0.2.2
 	github.com/moby/moby/v2 v2.0.0-beta.6
 	github.com/moby/patternmatcher v0.6.0
-	golang.org/x/term v0.39.0
+	golang.org/x/term v0.40.0
 )
 
 require (
@@ -26,5 +26,5 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 )
