@@ -523,7 +523,7 @@ func TestPingErrorWithNativeClient(t *testing.T) {
 func TestClientStreamTimeoutNotHit(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			fmt.Fprintf(w, "%d\n", i)
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
@@ -555,7 +555,7 @@ func TestClientStreamTimeoutNotHit(t *testing.T) {
 func TestClientStreamInactivityTimeout(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			fmt.Fprintf(w, "%d\n", i)
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
@@ -823,7 +823,7 @@ func TestClientDoContextCancel(t *testing.T) {
 func TestClientStreamTimeoutNativeClient(t *testing.T) {
 	t.Parallel()
 	srv, cleanup, err := newNativeServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			fmt.Fprintf(w, "%d\n", i)
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()

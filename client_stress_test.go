@@ -97,9 +97,7 @@ func TestClientDoConcurrentStress(t *testing.T) {
 				paths = append(paths, http.MethodGet+path)
 				paths = append(paths, http.MethodPost+path)
 				paths = append(paths, "HEAD"+path)
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
+				wg.Go(func() {
 					_, clientErr := client.do(http.MethodGet, path, doOptions{})
 					if clientErr != nil {
 						errsCh <- clientErr
@@ -114,7 +112,7 @@ func TestClientDoConcurrentStress(t *testing.T) {
 					} else {
 						waiters <- cw
 					}
-				}()
+				})
 			}
 			wg.Wait()
 			close(errsCh)

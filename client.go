@@ -1001,7 +1001,7 @@ func addQueryStringValue(items url.Values, key string, v reflect.Value) bool {
 		vLen := v.Len()
 		var valuesAdded int
 		if vLen > 0 {
-			for i := 0; i < vLen; i++ {
+			for i := range vLen {
 				if addQueryStringValue(items, key, v.Index(i)) {
 					valuesAdded++
 				}
