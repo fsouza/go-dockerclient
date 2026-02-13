@@ -41,6 +41,7 @@ jobs:
       matrix:
         go-version:
           - "1.25"
+          - "1.26"
         os:
           - macos
           - ubuntu
@@ -65,7 +66,7 @@ jobs:
       - run: go mod download
 
       - run: make staticcheck
-        if: matrix.go-version == '1.25'
+        if: matrix.go-version == '1.26'
 
       - run: make gotest
         env:
