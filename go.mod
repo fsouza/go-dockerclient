@@ -1,6 +1,6 @@
 module github.com/fsouza/go-dockerclient
 
-go 1.25.0
+go 1.25.5
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
@@ -10,7 +10,7 @@ require (
 	github.com/moby/go-archive v0.2.0
 	github.com/moby/moby/api v1.54.0
 	github.com/moby/moby/client v0.3.0
-	github.com/moby/moby/v2 v2.0.0-beta.6
+	github.com/moby/moby/v2 v2.0.0-beta.7
 	github.com/moby/patternmatcher v0.6.0
 	golang.org/x/term v0.40.0
 )
@@ -18,7 +18,7 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/klauspost/compress v1.18.3 // indirect
+	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/moby/sys/user v0.4.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
