@@ -11,7 +11,7 @@ require (
 	github.com/moby/moby/api v1.54.0
 	github.com/moby/moby/client v0.3.0
 	github.com/moby/moby/v2 v2.0.0-beta.7
-	github.com/moby/patternmatcher v0.6.0
+	github.com/moby/patternmatcher v0.6.1
 	golang.org/x/term v0.41.0
 )
 
