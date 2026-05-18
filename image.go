@@ -443,6 +443,7 @@ type ImportImageOptions struct {
 	Repository string `qs:"repo"`
 	Source     string `qs:"fromSrc"`
 	Tag        string `qs:"tag"`
+	Platform   string `qs:"platform" ver:"1.32"`
 
 	InputStream       io.Reader     `qs:"-"`
 	OutputStream      io.Writer     `qs:"-"`
