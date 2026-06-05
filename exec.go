@@ -44,13 +44,14 @@ type CreateExecOptions struct {
 //
 // See https://goo.gl/60TeBP for more details
 func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
-	if c.serverAPIVersion == nil {
-		c.checkAPIVersion()
+	if err := c.ensureServerVersionForCompatibility(); err != nil {
+		return nil, err
 	}
-	if len(opts.Env) > 0 && c.serverAPIVersion.LessThan(apiVersion125) {
+	v := c.getServerVersion()
+	if len(opts.Env) > 0 && (v == nil || v.LessThan(apiVersion125)) {
 		return nil, errors.New("exec configuration Env is only supported in API#1.25 and above")
 	}
-	if len(opts.WorkingDir) > 0 && c.serverAPIVersion.LessThan(apiVersion135) {
+	if len(opts.WorkingDir) > 0 && (v == nil || v.LessThan(apiVersion135)) {
 		return nil, errors.New("exec configuration WorkingDir is only supported in API#1.35 and above")
 	}
 	path := fmt.Sprintf("/containers/%s/exec", opts.Container)

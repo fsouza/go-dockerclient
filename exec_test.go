@@ -58,6 +58,32 @@ func TestExecCreate(t *testing.T) {
 	}
 }
 
+func TestExecCreateSkipServerVersionCheckIgnoresVersionError(t *testing.T) {
+	t.Parallel()
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/version":
+			w.WriteHeader(http.StatusInternalServerError)
+		case "/containers/test/exec":
+			w.Write([]byte(`{"Id":"exec-id"}`))
+		default:
+			t.Errorf("unexpected request path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	defer cleanup()
+	exec, err := client.CreateExec(CreateExecOptions{
+		Container: "test",
+		Cmd:       []string{"touch", "/tmp/file"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exec.ID != "exec-id" {
+		t.Fatalf("CreateExec: wrong ID. Want %q. Got %q.", "exec-id", exec.ID)
+	}
+}
+
 func TestExecCreateWithEnvErr(t *testing.T) {
 	t.Parallel()
 	jsonContainer := `{"Id": "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"}`
@@ -102,8 +128,8 @@ func TestExecCreateWithEnv(t *testing.T) {
 		endpoint:               endpoint,
 		endpointURL:            u,
 		SkipServerVersionCheck: true,
-		serverAPIVersion:       testAPIVersion,
 	}
+	client.serverAPIVersion.Store(testAPIVersion)
 	config := CreateExecOptions{
 		Container:    "test",
 		AttachStdin:  true,
@@ -117,6 +143,37 @@ func TestExecCreateWithEnv(t *testing.T) {
 	_, err = client.CreateExec(config)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestExecCreateWithEnvExplicitVersionUsesServerVersion(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/version", "/v1.25/version":
+			w.Write([]byte(`{"ApiVersion":"1.25"}`))
+		case "/v1.25/containers/test/exec":
+			w.Write([]byte(`{"Id":"exec-id"}`))
+		default:
+			t.Errorf("unexpected request path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+	client, err := NewVersionedClient(srv.URL, "1.25")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec, err := client.CreateExec(CreateExecOptions{
+		Container: "test",
+		Env:       []string{"foo=bar"},
+		Cmd:       []string{"touch", "/tmp/file"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exec.ID != "exec-id" {
+		t.Fatalf("CreateExec: wrong ID. Want %q. Got %q.", "exec-id", exec.ID)
 	}
 }
 
@@ -164,8 +221,8 @@ func TestExecCreateWithWorkingDir(t *testing.T) {
 		endpoint:               endpoint,
 		endpointURL:            u,
 		SkipServerVersionCheck: true,
-		serverAPIVersion:       testAPIVersion,
 	}
+	client.serverAPIVersion.Store(testAPIVersion)
 	config := CreateExecOptions{
 		Container:    "test",
 		AttachStdin:  true,

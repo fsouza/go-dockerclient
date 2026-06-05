@@ -474,7 +474,7 @@ func TestPathVersionCheckExplicitVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "http://localhost:4243/v1.44/build?q=1"
+	want := "/build?q=1"
 	if got != want {
 		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
 	}
@@ -511,7 +511,7 @@ func TestPathVersionCheckSkipServerVersionCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "http://localhost:4243/build?q=1"
+	want := "/build?q=1"
 	if got != want {
 		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
 	}
@@ -519,7 +519,11 @@ func TestPathVersionCheckSkipServerVersionCheck(t *testing.T) {
 
 func TestPathVersionCheckServerVersion(t *testing.T) {
 	t.Parallel()
-	client := newTestClient(&FakeRoundTripper{message: `{"ApiVersion":"1.52"}`, status: http.StatusOK})
+	client, err := NewClient("http://localhost:4243")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.HTTPClient = &http.Client{Transport: &FakeRoundTripper{message: `{"ApiVersion":"1.52"}`, status: http.StatusOK}}
 	client.SkipServerVersionCheck = false
 	requiredAPIVersion, err := NewAPIVersion("1.32")
 	if err != nil {
@@ -529,7 +533,7 @@ func TestPathVersionCheckServerVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "http://localhost:4243/v1.52/build?q=1"
+	want := "/build?q=1"
 	if got != want {
 		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
 	}
@@ -539,7 +543,7 @@ func TestPathVersionCheckServerVersionInsufficient(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
 	client.SkipServerVersionCheck = false
-	client.expectedAPIVersion = apiVersion124
+	client.expectedAPIVersion.Store(apiVersion124)
 	requiredAPIVersion, err := NewAPIVersion("1.32")
 	if err != nil {
 		t.Fatal(err)
@@ -562,12 +566,12 @@ func TestPathVersionCheckNilRequiredVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client.expectedAPIVersion = expectedAPIVersion
+	client.expectedAPIVersion.Store(expectedAPIVersion)
 	got, err := client.pathVersionCheck("/build", "q=1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "http://localhost:4243/v1.52/build?q=1"
+	want := "/build?q=1"
 	if got != want {
 		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
 	}
@@ -1019,6 +1023,17 @@ func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func (rt *FakeRoundTripper) Reset() {
 	rt.requests = nil
+}
+
+func newHTTPTestClient(t *testing.T, handler http.HandlerFunc) (*Client, func()) {
+	t.Helper()
+	srv := httptest.NewServer(handler)
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		srv.Close()
+		t.Fatal(err)
+	}
+	return client, srv.Close
 }
 
 type person struct {

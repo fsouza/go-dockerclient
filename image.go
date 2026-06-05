@@ -215,7 +215,7 @@ func (c *Client) InspectImage(name string) (*Image, error) {
 	var image Image
 
 	// if the caller elected to skip checking the server's version, assume it's the latest
-	if c.SkipServerVersionCheck || c.expectedAPIVersion.GreaterThanOrEqualTo(apiVersion112) {
+	if c.SkipServerVersionCheck || c.getExpectedVersion().GreaterThanOrEqualTo(apiVersion112) {
 		if err := json.NewDecoder(resp.Body).Decode(&image); err != nil {
 			return nil, err
 		}
@@ -331,11 +331,11 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 }
 
 func (c *Client) createImage(opts any, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool, timeout time.Duration, context context.Context) error {
-	url, err := c.getPath("/images/create", opts)
+	path, err := c.getPath("/images/create", opts)
 	if err != nil {
 		return err
 	}
-	return c.streamURL(http.MethodPost, url, streamOptions{
+	return c.stream(http.MethodPost, path, streamOptions{
 		setRawTerminal:    true,
 		headers:           headers,
 		in:                in,
@@ -408,27 +408,36 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 	}
 	// API < 1.25 allows multiple name values
 	// 1.25 says name must be a comma separated list
+	if err := c.ensureAPIVersion(); err != nil {
+		return err
+	}
 	var err error
-	var exporturl string
-	if c.requestedAPIVersion.GreaterThanOrEqualTo(apiVersion125) {
+	var exportpath string
+	var effectiveVersion APIVersion
+	if expected := c.getExpectedVersion(); expected != nil {
+		effectiveVersion = expected
+	} else if c.requestedAPIVersion != nil {
+		effectiveVersion = c.requestedAPIVersion
+	}
+	if effectiveVersion != nil && effectiveVersion.GreaterThanOrEqualTo(apiVersion125) {
 		var str strings.Builder
 		str.WriteString(opts.Names[0])
 		for _, val := range opts.Names[1:] {
 			str.WriteString("," + val)
 		}
-		exporturl, err = c.getPath("/images/get", ExportImagesOptions{
+		exportpath, err = c.getPath("/images/get", ExportImagesOptions{
 			Names:             []string{str.String()},
 			OutputStream:      opts.OutputStream,
 			InactivityTimeout: opts.InactivityTimeout,
 			Context:           opts.Context,
 		})
 	} else {
-		exporturl, err = c.getPath("/images/get", &opts)
+		exportpath, err = c.getPath("/images/get", &opts)
 	}
 	if err != nil {
 		return err
 	}
-	return c.streamURL(http.MethodGet, exporturl, streamOptions{
+	return c.stream(http.MethodGet, exportpath, streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
@@ -603,12 +612,12 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		}
 	}
 
-	buildURL, err := c.pathVersionCheck("/build", qs, ver)
+	buildPath, err := c.pathVersionCheck("/build", qs, ver)
 	if err != nil {
 		return err
 	}
 
-	return c.streamURL(http.MethodPost, buildURL, streamOptions{
+	return c.stream(http.MethodPost, buildPath, streamOptions{
 		setRawTerminal:    true,
 		rawJSONStream:     opts.RawJSONStream,
 		headers:           headers,
@@ -620,10 +629,9 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 }
 
 func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) registryAuth {
-	if c.serverAPIVersion == nil {
-		c.checkAPIVersion()
-	}
-	if c.serverAPIVersion != nil && c.serverAPIVersion.GreaterThanOrEqualTo(apiVersion119) {
+	c.ensureServerVersion()
+	v := c.getServerVersion()
+	if v != nil && v.GreaterThanOrEqualTo(apiVersion119) {
 		return AuthConfigurations119(authConfigs.Configs)
 	}
 	return authConfigs

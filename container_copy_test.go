@@ -24,6 +24,34 @@ func TestCopyFromContainer(t *testing.T) {
 	}
 }
 
+func TestCopyFromContainerSkipServerVersionCheckIgnoresVersionError(t *testing.T) {
+	t.Parallel()
+	content := "File content"
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/version":
+			w.WriteHeader(http.StatusInternalServerError)
+		case "/containers/a123456/copy":
+			w.Write([]byte(content))
+		default:
+			t.Errorf("unexpected request path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	defer cleanup()
+	out := stdoutMock{bytes.NewBuffer(nil)}
+	err := client.CopyFromContainer(CopyFromContainerOptions{
+		Container:    "a123456",
+		OutputStream: &out,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.String() != content {
+		t.Errorf("CopyFromContainer: wrong stdout. Want %#v. Got %#v.", content, out.String())
+	}
+}
+
 func TestCopyFromContainerEmptyContainer(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
@@ -37,7 +65,7 @@ func TestCopyFromContainerEmptyContainer(t *testing.T) {
 func TestCopyFromContainerDockerAPI124(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
-	client.serverAPIVersion = apiVersion124
+	client.serverAPIVersion.Store(apiVersion124)
 	opts := CopyFromContainerOptions{
 		Container: "a123456",
 	}
