@@ -148,8 +148,8 @@ type Client struct {
 	requestedAPIVersion APIVersion
 	// serverAPIVersion and expectedAPIVersion are read while requests are built,
 	// so keep access lock-free after the first version probe completes.
-	serverAPIVersion   atomic.Pointer[APIVersion]
-	expectedAPIVersion atomic.Pointer[APIVersion]
+	serverAPIVersion   atomicAPIVersion
+	expectedAPIVersion atomicAPIVersion
 	versionMu          sync.Mutex
 }
 
@@ -362,28 +362,24 @@ func (c *Client) SetTimeout(t time.Duration) {
 	}
 }
 
-func (c *Client) getExpectedVersion() APIVersion {
-	v := c.expectedAPIVersion.Load()
-	if v == nil {
-		return nil
-	}
-	return *v
+type atomicAPIVersion struct {
+	p atomic.Pointer[APIVersion]
 }
 
-func (c *Client) getServerVersion() APIVersion {
-	v := c.serverAPIVersion.Load()
-	if v == nil {
+func (v *atomicAPIVersion) Load() APIVersion {
+	version := v.p.Load()
+	if version == nil {
 		return nil
 	}
-	return *v
+	return *version
 }
 
-func storeAPIVersion(p *atomic.Pointer[APIVersion], v APIVersion) {
-	p.Store(&v)
+func (v *atomicAPIVersion) Store(version APIVersion) {
+	v.p.Store(&version)
 }
 
 func (c *Client) ensureAPIVersion() error {
-	if c.SkipServerVersionCheck || c.getExpectedVersion() != nil {
+	if c.SkipServerVersionCheck || c.expectedAPIVersion.Load() != nil {
 		return nil
 	}
 	return c.ensureServerVersion()
@@ -392,24 +388,24 @@ func (c *Client) ensureAPIVersion() error {
 // setExpectedVersion records the version used in request URLs. It may differ
 // from the server version when the caller requested an explicit API version.
 func (c *Client) setExpectedVersion(serverVersion APIVersion) {
-	if c.SkipServerVersionCheck || c.getExpectedVersion() != nil {
+	if c.SkipServerVersionCheck || c.expectedAPIVersion.Load() != nil {
 		return
 	}
 	if c.requestedAPIVersion != nil {
-		storeAPIVersion(&c.expectedAPIVersion, c.requestedAPIVersion)
+		c.expectedAPIVersion.Store(c.requestedAPIVersion)
 	} else {
-		storeAPIVersion(&c.expectedAPIVersion, serverVersion)
+		c.expectedAPIVersion.Store(serverVersion)
 	}
 }
 
 func (c *Client) ensureServerVersion() error {
-	if serverVersion := c.getServerVersion(); serverVersion != nil {
+	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
 		c.setExpectedVersion(serverVersion)
 		return nil
 	}
 	c.versionMu.Lock()
 	defer c.versionMu.Unlock()
-	if serverVersion := c.getServerVersion(); serverVersion != nil {
+	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
 		c.setExpectedVersion(serverVersion)
 		return nil
 	}
@@ -421,7 +417,7 @@ func (c *Client) ensureServerVersion() error {
 	if err != nil {
 		return err
 	}
-	storeAPIVersion(&c.serverAPIVersion, serverAPIVersion)
+	c.serverAPIVersion.Store(serverAPIVersion)
 	c.setExpectedVersion(serverAPIVersion)
 	return nil
 }
@@ -919,7 +915,7 @@ func (c *Client) getURL(path string) string {
 	if c.endpointURL.Scheme == unixProtocol || c.endpointURL.Scheme == namedPipeProtocol {
 		urlStr = ""
 	}
-	if expected := c.getExpectedVersion(); expected != nil {
+	if expected := c.expectedAPIVersion.Load(); expected != nil {
 		return fmt.Sprintf("%s/v%s%s", urlStr, expected, path)
 	}
 	if c.requestedAPIVersion != nil {
@@ -944,7 +940,7 @@ func (c *Client) pathVersionCheck(basepath, queryStr string, requiredAPIVersion 
 	if err := c.ensureAPIVersion(); err != nil {
 		return "", err
 	}
-	if expected := c.getExpectedVersion(); expected != nil {
+	if expected := c.expectedAPIVersion.Load(); expected != nil {
 		if requiredAPIVersion != nil && !expected.GreaterThanOrEqualTo(requiredAPIVersion) {
 			return "", fmt.Errorf("API %s requires version %s, server version %s is insufficient",
 				basepath, requiredAPIVersion, expected)
@@ -963,7 +959,7 @@ func (c *Client) getFakeNativeURL(path string) string {
 	u.Host = "unix.sock" // Doesn't matter what this is - it's not used.
 	u.Path = ""
 	urlStr := strings.TrimRight(u.String(), "/")
-	if expected := c.getExpectedVersion(); expected != nil {
+	if expected := c.expectedAPIVersion.Load(); expected != nil {
 		return fmt.Sprintf("%s/v%s%s", urlStr, expected, path)
 	}
 	if c.requestedAPIVersion != nil {

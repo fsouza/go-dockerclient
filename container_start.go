@@ -37,7 +37,7 @@ func (c *Client) startContainer(id string, hostConfig *HostConfig, opts doOption
 	if err := c.ensureServerVersionForCompatibility(); err != nil {
 		return err
 	}
-	if v := c.getServerVersion(); v != nil && v.LessThan(apiVersion124) {
+	if v := c.serverAPIVersion.Load(); v != nil && v.LessThan(apiVersion124) {
 		opts.data = hostConfig
 		opts.forceJSON = true
 	}

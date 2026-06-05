@@ -215,7 +215,7 @@ func (c *Client) InspectImage(name string) (*Image, error) {
 	var image Image
 
 	// if the caller elected to skip checking the server's version, assume it's the latest
-	if c.SkipServerVersionCheck || c.getExpectedVersion().GreaterThanOrEqualTo(apiVersion112) {
+	if c.SkipServerVersionCheck || c.expectedAPIVersion.Load().GreaterThanOrEqualTo(apiVersion112) {
 		if err := json.NewDecoder(resp.Body).Decode(&image); err != nil {
 			return nil, err
 		}
@@ -414,7 +414,7 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 	var err error
 	var exportpath string
 	var effectiveVersion APIVersion
-	if expected := c.getExpectedVersion(); expected != nil {
+	if expected := c.expectedAPIVersion.Load(); expected != nil {
 		effectiveVersion = expected
 	} else if c.requestedAPIVersion != nil {
 		effectiveVersion = c.requestedAPIVersion
@@ -630,7 +630,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 
 func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) registryAuth {
 	c.ensureServerVersion()
-	v := c.getServerVersion()
+	v := c.serverAPIVersion.Load()
 	if v != nil && v.GreaterThanOrEqualTo(apiVersion119) {
 		return AuthConfigurations119(authConfigs.Configs)
 	}
