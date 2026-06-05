@@ -129,7 +129,7 @@ func TestExecCreateWithEnv(t *testing.T) {
 		endpointURL:            u,
 		SkipServerVersionCheck: true,
 	}
-	client.serverAPIVersion.Store(testAPIVersion)
+	storeAPIVersion(&client.serverAPIVersion, testAPIVersion)
 	config := CreateExecOptions{
 		Container:    "test",
 		AttachStdin:  true,
@@ -222,7 +222,7 @@ func TestExecCreateWithWorkingDir(t *testing.T) {
 		endpointURL:            u,
 		SkipServerVersionCheck: true,
 	}
-	client.serverAPIVersion.Store(testAPIVersion)
+	storeAPIVersion(&client.serverAPIVersion, testAPIVersion)
 	config := CreateExecOptions{
 		Container:    "test",
 		AttachStdin:  true,
