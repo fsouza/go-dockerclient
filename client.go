@@ -883,14 +883,23 @@ func (c *Client) pathVersionCheck(basepath, queryStr string, requiredAPIVersion 
 		urlStr = ""
 	}
 	if c.requestedAPIVersion != nil {
-		if c.requestedAPIVersion.GreaterThanOrEqualTo(requiredAPIVersion) {
-			return fmt.Sprintf("%s/v%s%s?%s", urlStr, c.requestedAPIVersion, basepath, queryStr), nil
+		if requiredAPIVersion != nil && !c.requestedAPIVersion.GreaterThanOrEqualTo(requiredAPIVersion) {
+			return "", fmt.Errorf("API %s requires version %s, requested version %s is insufficient",
+				basepath, requiredAPIVersion, c.requestedAPIVersion)
 		}
-		return "", fmt.Errorf("API %s requires version %s, requested version %s is insufficient",
-			basepath, requiredAPIVersion, c.requestedAPIVersion)
+		return fmt.Sprintf("%s/v%s%s?%s", urlStr, c.requestedAPIVersion, basepath, queryStr), nil
 	}
-	if requiredAPIVersion != nil {
-		return fmt.Sprintf("%s/v%s%s?%s", urlStr, requiredAPIVersion, basepath, queryStr), nil
+	if !c.SkipServerVersionCheck {
+		if c.expectedAPIVersion == nil {
+			if err := c.checkAPIVersion(); err != nil {
+				return "", err
+			}
+		}
+		if requiredAPIVersion != nil && !c.expectedAPIVersion.GreaterThanOrEqualTo(requiredAPIVersion) {
+			return "", fmt.Errorf("API %s requires version %s, server version %s is insufficient",
+				basepath, requiredAPIVersion, c.expectedAPIVersion)
+		}
+		return fmt.Sprintf("%s/v%s%s?%s", urlStr, c.expectedAPIVersion, basepath, queryStr), nil
 	}
 	return fmt.Sprintf("%s%s?%s", urlStr, basepath, queryStr), nil
 }
