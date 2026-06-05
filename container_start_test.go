@@ -58,7 +58,7 @@ func TestStartContainerHostConfigAPI124(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	client.serverAPIVersion.Store(apiVersion124)
+	storeAPIVersion(&client.serverAPIVersion, apiVersion124)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.StartContainer(id, &HostConfig{})
 	if err != nil {

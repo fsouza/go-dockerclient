@@ -543,7 +543,7 @@ func TestPathVersionCheckServerVersionInsufficient(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
 	client.SkipServerVersionCheck = false
-	client.expectedAPIVersion.Store(apiVersion124)
+	storeAPIVersion(&client.expectedAPIVersion, apiVersion124)
 	requiredAPIVersion, err := NewAPIVersion("1.32")
 	if err != nil {
 		t.Fatal(err)
@@ -566,7 +566,7 @@ func TestPathVersionCheckNilRequiredVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client.expectedAPIVersion.Store(expectedAPIVersion)
+	storeAPIVersion(&client.expectedAPIVersion, expectedAPIVersion)
 	got, err := client.pathVersionCheck("/build", "q=1", nil)
 	if err != nil {
 		t.Fatal(err)

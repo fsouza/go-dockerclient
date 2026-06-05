@@ -65,7 +65,7 @@ func TestCopyFromContainerEmptyContainer(t *testing.T) {
 func TestCopyFromContainerDockerAPI124(t *testing.T) {
 	t.Parallel()
 	client := newTestClient(&FakeRoundTripper{status: http.StatusOK})
-	client.serverAPIVersion.Store(apiVersion124)
+	storeAPIVersion(&client.serverAPIVersion, apiVersion124)
 	opts := CopyFromContainerOptions{
 		Container: "a123456",
 	}

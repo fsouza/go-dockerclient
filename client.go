@@ -146,9 +146,11 @@ type Client struct {
 	endpointURL         *url.URL
 	eventMonitor        *eventMonitoringState
 	requestedAPIVersion APIVersion
-	serverAPIVersion    atomic.Value
-	expectedAPIVersion  atomic.Value
-	versionMu           sync.Mutex
+	// serverAPIVersion and expectedAPIVersion are read while requests are built,
+	// so keep access lock-free after the first version probe completes.
+	serverAPIVersion   atomic.Pointer[APIVersion]
+	expectedAPIVersion atomic.Pointer[APIVersion]
+	versionMu          sync.Mutex
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -365,7 +367,7 @@ func (c *Client) getExpectedVersion() APIVersion {
 	if v == nil {
 		return nil
 	}
-	return v.(APIVersion)
+	return *v
 }
 
 func (c *Client) getServerVersion() APIVersion {
@@ -373,7 +375,11 @@ func (c *Client) getServerVersion() APIVersion {
 	if v == nil {
 		return nil
 	}
-	return v.(APIVersion)
+	return *v
+}
+
+func storeAPIVersion(p *atomic.Pointer[APIVersion], v APIVersion) {
+	p.Store(&v)
 }
 
 func (c *Client) ensureAPIVersion() error {
@@ -383,14 +389,16 @@ func (c *Client) ensureAPIVersion() error {
 	return c.ensureServerVersion()
 }
 
+// setExpectedVersion records the version used in request URLs. It may differ
+// from the server version when the caller requested an explicit API version.
 func (c *Client) setExpectedVersion(serverVersion APIVersion) {
 	if c.SkipServerVersionCheck || c.getExpectedVersion() != nil {
 		return
 	}
 	if c.requestedAPIVersion != nil {
-		c.expectedAPIVersion.Store(c.requestedAPIVersion)
+		storeAPIVersion(&c.expectedAPIVersion, c.requestedAPIVersion)
 	} else {
-		c.expectedAPIVersion.Store(serverVersion)
+		storeAPIVersion(&c.expectedAPIVersion, serverVersion)
 	}
 }
 
@@ -413,11 +421,14 @@ func (c *Client) ensureServerVersion() error {
 	if err != nil {
 		return err
 	}
-	c.serverAPIVersion.Store(serverAPIVersion)
+	storeAPIVersion(&c.serverAPIVersion, serverAPIVersion)
 	c.setExpectedVersion(serverAPIVersion)
 	return nil
 }
 
+// ensureServerVersionForCompatibility probes /version only to decide old API
+// compatibility behavior. Respect SkipServerVersionCheck by preserving the old
+// best-effort semantics when that probe fails.
 func (c *Client) ensureServerVersionForCompatibility() error {
 	err := c.ensureServerVersion()
 	if c.SkipServerVersionCheck {

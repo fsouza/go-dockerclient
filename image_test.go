@@ -31,7 +31,7 @@ func newTestClient(rt http.RoundTripper) *Client {
 		endpointURL:            u,
 		SkipServerVersionCheck: true,
 	}
-	client.serverAPIVersion.Store(testAPIVersion)
+	storeAPIVersion(&client.serverAPIVersion, testAPIVersion)
 	return client
 }
 
