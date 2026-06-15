@@ -403,6 +403,8 @@ func (c *Client) ensureServerVersion() error {
 		c.setExpectedVersion(serverVersion)
 		return nil
 	}
+	// Serialize only the first /version request; version reads stay lock-free
+	// once the server version has been cached.
 	c.versionMu.Lock()
 	defer c.versionMu.Unlock()
 	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
@@ -420,17 +422,6 @@ func (c *Client) ensureServerVersion() error {
 	c.serverAPIVersion.Store(serverAPIVersion)
 	c.setExpectedVersion(serverAPIVersion)
 	return nil
-}
-
-// ensureServerVersionForCompatibility probes /version only to decide old API
-// compatibility behavior. Respect SkipServerVersionCheck by preserving the old
-// best-effort semantics when that probe fails.
-func (c *Client) ensureServerVersionForCompatibility() error {
-	err := c.ensureServerVersion()
-	if c.SkipServerVersionCheck {
-		return nil
-	}
-	return err
 }
 
 // Endpoint returns the current endpoint. It's useful for getting the endpoint
@@ -946,6 +937,8 @@ func (c *Client) pathVersionCheck(basepath, queryStr string, requiredAPIVersion 
 				basepath, requiredAPIVersion, expected)
 		}
 	}
+	// Return only a request path. The caller applies the endpoint and selected
+	// API version later through getURL.
 	return fmt.Sprintf("%s?%s", basepath, queryStr), nil
 }
 

@@ -215,7 +215,11 @@ func (c *Client) InspectImage(name string) (*Image, error) {
 	var image Image
 
 	// if the caller elected to skip checking the server's version, assume it's the latest
-	if c.SkipServerVersionCheck || c.expectedAPIVersion.Load().GreaterThanOrEqualTo(apiVersion112) {
+	if c.SkipServerVersionCheck {
+		if err := json.NewDecoder(resp.Body).Decode(&image); err != nil {
+			return nil, err
+		}
+	} else if v := c.expectedAPIVersion.Load(); v != nil && v.GreaterThanOrEqualTo(apiVersion112) {
 		if err := json.NewDecoder(resp.Body).Decode(&image); err != nil {
 			return nil, err
 		}
@@ -629,6 +633,8 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 }
 
 func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) registryAuth {
+	// If the server version cannot be discovered, keep the legacy auth config
+	// shape. This matches the previous best-effort version check behavior.
 	c.ensureServerVersion()
 	v := c.serverAPIVersion.Load()
 	if v != nil && v.GreaterThanOrEqualTo(apiVersion119) {
