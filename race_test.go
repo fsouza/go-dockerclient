@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestCheckAPIVersionRace(t *testing.T) {
+func TestProbeServerVersionRace(t *testing.T) {
 	t.Parallel()
 	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/version" {

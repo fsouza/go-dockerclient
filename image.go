@@ -635,7 +635,7 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) registryAuth {
 	// If the server version cannot be discovered, keep the legacy auth config
 	// shape. This matches the previous best-effort version check behavior.
-	c.ensureServerVersion()
+	c.probeServerVersion()
 	v := c.serverAPIVersion.Load()
 	if v != nil && v.GreaterThanOrEqualTo(apiVersion119) {
 		return AuthConfigurations119(authConfigs.Configs)

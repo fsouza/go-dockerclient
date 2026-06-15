@@ -44,7 +44,7 @@ type CreateExecOptions struct {
 //
 // See https://goo.gl/60TeBP for more details
 func (c *Client) CreateExec(opts CreateExecOptions) (*Exec, error) {
-	c.ensureServerVersion()
+	c.probeServerVersion()
 	v := c.serverAPIVersion.Load()
 	if len(opts.Env) > 0 && (v == nil || v.LessThan(apiVersion125)) {
 		return nil, errors.New("exec configuration Env is only supported in API#1.25 and above")

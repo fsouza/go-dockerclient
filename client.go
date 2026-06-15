@@ -382,7 +382,7 @@ func (c *Client) ensureAPIVersion() error {
 	if c.SkipServerVersionCheck || c.expectedAPIVersion.Load() != nil {
 		return nil
 	}
-	return c.ensureServerVersion()
+	return c.probeServerVersion()
 }
 
 // setExpectedVersion records the version used in request URLs. It may differ
@@ -398,7 +398,7 @@ func (c *Client) setExpectedVersion(serverVersion APIVersion) {
 	}
 }
 
-func (c *Client) ensureServerVersion() error {
+func (c *Client) probeServerVersion() error {
 	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
 		c.setExpectedVersion(serverVersion)
 		return nil
