@@ -460,6 +460,123 @@ func TestAPIVersions(t *testing.T) {
 	}
 }
 
+func TestPathVersionCheckExplicitVersion(t *testing.T) {
+	t.Parallel()
+	client, err := NewVersionedClient("http://localhost:4243", "1.44")
+	if err != nil {
+		t.Fatal(err)
+	}
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "/build?q=1"
+	if got != want {
+		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
+	}
+}
+
+func TestPathVersionCheckExplicitVersionInsufficient(t *testing.T) {
+	t.Parallel()
+	client, err := NewVersionedClient("http://localhost:4243", "1.24")
+	if err != nil {
+		t.Fatal(err)
+	}
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	want := "API /build requires version 1.32, requested version 1.24 is insufficient"
+	if err.Error() != want {
+		t.Fatalf("wrong error. Want %q. Got %q.", want, err.Error())
+	}
+}
+
+func TestPathVersionCheckSkipServerVersionCheck(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "/build?q=1"
+	if got != want {
+		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
+	}
+}
+
+func TestPathVersionCheckServerVersion(t *testing.T) {
+	t.Parallel()
+	client, err := NewClient("http://localhost:4243")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.HTTPClient = &http.Client{Transport: &FakeRoundTripper{message: `{"ApiVersion":"1.52"}`, status: http.StatusOK}}
+	client.SkipServerVersionCheck = false
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "/build?q=1"
+	if got != want {
+		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
+	}
+}
+
+func TestPathVersionCheckServerVersionInsufficient(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	client.SkipServerVersionCheck = false
+	client.expectedAPIVersion.Store(apiVersion124)
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	want := "API /build requires version 1.32, server version 1.24 is insufficient"
+	if err.Error() != want {
+		t.Fatalf("wrong error. Want %q. Got %q.", want, err.Error())
+	}
+}
+
+func TestPathVersionCheckNilRequiredVersion(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	client.SkipServerVersionCheck = false
+	expectedAPIVersion, err := NewAPIVersion("1.52")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.expectedAPIVersion.Store(expectedAPIVersion)
+	got, err := client.pathVersionCheck("/build", "q=1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "/build?q=1"
+	if got != want {
+		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
+	}
+}
+
 func TestPing(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
@@ -906,6 +1023,17 @@ func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func (rt *FakeRoundTripper) Reset() {
 	rt.requests = nil
+}
+
+func newHTTPTestClient(t *testing.T, handler http.HandlerFunc) (*Client, func()) {
+	t.Helper()
+	srv := httptest.NewServer(handler)
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		srv.Close()
+		t.Fatal(err)
+	}
+	return client, srv.Close
 }
 
 type person struct {

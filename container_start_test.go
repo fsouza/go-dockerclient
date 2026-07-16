@@ -34,11 +34,31 @@ func TestStartContainer(t *testing.T) {
 	}
 }
 
+func TestStartContainerSkipServerVersionCheckIgnoresVersionError(t *testing.T) {
+	t.Parallel()
+	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/version":
+			w.WriteHeader(http.StatusInternalServerError)
+		case "/containers/" + id + "/start":
+			w.WriteHeader(http.StatusOK)
+		default:
+			t.Errorf("unexpected request path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	defer cleanup()
+	if err := client.StartContainer(id, &HostConfig{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStartContainerHostConfigAPI124(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	client.serverAPIVersion = apiVersion124
+	client.serverAPIVersion.Store(apiVersion124)
 	id := "4fa6e0f0c6786287e131c3852c58a2e01cc697a68231826813597e4994f1d6e2"
 	err := client.StartContainer(id, &HostConfig{})
 	if err != nil {

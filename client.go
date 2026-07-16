@@ -27,6 +27,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -145,8 +146,11 @@ type Client struct {
 	endpointURL         *url.URL
 	eventMonitor        *eventMonitoringState
 	requestedAPIVersion APIVersion
-	serverAPIVersion    APIVersion
-	expectedAPIVersion  APIVersion
+	// serverAPIVersion and expectedAPIVersion are read while requests are built,
+	// so keep access lock-free after the first version probe completes.
+	serverAPIVersion   atomicAPIVersion
+	expectedAPIVersion atomicAPIVersion
+	versionMu          sync.Mutex
 }
 
 // Dialer is an interface that allows network connections to be dialed
@@ -358,20 +362,65 @@ func (c *Client) SetTimeout(t time.Duration) {
 	}
 }
 
-func (c *Client) checkAPIVersion() error {
+type atomicAPIVersion struct {
+	p atomic.Pointer[APIVersion]
+}
+
+func (v *atomicAPIVersion) Load() APIVersion {
+	version := v.p.Load()
+	if version == nil {
+		return nil
+	}
+	return *version
+}
+
+func (v *atomicAPIVersion) Store(version APIVersion) {
+	v.p.Store(&version)
+}
+
+func (c *Client) ensureAPIVersion() error {
+	if c.SkipServerVersionCheck || c.expectedAPIVersion.Load() != nil {
+		return nil
+	}
+	return c.probeServerVersion()
+}
+
+// setExpectedVersion records the version used in request URLs. It may differ
+// from the server version when the caller requested an explicit API version.
+func (c *Client) setExpectedVersion(serverVersion APIVersion) {
+	if c.SkipServerVersionCheck || c.expectedAPIVersion.Load() != nil {
+		return
+	}
+	if c.requestedAPIVersion != nil {
+		c.expectedAPIVersion.Store(c.requestedAPIVersion)
+	} else {
+		c.expectedAPIVersion.Store(serverVersion)
+	}
+}
+
+func (c *Client) probeServerVersion() error {
+	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
+		c.setExpectedVersion(serverVersion)
+		return nil
+	}
+	// Serialize only the first /version request; version reads stay lock-free
+	// once the server version has been cached.
+	c.versionMu.Lock()
+	defer c.versionMu.Unlock()
+	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
+		c.setExpectedVersion(serverVersion)
+		return nil
+	}
 	serverAPIVersionString, err := c.getServerAPIVersionString()
 	if err != nil {
 		return err
 	}
-	c.serverAPIVersion, err = NewAPIVersion(serverAPIVersionString)
+	serverAPIVersion, err := NewAPIVersion(serverAPIVersionString)
 	if err != nil {
 		return err
 	}
-	if c.requestedAPIVersion == nil {
-		c.expectedAPIVersion = c.serverAPIVersion
-	} else {
-		c.expectedAPIVersion = c.requestedAPIVersion
-	}
+	c.serverAPIVersion.Store(serverAPIVersion)
+	c.setExpectedVersion(serverAPIVersion)
 	return nil
 }
 
@@ -441,9 +490,8 @@ func (c *Client) do(method, path string, doOptions doOptions) (*http.Response, e
 		}
 		params = bytes.NewBuffer(buf)
 	}
-	if path != "/version" && !c.SkipServerVersionCheck && c.expectedAPIVersion == nil {
-		err := c.checkAPIVersion()
-		if err != nil {
+	if path != "/version" {
+		if err := c.ensureAPIVersion(); err != nil {
 			return nil, err
 		}
 	}
@@ -520,9 +568,8 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 	if (method == http.MethodPost || method == http.MethodPut) && streamOptions.in == nil {
 		streamOptions.in = bytes.NewReader(nil)
 	}
-	if path != "/version" && !c.SkipServerVersionCheck && c.expectedAPIVersion == nil {
-		err := c.checkAPIVersion()
-		if err != nil {
+	if path != "/version" {
+		if err := c.ensureAPIVersion(); err != nil {
 			return err
 		}
 	}
@@ -532,12 +579,6 @@ func (c *Client) stream(method, path string, streamOptions streamOptions) error 
 func (c *Client) streamURL(method, url string, streamOptions streamOptions) error {
 	if (method == http.MethodPost || method == http.MethodPut) && streamOptions.in == nil {
 		streamOptions.in = bytes.NewReader(nil)
-	}
-	if !c.SkipServerVersionCheck && c.expectedAPIVersion == nil {
-		err := c.checkAPIVersion()
-		if err != nil {
-			return err
-		}
 	}
 
 	// make a sub-context so that our active cancellation does not affect parent
@@ -728,9 +769,8 @@ type closerFunc func() error
 func (c closerFunc) Close() error { return c() }
 
 func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (CloseWaiter, error) {
-	if path != "/version" && !c.SkipServerVersionCheck && c.expectedAPIVersion == nil {
-		err := c.checkAPIVersion()
-		if err != nil {
+	if path != "/version" {
+		if err := c.ensureAPIVersion(); err != nil {
 			return nil, err
 		}
 	}
@@ -866,6 +906,9 @@ func (c *Client) getURL(path string) string {
 	if c.endpointURL.Scheme == unixProtocol || c.endpointURL.Scheme == namedPipeProtocol {
 		urlStr = ""
 	}
+	if expected := c.expectedAPIVersion.Load(); expected != nil {
+		return fmt.Sprintf("%s/v%s%s", urlStr, expected, path)
+	}
 	if c.requestedAPIVersion != nil {
 		return fmt.Sprintf("%s/v%s%s", urlStr, c.requestedAPIVersion, path)
 	}
@@ -878,21 +921,25 @@ func (c *Client) getPath(basepath string, opts any) (string, error) {
 }
 
 func (c *Client) pathVersionCheck(basepath, queryStr string, requiredAPIVersion APIVersion) (string, error) {
-	urlStr := strings.TrimRight(c.endpointURL.String(), "/")
-	if c.endpointURL.Scheme == unixProtocol || c.endpointURL.Scheme == namedPipeProtocol {
-		urlStr = ""
-	}
 	if c.requestedAPIVersion != nil {
-		if c.requestedAPIVersion.GreaterThanOrEqualTo(requiredAPIVersion) {
-			return fmt.Sprintf("%s/v%s%s?%s", urlStr, c.requestedAPIVersion, basepath, queryStr), nil
+		if requiredAPIVersion != nil && !c.requestedAPIVersion.GreaterThanOrEqualTo(requiredAPIVersion) {
+			return "", fmt.Errorf("API %s requires version %s, requested version %s is insufficient",
+				basepath, requiredAPIVersion, c.requestedAPIVersion)
 		}
-		return "", fmt.Errorf("API %s requires version %s, requested version %s is insufficient",
-			basepath, requiredAPIVersion, c.requestedAPIVersion)
+		return fmt.Sprintf("%s?%s", basepath, queryStr), nil
 	}
-	if requiredAPIVersion != nil {
-		return fmt.Sprintf("%s/v%s%s?%s", urlStr, requiredAPIVersion, basepath, queryStr), nil
+	if err := c.ensureAPIVersion(); err != nil {
+		return "", err
 	}
-	return fmt.Sprintf("%s%s?%s", urlStr, basepath, queryStr), nil
+	if expected := c.expectedAPIVersion.Load(); expected != nil {
+		if requiredAPIVersion != nil && !expected.GreaterThanOrEqualTo(requiredAPIVersion) {
+			return "", fmt.Errorf("API %s requires version %s, server version %s is insufficient",
+				basepath, requiredAPIVersion, expected)
+		}
+	}
+	// Return only a request path. The caller applies the endpoint and selected
+	// API version later through getURL.
+	return fmt.Sprintf("%s?%s", basepath, queryStr), nil
 }
 
 // getFakeNativeURL returns the URL needed to make an HTTP request over a UNIX
@@ -905,6 +952,9 @@ func (c *Client) getFakeNativeURL(path string) string {
 	u.Host = "unix.sock" // Doesn't matter what this is - it's not used.
 	u.Path = ""
 	urlStr := strings.TrimRight(u.String(), "/")
+	if expected := c.expectedAPIVersion.Load(); expected != nil {
+		return fmt.Sprintf("%s/v%s%s", urlStr, expected, path)
+	}
 	if c.requestedAPIVersion != nil {
 		return fmt.Sprintf("%s/v%s%s", urlStr, c.requestedAPIVersion, path)
 	}

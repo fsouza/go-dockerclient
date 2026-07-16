@@ -20,18 +20,18 @@ import (
 	"time"
 )
 
-func newTestClient(rt http.RoundTripper) Client {
+func newTestClient(rt http.RoundTripper) *Client {
 	endpoint := "http://localhost:4243"
 	u, _ := parseEndpoint("http://localhost:4243", false)
 	testAPIVersion, _ := NewAPIVersion("1.17")
-	client := Client{
+	client := &Client{
 		HTTPClient:             &http.Client{Transport: rt},
 		Dialer:                 &net.Dialer{},
 		endpoint:               endpoint,
 		endpointURL:            u,
 		SkipServerVersionCheck: true,
-		serverAPIVersion:       testAPIVersion,
 	}
+	client.serverAPIVersion.Store(testAPIVersion)
 	return client
 }
 
@@ -661,6 +661,36 @@ func TestImportImageFromUrl(t *testing.T) {
 	}
 }
 
+func TestImportImagePlatformDoesNotForceURLVersion(t *testing.T) {
+	t.Parallel()
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := ImportImageOptions{
+		Source:       "http://mycompany.com/file.tar",
+		Repository:   "testimage",
+		Platform:     "linux/arm64",
+		OutputStream: &buf,
+	}
+	err := client.ImportImage(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expected := map[string][]string{
+		"fromSrc":  {opts.Source},
+		"repo":     {opts.Repository},
+		"platform": {opts.Platform},
+	}
+	got := map[string][]string(req.URL.Query())
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+	}
+	if req.URL.Path != "/images/create" {
+		t.Errorf("ImportImage: wrong request path. Want %q. Got %q.", "/images/create", req.URL.Path)
+	}
+}
+
 func TestImportImageFromInput(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
@@ -833,9 +863,9 @@ func TestBuildImageParameters(t *testing.T) {
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("BuildImage: wrong query string. Want %#v.\n Got %#v.", expected, got)
 	}
-	expectedPrefix := "http://localhost:4243/v1.25/"
+	expectedPrefix := "http://localhost:4243/build?"
 	if !strings.HasPrefix(req.URL.String(), expectedPrefix) {
-		t.Errorf("BuildImage: wrong URL version Want Prefix %s.\n Got URL: %s", expectedPrefix, req.URL.String())
+		t.Errorf("BuildImage: wrong URL. Want Prefix %s.\n Got URL: %s", expectedPrefix, req.URL.String())
 	}
 }
 
@@ -1068,6 +1098,69 @@ func TestExportImages(t *testing.T) {
 	got = req.URL.String()
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ExportImages: wrong path. Expected %q. Got %q.", expected, got)
+	}
+}
+
+func TestExportImagesSkipServerVersionCheckNoVersion(t *testing.T) {
+	t.Parallel()
+	var gotRawQuery string
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/images/get":
+			gotRawQuery = r.URL.RawQuery
+			w.WriteHeader(http.StatusOK)
+		default:
+			t.Errorf("unexpected request path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	defer cleanup()
+	var buf bytes.Buffer
+	err := client.ExportImages(ExportImagesOptions{
+		Names:        []string{"testimage1", "testimage2:latest"},
+		OutputStream: &buf,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRawQuery := "names=testimage1&names=testimage2%3Alatest"
+	if gotRawQuery != wantRawQuery {
+		t.Fatalf("ExportImages: wrong query. Want %q. Got %q.", wantRawQuery, gotRawQuery)
+	}
+}
+
+func TestExportImagesNegotiatedVersionFirstCall(t *testing.T) {
+	t.Parallel()
+	var gotPath, gotRawQuery string
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/version":
+			w.Write([]byte(`{"ApiVersion":"1.25"}`))
+		case "/v1.25/images/get":
+			gotPath = r.URL.Path
+			gotRawQuery = r.URL.RawQuery
+			w.WriteHeader(http.StatusOK)
+		default:
+			t.Errorf("unexpected request path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	defer cleanup()
+	client.SkipServerVersionCheck = false
+	var buf bytes.Buffer
+	err := client.ExportImages(ExportImagesOptions{
+		Names:        []string{"testimage1", "testimage2:latest"},
+		OutputStream: &buf,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/v1.25/images/get" {
+		t.Fatalf("ExportImages: wrong path. Want %q. Got %q.", "/v1.25/images/get", gotPath)
+	}
+	wantRawQuery := "names=testimage1%2Ctestimage2%3Alatest"
+	if gotRawQuery != wantRawQuery {
+		t.Fatalf("ExportImages: wrong query. Want %q. Got %q.", wantRawQuery, gotRawQuery)
 	}
 }
 
