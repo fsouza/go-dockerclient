@@ -262,6 +262,10 @@ func NewVersionedTLSClient(endpoint string, cert, key, ca, apiVersionString stri
 // Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, DOCKER_CERT_PATH,
 // and DOCKER_API_VERSION.
 //
+// When DOCKER_HOST is unset, the host is resolved from the active docker CLI
+// context (DOCKER_CONTEXT, or the currentContext field of
+// $DOCKER_CONFIG/config.json), matching the docker CLI's behavior.
+//
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 // See https://github.com/moby/moby/blob/28d7dba41d0c0d9c7f0dafcc79d3c59f2b3f5dc3/client/options.go#L51
@@ -279,9 +283,24 @@ func NewClientFromEnv() (*Client, error) {
 // Docker's default logic for the environment variables DOCKER_HOST, DOCKER_TLS_VERIFY, and DOCKER_CERT_PATH,
 // and using a specific remote API version.
 //
+// When DOCKER_HOST is unset, the host is resolved from the active docker CLI
+// context (DOCKER_CONTEXT, or the currentContext field of
+// $DOCKER_CONFIG/config.json), matching the docker CLI's behavior.
+//
 // See https://github.com/docker/docker/blob/1f963af697e8df3a78217f6fdbf67b8123a7db94/docker/docker.go#L68.
 // See https://github.com/docker/compose/blob/81707ef1ad94403789166d2fe042c8a718a4c748/compose/cli/docker_client.py#L7.
 func NewVersionedClientFromEnv(apiVersionString string) (*Client, error) {
+	// DOCKER_HOST takes precedence over contexts in the docker CLI, so only
+	// look at contexts when it is unset.
+	if os.Getenv("DOCKER_HOST") == "" {
+		name, err := currentContextName()
+		if err != nil {
+			return nil, err
+		}
+		if name != "" && name != defaultContextName {
+			return NewVersionedContextClient(name, apiVersionString)
+		}
+	}
 	dockerEnv, err := getDockerEnv()
 	if err != nil {
 		return nil, err
