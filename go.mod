@@ -1,6 +1,6 @@
 module github.com/fsouza/go-dockerclient
 
-go 1.26.7
+go 1.26
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
