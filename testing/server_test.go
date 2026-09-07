@@ -516,7 +516,7 @@ func TestCommitContainer(t *testing.T) {
 		t.Errorf("CommitContainer: wrong status. Want %d. Got %d.", http.StatusOK, recorder.Code)
 	}
 	if len(server.images) != 1 {
-		t.Errorf("CommitContainer: wrong images len in server. Want 1. Got %q.", len(server.images))
+		t.Errorf("CommitContainer: wrong images len in server. Want 1. Got %#v.", len(server.images))
 	}
 	imgID := fmt.Sprintf("img-%s", containers[0].ID)
 	expected := fmt.Sprintf(`{"ID":"%s"}`, imgID)
