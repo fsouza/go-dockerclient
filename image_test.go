@@ -661,7 +661,7 @@ func TestImportImageFromUrl(t *testing.T) {
 	}
 }
 
-func TestImportImagePlatformDoesNotForceURLVersion(t *testing.T) {
+func TestImportImagePlatformPinsURLVersion(t *testing.T) {
 	t.Parallel()
 	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
 	client := newTestClient(fakeRT)
@@ -686,8 +686,8 @@ func TestImportImagePlatformDoesNotForceURLVersion(t *testing.T) {
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
-	if req.URL.Path != "/images/create" {
-		t.Errorf("ImportImage: wrong request path. Want %q. Got %q.", "/images/create", req.URL.Path)
+	if req.URL.Path != "/v1.32/images/create" {
+		t.Errorf("ImportImage: wrong request path. Want %q. Got %q.", "/v1.32/images/create", req.URL.Path)
 	}
 }
 
@@ -863,7 +863,7 @@ func TestBuildImageParameters(t *testing.T) {
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("BuildImage: wrong query string. Want %#v.\n Got %#v.", expected, got)
 	}
-	expectedPrefix := "http://localhost:4243/build?"
+	expectedPrefix := "http://localhost:4243/v1.25/build?"
 	if !strings.HasPrefix(req.URL.String(), expectedPrefix) {
 		t.Errorf("BuildImage: wrong URL. Want Prefix %s.\n Got URL: %s", expectedPrefix, req.URL.String())
 	}

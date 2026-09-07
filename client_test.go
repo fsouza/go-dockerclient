@@ -512,7 +512,7 @@ func TestPathVersionCheckSkipServerVersionCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "/build?q=1"
+	want := "/v1.32/build?q=1"
 	if got != want {
 		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
 	}

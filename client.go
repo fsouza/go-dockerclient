@@ -979,9 +979,13 @@ func (c *Client) pathVersionCheck(basepath, queryStr string, requiredAPIVersion 
 			return "", fmt.Errorf("API %s requires version %s, server version %s is insufficient",
 				basepath, requiredAPIVersion, expected)
 		}
+		return fmt.Sprintf("%s?%s", basepath, queryStr), nil
 	}
-	// Return only a request path. The caller applies the endpoint and selected
-	// API version later through getURL.
+	// When skip is on and there is no expected or requested version, pin the URL
+	// to requiredAPIVersion so older daemons fail loudly if the feature is unsupported.
+	if requiredAPIVersion != nil {
+		return fmt.Sprintf("/v%s%s?%s", requiredAPIVersion, basepath, queryStr), nil
+	}
 	return fmt.Sprintf("%s?%s", basepath, queryStr), nil
 }
 
