@@ -6,6 +6,7 @@ package docker
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -1176,6 +1177,36 @@ func TestExportImagesNoNames(t *testing.T) {
 	}
 	if !errors.Is(err, ErrMustSpecifyNames) {
 		t.Error(err)
+	}
+}
+
+func TestExportImagesContextCancellation(t *testing.T) {
+	t.Parallel()
+	block := make(chan struct{})
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-block:
+		case <-r.Context().Done():
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	defer cleanup()
+	defer close(block)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	var buf bytes.Buffer
+	err := client.ExportImages(ExportImagesOptions{
+		Names:        []string{"testimage1"},
+		OutputStream: &buf,
+		Context:      ctx,
+	})
+	if err == nil {
+		t.Fatal("expected ExportImages to fail with context deadline exceeded")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) && !strings.Contains(err.Error(), "context deadline exceeded") {
+		t.Fatalf("expected context deadline error, got %v", err)
 	}
 }
 

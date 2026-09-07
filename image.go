@@ -398,9 +398,9 @@ func (c *Client) ExportImage(opts ExportImageOptions) error {
 // See https://goo.gl/N9XlDn for more details.
 type ExportImagesOptions struct {
 	Names             []string
-	OutputStream      io.Writer     `qs:"-"`
-	InactivityTimeout time.Duration `qs:"-"`
-	Context           context.Context
+	OutputStream      io.Writer       `qs:"-"`
+	InactivityTimeout time.Duration   `qs:"-"`
+	Context           context.Context `qs:"-"`
 }
 
 // ExportImages exports one or more images (as a tar file) into the stream
@@ -418,6 +418,7 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
+		context:           opts.Context,
 	})
 }
 
