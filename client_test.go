@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -1163,5 +1164,166 @@ func TestBestEffortServerVersionFailureCachingAndTTL(t *testing.T) {
 	}
 	if calls := versionCalls.Load(); calls != 2 {
 		t.Fatalf("expected 2 calls to /version after TTL expiry, got %d", calls)
+	}
+}
+
+func TestEnsureAPIVersionSingleflight(t *testing.T) {
+	t.Parallel()
+	var versionCalls atomic.Int32
+	unblock := make(chan struct{})
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			versionCalls.Add(1)
+			<-unblock
+			w.Write([]byte(`{"ApiVersion":"1.41"}`))
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	client.SkipServerVersionCheck = false
+
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+	errors := make([]error, numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			errors[idx] = client.ensureAPIVersion(context.Background())
+		}(i)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	close(unblock)
+	wg.Wait()
+
+	for i, err := range errors {
+		if err != nil {
+			t.Fatalf("goroutine %d failed: %v", i, err)
+		}
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected exactly 1 call to /version across concurrent callers, got %d", calls)
+	}
+	expectedVersion, _ := NewAPIVersion("1.41")
+	if v := client.serverAPIVersion.Load(); !reflect.DeepEqual(v, expectedVersion) {
+		t.Fatalf("expected server version %v, got %v", expectedVersion, v)
+	}
+}
+
+func TestProbeServerVersionContextCancellation(t *testing.T) {
+	t.Parallel()
+	releaseServer := make(chan struct{})
+	var closeOnce sync.Once
+	closeRelease := func() {
+		closeOnce.Do(func() { close(releaseServer) })
+	}
+
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			select {
+			case <-releaseServer:
+				w.Write([]byte(`{"ApiVersion":"1.41"}`))
+			case <-r.Context().Done():
+			}
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	defer closeRelease()
+	client.SkipServerVersionCheck = false
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	err := client.probeServerVersion(ctx)
+	duration := time.Since(start)
+	closeRelease()
+
+	if err == nil {
+		t.Fatal("expected probeServerVersion to fail with context deadline exceeded")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) && !strings.Contains(err.Error(), "context deadline exceeded") {
+		t.Fatalf("expected context deadline error, got %v", err)
+	}
+	if duration > 2*time.Second {
+		t.Fatalf("probeServerVersion took too long to abort on cancelled context: %v", duration)
+	}
+}
+
+func TestProbeServerVersionConcurrentCancellation(t *testing.T) {
+	t.Parallel()
+	releaseServer := make(chan struct{})
+	var closeOnce sync.Once
+	closeRelease := func() {
+		closeOnce.Do(func() { close(releaseServer) })
+	}
+	serverEntered := make(chan struct{})
+
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			select {
+			case <-serverEntered:
+			default:
+				close(serverEntered)
+			}
+			select {
+			case <-releaseServer:
+				w.Write([]byte(`{"ApiVersion":"1.41"}`))
+			case <-r.Context().Done():
+			}
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	defer closeRelease()
+	client.SkipServerVersionCheck = false
+
+	var wg sync.WaitGroup
+	var err1, err2 error
+
+	// Caller 1 starts probe with long timeout
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err1 = client.probeServerVersion(context.Background())
+	}()
+
+	// Wait until server handler has been entered by the probe
+	<-serverEntered
+
+	// Caller 2 joins the in-flight probe but with a short timeout
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ctx2, cancel2 := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		defer cancel2()
+		err2 = client.probeServerVersion(ctx2)
+	}()
+
+	// Wait for caller 2's timeout to pass
+	time.Sleep(100 * time.Millisecond)
+	if err2 == nil {
+		t.Fatal("expected caller 2 to time out while server is blocked")
+	}
+	if !errors.Is(err2, context.DeadlineExceeded) && !strings.Contains(err2.Error(), "context deadline exceeded") {
+		t.Fatalf("expected caller 2 to get deadline exceeded, got %v", err2)
+	}
+
+	// Now unblock the server so caller 1 can complete
+	closeRelease()
+	wg.Wait()
+
+	if err1 != nil {
+		t.Fatalf("expected caller 1 to succeed after server unblocks, got %v", err1)
+	}
+	expectedVersion, _ := NewAPIVersion("1.41")
+	if v := client.serverAPIVersion.Load(); !reflect.DeepEqual(v, expectedVersion) {
+		t.Fatalf("expected cached server version %v, got %v", expectedVersion, v)
 	}
 }
