@@ -1082,7 +1082,7 @@ func TestExportImages(t *testing.T) {
 	if req.Method != http.MethodGet {
 		t.Errorf("ExportImages: wrong method. Expected %q. Got %q.", http.MethodGet, req.Method)
 	}
-	expected := "http://localhost:4243/v1.25/images/get?names=testimage1%2Ctestimage2%3Alatest"
+	expected := "http://localhost:4243/v1.25/images/get?names=testimage1&names=testimage2%3Alatest"
 	got := req.URL.String()
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ExportImages: wrong path. Expected %q. Got %q.", expected, got)
@@ -1158,7 +1158,7 @@ func TestExportImagesNegotiatedVersionFirstCall(t *testing.T) {
 	if gotPath != "/v1.25/images/get" {
 		t.Fatalf("ExportImages: wrong path. Want %q. Got %q.", "/v1.25/images/get", gotPath)
 	}
-	wantRawQuery := "names=testimage1%2Ctestimage2%3Alatest"
+	wantRawQuery := "names=testimage1&names=testimage2%3Alatest"
 	if gotRawQuery != wantRawQuery {
 		t.Fatalf("ExportImages: wrong query. Want %q. Got %q.", wantRawQuery, gotRawQuery)
 	}

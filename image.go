@@ -410,34 +410,7 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 	if len(opts.Names) == 0 {
 		return ErrMustSpecifyNames
 	}
-	// API < 1.25 allows multiple name values
-	// 1.25 says name must be a comma separated list
-	if err := c.ensureAPIVersion(); err != nil {
-		return err
-	}
-	var err error
-	var exportpath string
-	var effectiveVersion APIVersion
-	if expected := c.expectedAPIVersion.Load(); expected != nil {
-		effectiveVersion = expected
-	} else if c.requestedAPIVersion != nil {
-		effectiveVersion = c.requestedAPIVersion
-	}
-	if effectiveVersion != nil && effectiveVersion.GreaterThanOrEqualTo(apiVersion125) {
-		var str strings.Builder
-		str.WriteString(opts.Names[0])
-		for _, val := range opts.Names[1:] {
-			str.WriteString("," + val)
-		}
-		exportpath, err = c.getPath("/images/get", ExportImagesOptions{
-			Names:             []string{str.String()},
-			OutputStream:      opts.OutputStream,
-			InactivityTimeout: opts.InactivityTimeout,
-			Context:           opts.Context,
-		})
-	} else {
-		exportpath, err = c.getPath("/images/get", &opts)
-	}
+	exportpath, err := c.getPath("/images/get", &opts)
 	if err != nil {
 		return err
 	}
