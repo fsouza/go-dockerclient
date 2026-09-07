@@ -30,6 +30,7 @@ func TestCopyFromContainerSkipServerVersionCheckIgnoresVersionError(t *testing.T
 	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/version":
+			t.Errorf("unexpected request path %q when SkipServerVersionCheck is true", r.URL.Path)
 			w.WriteHeader(http.StatusInternalServerError)
 		case "/containers/a123456/copy":
 			w.Write([]byte(content))

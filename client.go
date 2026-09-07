@@ -61,6 +61,8 @@ var (
 	apiVersion135, _ = NewAPIVersion("1.35")
 )
 
+const probeFailureTTL = 10 * time.Second
+
 // APIVersion is an internal representation of a version of the Remote API.
 type APIVersion []int
 
@@ -150,6 +152,7 @@ type Client struct {
 	// so keep access lock-free after the first version probe completes.
 	serverAPIVersion   atomicAPIVersion
 	expectedAPIVersion atomicAPIVersion
+	lastProbeFailure   atomic.Int64
 	versionMu          sync.Mutex
 }
 
@@ -398,6 +401,43 @@ func (c *Client) setExpectedVersion(serverVersion APIVersion) {
 	}
 }
 
+// bestEffortServerVersion returns the server API version if known or probed.
+// If SkipServerVersionCheck is true, or if probing recently failed within probeFailureTTL,
+// it returns requestedAPIVersion (or nil) without performing a /version network round-trip.
+func (c *Client) bestEffortServerVersion() APIVersion {
+	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
+		return serverVersion
+	}
+	if c.SkipServerVersionCheck {
+		return c.requestedAPIVersion
+	}
+	if lastFail := c.lastProbeFailure.Load(); lastFail > 0 && time.Since(time.Unix(0, lastFail)) < probeFailureTTL {
+		return c.requestedAPIVersion
+	}
+	c.versionMu.Lock()
+	defer c.versionMu.Unlock()
+	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
+		return serverVersion
+	}
+	if lastFail := c.lastProbeFailure.Load(); lastFail > 0 && time.Since(time.Unix(0, lastFail)) < probeFailureTTL {
+		return c.requestedAPIVersion
+	}
+	serverAPIVersionString, err := c.getServerAPIVersionString()
+	if err != nil {
+		c.lastProbeFailure.Store(time.Now().UnixNano())
+		return c.requestedAPIVersion
+	}
+	serverAPIVersion, err := NewAPIVersion(serverAPIVersionString)
+	if err != nil {
+		c.lastProbeFailure.Store(time.Now().UnixNano())
+		return c.requestedAPIVersion
+	}
+	c.lastProbeFailure.Store(0)
+	c.serverAPIVersion.Store(serverAPIVersion)
+	c.setExpectedVersion(serverAPIVersion)
+	return serverAPIVersion
+}
+
 func (c *Client) probeServerVersion() error {
 	if serverVersion := c.serverAPIVersion.Load(); serverVersion != nil {
 		c.setExpectedVersion(serverVersion)
@@ -413,12 +453,15 @@ func (c *Client) probeServerVersion() error {
 	}
 	serverAPIVersionString, err := c.getServerAPIVersionString()
 	if err != nil {
+		c.lastProbeFailure.Store(time.Now().UnixNano())
 		return err
 	}
 	serverAPIVersion, err := NewAPIVersion(serverAPIVersionString)
 	if err != nil {
+		c.lastProbeFailure.Store(time.Now().UnixNano())
 		return err
 	}
+	c.lastProbeFailure.Store(0)
 	c.serverAPIVersion.Store(serverAPIVersion)
 	c.setExpectedVersion(serverAPIVersion)
 	return nil

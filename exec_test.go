@@ -63,6 +63,7 @@ func TestExecCreateSkipServerVersionCheckIgnoresVersionError(t *testing.T) {
 	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/version":
+			t.Errorf("unexpected request path %q when SkipServerVersionCheck is true", r.URL.Path)
 			w.WriteHeader(http.StatusInternalServerError)
 		case "/containers/test/exec":
 			w.Write([]byte(`{"Id":"exec-id"}`))
@@ -75,6 +76,35 @@ func TestExecCreateSkipServerVersionCheckIgnoresVersionError(t *testing.T) {
 	exec, err := client.CreateExec(CreateExecOptions{
 		Container: "test",
 		Cmd:       []string{"touch", "/tmp/file"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exec.ID != "exec-id" {
+		t.Fatalf("CreateExec: wrong ID. Want %q. Got %q.", "exec-id", exec.ID)
+	}
+}
+
+func TestExecCreateSkipServerVersionCheckWithEnvAndWorkingDir(t *testing.T) {
+	t.Parallel()
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/version":
+			t.Errorf("unexpected request path %q when SkipServerVersionCheck is true", r.URL.Path)
+			w.WriteHeader(http.StatusInternalServerError)
+		case "/containers/test/exec":
+			w.Write([]byte(`{"Id":"exec-id"}`))
+		default:
+			t.Errorf("unexpected request path %q", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	})
+	defer cleanup()
+	exec, err := client.CreateExec(CreateExecOptions{
+		Container:  "test",
+		Cmd:        []string{"touch", "/tmp/file"},
+		Env:        []string{"FOO=BAR"},
+		WorkingDir: "/app",
 	})
 	if err != nil {
 		t.Fatal(err)

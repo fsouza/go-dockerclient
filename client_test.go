@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -1049,4 +1050,118 @@ type dumb struct {
 	Y      float64
 	Z      int     `qs:"zee"`
 	Person *person `qs:"p"`
+}
+
+func TestBestEffortServerVersionSkipServerVersionCheck(t *testing.T) {
+	t.Parallel()
+	var versionCalls atomic.Int32
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			versionCalls.Add(1)
+			w.Write([]byte(`{"ApiVersion":"1.41"}`))
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+
+	// SkipServerVersionCheck is true by default from newHTTPTestClient/NewClient.
+	v := client.bestEffortServerVersion()
+	if v != nil {
+		t.Fatalf("expected nil version when skipping check with no requested version, got %v", v)
+	}
+	if calls := versionCalls.Load(); calls != 0 {
+		t.Fatalf("expected 0 calls to /version when SkipServerVersionCheck is true, got %d", calls)
+	}
+
+	// When requestedAPIVersion is set, it should return that requested version without hitting /version.
+	reqVersion, _ := NewAPIVersion("1.40")
+	client.requestedAPIVersion = reqVersion
+	v = client.bestEffortServerVersion()
+	if !reflect.DeepEqual(v, reqVersion) {
+		t.Fatalf("expected %v, got %v", reqVersion, v)
+	}
+	if calls := versionCalls.Load(); calls != 0 {
+		t.Fatalf("expected 0 calls to /version, got %d", calls)
+	}
+}
+
+func TestBestEffortServerVersionProbeSuccess(t *testing.T) {
+	t.Parallel()
+	var versionCalls atomic.Int32
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			versionCalls.Add(1)
+			w.Write([]byte(`{"ApiVersion":"1.42"}`))
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	client.SkipServerVersionCheck = false
+
+	v := client.bestEffortServerVersion()
+	expectedVersion, _ := NewAPIVersion("1.42")
+	if !reflect.DeepEqual(v, expectedVersion) {
+		t.Fatalf("expected %v, got %v", expectedVersion, v)
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected 1 call to /version, got %d", calls)
+	}
+
+	// Subsequent calls return cached version without hitting /version again.
+	v2 := client.bestEffortServerVersion()
+	if !reflect.DeepEqual(v2, expectedVersion) {
+		t.Fatalf("expected %v, got %v", expectedVersion, v2)
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected still 1 call to /version, got %d", calls)
+	}
+}
+
+func TestBestEffortServerVersionFailureCachingAndTTL(t *testing.T) {
+	t.Parallel()
+	var versionCalls atomic.Int32
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			versionCalls.Add(1)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	client.SkipServerVersionCheck = false
+
+	// First call fails probing.
+	v := client.bestEffortServerVersion()
+	if v != nil {
+		t.Fatalf("expected nil version on failed probe, got %v", v)
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected 1 call to /version, got %d", calls)
+	}
+
+	// Multiple subsequent calls within TTL should be negatively cached and NOT call /version.
+	for i := 0; i < 5; i++ {
+		v = client.bestEffortServerVersion()
+		if v != nil {
+			t.Fatalf("expected nil version on cached failure, got %v", v)
+		}
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected still only 1 call to /version due to negative caching, got %d", calls)
+	}
+
+	// Simulate TTL expiration by setting lastProbeFailure in the past.
+	client.lastProbeFailure.Store(time.Now().Add(-2 * probeFailureTTL).UnixNano())
+
+	// Next call should retry probing.
+	v = client.bestEffortServerVersion()
+	if v != nil {
+		t.Fatalf("expected nil version on failed retry, got %v", v)
+	}
+	if calls := versionCalls.Load(); calls != 2 {
+		t.Fatalf("expected 2 calls to /version after TTL expiry, got %d", calls)
+	}
 }

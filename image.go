@@ -606,14 +606,13 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 }
 
 func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) registryAuth {
-	// If the server version cannot be discovered, keep the legacy auth config
-	// shape. This matches the previous best-effort version check behavior.
-	c.probeServerVersion()
-	v := c.serverAPIVersion.Load()
-	if v != nil && v.GreaterThanOrEqualTo(apiVersion119) {
-		return AuthConfigurations119(authConfigs.Configs)
+	// If the server version is known and is older than 1.19, use the legacy auth
+	// config shape. Otherwise default to modern auth configurations.
+	v := c.bestEffortServerVersion()
+	if v != nil && v.LessThan(apiVersion119) {
+		return authConfigs
 	}
-	return authConfigs
+	return AuthConfigurations119(authConfigs.Configs)
 }
 
 // TagImageOptions present the set of options to tag an image.
