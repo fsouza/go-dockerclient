@@ -1,6 +1,6 @@
 module github.com/fsouza/go-dockerclient
 
-go 1.26
+go 1.26.0
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
@@ -11,7 +11,7 @@ require (
 	github.com/moby/moby/api v1.56.0
 	github.com/moby/moby/client v0.6.0
 	github.com/moby/patternmatcher v0.6.1
-	golang.org/x/term v0.45.0
+	golang.org/x/term v0.46.0
 )
 
 require (
@@ -25,5 +25,5 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 )
