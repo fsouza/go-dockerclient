@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -457,6 +459,123 @@ func TestAPIVersions(t *testing.T) {
 				t.Errorf("Expected %#v >= %#v", a, b)
 			}
 		})
+	}
+}
+
+func TestPathVersionCheckExplicitVersion(t *testing.T) {
+	t.Parallel()
+	client, err := NewVersionedClient("http://localhost:4243", "1.44")
+	if err != nil {
+		t.Fatal(err)
+	}
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "/build?q=1"
+	if got != want {
+		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
+	}
+}
+
+func TestPathVersionCheckExplicitVersionInsufficient(t *testing.T) {
+	t.Parallel()
+	client, err := NewVersionedClient("http://localhost:4243", "1.24")
+	if err != nil {
+		t.Fatal(err)
+	}
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	want := "API /build requires version 1.32, requested version 1.24 is insufficient"
+	if err.Error() != want {
+		t.Fatalf("wrong error. Want %q. Got %q.", want, err.Error())
+	}
+}
+
+func TestPathVersionCheckSkipServerVersionCheck(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "/v1.32/build?q=1"
+	if got != want {
+		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
+	}
+}
+
+func TestPathVersionCheckServerVersion(t *testing.T) {
+	t.Parallel()
+	client, err := NewClient("http://localhost:4243")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.HTTPClient = &http.Client{Transport: &FakeRoundTripper{message: `{"ApiVersion":"1.52"}`, status: http.StatusOK}}
+	client.SkipServerVersionCheck = false
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "/build?q=1"
+	if got != want {
+		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
+	}
+}
+
+func TestPathVersionCheckServerVersionInsufficient(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	client.SkipServerVersionCheck = false
+	client.expectedAPIVersion.Store(apiVersion124)
+	requiredAPIVersion, err := NewAPIVersion("1.32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.pathVersionCheck("/build", "q=1", requiredAPIVersion)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	want := "API /build requires version 1.32, server version 1.24 is insufficient"
+	if err.Error() != want {
+		t.Fatalf("wrong error. Want %q. Got %q.", want, err.Error())
+	}
+}
+
+func TestPathVersionCheckNilRequiredVersion(t *testing.T) {
+	t.Parallel()
+	client := newTestClient(&FakeRoundTripper{message: "", status: http.StatusOK})
+	client.SkipServerVersionCheck = false
+	expectedAPIVersion, err := NewAPIVersion("1.52")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.expectedAPIVersion.Store(expectedAPIVersion)
+	got, err := client.pathVersionCheck("/build", "q=1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "/build?q=1"
+	if got != want {
+		t.Fatalf("pathVersionCheck: wrong path. Want %q. Got %q.", want, got)
 	}
 }
 
@@ -908,6 +1027,17 @@ func (rt *FakeRoundTripper) Reset() {
 	rt.requests = nil
 }
 
+func newHTTPTestClient(t *testing.T, handler http.HandlerFunc) (*Client, func()) {
+	t.Helper()
+	srv := httptest.NewServer(handler)
+	client, err := NewClient(srv.URL)
+	if err != nil {
+		srv.Close()
+		t.Fatal(err)
+	}
+	return client, srv.Close
+}
+
 type person struct {
 	Name string
 	Age  int `json:"age"`
@@ -921,4 +1051,279 @@ type dumb struct {
 	Y      float64
 	Z      int     `qs:"zee"`
 	Person *person `qs:"p"`
+}
+
+func TestBestEffortServerVersionSkipServerVersionCheck(t *testing.T) {
+	t.Parallel()
+	var versionCalls atomic.Int32
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			versionCalls.Add(1)
+			w.Write([]byte(`{"ApiVersion":"1.41"}`))
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+
+	// SkipServerVersionCheck is true by default from newHTTPTestClient/NewClient.
+	v := client.bestEffortServerVersion()
+	if v != nil {
+		t.Fatalf("expected nil version when skipping check with no requested version, got %v", v)
+	}
+	if calls := versionCalls.Load(); calls != 0 {
+		t.Fatalf("expected 0 calls to /version when SkipServerVersionCheck is true, got %d", calls)
+	}
+
+	// When requestedAPIVersion is set, it should return that requested version without hitting /version.
+	reqVersion, _ := NewAPIVersion("1.40")
+	client.requestedAPIVersion = reqVersion
+	v = client.bestEffortServerVersion()
+	if !reflect.DeepEqual(v, reqVersion) {
+		t.Fatalf("expected %v, got %v", reqVersion, v)
+	}
+	if calls := versionCalls.Load(); calls != 0 {
+		t.Fatalf("expected 0 calls to /version, got %d", calls)
+	}
+}
+
+func TestBestEffortServerVersionProbeSuccess(t *testing.T) {
+	t.Parallel()
+	var versionCalls atomic.Int32
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			versionCalls.Add(1)
+			w.Write([]byte(`{"ApiVersion":"1.42"}`))
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	client.SkipServerVersionCheck = false
+
+	v := client.bestEffortServerVersion()
+	expectedVersion, _ := NewAPIVersion("1.42")
+	if !reflect.DeepEqual(v, expectedVersion) {
+		t.Fatalf("expected %v, got %v", expectedVersion, v)
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected 1 call to /version, got %d", calls)
+	}
+
+	// Subsequent calls return cached version without hitting /version again.
+	v2 := client.bestEffortServerVersion()
+	if !reflect.DeepEqual(v2, expectedVersion) {
+		t.Fatalf("expected %v, got %v", expectedVersion, v2)
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected still 1 call to /version, got %d", calls)
+	}
+}
+
+func TestBestEffortServerVersionFailureCachingAndTTL(t *testing.T) {
+	t.Parallel()
+	var versionCalls atomic.Int32
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			versionCalls.Add(1)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	client.SkipServerVersionCheck = false
+
+	// First call fails probing.
+	v := client.bestEffortServerVersion()
+	if v != nil {
+		t.Fatalf("expected nil version on failed probe, got %v", v)
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected 1 call to /version, got %d", calls)
+	}
+
+	// Multiple subsequent calls within TTL should be negatively cached and NOT call /version.
+	for i := 0; i < 5; i++ {
+		v = client.bestEffortServerVersion()
+		if v != nil {
+			t.Fatalf("expected nil version on cached failure, got %v", v)
+		}
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected still only 1 call to /version due to negative caching, got %d", calls)
+	}
+
+	// Simulate TTL expiration by setting lastProbeFailure in the past.
+	client.lastProbeFailure.Store(time.Now().Add(-2 * probeFailureTTL).UnixNano())
+
+	// Next call should retry probing.
+	v = client.bestEffortServerVersion()
+	if v != nil {
+		t.Fatalf("expected nil version on failed retry, got %v", v)
+	}
+	if calls := versionCalls.Load(); calls != 2 {
+		t.Fatalf("expected 2 calls to /version after TTL expiry, got %d", calls)
+	}
+}
+
+func TestEnsureAPIVersionSingleflight(t *testing.T) {
+	t.Parallel()
+	var versionCalls atomic.Int32
+	unblock := make(chan struct{})
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			versionCalls.Add(1)
+			<-unblock
+			w.Write([]byte(`{"ApiVersion":"1.41"}`))
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	client.SkipServerVersionCheck = false
+
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+	errors := make([]error, numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			errors[idx] = client.ensureAPIVersion(context.Background())
+		}(i)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	close(unblock)
+	wg.Wait()
+
+	for i, err := range errors {
+		if err != nil {
+			t.Fatalf("goroutine %d failed: %v", i, err)
+		}
+	}
+	if calls := versionCalls.Load(); calls != 1 {
+		t.Fatalf("expected exactly 1 call to /version across concurrent callers, got %d", calls)
+	}
+	expectedVersion, _ := NewAPIVersion("1.41")
+	if v := client.serverAPIVersion.Load(); !reflect.DeepEqual(v, expectedVersion) {
+		t.Fatalf("expected server version %v, got %v", expectedVersion, v)
+	}
+}
+
+func TestProbeServerVersionContextCancellation(t *testing.T) {
+	t.Parallel()
+	releaseServer := make(chan struct{})
+	var closeOnce sync.Once
+	closeRelease := func() {
+		closeOnce.Do(func() { close(releaseServer) })
+	}
+
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			select {
+			case <-releaseServer:
+				w.Write([]byte(`{"ApiVersion":"1.41"}`))
+			case <-r.Context().Done():
+			}
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	defer closeRelease()
+	client.SkipServerVersionCheck = false
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	err := client.probeServerVersion(ctx)
+	duration := time.Since(start)
+	closeRelease()
+
+	if err == nil {
+		t.Fatal("expected probeServerVersion to fail with context deadline exceeded")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) && !strings.Contains(err.Error(), "context deadline exceeded") {
+		t.Fatalf("expected context deadline error, got %v", err)
+	}
+	if duration > 2*time.Second {
+		t.Fatalf("probeServerVersion took too long to abort on cancelled context: %v", duration)
+	}
+}
+
+func TestProbeServerVersionConcurrentCancellation(t *testing.T) {
+	t.Parallel()
+	releaseServer := make(chan struct{})
+	var closeOnce sync.Once
+	closeRelease := func() {
+		closeOnce.Do(func() { close(releaseServer) })
+	}
+	serverEntered := make(chan struct{})
+
+	client, cleanup := newHTTPTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/version" {
+			select {
+			case <-serverEntered:
+			default:
+				close(serverEntered)
+			}
+			select {
+			case <-releaseServer:
+				w.Write([]byte(`{"ApiVersion":"1.41"}`))
+			case <-r.Context().Done():
+			}
+			return
+		}
+		http.NotFound(w, r)
+	})
+	defer cleanup()
+	defer closeRelease()
+	client.SkipServerVersionCheck = false
+
+	var wg sync.WaitGroup
+	var err1, err2 error
+
+	// Caller 1 starts probe with long timeout
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err1 = client.probeServerVersion(context.Background())
+	}()
+
+	// Wait until server handler has been entered by the probe
+	<-serverEntered
+
+	// Caller 2 joins the in-flight probe but with a short timeout
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ctx2, cancel2 := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		defer cancel2()
+		err2 = client.probeServerVersion(ctx2)
+	}()
+
+	// Wait for caller 2's timeout to pass
+	time.Sleep(100 * time.Millisecond)
+	if err2 == nil {
+		t.Fatal("expected caller 2 to time out while server is blocked")
+	}
+	if !errors.Is(err2, context.DeadlineExceeded) && !strings.Contains(err2.Error(), "context deadline exceeded") {
+		t.Fatalf("expected caller 2 to get deadline exceeded, got %v", err2)
+	}
+
+	// Now unblock the server so caller 1 can complete
+	closeRelease()
+	wg.Wait()
+
+	if err1 != nil {
+		t.Fatalf("expected caller 1 to succeed after server unblocks, got %v", err1)
+	}
+	expectedVersion, _ := NewAPIVersion("1.41")
+	if v := client.serverAPIVersion.Load(); !reflect.DeepEqual(v, expectedVersion) {
+		t.Fatalf("expected cached server version %v, got %v", expectedVersion, v)
+	}
 }

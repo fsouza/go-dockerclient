@@ -215,7 +215,11 @@ func (c *Client) InspectImage(name string) (*Image, error) {
 	var image Image
 
 	// if the caller elected to skip checking the server's version, assume it's the latest
-	if c.SkipServerVersionCheck || c.expectedAPIVersion.GreaterThanOrEqualTo(apiVersion112) {
+	if c.SkipServerVersionCheck {
+		if err := json.NewDecoder(resp.Body).Decode(&image); err != nil {
+			return nil, err
+		}
+	} else if v := c.expectedAPIVersion.Load(); v != nil && v.GreaterThanOrEqualTo(apiVersion112) {
 		if err := json.NewDecoder(resp.Body).Decode(&image); err != nil {
 			return nil, err
 		}
@@ -331,11 +335,11 @@ func (c *Client) PullImage(opts PullImageOptions, auth AuthConfiguration) error 
 }
 
 func (c *Client) createImage(opts any, headers map[string]string, in io.Reader, w io.Writer, rawJSONStream bool, timeout time.Duration, context context.Context) error {
-	url, err := c.getPath("/images/create", opts)
+	path, err := c.getPath("/images/create", opts)
 	if err != nil {
 		return err
 	}
-	return c.streamURL(http.MethodPost, url, streamOptions{
+	return c.stream(http.MethodPost, path, streamOptions{
 		setRawTerminal:    true,
 		headers:           headers,
 		in:                in,
@@ -394,9 +398,9 @@ func (c *Client) ExportImage(opts ExportImageOptions) error {
 // See https://goo.gl/N9XlDn for more details.
 type ExportImagesOptions struct {
 	Names             []string
-	OutputStream      io.Writer     `qs:"-"`
-	InactivityTimeout time.Duration `qs:"-"`
-	Context           context.Context
+	OutputStream      io.Writer       `qs:"-"`
+	InactivityTimeout time.Duration   `qs:"-"`
+	Context           context.Context `qs:"-"`
 }
 
 // ExportImages exports one or more images (as a tar file) into the stream
@@ -406,32 +410,15 @@ func (c *Client) ExportImages(opts ExportImagesOptions) error {
 	if len(opts.Names) == 0 {
 		return ErrMustSpecifyNames
 	}
-	// API < 1.25 allows multiple name values
-	// 1.25 says name must be a comma separated list
-	var err error
-	var exporturl string
-	if c.requestedAPIVersion.GreaterThanOrEqualTo(apiVersion125) {
-		var str strings.Builder
-		str.WriteString(opts.Names[0])
-		for _, val := range opts.Names[1:] {
-			str.WriteString("," + val)
-		}
-		exporturl, err = c.getPath("/images/get", ExportImagesOptions{
-			Names:             []string{str.String()},
-			OutputStream:      opts.OutputStream,
-			InactivityTimeout: opts.InactivityTimeout,
-			Context:           opts.Context,
-		})
-	} else {
-		exporturl, err = c.getPath("/images/get", &opts)
-	}
+	exportpath, err := c.getPath("/images/get", &opts)
 	if err != nil {
 		return err
 	}
-	return c.streamURL(http.MethodGet, exporturl, streamOptions{
+	return c.stream(http.MethodGet, exportpath, streamOptions{
 		setRawTerminal:    true,
 		stdout:            opts.OutputStream,
 		inactivityTimeout: opts.InactivityTimeout,
+		context:           opts.Context,
 	})
 }
 
@@ -603,12 +590,12 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		}
 	}
 
-	buildURL, err := c.pathVersionCheck("/build", qs, ver)
+	buildPath, err := c.pathVersionCheck("/build", qs, ver)
 	if err != nil {
 		return err
 	}
 
-	return c.streamURL(http.MethodPost, buildURL, streamOptions{
+	return c.stream(http.MethodPost, buildPath, streamOptions{
 		setRawTerminal:    true,
 		rawJSONStream:     opts.RawJSONStream,
 		headers:           headers,
@@ -620,13 +607,13 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 }
 
 func (c *Client) versionedAuthConfigs(authConfigs AuthConfigurations) registryAuth {
-	if c.serverAPIVersion == nil {
-		c.checkAPIVersion()
+	// If the server version is known and is older than 1.19, use the legacy auth
+	// config shape. Otherwise default to modern auth configurations.
+	v := c.bestEffortServerVersion()
+	if v != nil && v.LessThan(apiVersion119) {
+		return authConfigs
 	}
-	if c.serverAPIVersion != nil && c.serverAPIVersion.GreaterThanOrEqualTo(apiVersion119) {
-		return AuthConfigurations119(authConfigs.Configs)
-	}
-	return authConfigs
+	return AuthConfigurations119(authConfigs.Configs)
 }
 
 // TagImageOptions present the set of options to tag an image.
