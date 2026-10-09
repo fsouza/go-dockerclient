@@ -1,9 +1,9 @@
 module github.com/fsouza/go-dockerclient
 
-go 1.26
+go 1.26.0
 
 require (
-	github.com/Microsoft/go-winio v0.6.2
+	github.com/Microsoft/go-winio v0.6.3
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-cmp v0.7.0
 	github.com/gorilla/mux v1.8.1
@@ -24,6 +24,6 @@ require (
 	github.com/moby/term v0.5.2 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/sirupsen/logrus v1.9.4 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	github.com/sirupsen/logrus v1.10.2 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 )
