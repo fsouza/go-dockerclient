@@ -805,10 +805,11 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 			go func() {
 				defer func() {
 					if hijackOptions.in != nil {
+						// Publish completion before Close can make the input copier fail.
+						errChanIn <- nil
 						if closer, ok := hijackOptions.in.(io.Closer); ok {
 							closer.Close()
 						}
-						errChanIn <- nil
 					}
 				}()
 
