@@ -13,6 +13,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -315,4 +316,120 @@ func TestEventListenerReAdding(t *testing.T) {
 
 	// Give the goroutine of the first eventHijack() time to handle the EOF.
 	time.Sleep(10 * time.Millisecond)
+}
+
+func TestRemoveEventListenerClosesIdleConnection(t *testing.T) {
+	for name, newServer := range map[string]func(http.Handler) *httptest.Server{
+		"http": httptest.NewServer,
+		"tls":  httptest.NewTLSServer,
+	} {
+		t.Run(name, func(t *testing.T) {
+			disconnected := make(chan struct{}, 2)
+			server := newServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(`{"status":"start","time":1}` + "\n"))
+				w.(http.Flusher).Flush()
+				<-r.Context().Done()
+				disconnected <- struct{}{}
+			}))
+			defer server.Close()
+			defer server.CloseClientConnections()
+			client, err := NewClient(server.URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if server.TLS != nil {
+				client.TLSConfig = server.Client().Transport.(*http.Transport).TLSClientConfig
+			}
+			listener := make(chan *APIEvents, 1)
+			for range 2 {
+				if err := client.AddEventListener(listener); err != nil {
+					t.Fatal(err)
+				}
+				select {
+				case <-listener:
+				case <-time.After(5 * time.Second):
+					t.Fatal("did not receive event")
+				}
+				if err := client.RemoveEventListener(listener); err != nil {
+					t.Fatal(err)
+				}
+				select {
+				case <-disconnected:
+				case <-time.After(2 * time.Second):
+					t.Fatal("idle event connection remained open after removing the final listener")
+				}
+			}
+		})
+	}
+}
+
+func TestEventListenerReAddingDuringConnect(t *testing.T) {
+	firstRequest := make(chan struct{})
+	releaseFirst := make(chan struct{})
+	firstClosed := make(chan struct{})
+	secondClosed := make(chan struct{})
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		first := requests.Add(1) == 1
+		if first {
+			close(firstRequest)
+			<-releaseFirst
+		}
+		w.Write([]byte(`{"status":"start","time":1}` + "\n"))
+		w.(http.Flusher).Flush()
+		<-r.Context().Done()
+		if first {
+			close(firstClosed)
+		} else {
+			close(secondClosed)
+		}
+	}))
+	defer server.Close()
+	defer server.CloseClientConnections()
+	// Also release the handler if the test fails before the handshake completes.
+	defer func() {
+		select {
+		case <-releaseFirst:
+		default:
+			close(releaseFirst)
+		}
+	}()
+	client, err := NewClient(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listener := make(chan *APIEvents, 1)
+	if err := client.AddEventListener(listener); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-firstRequest:
+	case <-time.After(5 * time.Second):
+		t.Fatal("first request did not start")
+	}
+	if err := client.RemoveEventListener(listener); err != nil {
+		t.Fatal(err)
+	}
+	if err := client.AddEventListener(listener); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-listener:
+	case <-time.After(5 * time.Second):
+		t.Fatal("new listener did not receive event")
+	}
+	close(releaseFirst)
+	select {
+	case <-firstClosed:
+	case <-time.After(2 * time.Second):
+		t.Fatal("connection from the previous session remained open")
+	}
+	if err := client.RemoveEventListener(listener); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-secondClosed:
+	case <-time.After(2 * time.Second):
+		t.Fatal("current session connection remained open")
+	}
 }

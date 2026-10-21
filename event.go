@@ -151,7 +151,7 @@ func (c *Client) RemoveEventListener(listener chan *APIEvents) error {
 		return err
 	}
 	if c.eventMonitor.listernersCount() == 0 {
-		c.eventMonitor.disableEventMonitoring()
+		c.eventMonitor.disableEventMonitoring(nil)
 	}
 	return nil
 }
@@ -209,14 +209,18 @@ func (eventState *eventMonitoringState) enableEventMonitoring(c *Client, opts Ev
 		atomic.StoreInt64(&eventState.lastSeen, 0)
 		eventState.C = make(chan *APIEvents, 100)
 		eventState.errC = make(chan error, 1)
-		go eventState.monitorEvents(c, opts)
+		go eventState.monitorEvents(c, opts, eventState.C, eventState.errC)
 	}
 	return nil
 }
 
-func (eventState *eventMonitoringState) disableEventMonitoring() {
+func (eventState *eventMonitoringState) disableEventMonitoring(eventChan chan *APIEvents) {
 	eventState.Lock()
 	defer eventState.Unlock()
+
+	if eventChan != nil && eventState.C != eventChan {
+		return
+	}
 
 	eventState.closeListeners()
 
@@ -234,7 +238,7 @@ func (eventState *eventMonitoringState) disableEventMonitoring() {
 	}
 }
 
-func (eventState *eventMonitoringState) monitorEvents(c *Client, opts EventsOptions) {
+func (eventState *eventMonitoringState) monitorEvents(c *Client, opts EventsOptions, eventChan chan *APIEvents, errChan chan error) {
 	const (
 		noListenersTimeout  = 5 * time.Second
 		noListenersInterval = 10 * time.Millisecond
@@ -242,44 +246,48 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client, opts EventsOpti
 	)
 
 	var err error
-	for i := time.Duration(0); i < noListenersMaxTries && eventState.noListeners(); i++ {
+	for i := time.Duration(0); i < noListenersMaxTries && eventState.monitoring(eventChan) && eventState.noListeners(); i++ {
 		time.Sleep(10 * time.Millisecond)
+	}
+
+	if !eventState.monitoring(eventChan) {
+		return
 	}
 
 	if eventState.noListeners() {
 		// terminate if no listener is available after 5 seconds.
 		// Prevents goroutine leak when RemoveEventListener is called
 		// right after AddEventListener.
-		eventState.disableEventMonitoring()
+		eventState.disableEventMonitoring(eventChan)
 		return
 	}
 
-	if err = eventState.connectWithRetry(c, opts); err != nil {
+	if err = eventState.connectWithRetry(c, opts, eventChan, errChan); err != nil {
 		// terminate if connect failed
-		eventState.disableEventMonitoring()
+		eventState.disableEventMonitoring(eventChan)
 		return
 	}
-	for eventState.isEnabled() {
+	for eventState.monitoring(eventChan) {
 		timeout := time.After(100 * time.Millisecond)
 		select {
-		case ev, ok := <-eventState.C:
+		case ev, ok := <-eventChan:
 			if !ok {
 				return
 			}
 			if ev == EOFEvent {
-				go eventState.disableEventMonitoring()
+				go eventState.disableEventMonitoring(eventChan)
 				return
 			}
 			go func(ev *APIEvents) {
 				eventState.updateLastSeen(ev)
 				eventState.sendEvent(ev)
 			}(ev)
-		case err = <-eventState.errC:
+		case err = <-errChan:
 			if errors.Is(err, ErrNoListeners) {
-				eventState.disableEventMonitoring()
+				eventState.disableEventMonitoring(eventChan)
 				return
 			} else if err != nil {
-				defer func() { go eventState.monitorEvents(c, opts) }()
+				defer func() { go eventState.monitorEvents(c, opts, eventChan, errChan) }()
 				return
 			}
 		case <-timeout:
@@ -288,26 +296,37 @@ func (eventState *eventMonitoringState) monitorEvents(c *Client, opts EventsOpti
 	}
 }
 
-func (eventState *eventMonitoringState) connectWithRetry(c *Client, opts EventsOptions) error {
-	var retries int
-	eventState.RLock()
-	eventChan := eventState.C
-	errChan := eventState.errC
-	eventState.RUnlock()
-	closeConn, err := c.eventHijack(opts, atomic.LoadInt64(&eventState.lastSeen), eventChan, errChan)
-	for ; err != nil && retries < maxMonitorConnRetries; retries++ {
+func (eventState *eventMonitoringState) connectWithRetry(c *Client, opts EventsOptions, eventChan chan *APIEvents, errChan chan error) error {
+	var closeConn func()
+	var err error
+	for retries := 0; retries <= maxMonitorConnRetries; retries++ {
+		if !eventState.monitoring(eventChan) {
+			return ErrNoListeners
+		}
+		closeConn, err = c.eventHijack(opts, atomic.LoadInt64(&eventState.lastSeen), eventChan, errChan)
+		if err == nil || retries == maxMonitorConnRetries {
+			break
+		}
 		waitTime := int64(retryInitialWaitTime * math.Pow(2, float64(retries)))
 		time.Sleep(time.Duration(waitTime) * time.Millisecond)
-		eventState.RLock()
-		eventChan = eventState.C
-		errChan = eventState.errC
-		eventState.RUnlock()
-		closeConn, err = c.eventHijack(opts, atomic.LoadInt64(&eventState.lastSeen), eventChan, errChan)
 	}
 	eventState.Lock()
 	defer eventState.Unlock()
+	if !eventState.enabled || eventState.C != eventChan {
+		if closeConn != nil {
+			closeConn()
+		}
+		return ErrNoListeners
+	}
 	eventState.closeConn = closeConn
 	return err
+}
+
+// monitoring reports whether the connection belongs to the current session.
+func (eventState *eventMonitoringState) monitoring(eventChan chan *APIEvents) bool {
+	eventState.RLock()
+	defer eventState.RUnlock()
+	return eventState.enabled && eventState.C == eventChan
 }
 
 func (eventState *eventMonitoringState) noListeners() bool {
@@ -389,8 +408,8 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 	keepRunning := int32(1)
 	//lint:ignore SA1019 the alternative doesn't quite work, so keep using the deprecated thing.
 	go func(res *http.Response, conn *httputil.ClientConn) {
-		defer conn.Close()
 		defer res.Body.Close()
+		defer conn.Close()
 		decoder := json.NewDecoder(res.Body)
 		for atomic.LoadInt32(&keepRunning) == 1 {
 			var event APIEvents
@@ -404,7 +423,12 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 					c.eventMonitor.RUnlock()
 					break
 				}
-				errChan <- err
+				c.eventMonitor.RLock()
+				if c.eventMonitor.enabled && c.eventMonitor.C == eventChan {
+					errChan <- err
+				}
+				c.eventMonitor.RUnlock()
+				break
 			}
 			if event.Time == 0 {
 				continue
@@ -419,6 +443,8 @@ func (c *Client) eventHijack(opts EventsOptions, startTime int64, eventChan chan
 	}(res, conn)
 	return func() {
 		atomic.StoreInt32(&keepRunning, 0)
+		// Close the socket first to interrupt Decode without draining the body.
+		dial.Close()
 	}, nil
 }
 
