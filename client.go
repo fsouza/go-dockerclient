@@ -710,6 +710,7 @@ type hijackOptions struct {
 	stdout         io.Writer
 	stderr         io.Writer
 	data           any
+	context        context.Context
 }
 
 // CloseWaiter is an interface with methods for closing the underlying resource
@@ -728,6 +729,13 @@ type closerFunc func() error
 func (c closerFunc) Close() error { return c() }
 
 func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (CloseWaiter, error) {
+	ctx := hijackOptions.context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedAPIVersion == nil {
 		err := c.checkAPIVersion()
 		if err != nil {
@@ -742,7 +750,7 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 		}
 		params = bytes.NewBuffer(buf)
 	}
-	req, err := http.NewRequest(method, c.getURL(path), params)
+	req, err := http.NewRequestWithContext(ctx, method, c.getURL(path), params)
 	if err != nil {
 		return nil, err
 	}
@@ -774,14 +782,31 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 
 	errs := make(chan error, 1)
 	quit := make(chan struct{})
+	// ClientConn does not cancel its I/O when the request context ends.
+	stopCancel := context.AfterFunc(ctx, func() { dial.Close() })
 	go func() {
+		defer stopCancel()
 		//lint:ignore SA1019 the alternative doesn't quite work, so keep using the deprecated thing.
 		clientconn := httputil.NewClientConn(dial, nil)
 		defer clientconn.Close()
 		clientconn.Do(req)
+		if ctx.Err() != nil {
+			errs <- context.Cause(ctx)
+			return
+		}
 		if hijackOptions.success != nil {
-			hijackOptions.success <- struct{}{}
-			<-hijackOptions.success
+			select {
+			case hijackOptions.success <- struct{}{}:
+			case <-ctx.Done():
+				errs <- context.Cause(ctx)
+				return
+			}
+			select {
+			case <-hijackOptions.success:
+			case <-ctx.Done():
+				errs <- context.Cause(ctx)
+				return
+			}
 		}
 		rwc, br := clientconn.Hijack()
 		defer rwc.Close()
@@ -837,18 +862,21 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (Close
 		select {
 		case errIn = <-errChanIn:
 		case <-quit:
+		case <-ctx.Done():
 		}
 
 		var errOut error
+		// The context watcher stops network reads, but a pending output Write
+		// must finish before Wait returns to the caller.
 		select {
 		case errOut = <-errChanOut:
 		case <-quit:
 		}
 
 		if errIn != nil {
-			errs <- errIn
+			errs <- chooseError(ctx, errIn)
 		} else {
-			errs <- errOut
+			errs <- chooseError(ctx, errOut)
 		}
 	}()
 

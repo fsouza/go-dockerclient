@@ -92,6 +92,9 @@ type StartExecOptions struct {
 	// to unexpected behavior.
 	Success chan struct{} `json:"-"`
 
+	// Context controls the attached stream or detached start request.
+	// Canceling an attached stream closes the client connection without requesting
+	// termination of the exec process in the container.
 	Context context.Context `json:"-"`
 }
 
@@ -143,6 +146,7 @@ func (c *Client) StartExecNonBlocking(id string, opts StartExecOptions) (CloseWa
 		stdout:         opts.OutputStream,
 		stderr:         opts.ErrorStream,
 		data:           opts,
+		context:        opts.Context,
 	})
 }
 
